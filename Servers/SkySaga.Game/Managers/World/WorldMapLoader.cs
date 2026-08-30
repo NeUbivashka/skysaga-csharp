@@ -1,0 +1,152 @@
+namespace SkySaga.Game.Managers.World;
+
+using System.IO.Compression;
+
+public static class WorldMapLoader
+{
+    public const string DefaultPath = @"Data\WorldMap.json";
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+
+
+
+
+    public static bool TryLoad(IMapChunkManager chunkManager, out MapDefinition? definition, out List<WorldMapEntityData> entities, string path = DefaultPath)
+    {
+        ArgumentNullException.ThrowIfNull(chunkManager);
+
+        definition = null;
+        entities = [];
+
+        string actualPath = path;
+        bool isGzip = path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
+
+        if (!File.Exists(actualPath))
+        {
+
+            string gzPath = path + ".gz";
+            if (!isGzip && File.Exists(gzPath))
+            {
+                actualPath = gzPath;
+                isGzip = true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        WorldMapData? data;
+
+        try
+        {
+            using var fileStream = File.OpenRead(actualPath);
+            using Stream sourceStream = isGzip
+                ? new GZipStream(fileStream, CompressionMode.Decompress)
+                : fileStream;
+            data = JsonSerializer.Deserialize<WorldMapData>(sourceStream, _jsonOptions);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or InvalidDataException)
+        {
+            Console.WriteLine($"[WorldMapLoader] Failed to read '{actualPath}': {ex.Message}");
+            return false;
+        }
+
+        if (data is null || data.Voxels is null || data.Voxels.Count == 0)
+        {
+            Console.WriteLine($"[WorldMapLoader] '{actualPath}' has no voxels, ignoring.");
+            return false;
+        }
+
+        int sizeX = Math.Clamp(data.MapSizeChunks.X, 1, 32);
+        int sizeY = Math.Clamp(data.MapSizeChunks.Y, 1, 32);
+        int sizeZ = Math.Clamp(data.MapSizeChunks.Z, 1, 32);
+
+        int placed = 0;
+        int skippedOutOfBounds = 0;
+
+        foreach (var voxel in data.Voxels)
+        {
+            var chunkPos = new Vector3Int(
+                FloorDiv(voxel.X, 32),
+                FloorDiv(voxel.Y, 32),
+                FloorDiv(voxel.Z, 32));
+
+
+            if (chunkPos.X < 0 || chunkPos.X >= sizeX ||
+                chunkPos.Y < 0 || chunkPos.Y >= sizeY ||
+                chunkPos.Z < 0 || chunkPos.Z >= sizeZ)
+            {
+                skippedOutOfBounds++;
+                continue;
+            }
+
+            int localX = Mod(voxel.X, 32);
+            int localY = Mod(voxel.Y, 32);
+            int localZ = Mod(voxel.Z, 32);
+
+            var chunk = chunkManager.GetOrCreateChunk(chunkPos);
+            chunk.SetVoxel(localX, localY, localZ, voxel.Block, voxel.Meta);
+            placed++;
+        }
+
+        definition = new MapDefinition
+        {
+            MapSizeChunks = new Vector3Int(sizeX, sizeY, sizeZ),
+
+
+
+
+
+
+
+            Spec = MapSpec.Ftue(seed: 1337),
+            GameMode = (uint)data.GameMode,
+            AdventureType = "Adventure",
+
+            MapFileName = "TestMap"
+        };
+
+        if (data.Entities is not null)
+            entities = data.Entities;
+
+        Console.WriteLine(
+            $"[WorldMapLoader] Loaded '{actualPath}'{(isGzip ? " (gzip)" : "")}: {placed} voxels placed, {entities.Count} entities" +
+            (skippedOutOfBounds > 0 ? $", {skippedOutOfBounds} voxels skipped (out of {sizeX}x{sizeY}x{sizeZ} chunk bounds)" : ""));
+
+        return true;
+    }
+
+    private static int FloorDiv(int value, int divisor) =>
+        (int)Math.Floor(value / (double)divisor);
+
+    private static int Mod(int value, int modulus) =>
+        ((value % modulus) + modulus) % modulus;
+
+
+
+
+
+    private static MapSpec BuildSpecForBiome(string? biomeName)
+    {
+        var spec = MapSpec.HomeIsland(seed: 1337);
+
+        var biomeIndex = biomeName?.Trim().ToLowerInvariant() switch
+        {
+            "desert" => 1u,
+            "forest" => 2u,
+            "jungle" => 3u,
+            "mountain" => 4u,
+            "npcfriend" => 5u,
+            _ => 1u
+        };
+
+        spec.Searchable[0] = biomeIndex;
+
+        return spec;
+    }
+}
