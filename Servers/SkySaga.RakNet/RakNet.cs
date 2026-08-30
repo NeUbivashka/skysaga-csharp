@@ -6,12 +6,12 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-namespace RakNet {
+namespace RakNet
+{
 
-using System;
-using System.Runtime.InteropServices;
+    using System;
 
-public class RakNet {
+    public class RakNet {
  
 	    public static readonly SystemAddress UNASSIGNED_SYSTEM_ADDRESS = new SystemAddress();
 	    public static readonly RakNetGUID UNASSIGNED_RAKNET_GUID = new RakNetGUID(ulong.MaxValue);
@@ -133,6 +133,7 @@ public class RakNet {
   public static readonly int INTERNAL_PACKET_PAGE_SIZE = RakNetPINVOKE.INTERNAL_PACKET_PAGE_SIZE_get();
   public static readonly int RAKPEER_USER_THREADED = RakNetPINVOKE.RAKPEER_USER_THREADED_get();
   public static readonly int USE_ALLOCA = RakNetPINVOKE.USE_ALLOCA_get();
+  public static readonly int SLNET_MAX_RETRIEVABLE_FILESIZE = RakNetPINVOKE.SLNET_MAX_RETRIEVABLE_FILESIZE_get();
   public static readonly int LIBCAT_SECURITY = RakNetPINVOKE.LIBCAT_SECURITY_get();
   public static readonly int _RAKNET_SUPPORT_ConnectionGraph2 = RakNetPINVOKE._RAKNET_SUPPORT_ConnectionGraph2_get();
   public static readonly int _RAKNET_SUPPORT_DirectoryDeltaTransfer = RakNetPINVOKE._RAKNET_SUPPORT_DirectoryDeltaTransfer_get();
@@ -176,6 +177,7 @@ public class RakNet {
   public static readonly int _RAKNET_SUPPORT_RelayPlugin = RakNetPINVOKE._RAKNET_SUPPORT_RelayPlugin_get();
   public static readonly string PRINTF_64_BIT_MODIFIER = RakNetPINVOKE.PRINTF_64_BIT_MODIFIER_get();
   public static readonly int NETWORK_ID_MANAGER_HASH_LENGTH = RakNetPINVOKE.NETWORK_ID_MANAGER_HASH_LENGTH_get();
+  public static readonly string RAK_TIME_FORMAT_STRING = RakNetPINVOKE.RAK_TIME_FORMAT_STRING_get();
   public static readonly int ALLOW_JOIN_ANY_AVAILABLE_TEAM = RakNetPINVOKE.ALLOW_JOIN_ANY_AVAILABLE_TEAM_get();
   public static readonly int ALLOW_JOIN_SPECIFIC_TEAM = RakNetPINVOKE.ALLOW_JOIN_SPECIFIC_TEAM_get();
   public static readonly int ALLOW_JOIN_REBALANCING = RakNetPINVOKE.ALLOW_JOIN_REBALANCING_get();

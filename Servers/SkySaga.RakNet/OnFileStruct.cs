@@ -71,8 +71,7 @@ public class OnFileStruct : IDisposable {
 		fileDataIsCached = true;
 		SetFileData (value, value.Length);    
 	}
-
-        get
+get
         {
             byte[] returnArray;
             if (!fileDataIsCached)
@@ -96,7 +95,6 @@ public class OnFileStruct : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public uint byteLengthOfThisFile {

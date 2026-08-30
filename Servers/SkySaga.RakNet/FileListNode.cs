@@ -73,8 +73,7 @@ public class FileListNode : IDisposable {
 		dataIsCached = true;
 		SetData (value, value.Length);    
 	}
-
-        get
+get
         {
             byte[] returnArray;
             if (!dataIsCached)
@@ -98,7 +97,6 @@ public class FileListNode : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public uint dataLengthBytes {

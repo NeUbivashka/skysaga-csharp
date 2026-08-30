@@ -167,6 +167,14 @@ public class SystemAddress : IDisposable {
     RakNetPINVOKE.SystemAddress_ToString__SWIG_2(swigCPtr, writePort, dest, portDelineator);
   }
 
+  public void ToString(bool writePort, string dest, uint destLength, char portDelineator) {
+    RakNetPINVOKE.SystemAddress_ToString__SWIG_3(swigCPtr, writePort, dest, destLength, portDelineator);
+  }
+
+  public void ToString(bool writePort, string dest, uint destLength) {
+    RakNetPINVOKE.SystemAddress_ToString__SWIG_4(swigCPtr, writePort, dest, destLength);
+  }
+
   public bool FromString(string str, char portDelineator, int ipVersion) {
     bool ret = RakNetPINVOKE.SystemAddress_FromString__SWIG_0(swigCPtr, str, portDelineator, ipVersion);
     return ret;
@@ -237,6 +245,14 @@ public class SystemAddress : IDisposable {
 
   public void ToString_Old(bool writePort, string dest) {
     RakNetPINVOKE.SystemAddress_ToString_Old__SWIG_1(swigCPtr, writePort, dest);
+  }
+
+  public void ToString_Old(bool writePort, string dest, uint destLength, char portDelineator) {
+    RakNetPINVOKE.SystemAddress_ToString_Old__SWIG_2(swigCPtr, writePort, dest, destLength, portDelineator);
+  }
+
+  public void ToString_Old(bool writePort, string dest, uint destLength) {
+    RakNetPINVOKE.SystemAddress_ToString_Old__SWIG_3(swigCPtr, writePort, dest, destLength);
   }
 
   public void FixForIPVersion(SystemAddress boundAddressToSocket) {

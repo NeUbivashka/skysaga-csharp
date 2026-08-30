@@ -79,8 +79,7 @@ public class ByteQueue : IDisposable {
     return ret;
   }
 
-  private byte[] PeekContiguousBytesHelper(out uint outLength) 
-  {
+  private byte[] PeekContiguousBytesHelper(out uint outLength) {
       IntPtr cPtr = RakNetPINVOKE.ByteQueue_PeekContiguousBytesHelper(swigCPtr, out outLength);
       int len = (int)outLength;
       if (len <= 0)
@@ -91,7 +90,6 @@ public class ByteQueue : IDisposable {
       Marshal.Copy(cPtr, returnBytes, 0, len);
       return returnBytes;
   }
-
 
 }
 

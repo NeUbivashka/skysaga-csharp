@@ -88,8 +88,8 @@ public class FileListTransfer : PluginInterface2 {
     return ret;
   }
 
-  public void CancelReceive(ushort setId) {
-    RakNetPINVOKE.FileListTransfer_CancelReceive(swigCPtr, setId);
+  public void CancelReceive(ushort inSetId) {
+    RakNetPINVOKE.FileListTransfer_CancelReceive(swigCPtr, inSetId);
   }
 
   public void RemoveReceiver(SystemAddress systemAddress) {
@@ -97,8 +97,8 @@ public class FileListTransfer : PluginInterface2 {
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
   }
 
-  public bool IsHandlerActive(ushort setId) {
-    bool ret = RakNetPINVOKE.FileListTransfer_IsHandlerActive(swigCPtr, setId);
+  public bool IsHandlerActive(ushort inSetId) {
+    bool ret = RakNetPINVOKE.FileListTransfer_IsHandlerActive(swigCPtr, inSetId);
     return ret;
   }
 

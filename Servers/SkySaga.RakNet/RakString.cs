@@ -41,9 +41,7 @@ public class RakString : IDisposable {
       GC.SuppressFinalize(this);
     }
   }
-
-
-	public override int GetHashCode()
+public override int GetHashCode()
 	{
 		return this.C_String().GetHashCode();
 	}
@@ -180,7 +178,6 @@ public class RakString : IDisposable {
 	{
 		Replace(index,count,(byte)inChar);
 	}
-
   public RakString() : this(RakNetPINVOKE.new_RakString__SWIG_0(), true) {
   }
 
@@ -399,6 +396,10 @@ public class RakString : IDisposable {
     return ret;
   }
 
+  public void AppendBytes(string bytes, uint count) {
+    RakNetPINVOKE.RakString_AppendBytes__SWIG_0(swigCPtr, bytes, count);
+  }
+
   public int StrCmp(RakString rhs) {
     int ret = RakNetPINVOKE.RakString_StrCmp(swigCPtr, RakString.getCPtr(rhs));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
@@ -605,7 +606,7 @@ public class RakString : IDisposable {
   }
 
   public void AppendBytes(byte[] inByteArray, uint count) {
-    RakNetPINVOKE.RakString_AppendBytes(swigCPtr, inByteArray, count);
+    RakNetPINVOKE.RakString_AppendBytes__SWIG_1(swigCPtr, inByteArray, count);
   }
 
 }

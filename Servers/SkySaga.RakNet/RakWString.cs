@@ -184,6 +184,11 @@ public class RakWString : IDisposable {
     return ret;
   }
 
+  public static bool Deserialize(SWIGTYPE_p_wchar_t str, uint strLength, BitStream bs) {
+    bool ret = RakNetPINVOKE.RakWString_Deserialize__SWIG_2(SWIGTYPE_p_wchar_t.getCPtr(str), strLength, BitStream.getCPtr(bs));
+    return ret;
+  }
+
 }
 
 }

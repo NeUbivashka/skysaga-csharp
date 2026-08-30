@@ -100,8 +100,8 @@ public class TM_TeamMember : IDisposable {
     return ret;
   }
 
-  public bool LeaveAllTeams(byte noTeamSubcategory) {
-    bool ret = RakNetPINVOKE.TM_TeamMember_LeaveAllTeams(swigCPtr, noTeamSubcategory);
+  public bool LeaveAllTeams(byte inNoTeamSubcategory) {
+    bool ret = RakNetPINVOKE.TM_TeamMember_LeaveAllTeams(swigCPtr, inNoTeamSubcategory);
     return ret;
   }
 

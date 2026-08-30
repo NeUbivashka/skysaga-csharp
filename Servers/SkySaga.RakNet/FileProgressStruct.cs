@@ -109,8 +109,7 @@ public class FileProgressStruct : IDisposable {
 		firstDataChunkIsCached = true;
 		SetFirstDataChunk (value, value.Length);    
 	}
-
-        get
+get
         {
             byte[] returnArray;
             if (!firstDataChunkIsCached)
@@ -134,7 +133,6 @@ public class FileProgressStruct : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public byte[] iriDataChunk {
@@ -144,8 +142,7 @@ public class FileProgressStruct : IDisposable {
 		iriDataChunkIsCached = true;
 		SetIriDataChunk (value, value.Length);    
 	}
-
-        get
+get
         {
             byte[] returnArray;
             if (!iriDataChunkIsCached)
@@ -169,7 +166,6 @@ public class FileProgressStruct : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public uint iriWriteOffset {

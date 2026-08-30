@@ -218,13 +218,37 @@ public class BitStream : IDisposable {
     return ret;
   }
 
+  public bool Read(SWIGTYPE_p_p_wchar_t varString) {
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_1(swigCPtr, SWIGTYPE_p_p_wchar_t.getCPtr(varString));
+    if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public bool Read(SWIGTYPE_p_p_wchar_t varString, uint varStringLength) {
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_2(swigCPtr, SWIGTYPE_p_p_wchar_t.getCPtr(varString), varStringLength);
+    if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public bool ReadCompressed(SWIGTYPE_p_p_wchar_t varString) {
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_1(swigCPtr, SWIGTYPE_p_p_wchar_t.getCPtr(varString));
+    if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public bool ReadCompressed(SWIGTYPE_p_p_wchar_t varString, uint varStringLength) {
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_2(swigCPtr, SWIGTYPE_p_p_wchar_t.getCPtr(varString), varStringLength);
+    if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public bool Read(BitStream bitStream, uint numberOfBits) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_1(swigCPtr, BitStream.getCPtr(bitStream), numberOfBits);
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_3(swigCPtr, BitStream.getCPtr(bitStream), numberOfBits);
     return ret;
   }
 
   public bool Read(BitStream bitStream) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_2(swigCPtr, BitStream.getCPtr(bitStream));
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_4(swigCPtr, BitStream.getCPtr(bitStream));
     return ret;
   }
 
@@ -257,12 +281,20 @@ public class BitStream : IDisposable {
     RakNetPINVOKE.BitStream_AssertStreamEmpty(swigCPtr);
   }
 
+  public void PrintBits(string arg0, uint outLength) {
+    RakNetPINVOKE.BitStream_PrintBits__SWIG_0(swigCPtr, arg0, outLength);
+  }
+
   public void PrintBits() {
-    RakNetPINVOKE.BitStream_PrintBits(swigCPtr);
+    RakNetPINVOKE.BitStream_PrintBits__SWIG_1(swigCPtr);
+  }
+
+  public void PrintHex(string arg0, uint outLength) {
+    RakNetPINVOKE.BitStream_PrintHex__SWIG_0(swigCPtr, arg0, outLength);
   }
 
   public void PrintHex() {
-    RakNetPINVOKE.BitStream_PrintHex(swigCPtr);
+    RakNetPINVOKE.BitStream_PrintHex__SWIG_1(swigCPtr);
   }
 
   public void IgnoreBits(uint numberOfBits) {
@@ -1173,55 +1205,55 @@ public class BitStream : IDisposable {
   }
 
   public bool Read(out bool outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_3(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool Read(out byte outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_4(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool Read(out short outTemplateVar) {
     bool ret = RakNetPINVOKE.BitStream_Read__SWIG_5(swigCPtr, out outTemplateVar);
     return ret;
   }
 
+  public bool Read(out byte outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_6(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
+  public bool Read(out short outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_7(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
   public bool Read(SWIGTYPE_p_unsigned_short outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_6(swigCPtr, SWIGTYPE_p_unsigned_short.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_8(swigCPtr, SWIGTYPE_p_unsigned_short.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public bool Read(out int outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_7(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool Read(out long outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_8(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool Read(out float outTemplateVar) {
     bool ret = RakNetPINVOKE.BitStream_Read__SWIG_9(swigCPtr, out outTemplateVar);
     return ret;
   }
 
+  public bool Read(out long outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_10(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
+  public bool Read(out float outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_11(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
   public bool Read(RakString outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_10(swigCPtr, RakString.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_12(swigCPtr, RakString.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public bool Read(RakNetGUID outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_11(swigCPtr, RakNetGUID.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_13(swigCPtr, RakNetGUID.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public bool Read(uint24_t outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_12(swigCPtr, uint24_t.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_Read__SWIG_14(swigCPtr, uint24_t.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
@@ -1281,55 +1313,55 @@ public class BitStream : IDisposable {
   }
 
   public bool ReadCompressed(out bool outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_1(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool ReadCompressed(out byte outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_2(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool ReadCompressed(out short outTemplateVar) {
     bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_3(swigCPtr, out outTemplateVar);
     return ret;
   }
 
+  public bool ReadCompressed(out byte outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_4(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
+  public bool ReadCompressed(out short outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_5(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
   public bool ReadCompressed(SWIGTYPE_p_unsigned_short outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_4(swigCPtr, SWIGTYPE_p_unsigned_short.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_6(swigCPtr, SWIGTYPE_p_unsigned_short.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public bool ReadCompressed(out int outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_5(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool ReadCompressed(out long outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_6(swigCPtr, out outTemplateVar);
-    return ret;
-  }
-
-  public bool ReadCompressed(out float outTemplateVar) {
     bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_7(swigCPtr, out outTemplateVar);
     return ret;
   }
 
+  public bool ReadCompressed(out long outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_8(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
+  public bool ReadCompressed(out float outTemplateVar) {
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_9(swigCPtr, out outTemplateVar);
+    return ret;
+  }
+
   public bool ReadCompressed(RakString outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_8(swigCPtr, RakString.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_10(swigCPtr, RakString.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public bool ReadCompressed(RakNetGUID outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_9(swigCPtr, RakNetGUID.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_11(swigCPtr, RakNetGUID.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public bool ReadCompressed(uint24_t outTemplateVar) {
-    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_10(swigCPtr, uint24_t.getCPtr(outTemplateVar));
+    bool ret = RakNetPINVOKE.BitStream_ReadCompressed__SWIG_12(swigCPtr, uint24_t.getCPtr(outTemplateVar));
     if (RakNetPINVOKE.SWIGPendingException.Pending) throw RakNetPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }

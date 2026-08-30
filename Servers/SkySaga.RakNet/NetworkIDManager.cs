@@ -42,7 +42,7 @@ public class NetworkIDManager : IDisposable {
     }
   }
 
-    public Dictionary<IntPtr, NetworkIDObject> pointerDictionary = new Dictionary<IntPtr, NetworkIDObject>();
+    public Dictionary<IntPtr, NetworkIDObject> pointerDictionary = [];
 
      public NetworkIDObject GET_BASE_OBJECT_FROM_ID(ulong x)
      {

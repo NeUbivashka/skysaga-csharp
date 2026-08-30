@@ -40,6 +40,16 @@ public class PacketFileLogger : PacketLogger {
     }
   }
 
+  public new static PacketFileLogger GetInstance() {
+    IntPtr cPtr = RakNetPINVOKE.PacketFileLogger_GetInstance();
+    PacketFileLogger ret = (cPtr == IntPtr.Zero) ? null : new PacketFileLogger(cPtr, false);
+    return ret;
+  }
+
+  public static void DestroyInstance(PacketFileLogger i) {
+    RakNetPINVOKE.PacketFileLogger_DestroyInstance(PacketFileLogger.getCPtr(i));
+  }
+
   public PacketFileLogger() : this(RakNetPINVOKE.new_PacketFileLogger(), true) {
   }
 

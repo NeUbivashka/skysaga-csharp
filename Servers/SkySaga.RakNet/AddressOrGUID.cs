@@ -96,8 +96,12 @@ public class AddressOrGUID : IDisposable {
   }
 
   public string ToString(bool writePort) {
-    string ret = RakNetPINVOKE.AddressOrGUID_ToString(swigCPtr, writePort);
+    string ret = RakNetPINVOKE.AddressOrGUID_ToString__SWIG_0(swigCPtr, writePort);
     return ret;
+  }
+
+  public void ToString(bool writePort, string dest, uint destLength) {
+    RakNetPINVOKE.AddressOrGUID_ToString__SWIG_1(swigCPtr, writePort, dest, destLength);
   }
 
   public AddressOrGUID() : this(RakNetPINVOKE.new_AddressOrGUID__SWIG_0(), true) {

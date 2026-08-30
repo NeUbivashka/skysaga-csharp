@@ -125,7 +125,12 @@ public class FileList : IDisposable {
   }
 
   public static bool FixEndingSlash(string str) {
-    bool ret = RakNetPINVOKE.FileList_FixEndingSlash(str);
+    bool ret = RakNetPINVOKE.FileList_FixEndingSlash__SWIG_0(str);
+    return ret;
+  }
+
+  public static bool FixEndingSlash(string str, uint strLength) {
+    bool ret = RakNetPINVOKE.FileList_FixEndingSlash__SWIG_1(str, strLength);
     return ret;
   }
 

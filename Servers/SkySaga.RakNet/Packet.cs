@@ -105,8 +105,7 @@ public class Packet : IDisposable {
 	    
 
 	}
-
-        get
+get
         {
             byte[] returnBytes;
             if (!dataIsCached)
@@ -128,7 +127,6 @@ public class Packet : IDisposable {
             }
             return returnBytes;
         }
- 
   }
 
   public bool deleteData {

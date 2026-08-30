@@ -113,8 +113,12 @@ public class RakNetGUID : IDisposable {
   }
 
   public override string ToString() {
-    string ret = RakNetPINVOKE.RakNetGUID_ToString(swigCPtr);
+    string ret = RakNetPINVOKE.RakNetGUID_ToString__SWIG_0(swigCPtr);
     return ret;
+  }
+
+  public void ToString(string dest, uint destSize) {
+    RakNetPINVOKE.RakNetGUID_ToString__SWIG_1(swigCPtr, dest, destSize);
   }
 
   public bool FromString(string source) {

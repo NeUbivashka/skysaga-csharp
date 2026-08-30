@@ -205,7 +205,11 @@ public class Table : IDisposable {
   }
 
   public void GetCellValueByIndex(uint rowIndex, uint columnIndex, out int output) {
-    RakNetPINVOKE.Table_GetCellValueByIndex(swigCPtr, rowIndex, columnIndex, out output);
+    RakNetPINVOKE.Table_GetCellValueByIndex__SWIG_0(swigCPtr, rowIndex, columnIndex, out output);
+  }
+
+  public void GetCellValueByIndex(uint rowIndex, uint columnIndex, string output, uint outputLength) {
+    RakNetPINVOKE.Table_GetCellValueByIndex__SWIG_1(swigCPtr, rowIndex, columnIndex, output, outputLength);
   }
 
   public Row GetRowByID(uint rowId) {

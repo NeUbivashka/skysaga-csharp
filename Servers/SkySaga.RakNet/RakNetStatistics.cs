@@ -83,8 +83,7 @@ public class RakNetStatistics : IDisposable {
 		valueOverLastSecondIsCached = true;
 		SetValueOverLastSecond (value, value.Length);    
 	}
-
-        get
+get
         {
             ulong[] returnArray;
             if (!valueOverLastSecondIsCached)
@@ -111,7 +110,6 @@ public class RakNetStatistics : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public ulong[] runningTotal {
@@ -121,8 +119,7 @@ public class RakNetStatistics : IDisposable {
 		runningTotalIsCached = true;
 		SetRunningTotal (value, value.Length);    
 	}
-
-        get
+get
         {
             ulong[] returnArray;
             if (!runningTotalIsCached)
@@ -149,7 +146,6 @@ public class RakNetStatistics : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public ulong connectionStartTime {
@@ -209,8 +205,7 @@ public class RakNetStatistics : IDisposable {
 		messageInSendBufferIsCached = true;
 		SetMessageInSendBuffer (value, value.Length);    
 	}
-
-        get
+get
         {
             uint[] returnArray;
             if (!messageInSendBufferIsCached)
@@ -237,7 +232,6 @@ public class RakNetStatistics : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public double[] bytesInSendBuffer {
@@ -247,8 +241,7 @@ public class RakNetStatistics : IDisposable {
 		bytesInSendBufferIsCached = true;
 		SetBytesInSendBuffer (value, value.Length);    
 	}
-
-        get
+get
         {
             double[] returnArray;
             if (!bytesInSendBufferIsCached)
@@ -275,7 +268,6 @@ public class RakNetStatistics : IDisposable {
             }
             return returnArray;
         }
- 
   }
 
   public uint messagesInResendBuffer {
