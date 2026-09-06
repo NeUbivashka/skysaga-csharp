@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace SkySaga.Game.Managers.World;
@@ -12,6 +13,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     public IMapEntityManager EntityManager { get; }
     public IMapChunkManager ChunkManager => _chunkManager;
+    // Assigned on every path through InitializeWorld(), which the constructor calls - see the
+    // [MemberNotNull] there. It cannot be assigned in the constructor instead, because
+    // SpawnAirship() reads Definition.MapSizeChunks and runs inside InitializeWorld().
     public MapDefinition Definition { get; set; }
     public Vector3 AirshipPosition { get; private set; }
     public Vector3? PlayerSpawnPosition { get; private set; }
@@ -107,6 +111,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
 
 
+    // Tells the null-flow analysis that Definition is non-null once this returns, which clears
+    // CS8618 on the constructor. Unlike `= null!` on the property, this is verified: if a
+    // future branch here forgets to assign Definition, the compiler reports it (CS8774)
+    // instead of silently letting a null through.
+    [MemberNotNull(nameof(Definition))]
     private void InitializeWorld()
     {
 

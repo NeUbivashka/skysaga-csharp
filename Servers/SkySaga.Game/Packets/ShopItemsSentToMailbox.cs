@@ -1,12 +1,21 @@
 namespace SkySaga.Game.Packets;
 
+/// <summary>
+/// Ordinal 104, server to client. Reader: FUN_007FFFF0 -> FUN_00BB3E50(1, 0x68, ...).
+///
+/// A single 32-bit field, read at full width through the FUN_006FB780 path, so it goes out
+/// big-endian. Nothing else in the body.
+/// </summary>
 public class ShopItemsSentToMailbox : ISerializablePacket
 {
+    public int MailId;
+
     public BitStream Serialize()
     {
         var bitStream = new BitStream();
-
         bitStream.WritePacketId(PacketId.ShopItemsSentToMailbox);
+
+        InventoryItemRef.WriteUInt32(bitStream, (uint)MailId);
 
         return bitStream;
     }

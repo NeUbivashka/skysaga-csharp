@@ -1,4 +1,4 @@
-﻿using SkySaga.Game.Packets;
+using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
 
@@ -44,11 +44,45 @@ public class PlayerConnection
     {
     }
 
+    /// <summary>
+    /// Tears down everything this connection created, not just the player entity.
+    ///
+    /// A teleport makes the client disconnect and come straight back - that is the protocol, not a
+    /// fault - so this runs on every world transition, and anything it leaves behind accumulates.
+    /// It used to remove only PlayerEntity, while PlayerInitializer creates a fresh
+    /// BasicInventoryItem entity per occupied slot on every connection. One reconnect and the
+    /// world held two players' worth of items:
+    ///
+    ///   connection 1: player Id=4,  items Id=5..18
+    ///   connection 2: player Id=19, items Id=5..18 resent, plus new items Id=20..33
+    ///
+    /// The second client was being sent 28 items, half of them belonging to a player entity it
+    /// never received - Id=4 was already gone by then, so those items had a dangling owner.
+    ///
+    /// The items are reachable from the player's own inventory component, so they come out with
+    /// it. Removal order is items first, then the player, so nothing is ever left referring to a
+    /// player that no longer exists.
+    /// </summary>
     public void OnDisconnected()
     {
-
-
         SaveState();
+
+        var removedItems = 0;
+
+        if (PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+        {
+            foreach (var itemId in inventory.InventoryEntityList)
+            {
+                if (itemId == 0)
+                    continue;
+
+                _worldManager.EntityManager.RemoveEntity(itemId);
+
+                _playerConnectionManager.BroadcastToAll(new EntityRemoved { Id = itemId });
+
+                removedItems++;
+            }
+        }
 
         _worldManager.EntityManager.RemoveEntity(PlayerEntity);
 
@@ -58,6 +92,9 @@ public class PlayerConnection
         };
 
         _playerConnectionManager.BroadcastToAll(entityRemoved);
+
+        Console.WriteLine($"[PlayerConnection] Disconnected guid={Guid.g}: removed player entity "
+            + $"{PlayerEntity.Id} and {removedItems} inventory item(s).");
     }
 
 
@@ -73,6 +110,7 @@ public class PlayerConnection
     {
         return packetId switch
         {
+            PacketId.ResourceCheck => ResourceCheckReceived.Handle(this, bitStream),
             PacketId.ClientConnected => ClientConnected.Handle(this, bitStream),
             PacketId.ClientReadyToSync => ClientReadyToSync.Handle(this, bitStream),
             PacketId.ClientReadyToPlay => ClientReadyToPlay.Handle(this, bitStream),
@@ -90,6 +128,9 @@ public class PlayerConnection
             PacketId.RequestEquipInventoryItem => RequestEquipInventoryItem.Handle(this, bitStream),
             PacketId.EnteredGameplay => EnteredGameplay.Handle(this, bitStream),
             PacketId.FullScreenVideoCompleted => FullScreenVideoCompleted.Handle(this, bitStream),
+            PacketId.RequestStartAnimationSequence => RequestStartAnimationSequenceReceived.Handle(this, bitStream),
+            PacketId.AnimationSequenceCompleted => AnimationSequenceCompletedReceived.Handle(this, bitStream),
+            PacketId.NarrativeCompleted => NarrativeCompletedReceived.Handle(this, bitStream),
 
 
 

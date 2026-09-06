@@ -1,4 +1,4 @@
-﻿using RakNet;
+using RakNet;
 using SkySaga.Game.Managers.Player;
 using System.Collections.Frozen;
 using System.Linq;
@@ -261,7 +261,7 @@ public class Server : IDisposable
 
 
                     var totalBits = packet.length * 8;
-                    var consumedBits = messageIdWasExtended ? 24 : 8;
+                    var consumedBits = messageIdWasExtended ? 16 : 8;
                     var remainingBits = (uint)Math.Max(0, totalBits - consumedBits);
                     var remainingBytes = (int)((remainingBits + 7) / 8);
                     var bytesRead = 0;

@@ -14,17 +14,177 @@ public static class EnteredGameplay
 
         Console.WriteLine($"[EnteredGameplay] Received. readOk={readOk} raw: {hex}");
 
-        var videoStream = new BitStream();
-        videoStream.WritePacketId(PacketId.PlayFullScreenVideo);
+        const string videoName = "GCIntro_StoryTextVideo";
 
-        var crcBytes = BitConverter.GetBytes(Util.ComputeCrc32("GCIntro_StoryTextVideo"));
-        Array.Reverse(crcBytes);
-        videoStream.WriteBits(crcBytes, 32, true);
-        
-        connection.Send(videoStream);
-        
-        Console.WriteLine("[EnteredGameplay] Sent PlayFullScreenVideo('GCIntro_StoryTextVideo').");
+        // The client selects the video by its index in its own Videos list, not by name and not
+        // by hash. This used to send a CRC32 of the name, of which the client read the top two
+        // bits as the index - so which video started was down to two bits of a hash.
+        //
+        // GeoData's Videos list has three entries and indices are 1-based, so GCIntro_
+        // StoryTextVideo is 3. It is the looping one (SkySaga_IntroStoryBackground_Loop with
+        // INTRO_STORY_TEXT over it) and its on-complete transition points at CGIntro_Video1.
+        var playVideo = new PlayFullScreenVideo
+        {
+            VideoIndex = PlayFullScreenVideo.GCIntroStoryTextVideo
+        };
+
+        // Only read back by FullScreenVideoCompleted's log line, so it stays accurate about which
+        // video the client is acknowledging.
+        connection.CurrentVideoFileName = videoName;
+
+        // TeleportBegins IS a teleport, not just a picture hint - see the note on _teleportSent.
+        var teleporting = SendTeleport && !_teleportSent;
+
+        if (teleporting)
+        {
+            _teleportSent = true;
+
+            SendTeleportBegins(connection);
+
+            // No video on the connection that is about to teleport. EnteredGameplay arrives twice
+            // - once before the teleport and once on the connection that comes back after it -
+            // and sending the video both times overlapped two playbacks, which is what the doubled
+            // audio was. The first one would be torn down by the teleport seconds later anyway,
+            // so the connection that stays is the one that should get it.
+            Console.WriteLine("[EnteredGameplay] Teleporting - holding PlayFullScreenVideo until "
+                + "the client comes back.");
+
+            return true;
+        }
+
+        var playVideoStream = playVideo.Serialize();
+
+        connection.Send(playVideoStream);
+
+        Console.WriteLine($"[EnteredGameplay] Sent PlayFullScreenVideo('{videoName}', index="
+            + $"{playVideo.VideoIndex}, {playVideoStream.GetNumberOfBytesUsed()} bytes, "
+            + $"{playVideoStream.GetNumberOfBitsUsed()} bits used).");
 
         return true;
     }
+
+    /// <summary>
+    /// Sent once per server run, not once per connection.
+    ///
+    /// Confirmed working: after this packet the client's ModeGlobal+0xFC4 went from
+    /// 0x0/format=3 to "2x79 format=0 VALID", ui_loading_screen's tick gate at +0x194 cleared,
+    /// and the game-state flags at +0x38 went 0x11 -> 0x17, which is the first time the
+    /// (flags &amp; 5) == 5 condition has ever been met. The 2 and 79 are Searchable[0] and
+    /// Searchable[2] from MapSpec, so the client parsed the body exactly as a map descriptor.
+    ///
+    /// But ordinal 35 is a real teleport, not a hint: the client disconnects and reconnects to
+    /// the destination. Sending it on every EnteredGameplay therefore loops - connect, enter
+    /// gameplay, teleport, reconnect, repeat - which is what the reconnect storm was.
+    ///
+    /// A static flag is crude and only right for single-client testing. For more than one player
+    /// this belongs on the connection or the save, keyed by whether that player has already been
+    /// placed in the world.
+    /// </summary>
+    /// <summary>
+    /// Master switch for TeleportBegins.
+    ///
+    /// ON. This is not an optional extra - it is the only way the loading screen ever leaves.
+    ///
+    /// Measured with unstick while the screen was white:
+    ///
+    ///     fsm=4  tickGate(+0x194)=1  flag(+0x160)=0
+    ///     image 0x0 format=3 data=0x00000000 INVALID
+    ///     state@+0xD04 flags=0x11
+    ///
+    /// ui_loading_screen's tick skips its whole state machine while +0x194 is set, and only
+    /// clears it once FUN_00C0CD80(ModeGlobal + 0xFC4) passes. That object is a MapSpec, not an
+    /// image - destructor FUN_007B85B0 -> FUN_00C0CD20, constructor FUN_00C0CC30, 0x60 bytes -
+    /// and it was reading exactly what its default constructor leaves, meaning nothing had ever
+    /// written to it.
+    ///
+    /// There is exactly one writer in the binary. FUN_00964010, inside:
+    ///
+    ///     if ((this[0x38] &amp; 5) == 5) {
+    ///         if (FUN_00777A00(0x45) == 0) {
+    ///             FUN_00C0CC30(); FUN_007176F0(subsystem + 0xFC4);
+    ///             FUN_00777A40(0x45, 0, ...); FUN_00C0CD20();
+    ///         }
+    ///         FUN_00718D00(0xC, 0);
+    ///     }
+    ///
+    /// flags read 0x11, so bit 1 (0x02) was missing. That bit is set in exactly one place:
+    ///
+    ///     void FUN_00964BA0(int this, ..., param_3) {
+    ///         *(byte *)(this + 0x38) |= 2;
+    ///         FUN_007176F0(param_3);
+    ///     }
+    ///
+    /// which is the TeleportBegins handler - it raises the bit and stores the spec that arrived.
+    /// Without ordinal 35 the bit never sets, the condition never holds, +0xFC4 stays default and
+    /// the panel never lifts. The earlier run that reached flags 0x17 and a VALID image was this
+    /// path firing correctly, not a side effect.
+    ///
+    /// The reconnect is the protocol, not damage. A teleport moves the client to another world -
+    /// in the live game, another server - so it disconnects and comes back. The server has to
+    /// accept the second connection as the same player arriving, rather than starting over.
+    /// _teleportSent keeps the second one from teleporting again; whether that is enough depends
+    /// on what the second connection actually does, which is what this run is for.
+    /// </summary>
+    private static readonly bool SendTeleport = true;
+
+    /// <summary>
+    /// Append a 32-bit float after the MapDefinition-shaped body.
+    ///
+    /// Why: the body alone is 90 bytes and the client evidently reads past it. Reading past the
+    /// end of a BitStream yields zeros, and a zero landed in a duration field - FUN_00D45E60
+    /// divides by the float at +0x38, and its other caller (FUN_00D459B0) explicitly guards with
+    /// `if ((float)param_1[0xe] &lt;= 0.0) return;`, so that field is normally positive. The
+    /// unguarded caller is what crashed with STATUS_FLOAT_MULTIPLE_TRAPS at 0x00D45EDC.
+    ///
+    /// So the payload continues past where we stop, and at least one of the missing fields is a
+    /// duration. This is the cheapest probe for that. If it does not help, vary
+    /// TrailingFloatValue or turn SendTeleport off and we go read the real tail out of the client.
+    /// </summary>
+    private static readonly bool AppendTrailingFloat = false;
+
+    private const float TrailingFloatValue = 1.0f;
+
+    private static bool _teleportSent;
+
+    private static void SendTeleportBegins(PlayerConnection connection)
+    {
+        // TeleportBegins (ordinal 35) carries the destination map descriptor. Its handler fills
+        // ModeGlobal+0xFC4, the struct ui_loading_screen's tick is blocked on - without it the
+        // loading screen never appears and its background picture never changes.
+        //
+        // It has to go out HERE, not at ClientConnected. The handler is registered by
+        // FUN_00964C00, called from FUN_009644F0, which is the gameplay state's Enter. Sending it
+        // at connect time - which is what the first attempt did - means the client has no handler
+        // for ordinal 35 yet and drops the packet silently. That matches what happened: 90 bytes
+        // went out, the client neither crashed nor reacted.
+        //
+        // Timing from the client's own loading-section byte (ModeGlobal+0xD34):
+        //     FRONTEND -> READY_TO_PLAY (13) -> [10.2 s timeout] -> TELEPORTING (9) -> stuck
+        // TELEPORTING is exactly the section this packet belongs to.
+        var definition = connection.WorldManager.Definition;
+
+        // One field. FUN_00964EE0 reads a MapSpec and stops; the six extra fields this used to
+        // carry were never read by anyone.
+        var teleportBegins = new TeleportBegins
+        {
+            Spec = definition.Spec
+        };
+
+        var teleportStream = teleportBegins.Serialize();
+
+        // OFF. TeleportBegins is one MapSpec and nothing else - FUN_00964EE0 reads the spec via
+        // FUN_007E9810 and stops. This float was added when MapSpec.Encode was still missing
+        // nonSearchable, masteryLevels and version: the client overran the end of the spec, a zero
+        // reached a divisor in FUN_00D45E60 and it trapped at 0x00D45EDC. The spec is complete
+        // now, so there is nothing left to overrun.
+        if (AppendTrailingFloat)
+            teleportStream.WriteBits(BitConverter.GetBytes(TrailingFloatValue), 32, true);
+
+        Console.WriteLine($"[EnteredGameplay] Sending TeleportBegins (ordinal 35), "
+            + $"{teleportStream.GetNumberOfBytesUsed()} bytes"
+            + (AppendTrailingFloat ? $", trailing float {TrailingFloatValue}." : "."));
+
+        connection.Send(teleportStream);
+    }
+
 }

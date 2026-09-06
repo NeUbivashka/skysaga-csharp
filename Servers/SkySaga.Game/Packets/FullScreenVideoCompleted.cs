@@ -19,7 +19,7 @@ public static class FullScreenVideoCompleted
         Console.WriteLine($"[FullScreenVideoCompleted] Received. totalBytes={totalBytes} totalBits={totalBits} "
             + $"remainingBitsAfterId={remainingBits} readOk={readOk} raw: {hex} (was playing: {connection.CurrentVideoFileName})");
 
-
+        connection.CurrentVideoFileName = null;
 
         return true;
     }
