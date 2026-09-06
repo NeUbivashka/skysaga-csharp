@@ -52,6 +52,13 @@ public static class PersistentRecordEndpoints
             });
         });
 
+        // Client asks for the profanity list right after login; an empty list
+        // is enough to let it continue.
+        app.MapPost("/api/persistent-record/profanity/blacklist", () => new
+        {
+            result = Array.Empty<string>()
+        });
+
         app.MapPost("/api/persistent-record/characters/_create", () =>
         {
             _characterUUID = Guid.NewGuid();

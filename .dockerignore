@@ -1,0 +1,6 @@
+# Keep the build context small (Bundled alone is ~237M).
+Bundled/
+Tools/
+**/bin/
+**/obj/
+.git/

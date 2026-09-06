@@ -1,0 +1,52 @@
+# SkySaga C# server stack. Podman: podman-compose up -d --build
+# First run needs a cert for the front door: ./scripts/gen-cert.sh
+#
+# caddy  :5001  — TLS/plain demux, proxies to the web container (see Caddyfile)
+# web    :5164  — SkySaga.Web (loopback only, see below)
+# auth   :10106 — SmilegateAuth, plain TCP, no proxy needed
+#
+# network_mode host everywhere: SkySaga.Web hardcodes UseUrls("http://localhost:5164")
+# (Program.cs), so it binds the loopback of its netns only. Sharing the host netns
+# is what lets Caddy reach it at 127.0.0.1:5164 — and it matches the Go stack.
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Containerfile.caddy
+    image: skysaga-caddy:2
+    container_name: skysaga-cs-caddy
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:z,ro
+      - ./server.crt:/etc/caddy/server.crt:z,ro
+      - ./server.key:/etc/caddy/server.key:z,ro
+    restart: unless-stopped
+    depends_on:
+      - web
+
+  web:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: skysaga-csharp:36731
+    container_name: skysaga-cs-web
+    network_mode: host
+    environment:
+      SKYSAGA_ROLE: web
+      # What geonode/retrieve hand the client. GAME_IP must be an address the
+      # client can reach (tailnet IP here), and WEB_PORT is the Caddy front
+      # door, not Kestrel's 5164.
+      SKYSAGA_GAME_IP: ${SKYSAGA_GAME_IP:-127.0.0.1}
+      SKYSAGA_WEB_PORT: ${SKYSAGA_WEB_PORT:-5001}
+      SKYSAGA_GAME_PORT: ${SKYSAGA_GAME_PORT:-42069}
+    restart: unless-stopped
+
+  auth:
+    image: skysaga-csharp:36731
+    container_name: skysaga-cs-auth
+    network_mode: host
+    environment:
+      SKYSAGA_ROLE: auth
+    restart: unless-stopped
+    depends_on:
+      - web

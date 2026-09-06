@@ -1,0 +1,33 @@
+# Front door for the C# stack. The client hits one port with BOTH plain HTTP and
+# TLS, so :5001 is demuxed by layer4 (the Go server does the same in-process,
+# cmd/skysaga/main.go demuxListener) and both branches proxy to SkySaga.Web.
+{
+	auto_https off
+
+	layer4 {
+		:5001 {
+			@tls tls
+			route @tls {
+				tls {
+					connection_policy {
+						default_sni skysaga.local
+						# h1 only: the demux proxies raw bytes to a plain HTTP/1.1
+						# backend, so advertising h2 in ALPN breaks the client.
+						alpn http/1.1
+					}
+				}
+				proxy 127.0.0.1:5164
+			}
+			route {
+				proxy 127.0.0.1:5164
+			}
+		}
+	}
+}
+
+# Not a real site — it only loads server.crt/key into Caddy's cert cache so the
+# layer4 tls handler above can serve them. Nothing is expected to talk to :5443.
+https://skysaga.local:5443 {
+	tls /etc/caddy/server.crt /etc/caddy/server.key
+	respond 404
+}

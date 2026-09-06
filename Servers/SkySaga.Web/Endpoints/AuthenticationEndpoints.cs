@@ -47,5 +47,34 @@ public static class AuthenticationEndpoints
                 timeout = 999999
             }
         });
+
+        // Unpatched-launcher flow: the client converts its launcher token and
+        // refreshes it later. Same token payload as the login routes above.
+        app.MapPost("/api/authentication/sgauth/_convertLauncherToken", () => new
+        {
+            result = new
+            {
+                tokenId = "tokenId",
+                refreshingTokenId = "refreshingTokenId",
+                timeout = 999999
+            }
+        });
+
+        app.MapPost("/api/authentication/tokens/refresh", () => new
+        {
+            result = new
+            {
+                tokenId = "tokenId",
+                refreshingTokenId = "refreshingTokenId",
+                timeout = 999999
+            }
+        });
+
+        app.MapPost("/api/authentication/credentials/usernames/logout", () => new
+        {
+            result = new
+            {
+            }
+        });
     }
 }
