@@ -116,9 +116,16 @@ The server never sent `islocal`, so the bit stayed clear, so nothing ever faded 
 
 ## Fix (server)
 
+0. **TeleportBegins is off** (`EnteredGameplay.SendTeleport = false`). No reconnect anymore. Without it
+   `ui_loading_screen` (0x45) closes by itself **[run]**, so the `+0xFC4` gate above does not matter for the white screen.
+
 1. Live proof **[run]**: writing `+0x81 |= 8` and `+0x91 = 1` with WriteProcessMemory lifted the white at once.
 2. `PlayerAspectsComponent.IsLocal` + `Entity.GetSyncData(forOwner, onlyParameter)`: the owner alone gets `islocal = true`.
-3. Sent from `EnteredGameplay.SendIsLocal` as an `EntitySync` 2 s after gameplay entry on the connection that stays.
+3. Five `EntitySync` copies (islocal only), 2/4/6/8/10 s after EnteredGameplay, sent from `PlayerConnection.Tick`
+   on the server thread. Sending from a `Task.Delay` thread raced `ProcessMaps` over `SyncingForOwner` and sent `false`.
+   **[run]** Whether a single copy at 2 s lands varies from run to run. The first accepted copy lifts the fade, and the later ones are ignored.
+   **Open:** about 4 s after accepting it, the client clears islocal by itself. EntityMoved packets stop at that moment, and resending `true` does not set it again.
+   The white does not come back, but local-player control is lost.
    **[run]** A copy sent in the same tick as EnteredGameplay was ignored; the delayed one applied
    (flags `0xF0 -> 0xF8`, portalfade `+0x138 = 1`, frame average 250 -> ~20). The delay is a stand-in until the real trigger is found.
 4. Not in the initial EntityAdd: there it crashed the client in READY_TO_PLAY with

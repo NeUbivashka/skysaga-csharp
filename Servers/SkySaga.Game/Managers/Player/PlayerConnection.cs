@@ -142,8 +142,28 @@ public class PlayerConnection
         };
     }
 
+    /// <summary>
+    /// When to push Player.islocal = true to this client (see EnteredGameplay.ScheduleIsLocal).
+    /// Sent from Tick, i.e. on the server thread: it used to go out from a Task.Delay continuation,
+    /// which raced ProcessMaps over Component.SyncingForOwner and sent islocal = false roughly
+    /// every other time - the client applied the bit, then the next copy cleared it again.
+    /// </summary>
+    public Queue<DateTime> IsLocalDueUtc { get; } = new();
+
     public void Tick()
     {
+        if (IsLocalDueUtc.TryPeek(out var due) && DateTime.UtcNow >= due)
+        {
+            IsLocalDueUtc.Dequeue();
+
+            Send(new EntitySync
+            {
+                Id = PlayerEntity.Id,
+                SyncData = PlayerEntity.GetSyncData(newEntity: false, forOwner: true, onlyParameter: "islocal")
+            });
+
+            Console.WriteLine($"[PlayerConnection] Sent EntitySync(EntityId={PlayerEntity.Id}, islocal=true) to the owner.");
+        }
     }
 
     public void Send(BitStream bitStream)

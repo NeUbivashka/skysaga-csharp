@@ -85,7 +85,11 @@ public static class EnteredGameplay
     /// <summary>
     /// Master switch for TeleportBegins.
     ///
-    /// ON. This is not an optional extra - it is the only way the loading screen ever leaves.
+    /// OFF (2026-10-11). The white screen was never the loading screen: it was ui_portalfade, lifted
+    /// by Player.islocal (see SendIsLocal). Without the teleport, ui_loading_screen (screen 0x45)
+    /// closes by itself, and the reconnect it forced is gone. The history below is kept for reference.
+    ///
+    /// (Old note) ON. This is not an optional extra - it is the only way the loading screen ever leaves.
     ///
     /// Measured with unstick while the screen was white:
     ///
@@ -121,7 +125,7 @@ public static class EnteredGameplay
     /// _teleportSent keeps the second one from teleporting again; whether that is enough depends
     /// on what the second connection actually does, which is what this run is for.
     /// </summary>
-    private static readonly bool SendTeleport = true;
+    private static readonly bool SendTeleport = false;
 
     /// <summary>
     /// Append a 32-bit float after the MapDefinition-shaped body.
@@ -160,30 +164,24 @@ public static class EnteredGameplay
     /// Owner-only, because islocal must stay false for every other client.
     ///
     /// Timing, measured (run 2026-10-11 14:40): a copy sent in the same tick as EnteredGameplay
-    /// was ignored - flags stayed 0xF0. The same packet 2 s later applied at once: flags 0xF8,
-    /// ui_portalfade +0x138 = 1, frame went from white (avg 250) to the intro video (avg ~20).
-    /// So the client drops entity syncs for a moment after entering gameplay. The delay is an
-    /// empirical stand-in; the proper trigger (whatever the client waits for) is still to be found.
+    /// was ignored - flags stayed 0xF0. A copy 2 s later applied (flags 0xF8, ui_portalfade
+    /// +0x138 = 1, frame white -> intro video). The delay is an empirical stand-in; the proper
+    /// trigger (whatever the client waits for) is still to be found.
+    ///
+    /// The send itself happens in PlayerConnection.Tick, on the server thread - see the note on
+    /// PlayerConnection.IsLocalDueUtc for the race that made it unreliable from a Task.Delay.
     /// See docs/client/loading-screen.md.
     /// </summary>
     private static void SendIsLocal(PlayerConnection connection)
     {
-        _ = Task.Delay(IsLocalDelay).ContinueWith(_ =>
-        {
-            if (connection.PlayerEntity is null)
-                return;
-
-            var entitySync = new EntitySync
-            {
-                Id = connection.PlayerEntity.Id,
-                SyncData = connection.PlayerEntity.GetSyncData(newEntity: false, forOwner: true, onlyParameter: "islocal")
-            };
-
-            connection.Send(entitySync);
-
-            Console.WriteLine($"[EnteredGameplay] Sent EntitySync(EntityId={entitySync.Id}, islocal=true) to the owner, "
-                + $"{IsLocalDelay.TotalMilliseconds:0} ms after gameplay entry.");
-        });
+        // Five copies, 2..10 s, sent from the server thread (PlayerConnection.Tick). Measured: a single
+        // copy at 2 s is accepted in some runs and ignored in others. The first copy that lands lifts
+        // the fade, and later copies are no-ops because the client keeps the last value it received.
+        // Open: about 4 s later the client clears islocal by itself and stops sending EntityMoved.
+        // The white does not come back, but local-player control does not survive it.
+        var now = DateTime.UtcNow;
+        for (var s = 2; s <= 10; s += 2)
+            connection.IsLocalDueUtc.Enqueue(now + TimeSpan.FromSeconds(s));
     }
 
     private static readonly TimeSpan IsLocalDelay = TimeSpan.FromSeconds(2);
