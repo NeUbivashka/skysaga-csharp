@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets;
+﻿namespace SkySaga.Game.Packets;
 
 /// <summary>
 /// Reader: FUN_007F1140 -> FUN_00BB3E50(1, 0x99, ...)
@@ -64,8 +64,16 @@ public class EntityAdd : ISerializablePacket
 
         WriteSyncDataLength(bitStream, syncDataBits);
 
+        // BitStream.Write(BitStream) reads from SyncData and moves its read pointer, so a second
+        // Serialize() wrote the length but no data. SendInitialEntities serializes once for its hex
+        // log and again in Send(), so every EntityAdd reached the client as a bare 13-byte header and
+        // the client never applied any entity's initial state (TimeOfDay, health, ...). Measured
+        // 2026-10-12 in the client: RPC stream 104 bits, sync blob 3 bits. Rewind first.
         if (syncDataBits > 0)
-            bitStream.Write(SyncData);
+        {
+            SyncData.ResetReadPointer();
+            bitStream.Write(SyncData, syncDataBits);
+        }
 
         return bitStream;
     }

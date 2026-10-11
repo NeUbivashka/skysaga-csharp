@@ -136,7 +136,14 @@ public class PlayerInitializer(IWorldManager worldManager)
             for (int i = 0; i < clientInventoryComponent.MaxInventorySlots; i++)
                 clientInventoryComponent.InventoryEntityList.Add(0);
 
-            if (save is { Inventory.Count: > 0 })
+            // SKYSAGA_NO_INVENTORY=1: create no item entities (test switch). Since EntityAdd data
+            // actually reaches the client (2026-10-12), an item's spec trips an FTL index assert
+            // at 0x00BA8306 (component +0xA0 -> spec +0x28 index >= table size at
+            // DAT_01487BCC+0x1F2C) right after the item is created.
+            if (Environment.GetEnvironmentVariable("SKYSAGA_NO_INVENTORY") == "1")
+            {
+            }
+            else if (save is { Inventory.Count: > 0 })
             {
                 foreach (var entry in save.Inventory)
                 {

@@ -17,6 +17,9 @@ Hooks (all 36731 addresses):
             (extra = bindings byte +0x61 before the read; bit 3 = islocal)
   SET17     FUN_00C77260  islocal setter behind SetParameter (extra = new<<8 | old +0x61)
   DTOR      FUN_0086C190  player aspects component destructor
+  TOD_READ  FUN_00D462E0  clienttimeofdaycomponent binding read (binding, stream bit offset)
+
+    python trace_islocal.py --hooks TOD_READ,SYNC_RX   # only these hooks
 """
 
 import ctypes
@@ -108,10 +111,28 @@ X_SET17 = (b"\x8b\x46\x04\x0f\xb6\x00\xc1\xe0\x08"          # mov eax,[esi+4] / 
 HOOKS = [
     # name, tag, address, original (stolen) bytes, filter, extra
     ("SYNC_RX", 1, 0x007D4C80, bytes.fromhex("558bec51f6411c20"), None, X_ENTITY_ID),
-    ("APPLY", 2, 0x00B43760, bytes.fromhex("558bec81ecf00a0000"), None, b""),
+    ("APPLY", 2, 0x00B43760, bytes.fromhex("558bec81ecf00a0000"), None, bytes.fromhex("8b4e048b01c1e0100b4108")),
     ("READ17", 3, 0x00C75410, bytes.fromhex("558bec83ec2c"), 0x11, X_FLAGS61),
     ("SET17", 4, 0x00C77260, bytes.fromhex("558bec8b4508"), None, X_SET17),
     ("DTOR", 5, 0x0086C190, bytes.fromhex("558bec568bf1"), None, b""),
+    # clienttimeofdaycomponent bindings read (switch on binding); extra = stream read offset (bits)
+    ("TOD_READ", 6, 0x00D462E0, bytes.fromhex("558bec8b5508"), None, bytes.fromhex("8b46088b4008")),
+    # Inside Entity_ApplySyncEx's loop. LOOP_BIT: mask bit set for index EDI;
+    # extra = index | (mask word 0 << 16)  (saved edi = [esp+4], saved ebp = [esp+0xc]).
+    # EntityAdd receive stub right after the sync-data length read; extra = readpos << 16 | length.
+    ("ADD_LEN", 9, 0x007F121C, bytes.fromhex("8d8de8feffff"), None,
+     bytes.fromhex("8b44240c8b80bcf9ffff8b4c24148b4908c1e11009c8")),
+    # 5th stack argument and its first dword (BitStream bits used) at three steps of EntityAdd.
+    ("H_ADD", 10, 0x007D4BD0, bytes.fromhex("558bec5153"), None, bytes.fromhex("8b46148b00")),
+    ("H_CREATE", 11, 0x00BE3880, bytes.fromhex("558bec83ec08"), None, bytes.fromhex("8b46148b00")),
+    ("H_DC", 12, 0x00DC4440, bytes.fromhex("558bec5153"), None, bytes.fromhex("8b46148b00")),
+    # EntityAdd stub right after the copy; extra = rpc stream bits << 16 | copied bits.
+    ("ADD_COPY", 13, 0x007F122E, bytes.fromhex("6a00ff368d85e8feffff"), None,
+     bytes.fromhex("8b4424148b00c1e0108b4c240c0b81e8feffff")),
+    ("LOOP_BIT", 7, 0x00B4388E, bytes.fromhex("8b8d9cfdffff"), None,
+     bytes.fromhex("8b4424048b4c240c8b49e0c1e11009c8")),
+    # COMP_FOUND: component for the parameter found (esi); extra = component.
+    ("COMP_FOUND", 8, 0x00B438F8, bytes.fromhex("8b068bce8b4008"), None, bytes.fromhex("8b442408")),
 ]
 TAGS = {h[1]: h[0] for h in HOOKS}
 
@@ -120,13 +141,20 @@ def ts():
     return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
 
+def selected_hooks():
+    if "--hooks" in sys.argv:
+        names = set(sys.argv[sys.argv.index("--hooks") + 1].split(","))
+        return [x for x in HOOKS if x[0] in names]
+    return [x for x in HOOKS if x[0] != "TOD_READ"]
+
+
 def install(h):
     ring = cp.k32.VirtualAllocEx(h, None, HEADER + RING_ENTRIES * ENTRY, 0x3000, 0x04)
     caves = cp.k32.VirtualAllocEx(h, None, 0x1000, 0x3000, 0x40)
     if not ring or not caves:
         raise RuntimeError(f"VirtualAllocEx failed ({ctypes.get_last_error()})")
     off = 0
-    for name, tag, addr, stolen, flt, extra in HOOKS:
+    for name, tag, addr, stolen, flt, extra in selected_hooks():
         cave = caves + off
         code = build_cave(cave, ring, tag, stolen, addr + len(stolen), flt, extra)
         off += (len(code) + 15) & ~15
@@ -141,7 +169,7 @@ def install(h):
 
 def wait_unpacked(h):
     while cp.alive(h):
-        if all(cp.read(h, a, len(o)) == o for _, _, a, o, _, _ in HOOKS):
+        if all(cp.read(h, a, len(o)) == o for _, _, a, o, _, _ in selected_hooks()):
             return True
         time.sleep(0.05)
     return False
@@ -180,10 +208,18 @@ def main():
                 continue
             desc = {
                 "SYNC_RX": lambda: f"entity={extra}",
-                "APPLY": lambda: f"entity_obj={ecx:#x}",
+                "APPLY": lambda: f"entity_obj={ecx:#x} stream bits={extra >> 16} readpos={extra & 0xffff}",
                 "READ17": lambda: f"bindings={ecx:#x} +0x61 before={extra:#04x} (islocal={extra >> 3 & 1})",
                 "SET17": lambda: f"bindings={ecx:#x} new={extra >> 8} old+0x61={extra & 0xff:#04x}",
                 "DTOR": lambda: f"component={ecx:#x}",
+                "LOOP_BIT": lambda: f"index={extra & 0xffff} mask0_lo16={extra >> 16:#06x} ret_frame={stack[0]:#x}",
+                "ADD_LEN": lambda: f"length={extra & 0xffff} rpc_readpos={extra >> 16}",
+                "H_ADD": lambda: f"arg5={stack[5]:#x} [arg5]={extra} args={[hex(x) for x in stack[1:6]]}",
+                "H_CREATE": lambda: f"arg5={stack[5]:#x} [arg5]={extra} args={[hex(x) for x in stack[1:6]]}",
+                "H_DC": lambda: f"arg5={stack[5]:#x} [arg5]={extra} args={[hex(x) for x in stack[1:6]]}",
+                "ADD_COPY": lambda: f"rpc_bits={extra >> 16} copied_bits={extra & 0xffff}",
+                "COMP_FOUND": lambda: f"component={extra:#x}",
+                "TOD_READ": lambda: f"bindings={ecx:#x} binding={stack[1]} bitpos={extra}",
             }.get(name, lambda: "")()
             print(f"[{ts()}] t={ms} {name:7} {desc} ret={stack[0]:#x} "
                   f"chain=[{' '.join(f'{x:#x}' for x in chain)}]", flush=True)

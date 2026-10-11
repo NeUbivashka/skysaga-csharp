@@ -33,7 +33,7 @@ public class Entity
     {
         var syncIndex = _entityData.GetParameterSyncIndex(component.Name, parameter);
 
-        if (syncIndex > 0)
+        if (syncIndex >= 0)
             _sync.Set(syncIndex, true);
     }
 
