@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace SkySaga.Game.Managers.World;
@@ -176,6 +176,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         SpawnTimeOfDay();
+        SpawnWorldComposition();
     }
 
 
@@ -200,6 +201,24 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
 
 
+
+    /// <summary>
+    /// WorldComposition carries the biome palette and terrain type. Without it the client has no
+    /// palette to colour voxels or sky with.
+    /// </summary>
+    private void SpawnWorldComposition()
+    {
+        if (EntityManager.TryCreateEntity("WorldComposition", out var worldComposition) &&
+            worldComposition.TryGetComponent<ClientWorldCompositionComponent>(out var composition))
+        {
+            // SKYSAGA_PALETTE overrides the palette wire index (1..45) for testing.
+            composition.PaletteCrc =
+                uint.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_PALETTE"), out var palette)
+                    ? palette : ClientWorldCompositionComponent.FtuePalette;
+            composition.TerrainType = TerrainType.Sky;
+            composition.MinWalkableYPosition = 0;
+        }
+    }
 
     private void SpawnTimeOfDay()
     {
