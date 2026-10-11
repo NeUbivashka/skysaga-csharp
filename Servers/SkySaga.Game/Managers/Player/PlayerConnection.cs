@@ -110,6 +110,7 @@ public class PlayerConnection
     {
         return packetId switch
         {
+            PacketId.QuitGame => QuitGame.Handle(this, bitStream),
             PacketId.ResourceCheck => ResourceCheckReceived.Handle(this, bitStream),
             PacketId.ClientConnected => ClientConnected.Handle(this, bitStream),
             PacketId.ClientReadyToSync => ClientReadyToSync.Handle(this, bitStream),

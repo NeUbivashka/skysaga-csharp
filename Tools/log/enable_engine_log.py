@@ -8,8 +8,15 @@ level gate DAT_01404120 is 0. So every message is dropped.
 
 This makes one channel the way the client itself would: a remote thread calls FUN_006E10B0
 (cdecl: object, path, flags, bufsize) on memory allocated in the client, so the client's own CRT
-opens the file. The tool then copies that channel into a small vector, points every channel index
-at entry 0, and raises the level gate. No debugger and no suspension.
+opens the file. The tool then installs that channel as the only vector entry, points every channel
+index at entry 0, and raises the level gate. No debugger and no suspension.
+
+Exactly one entry, never copies of it. On exit the engine closes every channel (FUN_00B40D10 ->
+FUN_006E1E20: flush, free the buffer, fclose). Copies share the buffer and FILE*, so the second close
+freed the same block again and the allocator's header check killed the client ("Force crash: FTL",
+write to 0xF41 at 0x006E6461). The vector's capacity word (DAT_01487858) stays 0, so the engine
+never tries to free the vector itself, which lives in VirtualAllocEx memory. Log_Write bounds-checks
+the channel index, so the one entry is safe.
 
     python enable_engine_log.py            # wait for SkySaga.exe, enable, exit
     python enable_engine_log.py --loop     # do it for every new SkySaga.exe
@@ -31,7 +38,7 @@ LOG_PATH = rb"D:\codya\SkySaga\Alpha v10 36731 fixed\Client\engine.log"
 FN_OPEN_CHANNEL = 0x006E10B0   # FUN_006E10B0(obj, path, flags, bufsize) -> obj or 0
 CHANNEL_FLAGS = 0x184          # messageLog flags (0x104) + 0x80: flush after every write
 CHANNEL_SIZE = 0x424
-CHANNEL_COUNT = 8
+CHANNEL_COUNT = 1             # see the docstring: copies double-free on exit
 VEC_BEGIN, VEC_END = 0x01487860, 0x01487864
 CHANNEL_INDEX_GLOBALS = range(0x01404150, 0x01404168, 4)
 LEVEL_GATE = 0x01404120        # messages with level <= this are written; 8 = everything
@@ -116,8 +123,6 @@ def enable(pid):
     if not file_ptr:
         print(f"[{ts()}] pid {pid}: channel did not open {LOG_PATH!r}", flush=True)
         return
-    for i in range(1, CHANNEL_COUNT):
-        write(h, vec_addr + i * CHANNEL_SIZE, channel)
     write(h, VEC_BEGIN, struct.pack("<II", vec_addr, vec_addr + CHANNEL_SIZE * CHANNEL_COUNT))
     for g in CHANNEL_INDEX_GLOBALS:
         write(h, g, struct.pack("<I", 0))
