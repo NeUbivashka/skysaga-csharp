@@ -1,8 +1,13 @@
-namespace SkySaga.Game.Managers.Player;
+﻿namespace SkySaga.Game.Managers.Player;
 
 public class PlayerSaveData
 {
     public string? Playername { get; set; }
+
+    public bool IsCharacterCustomised { get; set; }
+
+    /// <summary>ClientCharacterCustomisationComponent.CustomisationData, base64 of the raw bits.</summary>
+    public string? CustomisationData { get; set; }
 
     public bool HasPosition { get; set; }
     public float PositionX { get; set; }

@@ -312,6 +312,19 @@ def get_guid():
     }), 200
 
 
+@app.route("/api/account/name/checkName", methods=["GET", "POST"])
+def alpha10_account_check_name():
+    # The character creator checks the chosen name here before it sends RPCSaveCharacterName
+    # (GameState_CharacterCreation callback FUN_00810C00). It reads "valid"; otherwise "profane",
+    # "containsNotAllowedCharacters", "alreadyExists" and "suggestion" pick the error text.
+    print("=== checkName", request.get_data(as_text=True)[:200], "===")
+    # FUN_00811360 looks the keys up in the response node at +0x34 and wants JSON bools (node type
+    # 6). Whether that node is the root or "result" is not settled, so both carry them.
+    verdict = {"valid": True, "profane": False, "containsNotAllowedCharacters": False,
+               "alreadyExists": False}
+    return jsonify({"result": dict(verdict), **verdict}), 200
+
+
 @app.route("/api/account/get", methods=["POST"])
 def alpha10_account_get():
     return jsonify({"result": {"keySubset": {"RESERVED_NAME": PLAYER_NAME}}}), 200

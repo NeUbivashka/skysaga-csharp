@@ -214,7 +214,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             // SKYSAGA_PALETTE overrides the palette wire index (1..45) for testing.
             composition.PaletteCrc =
                 uint.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_PALETTE"), out var palette)
-                    ? palette : ClientWorldCompositionComponent.FtuePalette;
+                    ? palette : Definition.Spec.Palette;
             composition.TerrainType = TerrainType.Sky;
             composition.MinWalkableYPosition = 0;
         }

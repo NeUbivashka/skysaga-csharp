@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets;
+﻿namespace SkySaga.Game.Packets;
 
 /// <summary>
 /// Alpha 10 layout, read out of the client.
@@ -103,9 +103,15 @@ public class MapSpec
         public uint Level { get; } = level;
     }
 
+    /// <summary>
+    /// Home_Island_Adventure (wire 83): Forest biome, BiomePalette_Forest_HomeIsland, the
+    /// Home_Island time-of-day preset, MapSize HomeIsland_6x4x6. The adventure itself leaves
+    /// BiomePalette blank (the live game picked one per island), so the Forest home palette is
+    /// filled in here.
+    /// </summary>
     public static MapSpec HomeIsland(uint seed)
     {
-        return new MapSpec
+        var spec = new MapSpec
         {
             Searchable =
             [
@@ -127,7 +133,64 @@ public class MapSpec
             Seed = seed,
             FeatureName = "Home_Island_World",
         };
+
+        spec.Searchable[PaletteSlot] = HomeIslandPaletteIndex;
+
+        return spec;
     }
+
+    /// <summary>
+    /// True for the FTUE adventure (Adventures[78], wire 79): the scripted Old City with its intro
+    /// video and cutscenes.
+    /// </summary>
+    public bool IsFtue => Searchable[2] == 79;
+
+    /// <summary>The BiomePalette wire index this spec asks for (slot 4).</summary>
+    public uint Palette => Searchable[PaletteSlot];
+
+    /// <summary>Wire index of MapSizes HomeIsland_6x4x6 (GeoData Index 3).</summary>
+    public const uint HomeIslandMapSizeIndex = 4;
+
+    /// <summary>
+    /// DestinationSelection (Adventures[64], wire 65): the airship between the FTUE and the rest of
+    /// the game, and the place where the character is created. GeoData chain:
+    ///
+    ///   AdventureStartedClientActions -> DestinationSelectionIntro (Actions[27], conditional on
+    ///   HasQuestFromSource being false) -> Trigger_CharacterCreateIntro -> AnimatedSequences[4]
+    ///   Character_Create_Intro -> OnComplete Action_ShowCharacterCustomisation ->
+    ///   faGame_ShowCharacterCustomisation (FUN_01207B60), which enters GameState_CharacterCreation
+    ///   (game state 0xE) when the player's IsCharacterCustomised bit is 0.
+    ///
+    ///   slot  value  resolves to
+    ///    0      2    Forest
+    ///    2     65    DestinationSelection
+    ///    4     26    BiomePalette_Forest_Traditonal (Index 25)
+    ///    8     10    TimeOfDayPresets[9] = MidDay_Fixed
+    ///   10      5    Special
+    ///   11      4    HomeIsland_6x4x6
+    ///   13      3    NoEvent
+    /// </summary>
+    public static MapSpec DestinationSelection(uint seed)
+    {
+        return new MapSpec
+        {
+            Searchable = [2, 0, 65, 0, 26, 0, 0, 0, 10, 0, 5, HomeIslandMapSizeIndex, 0, 3],
+            Seed = seed,
+            FeatureName = "CharacterSelect",
+        };
+    }
+
+    /// <summary>
+    /// The adventure to host, from SKYSAGA_ADVENTURE: "ftue" (default) for FTUE_The_Old_City,
+    /// "airship" for DestinationSelection, "home" for the home island.
+    /// </summary>
+    public static MapSpec FromEnvironment(uint seed)
+        => Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.ToLowerInvariant() switch
+        {
+            "home" => HomeIsland(seed),
+            "airship" => DestinationSelection(seed),
+            _ => Ftue(seed),
+        };
 
     /// <summary>
     /// Slot 4 carries BiomePalette. Confirmed by the client's own field names, not swept.
@@ -139,6 +202,9 @@ public class MapSpec
     /// 1-based with 0 meaning "unset", which is why the count is 46 for a 45-entry list.
     /// </summary>
     private const uint FtuePaletteIndex = 29;
+
+    /// <summary>BiomePalette_Forest_HomeIsland is Index 22 in GeoData.json, so 23 on the wire.</summary>
+    private const uint HomeIslandPaletteIndex = 23;
 
     /// <summary>Slot 11 carries MapSizes (count 32 = 31 entries + "unset").</summary>
     public const int MapSizeSlot = 11;

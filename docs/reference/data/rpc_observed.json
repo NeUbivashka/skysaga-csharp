@@ -1,16 +1,18 @@
 {
  "processed": [
-  "aeb34c0aa4cd169139ca6e93aba32584e144bc9c"
+  "aeb34c0aa4cd169139ca6e93aba32584e144bc9c",
+  "373c3e964b02e3f316dd9aef9beea2fcfcad3b8c",
+  "a1e03664f12611dcc410968da9d4ac0bf271cf65"
  ],
  "rpcs": {
   "RPCBeginSync": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "S2C"
    ],
    "first_example": "{\"numChunksToSync\": 500}",
-   "last_seen": "2026-10-12T03:40:16",
-   "latest_example": "{\"numChunksToSync\": 500}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"numChunksToSync\": 144}",
    "parse_errors": 0,
    "schema": {
     "numChunksToSync": {
@@ -20,13 +22,30 @@
     }
    }
   },
+  "RPCCharacterCreationResponse": {
+   "count": 1,
+   "directions": [
+    "S2C"
+   ],
+   "first_example": "{\"response\": 0}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"response\": 0}",
+   "parse_errors": 0,
+   "schema": {
+    "response": {
+     "types": [
+      "int"
+     ]
+    }
+   }
+  },
   "RPCClientConnected": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "C2S"
    ],
    "first_example": "{\"clientVersionNumber\": \"20335948d8ece3bebf9e33bd936bef90\", \"connectInvisibly\": true, \"clientTestAppType\": 0, \"instanceIPAddress\": \"127.0.0.1\", \"characterUUID\": \"\"}",
-   "last_seen": "2026-10-12T03:40:16",
+   "last_seen": "2026-10-12T04:47:28",
    "latest_example": "{\"clientVersionNumber\": \"20335948d8ece3bebf9e33bd936bef90\", \"connectInvisibly\": true, \"clientTestAppType\": 0, \"instanceIPAddress\": \"127.0.0.1\", \"characterUUID\": \"\"}",
    "parse_errors": 0,
    "schema": {
@@ -58,45 +77,45 @@
    }
   },
   "RPCClientEntitiesSyncFinished": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "S2C"
    ],
    "first_example": "{}",
-   "last_seen": "2026-10-12T03:40:16",
+   "last_seen": "2026-10-12T04:47:28",
    "latest_example": "{}",
    "parse_errors": 0,
    "schema": {}
   },
   "RPCClientInitialSyncFinished": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "C2S"
    ],
    "first_example": "{}",
-   "last_seen": "2026-10-12T03:40:16",
+   "last_seen": "2026-10-12T04:47:28",
    "latest_example": "{}",
    "parse_errors": 0,
    "schema": {}
   },
   "RPCClientReadyToPlay": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "C2S"
    ],
    "first_example": "{}",
-   "last_seen": "2026-10-12T03:40:16",
+   "last_seen": "2026-10-12T04:47:28",
    "latest_example": "{}",
    "parse_errors": 0,
    "schema": {}
   },
   "RPCClientReadyToSync": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "C2S"
    ],
    "first_example": "{\"primaryDataCentreID\": \"\"}",
-   "last_seen": "2026-10-12T03:40:16",
+   "last_seen": "2026-10-12T04:47:28",
    "latest_example": "{\"primaryDataCentreID\": \"\"}",
    "parse_errors": 0,
    "schema": {
@@ -107,14 +126,31 @@
     }
    }
   },
+  "RPCJoinDestinationSelectionWorld": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{\"triggeringEntityID\": 5}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"triggeringEntityID\": 5}",
+   "parse_errors": 0,
+   "schema": {
+    "triggeringEntityID": {
+     "types": [
+      "int"
+     ]
+    }
+   }
+  },
   "RPCMapDefinition": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "S2C"
    ],
    "first_example": "{\"mapHeader\": {\"MapSpec\": {\"searchable\": {\"biome\": \"Forest\", \"region\": \"\", \"adventure\": \"FTUE_The_Old_City\", \"difficulty\": \"Easy\", \"adventureType\": \"solo\", \"seed\": 1337, \"palette\": \"BiomePalette_FTUE_The_Old_City\", \"featureCreatureSet\": \"\", \"terrainCreatureSet\": \"\", \"caveCreatureSet\": \"\", \"timeOfDayPreset\": \"\", \"timeOfDayPresetList\": \"FTUE_The_Old_City\", \"mapSizeCategory\": \"Special\", \"mapSize\": \"MapSize_10x5x10\", \"terrainGenerator\": \"\", \"featureName\": \"FeatureGroup_Overground_FTUE_The_Old_City\", \"activeEvent\": \"NoEvent\"}, \"nonSearchable\": {\"forcedMap\": \"\", \"cost\": \"\"}, \"masteryLevels\": {\"Forest\": 0}, \"version\": \"\"}, \"AdventureType\": \"Adventure\", \"MapFileName\": \"TestMap\", \"GroupLock\": \"\", \"GameQueueCRC\": \"<<CRC Lookup Unavailable>>\", \"GameMode\": 1, \"Seed\": 0}}",
-   "last_seen": "2026-10-12T03:40:16",
-   "latest_example": "{\"mapHeader\": {\"MapSpec\": {\"searchable\": {\"biome\": \"Forest\", \"region\": \"\", \"adventure\": \"FTUE_The_Old_City\", \"difficulty\": \"Easy\", \"adventureType\": \"solo\", \"seed\": 1337, \"palette\": \"BiomePalette_FTUE_The_Old_City\", \"featureCreatureSet\": \"\", \"terrainCreatureSet\": \"\", \"caveCreatureSet\": \"\", \"timeOfDayPreset\": \"\", \"timeOfDayPresetList\": \"FTUE_The_Old_City\", \"mapSizeCategory\": \"Special\", \"mapSize\": \"MapSize_10x5x10\", \"terrainGenerator\": \"\", \"featureName\": \"FeatureGroup_Overground_FTUE_The_Old_City\", \"activeEvent\": \"NoEvent\"}, \"nonSearchable\": {\"forcedMap\": \"\", \"cost\": \"\"}, \"masteryLevels\": {\"Forest\": 0}, \"version\": \"\"}, \"AdventureType\": \"Adventure\", \"MapFileName\": \"TestMap\", \"GroupLock\": \"\", \"GameQueueCRC\": \"<<CRC Lookup Unavailable>>\", \"GameMode\": 1, \"Seed\": 0}}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"mapHeader\": {\"MapSpec\": {\"searchable\": {\"biome\": \"Forest\", \"region\": \"\", \"adventure\": \"DestinationSelection\", \"difficulty\": \"Easy\", \"adventureType\": \"solo\", \"seed\": 1337, \"palette\": \"BiomePalette_Forest_Traditonal\", \"featureCreatureSet\": \"\", \"terrainCreatureSet\": \"\", \"caveCreatureSet\": \"\", \"timeOfDayPreset\": \"MidDay_Fixed\", \"timeOfDayPresetList\": \"\", \"mapSizeCategory\": \"Special\", \"mapSize\": \"HomeIsland_6x4x6\", \"terrainGenerator\": \"\", \"featureName\": \"CharacterSelect\", \"activeEvent\": \"NoEvent\"}, \"nonSearchable\": {\"forcedMap\": \"\", \"cost\": \"\"}, \"masteryLevels\": {\"Forest\": 0}, \"version\": \"\"}, \"AdventureType\": \"Adventure\", \"MapFileName\": \"TestMap\", \"GroupLock\": \"\", \"GameQueueCRC\": \"<<CRC Lookup Unavailable>>\", \"GameMode\": 1, \"Seed\": 0}}",
    "parse_errors": 0,
    "schema": {
     "mapHeader": {
@@ -289,26 +325,107 @@
     }
    }
   },
+  "RPCNotifyPhotoCaptured": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{\"clientPhotoID\": 0, \"position\": [0.0, 0.0, 0.0], \"cameraPosition\": [0.0, 0.0, 0.0], \"direction\": [0.0, 0.0, 0.0], \"cameraDirection\": [0.0, 0.0, 0.0], \"isAvatarPhoto\": true, \"shareImmediately\": true, \"validQuestEntityIDList\": []}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"clientPhotoID\": 0, \"position\": [0.0, 0.0, 0.0], \"cameraPosition\": [0.0, 0.0, 0.0], \"direction\": [0.0, 0.0, 0.0], \"cameraDirection\": [0.0, 0.0, 0.0], \"isAvatarPhoto\": true, \"shareImmediately\": true, \"validQuestEntityIDList\": []}",
+   "parse_errors": 0,
+   "schema": {
+    "cameraDirection": {
+     "item_types": [
+      "float"
+     ],
+     "types": [
+      "array"
+     ]
+    },
+    "cameraPosition": {
+     "item_types": [
+      "float"
+     ],
+     "types": [
+      "array"
+     ]
+    },
+    "clientPhotoID": {
+     "types": [
+      "int"
+     ]
+    },
+    "direction": {
+     "item_types": [
+      "float"
+     ],
+     "types": [
+      "array"
+     ]
+    },
+    "isAvatarPhoto": {
+     "types": [
+      "bool"
+     ]
+    },
+    "position": {
+     "item_types": [
+      "float"
+     ],
+     "types": [
+      "array"
+     ]
+    },
+    "shareImmediately": {
+     "types": [
+      "bool"
+     ]
+    },
+    "validQuestEntityIDList": {
+     "types": [
+      "array"
+     ]
+    }
+   }
+  },
   "RPCQuitGame": {
-   "count": 3,
+   "count": 7,
    "directions": [
     "C2S",
     "S2C"
    ],
    "first_example": "{}",
-   "last_seen": "2026-10-12T03:37:15",
+   "last_seen": "2026-10-12T04:47:28",
    "latest_example": "{}",
    "parse_errors": 0,
    "schema": {}
   },
+  "RPCSaveCharacterName": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{\"name\": \"MiNo\"}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"name\": \"MiNo\"}",
+   "parse_errors": 0,
+   "schema": {
+    "name": {
+     "types": [
+      "string"
+     ]
+    }
+   }
+  },
   "RPCServerInfo": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "S2C"
    ],
    "first_example": "{\"serverInfo\": {\"ServerOwnerGUID\": \"\", \"WorldUUID\": \"f6d0a3e1-f429-c574-48d1-b6a952b37e0c\", \"ServerUUID\": \"3b9ec470-d486-a251-50c7-13f80164eb9a\", \"ServerOwnerName\": \"NeUbivashka\", \"ChatHost\": \"127.0.0.1\", \"MaxUsers\": 32, \"MinUsersRequiredToPlay\": 1, \"ChatPort\": 444, \"GameModeEntityID\": 0, \"IsOpenedToMatchmakingForMorePlayers\": false}}",
-   "last_seen": "2026-10-12T03:40:16",
-   "latest_example": "{\"serverInfo\": {\"ServerOwnerGUID\": \"7afcdaa0-1445-6943-2459-33b8ea4f3475\", \"WorldUUID\": \"f6d0a3e1-f429-c574-48d1-b6a952b37e0c\", \"ServerUUID\": \"3b9ec470-d486-a251-50c7-13f80164eb9a\", \"ServerOwnerName\": \"NeUbivashka\", \"ChatHost\": \"127.0.0.1\", \"MaxUsers\": 32, \"MinUsersRequiredToPlay\": 1, \"ChatPort\": 444, \"GameModeEntityID\": 0, \"IsOpenedToMatchmakingForMorePlayers\": false}}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"serverInfo\": {\"ServerOwnerGUID\": \"a7cfad0a-9634-4154-8b33-95425743f4ae\", \"WorldUUID\": \"6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25\", \"ServerUUID\": \"b3e94c07-2a15-4d68-8f31-7c05a9be4610\", \"ServerOwnerName\": \"NeUbivashka\", \"ChatHost\": \"127.0.0.1\", \"MaxUsers\": 32, \"MinUsersRequiredToPlay\": 1, \"ChatPort\": 444, \"GameModeEntityID\": 0, \"IsOpenedToMatchmakingForMorePlayers\": false}}",
    "parse_errors": 0,
    "schema": {
     "serverInfo": {
@@ -370,14 +487,86 @@
     }
    }
   },
+  "RPCSetCharacterCustomisationData": {
+   "count": 18,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{\"entityID\": 9, \"customisationData\": {\"Gender\": 0, \"Tribe\": \"Human\", \"MaterialList\": [\"Human_Skin_Pink1\", \"Human_Eyes_Dark_Brown\", \"Fabric_Yellow\"], \"AttachmentList\": [{\"Attachment\": \"HumanMaleHairstyle00_Bald\", \"Material\": \"Human_Hair_Brown\"}, {\"Attachment\": \"\", \"Material\": \"Human_Hair_Brown\"}, {\"Attachment\": \"HumanMaleBeard01_None\", \"Material\": \"Human_Hair_Brown\"}, {\"Attachment\": \"\", \"Material\": \"Human_Hair_Brown\"}, {\"Attachment\": \"\", \"Material\": \"Human_Hair_Brown\"}], \"MaterialCustomisationList\": [\"Pattern_HumanMaleMarkings00_None\", \"Pattern_HumanMaleMarkings00_None\", \"Pattern_HumanMaleMarkings00_None\", \"PatternPalette_Human_01\", \"\", \"\", \"\", \"Eye_Human_Male02_Cute\", \"Mouth_Human_Male02_Cute\"], \"Backstory\": \"\"}}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"entityID\": 5, \"customisationData\": {\"Gender\": 0, \"Tribe\": \"Human\", \"MaterialList\": [\"Human_Skin_Light\", \"Human_Eyes_Hazel\", \"Fabric_Green\"], \"AttachmentList\": [{\"Attachment\": \"HumanMaleHairstyle04\", \"Material\": \"Human_Hair_Brown\"}, {\"Attachment\": \"\", \"Material\": \"Human_Hair_Beige\"}, {\"Attachment\": \"HumanMaleBeard01_None\", \"Material\": \"Human_Hair_Brown\"}, {\"Attachment\": \"\", \"Material\": \"Human_Hair_Dark_Red\"}, {\"Attachment\": \"\", \"Material\": \"Human_Hair_Blonde\"}], \"MaterialCustomisationList\": [\"Pattern_HumanMaleMarkings00_None\", \"Pattern_HumanMaleMarkings00_None\", \"Pattern_HumanMaleMarkings00_None\", \"PatternPalette_Human_02\", \"\", \"\", \"\", \"Eye_Human_Male02_Cute\", \"Mouth_Human_Male02_Cute\"], \"Backstory\": \"Human_Arden_Skysailor\"}}",
+   "parse_errors": 0,
+   "schema": {
+    "customisationData": {
+     "fields": {
+      "AttachmentList": {
+       "items": {
+        "Attachment": {
+         "types": [
+          "string"
+         ]
+        },
+        "Material": {
+         "types": [
+          "string"
+         ]
+        }
+       },
+       "types": [
+        "array"
+       ]
+      },
+      "Backstory": {
+       "types": [
+        "string"
+       ]
+      },
+      "Gender": {
+       "types": [
+        "int"
+       ]
+      },
+      "MaterialCustomisationList": {
+       "item_types": [
+        "string"
+       ],
+       "types": [
+        "array"
+       ]
+      },
+      "MaterialList": {
+       "item_types": [
+        "string"
+       ],
+       "types": [
+        "array"
+       ]
+      },
+      "Tribe": {
+       "types": [
+        "string"
+       ]
+      }
+     },
+     "types": [
+      "object"
+     ]
+    },
+    "entityID": {
+     "types": [
+      "int"
+     ]
+    }
+   }
+  },
   "RPCSetClientLocalPlayerEntity": {
-   "count": 2,
+   "count": 4,
    "directions": [
     "S2C"
    ],
    "first_example": "{\"playerEntityID\": 4}",
-   "last_seen": "2026-10-12T03:40:16",
-   "latest_example": "{\"playerEntityID\": 4}",
+   "last_seen": "2026-10-12T04:47:28",
+   "latest_example": "{\"playerEntityID\": 5}",
    "parse_errors": 0,
    "schema": {
     "playerEntityID": {
@@ -388,5 +577,5 @@
    }
   }
  },
- "updated": "2026-10-12T03:40:16"
+ "updated": "2026-10-12T04:47:28"
 }

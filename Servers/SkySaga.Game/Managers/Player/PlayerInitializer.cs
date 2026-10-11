@@ -25,6 +25,14 @@ public class PlayerInitializer(IWorldManager worldManager)
                 ? save.Playername
                 : Util.CharacterName();
 
+        if (player.TryGetComponent<ClientCharacterCustomisationComponent>(out var customisation) && save is not null)
+        {
+            customisation.IsCharacterCustomised = save.IsCharacterCustomised;
+
+            if (!string.IsNullOrEmpty(save.CustomisationData))
+                customisation.CustomisationData = Convert.FromBase64String(save.CustomisationData);
+        }
+
         if (player.TryGetComponent<ClientHealthComponent>(out var clientHealthComponent))
         {
             clientHealthComponent.InitialHP = save is { InitialHP: > 0 } ? save.InitialHP : 10;
@@ -197,6 +205,12 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientPlayernameComponent>(out var clientPlayernameComponent))
             data.Playername = clientPlayernameComponent.Playername;
+
+        if (player.TryGetComponent<ClientCharacterCustomisationComponent>(out var customisation))
+        {
+            data.IsCharacterCustomised = customisation.IsCharacterCustomised;
+            data.CustomisationData = customisation.CustomisationData is { } bytes ? Convert.ToBase64String(bytes) : null;
+        }
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {

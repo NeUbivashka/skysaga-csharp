@@ -1,4 +1,4 @@
-using SkySaga.Game.Packets;
+﻿using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
 
@@ -126,6 +126,8 @@ public class PlayerConnection
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
             PacketId.SetLookAtDirection => SetLookAtDirection.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
+            PacketId.SetCharacterCustomisationData => SetCharacterCustomisationData.Handle(this, bitStream),
+            PacketId.SaveCharacterName => SaveCharacterName.Handle(this, bitStream),
             PacketId.RequestEquipInventoryItem => RequestEquipInventoryItem.Handle(this, bitStream),
             PacketId.EnteredGameplay => EnteredGameplay.Handle(this, bitStream),
             PacketId.FullScreenVideoCompleted => FullScreenVideoCompleted.Handle(this, bitStream),
@@ -150,6 +152,12 @@ public class PlayerConnection
     /// every other time - the client applied the bit, then the next copy cleared it again.
     /// </summary>
     public Queue<DateTime> IsLocalDueUtc { get; } = new();
+
+    /// <summary>
+    /// The latest CustomisationData struct from the character creator (raw bits, not decoded yet).
+    /// Applied to the Player at SaveCharacterName.
+    /// </summary>
+    public byte[]? CustomisationPayload { get; set; }
 
     public void Tick()
     {

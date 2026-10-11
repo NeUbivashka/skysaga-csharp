@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Managers.World;
+﻿namespace SkySaga.Game.Managers.World;
 
 using System.IO.Compression;
 
@@ -136,9 +136,11 @@ public static class WorldMapLoader
         // MapSpec.Ftue hard-coded slot 11 (MapSizes) = 7 = MapSize_10x5x10, while this map is
         // sizeX x sizeY x sizeZ. The client then expected a 10x5x10 world and lit it from a top
         // the server never sent. Describe the map we actually load.
-        var spec = MapSpec.Ftue(seed: 1337);
+        var spec = MapSpec.FromEnvironment(seed: 1337);
 
-        if (MapSpec.TryGetMapSizeWireIndex(sizeX, sizeY, sizeZ, out var mapSizeIndex))
+        if (!spec.IsFtue && (sizeX, sizeY, sizeZ) == (6, 4, 6))
+            spec.Searchable[MapSpec.MapSizeSlot] = MapSpec.HomeIslandMapSizeIndex;
+        else if (MapSpec.TryGetMapSizeWireIndex(sizeX, sizeY, sizeZ, out var mapSizeIndex))
             spec.Searchable[MapSpec.MapSizeSlot] = mapSizeIndex;
         else
             Console.WriteLine($"[WorldMapLoader] No GeoData MapSize for {sizeX}x{sizeY}x{sizeZ} chunks - "

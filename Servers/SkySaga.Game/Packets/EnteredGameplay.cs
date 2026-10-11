@@ -57,6 +57,13 @@ public static class EnteredGameplay
         // Debug switch: SKYSAGA_SKIP_INTRO=1 goes straight to the world. The client reads Esc through
         // raw input, so a posted key can't skip the video when testing unattended. Nothing on the
         // server depends on FullScreenVideoCompleted.
+        // The intro video belongs to the FTUE only.
+        if (!connection.WorldManager.Definition.Spec.IsFtue)
+        {
+            Console.WriteLine("[EnteredGameplay] Not the FTUE - no intro video.");
+            return true;
+        }
+
         if (Environment.GetEnvironmentVariable("SKYSAGA_SKIP_INTRO") == "1")
         {
             Console.WriteLine("[EnteredGameplay] SKYSAGA_SKIP_INTRO=1 - not sending PlayFullScreenVideo.");
