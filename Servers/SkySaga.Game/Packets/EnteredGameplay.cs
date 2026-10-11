@@ -97,24 +97,18 @@ public static class EnteredGameplay
     /// and it was reading exactly what its default constructor leaves, meaning nothing had ever
     /// written to it.
     ///
-    /// There is exactly one writer in the binary. FUN_00964010, inside:
-    ///
-    ///     if ((this[0x38] &amp; 5) == 5) {
-    ///         if (FUN_00777A00(0x45) == 0) {
-    ///             FUN_00C0CC30(); FUN_007176F0(subsystem + 0xFC4);
-    ///             FUN_00777A40(0x45, 0, ...); FUN_00C0CD20();
-    ///         }
-    ///         FUN_00718D00(0xC, 0);
-    ///     }
-    ///
-    /// flags read 0x11, so bit 1 (0x02) was missing. That bit is set in exactly one place:
+    /// There is exactly one writer in the binary, the TeleportBegins handler:
     ///
     ///     void FUN_00964BA0(int this, ..., param_3) {
     ///         *(byte *)(this + 0x38) |= 2;
-    ///         FUN_007176F0(param_3);
+    ///         ModeGlobal.FC4 = param_3;   // FUN_007176F0 is MapSpec::operator=(this=dest)
     ///     }
     ///
-    /// which is the TeleportBegins handler - it raises the bit and stores the spec that arrived.
+    /// (Corrected: FUN_00964010 used to be listed here as the writer. At 0x00964259 it puts a
+    /// temp in ECX and pushes +0xFC4 as the source, so it copies the spec OUT into slot 0x45.
+    /// Every +0xFC4 access is classified in docs/client/loading-screen.md.)
+    ///
+    /// flags read 0x11, so bit 1 (0x02) was missing. The handler raises it and stores the spec.
     /// Without ordinal 35 the bit never sets, the condition never holds, +0xFC4 stays default and
     /// the panel never lifts. The earlier run that reached flags 0x17 and a VALID image was this
     /// path firing correctly, not a side effect.
