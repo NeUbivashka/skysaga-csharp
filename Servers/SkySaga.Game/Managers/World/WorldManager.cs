@@ -334,10 +334,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
             {
                 Id = entity.Id,
                 NameHash = Util.ComputeCrc32(entity.Name),
-                // islocal deliberately stays false here. With it true in the initial add, the client
-                // crashed in READY_TO_PLAY with STATUS_FLOAT_MULTIPLE_TRAPS at 0x00D45EDC (a
-                // zero duration reached FUN_00D45E60). islocal goes out later, as a parameter change,
-                // from EnteredGameplay.SendIsLocal.
+                // islocal stays false here on purpose. Measured (17:40 run): with islocal = true in the
+                // initial add, the player object's bit never got set at all, and the later EntitySync
+                // pushes became no-ops - the client only reacts to a *change* of the parameter.
+                // (The 0x00D45EDC crash once blamed on this is unrelated and intermittent; it is
+                // patched by Tools/patch/client_patches.py.)
                 SyncData = entity.GetSyncData(newEntity: true)
             };
 

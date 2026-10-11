@@ -41,10 +41,25 @@ public class PlayerInitializer(IWorldManager worldManager)
 
 
 
-            if (save is { HasPosition: true })
+            // A saved position inside a solid voxel is worse than none: the camera sits inside the
+            // terrain and the client renders black, with only the odd purple face edge visible.
+            // That happened for real - the save held (0, 0, 0) while the map's ground occupies
+            // y = 0..1, because EntityMoved is not handled yet and the position never updated before
+            // being written back.
+            var savedPosition = save is { HasPosition: true }
+                ? new Vector3(save.PositionX, save.PositionY, save.PositionZ)
+                : (Vector3?)null;
+
+            if (savedPosition is { } position && SpawnFinder.IsSolidAt(_worldManager.ChunkManager, position))
             {
-                smoothedTransformComponent.Position = new Vector3(save.PositionX, save.PositionY, save.PositionZ);
-                smoothedTransformComponent.YawDegrees = save.YawDegrees;
+                Console.WriteLine($"[PlayerInitializer] Saved position {position} is inside a solid voxel - ignoring it.");
+                savedPosition = null;
+            }
+
+            if (savedPosition is { } validPosition)
+            {
+                smoothedTransformComponent.Position = validPosition;
+                smoothedTransformComponent.YawDegrees = save!.YawDegrees;
             }
             else
             {

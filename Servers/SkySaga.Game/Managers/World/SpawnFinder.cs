@@ -8,6 +8,19 @@ public static class SpawnFinder
 
 
 
+    /// <summary>True when the voxel containing <paramref name="position"/> is not air.</summary>
+    public static bool IsSolidAt(IMapChunkManager chunkManager, Vector3 position)
+    {
+        ArgumentNullException.ThrowIfNull(chunkManager);
+
+        int x = (int)MathF.Floor(position.X), y = (int)MathF.Floor(position.Y), z = (int)MathF.Floor(position.Z);
+
+        var chunkPosition = new Vector3Int(FloorDiv(x, ChunkSize), FloorDiv(y, ChunkSize), FloorDiv(z, ChunkSize));
+        var voxelPosition = new Vector3Int(Mod(x, ChunkSize), Mod(y, ChunkSize), Mod(z, ChunkSize));
+
+        return chunkManager.GetVoxel(chunkPosition, voxelPosition) != 0;
+    }
+
     public static int FindGroundHeight(IMapChunkManager chunkManager, int worldX, int worldZ, int mapHeightVoxels)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
