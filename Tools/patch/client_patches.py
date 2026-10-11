@@ -20,28 +20,46 @@ import time
 
 PROCESS_NAME = "SkySaga.exe"
 
+def _rel32(src_next, dst):
+    return ((dst - src_next) & 0xFFFFFFFF).to_bytes(4, "little")
+
+
+def _d45e60_cave(cave):
+    # mov eax,[ecx+0x34] / add eax,eax / jz ret0        ; [timer+0x34] is +0.0 or -0.0
+    # cmp dword [ecx+0x38],0 / jle ret0                 ; duration <= 0
+    # push ebp / mov ebp,esp / sub esp,8 / jmp 0x00D45E66   (stolen prologue, then the original)
+    # ret0: fldz / ret
+    return (bytes.fromhex("8b4134" "03c0" "7411" "83793800" "7e0b" "55" "8bec" "83ec08" "e9")
+            + _rel32(cave + 24, 0x00D45E66) + bytes.fromhex("d9ee" "c3"))
+
+
 PATCHES = [
     {
-        # STATUS_FLOAT_MULTIPLE_TRAPS at 0x00D45EDC, intermittent, ~2 s after ClientReadyToPlay
-        # (READY_TO_PLAY). FUN_00D45E60 divides by the timer duration at [timer+0x38]. Its other
-        # caller FUN_00D459B0 checks for <= 0 first; this one, FUN_00BE0540, does not, and it is
-        # only reached from virtualized code, so the timer with the zero duration can't be traced
-        # statically. Same check as the guarded caller: duration <= 0 returns 0.0.
+        # STATUS_FLOAT_MULTIPLE_TRAPS at 0x00D45EDC, intermittent, a few seconds after
+        # ClientReadyToPlay. FUN_00D45E60 (__fastcall, ecx = timer) ends with
+        #     DIVSS xmm1, [ebp-8]      ; [ebp-8] = [timer+0x34] * k / [timer+0x38]
+        # and that divisor is zero when [timer+0x34] is zero. (The first division, by +0x38, at
+        # 0x00D45E86 does not trap, so +0x38 is not the zero.) Its callers include virtualized code
+        # that no xref shows, so the guard sits at the function entry, in a cave allocated in the
+        # client. Either field zero / non-positive returns 0.0.
         #
-        #   cmp byte [ebp+8],0 / jz ret0 / cmp dword [eax+0x38],0 / jle ret0 /
-        #   mov ecx,eax / call 0x00D45E60 / pop ebp / ret 4 / ret0: fldz / pop ebp / ret 4
-        #
-        # Integer compare on the float: positive floats are positive ints; -x and 0.0 are <= 0.
-        "name": "guard zero duration in FUN_00BE0540",
-        "address": 0x00BE0552,
-        "original": bytes.fromhex("807d0800750ec7450800000000d945085dc204008bc8e8f35816005dc20400"),
-        "patch": bytes.fromhex("807d08007411837838007e0b8bc8e8fb5816005dc20400d9ee5dc20400cccc"),
+        # Superseded an earlier patch in FUN_00BE0540 that checked only +0x38 at one caller: the
+        # client still crashed with it applied (pid 8708, 17:53).
+        "name": "guard zero divisor in FUN_00D45E60",
+        "address": 0x00D45E60,
+        "original": bytes.fromhex("558bec83ec08"),
+        "cave": _d45e60_cave,
+        "patch": lambda cave: b"\xe9" + _rel32(0x00D45E65, cave) + b"\x90",
     },
 ]
 
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
 PROCESS_ALL_NEEDED = 0x0008 | 0x0010 | 0x0020 | 0x0400  # VM_OPERATION | VM_READ | VM_WRITE | QUERY_INFORMATION
 PAGE_EXECUTE_READWRITE = 0x40
+MEM_COMMIT = 0x1000
+MEM_RESERVE = 0x2000
+k32.VirtualAllocEx.restype = ctypes.c_void_p
+k32.VirtualAllocEx.argtypes = [wt.HANDLE, ctypes.c_void_p, ctypes.c_size_t, wt.DWORD, wt.DWORD]
 TH32CS_SNAPPROCESS = 0x2
 
 
@@ -106,13 +124,31 @@ def patch_process(pid, timeout=60.0):
     while pending and time.time() < deadline and alive(h):
         for p in list(pending):
             cur = read(h, p["address"], len(p["original"]))
-            if cur == p["patch"]:
-                print(f"[{ts()}] pid {pid}: already patched: {p['name']}", flush=True)
-                pending.remove(p)
-            elif cur == p["original"]:
-                ok = write_code(h, p["address"], p["patch"])
-                print(f"[{ts()}] pid {pid}: {'patched' if ok else 'WRITE FAILED'}: {p['name']}", flush=True)
-                pending.remove(p)
+            if cur is None or cur != p["original"]:
+                # Still packed, or already patched by an earlier run (a static patch matches its
+                # bytes exactly; a cave patch starts with the jmp into the cave).
+                if cur is not None and ((not callable(p["patch"]) and cur == p["patch"])
+                                        or (callable(p["patch"]) and cur[:1] == b"\xe9")):
+                    print(f"[{ts()}] pid {pid}: already patched: {p['name']}", flush=True)
+                    pending.remove(p)
+                continue
+            if "cave" in p:
+                cave = k32.VirtualAllocEx(h, None, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)
+                if not cave:
+                    print(f"[{ts()}] pid {pid}: VirtualAllocEx failed ({ctypes.get_last_error()}): {p['name']}", flush=True)
+                    pending.remove(p)
+                    continue
+                cave_bytes = p["cave"](cave)
+                if not write_code(h, cave, cave_bytes):
+                    print(f"[{ts()}] pid {pid}: cave write failed: {p['name']}", flush=True)
+                    pending.remove(p)
+                    continue
+                patch = p["patch"](cave)
+            else:
+                patch = p["patch"]
+            ok = write_code(h, p["address"], patch)
+            print(f"[{ts()}] pid {pid}: {'patched' if ok else 'WRITE FAILED'}: {p['name']}", flush=True)
+            pending.remove(p)
         time.sleep(0.05)  # code is still packed until the bytes match
     for p in pending:
         print(f"[{ts()}] pid {pid}: skipped (bytes never matched): {p['name']}", flush=True)

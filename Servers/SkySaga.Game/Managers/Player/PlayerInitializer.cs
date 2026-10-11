@@ -72,6 +72,15 @@ public class PlayerInitializer(IWorldManager worldManager)
                         _worldManager.Definition.MapSizeChunks,
                         _random);
             }
+
+            // SKYSAGA_SPAWN_Y overrides the spawn height, for testing what the camera sees from above.
+            if (float.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_SPAWN_Y"),
+                    System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var spawnY))
+            {
+                var p = smoothedTransformComponent.Position;
+                smoothedTransformComponent.Position = new Vector3(p.X, spawnY, p.Z);
+                Console.WriteLine($"[PlayerInitializer] SKYSAGA_SPAWN_Y={spawnY} - spawn moved to {smoothedTransformComponent.Position}.");
+            }
         }
 
         if (player.TryGetComponent<ClientFeatureUnlockComponent>(out var clientFeatureUnlockComponent))

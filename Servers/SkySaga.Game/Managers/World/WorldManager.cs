@@ -206,7 +206,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (EntityManager.TryCreateEntity("TimeOfDay", out var timeOfDay) &&
             timeOfDay.TryGetComponent<ClientTimeOfDayComponent>(out var clientTimeOfDayComponent))
         {
-            clientTimeOfDayComponent.StartTimeOfDay = 32768;
+            // SKYSAGA_TIME_OF_DAY overrides the start time (0..65535) for testing without a rebuild.
+            clientTimeOfDayComponent.StartTimeOfDay =
+                int.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_TIME_OF_DAY"), out var tod) ? tod : 32768;
             clientTimeOfDayComponent.FixedTimeOfDay = true;
             clientTimeOfDayComponent.DayNightCycleDuration = 20;
             clientTimeOfDayComponent.RealWorldStartTime = RakNet.RakNet.GetTime();

@@ -94,6 +94,26 @@ public static class WorldMapLoader
             placed++;
         }
 
+        // Every chunk inside the map bounds must exist, air-only ones included. The client computes
+        // sunlight itself ("Light Propagation task calculating sunlight", FUN_0097DFF0) over the
+        // whole map; with only the 16 ground chunks synced, the layers above were never sent.
+        // Hypothesis under test: that is what leaves the ground unlit (the black world).
+        for (int cx = 0; cx < sizeX; cx++)
+            for (int cy = 0; cy < sizeY; cy++)
+                for (int cz = 0; cz < sizeZ; cz++)
+                    chunkManager.GetOrCreateChunk(new Vector3Int(cx, cy, cz));
+
+        // MapSpec.Ftue hard-coded slot 11 (MapSizes) = 7 = MapSize_10x5x10, while this map is
+        // sizeX x sizeY x sizeZ. The client then expected a 10x5x10 world and lit it from a top
+        // the server never sent. Describe the map we actually load.
+        var spec = MapSpec.Ftue(seed: 1337);
+
+        if (MapSpec.TryGetMapSizeWireIndex(sizeX, sizeY, sizeZ, out var mapSizeIndex))
+            spec.Searchable[MapSpec.MapSizeSlot] = mapSizeIndex;
+        else
+            Console.WriteLine($"[WorldMapLoader] No GeoData MapSize for {sizeX}x{sizeY}x{sizeZ} chunks - "
+                + $"the client will assume slot {spec.Searchable[MapSpec.MapSizeSlot]}. Use a listed size.");
+
         definition = new MapDefinition
         {
             MapSizeChunks = new Vector3Int(sizeX, sizeY, sizeZ),
@@ -104,7 +124,7 @@ public static class WorldMapLoader
 
 
 
-            Spec = MapSpec.Ftue(seed: 1337),
+            Spec = spec,
             GameMode = (uint)data.GameMode,
             AdventureType = "Adventure",
 

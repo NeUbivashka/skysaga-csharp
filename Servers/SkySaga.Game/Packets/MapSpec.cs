@@ -140,6 +140,28 @@ public class MapSpec
     /// </summary>
     private const uint FtuePaletteIndex = 29;
 
+    /// <summary>Slot 11 carries MapSizes (count 32 = 31 entries + "unset").</summary>
+    public const int MapSizeSlot = 11;
+
+    /// <summary>
+    /// GeoData.json (36731) MapSizes that are plain XxYxZ chunk sizes, mapped to their wire index
+    /// (GeoData Index + 1). The client sizes its world - and its top-down sunlight pass - from this
+    /// slot, so it has to describe the chunks the server actually sends.
+    /// </summary>
+    private static readonly Dictionary<(int X, int Y, int Z), uint> MapSizeWireIndex = new()
+    {
+        [(10, 5, 10)] = 7,  [(10, 4, 14)] = 5,  [(10, 4, 8)] = 6,   [(11, 4, 13)] = 8,
+        [(11, 4, 7)] = 9,   [(12, 4, 12)] = 10, [(13, 4, 11)] = 11, [(14, 4, 10)] = 12,
+        [(16, 4, 8)] = 13,  [(17, 2, 17)] = 14, [(1, 1, 1)] = 15,   [(4, 4, 4)] = 16,
+        [(4, 4, 8)] = 17,   [(5, 4, 7)] = 18,   [(6, 3, 6)] = 19,   [(6, 4, 6)] = 20,
+        [(6, 6, 6)] = 21,   [(7, 4, 11)] = 22,  [(7, 4, 5)] = 23,   [(8, 4, 10)] = 24,
+        [(8, 4, 16)] = 25,  [(8, 4, 4)] = 26,   [(9, 4, 9)] = 27,   [(9, 7, 9)] = 28,
+        [(4, 4, 5)] = 3,    [(2, 2, 2)] = 30,
+    };
+
+    public static bool TryGetMapSizeWireIndex(int x, int y, int z, out uint index)
+        => MapSizeWireIndex.TryGetValue((x, y, z), out index);
+
     /// <summary>
     /// The FTUE map spec, with every slot resolved against GeoData.json.
     ///
