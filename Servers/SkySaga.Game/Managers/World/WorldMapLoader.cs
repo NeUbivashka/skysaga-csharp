@@ -66,6 +66,18 @@ public static class WorldMapLoader
         int sizeY = Math.Clamp(data.MapSizeChunks.Y, 1, 32);
         int sizeZ = Math.Clamp(data.MapSizeChunks.Z, 1, 32);
 
+        // SKYSAGA_MAP_SIZE="X,Y,Z" overrides the chunk bounds for testing (FTUE is 10,5,10), without
+        // editing WorldMap.json. Voxels stay where the file put them.
+        if (Environment.GetEnvironmentVariable("SKYSAGA_MAP_SIZE") is { } sizeOverride
+            && sizeOverride.Split(',') is [var ox, var oy, var oz]
+            && int.TryParse(ox, out var sx) && int.TryParse(oy, out var sy) && int.TryParse(oz, out var sz))
+        {
+            sizeX = Math.Clamp(sx, 1, 32);
+            sizeY = Math.Clamp(sy, 1, 7);  // ChunkSync carries Y ranged max 7
+            sizeZ = Math.Clamp(sz, 1, 32);
+            Console.WriteLine($"[WorldMapLoader] SKYSAGA_MAP_SIZE - chunk bounds {sizeX}x{sizeY}x{sizeZ}.");
+        }
+
         int placed = 0;
         int skippedOutOfBounds = 0;
 
