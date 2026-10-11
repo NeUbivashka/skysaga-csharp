@@ -1,0 +1,3630 @@
+{
+ "source": "SkySagaU.exe 36731 via Ghidra",
+ "unresolved_stats_calls": [],
+ "rpcs": [
+  {
+   "ordinal": 0,
+   "name": "RPCQuitGame",
+   "send": [
+    {
+     "function": "RPC_QuitGame_Send",
+     "address": "0x00717B40",
+     "call": "0x00717DB5"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007fbcf0",
+     "address": "0x007FBCF0",
+     "call": "0x007FBF53"
+    }
+   ]
+  },
+  {
+   "ordinal": 1,
+   "name": "RPCSentErrorToClient",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fdb00",
+     "address": "0x007FDB00",
+     "call": "0x007FDEF5"
+    }
+   ]
+  },
+  {
+   "ordinal": 2,
+   "name": "RPCShutdownMessage",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_00800360",
+     "address": "0x00800360",
+     "call": "0x008006D1"
+    }
+   ]
+  },
+  {
+   "ordinal": 3,
+   "name": "RPCClientConnected",
+   "send": [
+    {
+     "function": "FUN_00946d60",
+     "address": "0x00946D60",
+     "call": "0x0094717D"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 4,
+   "name": "RPCClientReadyToSync",
+   "send": [
+    {
+     "function": "FUN_0080dc50",
+     "address": "0x0080DC50",
+     "call": "0x0080DF19"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 5,
+   "name": "RPCClientReadyToPlay",
+   "send": [
+    {
+     "function": "FUN_0080ff20",
+     "address": "0x0080FF20",
+     "call": "0x00810195"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 6,
+   "name": "RPCClientInitialSyncFinished",
+   "send": [
+    {
+     "function": "FUN_0080d950",
+     "address": "0x0080D950",
+     "call": "0x0080DBC5"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 7,
+   "name": "RPCClientEntitiesSyncFinished",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ee6c0",
+     "address": "0x007EE6C0",
+     "call": "0x007EE923"
+    }
+   ]
+  },
+  {
+   "ordinal": 8,
+   "name": "RPCMapDefinition",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f7280",
+     "address": "0x007F7280",
+     "call": "0x007F7577"
+    }
+   ]
+  },
+  {
+   "ordinal": 9,
+   "name": "RPCFrameTimeSyncCheck",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 10,
+   "name": "RPCResourceCheck",
+   "send": [
+    {
+     "function": "FUN_008260d0",
+     "address": "0x008260D0",
+     "call": "0x00826402"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 11,
+   "name": "RPCSetConnectionTimeout",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fe6c0",
+     "address": "0x007FE6C0",
+     "call": "0x007FE944"
+    }
+   ]
+  },
+  {
+   "ordinal": 12,
+   "name": "RPCBeginSync",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ec550",
+     "address": "0x007EC550",
+     "call": "0x007EC7F9"
+    }
+   ]
+  },
+  {
+   "ordinal": 13,
+   "name": "RPCChunkSync",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ee220",
+     "address": "0x007EE220",
+     "call": "0x007EE59E"
+    }
+   ]
+  },
+  {
+   "ordinal": 14,
+   "name": "RPCPartialChunkEditsSync",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f8a60",
+     "address": "0x007F8A60",
+     "call": "0x007F8D96"
+    }
+   ]
+  },
+  {
+   "ordinal": 15,
+   "name": "RPCRequestEquipInventoryItem",
+   "send": [
+    {
+     "function": "FUN_00956a20",
+     "address": "0x00956A20",
+     "call": "0x00956EDE"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 16,
+   "name": "RPCRequestUnEquipInventoryItem",
+   "send": [
+    {
+     "function": "FUN_00956f70",
+     "address": "0x00956F70",
+     "call": "0x00957304"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 17,
+   "name": "RPCUISettingsSetGameplayCameraState",
+   "send": [
+    {
+     "function": "FUN_009c37d0",
+     "address": "0x009C37D0",
+     "call": "0x009C3B4C"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 18,
+   "name": "RPCUISettingsSetHotbarSlotItemSpec",
+   "send": [
+    {
+     "function": "FUN_009c3be0",
+     "address": "0x009C3BE0",
+     "call": "0x009C3FF8"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 19,
+   "name": "RPCUISettingsSelectHotbarSlot",
+   "send": [
+    {
+     "function": "FUN_009c30b0",
+     "address": "0x009C30B0",
+     "call": "0x009C33D0"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 20,
+   "name": "RPCUISettingsSetMiniMapSettings",
+   "send": [
+    {
+     "function": "FUN_009c4080",
+     "address": "0x009C4080",
+     "call": "0x009C438B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 21,
+   "name": "RPCUISettingsSetUISettings",
+   "send": [
+    {
+     "function": "FUN_009c4420",
+     "address": "0x009C4420",
+     "call": "0x009C46F4"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 22,
+   "name": "RPCUISettingsSetControlSettings",
+   "send": [
+    {
+     "function": "FUN_009c3460",
+     "address": "0x009C3460",
+     "call": "0x009C3740"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 23,
+   "name": "RPCSetEmoteBinding",
+   "send": [
+    {
+     "function": "FUN_007c2490",
+     "address": "0x007C2490",
+     "call": "0x007C27E8"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 24,
+   "name": "RPCSetReportUrl",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ff5e0",
+     "address": "0x007FF5E0",
+     "call": "0x007FF860"
+    }
+   ]
+  },
+  {
+   "ordinal": 25,
+   "name": "RPCSetEndGameList",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fe9f0",
+     "address": "0x007FE9F0",
+     "call": "0x007FED07"
+    }
+   ]
+  },
+  {
+   "ordinal": 26,
+   "name": "RPCSetMapRotationList",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ff210",
+     "address": "0x007FF210",
+     "call": "0x007FF527"
+    }
+   ]
+  },
+  {
+   "ordinal": 27,
+   "name": "RPCSetUGCIslandListForFTUE",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ffc80",
+     "address": "0x007FFC80",
+     "call": "0x007FFF10"
+    }
+   ]
+  },
+  {
+   "ordinal": 28,
+   "name": "RPCSetSystemCharacterMap",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ff910",
+     "address": "0x007FF910",
+     "call": "0x007FFBB4"
+    }
+   ]
+  },
+  {
+   "ordinal": 29,
+   "name": "RPCRunActionList",
+   "send": [
+    {
+     "function": "FUN_00a51a10",
+     "address": "0x00A51A10",
+     "call": "0x00A51E31"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 30,
+   "name": "RPCEnteredGameplay",
+   "send": [
+    {
+     "function": "FUN_0080f1b0",
+     "address": "0x0080F1B0",
+     "call": "0x0080F425"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 31,
+   "name": "RPCEndInteractionWithEntity",
+   "send": [
+    {
+     "function": "FUN_006fb360",
+     "address": "0x006FB360",
+     "call": "0x006FB6F4"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 32,
+   "name": "RPCUpdateVoxelDamage",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_00801c20",
+     "address": "0x00801C20",
+     "call": "0x008020E5"
+    }
+   ]
+  },
+  {
+   "ordinal": 33,
+   "name": "RPCRemoveVoxelDamage",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fca30",
+     "address": "0x007FCA30",
+     "call": "0x007FCCFE"
+    }
+   ]
+  },
+  {
+   "ordinal": 34,
+   "name": "RPCSetCurrentEmote",
+   "send": [
+    {
+     "function": "FUN_007c2060",
+     "address": "0x007C2060",
+     "call": "0x007C23FC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 35,
+   "name": "RPCTeleportBegins",
+   "send": [],
+   "receive": [
+    {
+     "function": "RPC_TeleportBegins_Receive",
+     "address": "0x00964EE0",
+     "call": "0x009651C5"
+    }
+   ]
+  },
+  {
+   "ordinal": 36,
+   "name": "RPCKillOccurred",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f6960",
+     "address": "0x007F6960",
+     "call": "0x007F6D90"
+    }
+   ]
+  },
+  {
+   "ordinal": 37,
+   "name": "RPCHitOccurred",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f6010",
+     "address": "0x007F6010",
+     "call": "0x007F6555"
+    }
+   ]
+  },
+  {
+   "ordinal": 38,
+   "name": "RPCHealOccurred",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f5a60",
+     "address": "0x007F5A60",
+     "call": "0x007F5F51"
+    }
+   ]
+  },
+  {
+   "ordinal": 39,
+   "name": "RPCIFellTooFar",
+   "send": [
+    {
+     "function": "FUN_00b24ec0",
+     "address": "0x00B24EC0",
+     "call": "0x00B25135"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 40,
+   "name": "RPCEntityLanded",
+   "send": [
+    {
+     "function": "FUN_00b239f0",
+     "address": "0x00B239F0",
+     "call": "0x00B23D9B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 41,
+   "name": "RPCPlayerJoined",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f9a50",
+     "address": "0x007F9A50",
+     "call": "0x007F9CD0"
+    }
+   ]
+  },
+  {
+   "ordinal": 42,
+   "name": "RPCPlayerLeft",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fa4f0",
+     "address": "0x007FA4F0",
+     "call": "0x007FA770"
+    }
+   ]
+  },
+  {
+   "ordinal": 43,
+   "name": "RPCPlayerJoinedPvP",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f9d80",
+     "address": "0x007F9D80",
+     "call": "0x007FA09D"
+    }
+   ]
+  },
+  {
+   "ordinal": 44,
+   "name": "RPCAlterActivePhaseByFactor",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007eb3e0",
+     "address": "0x007EB3E0",
+     "call": "0x007EB72E"
+    }
+   ]
+  },
+  {
+   "ordinal": 45,
+   "name": "RPCDebugRequestBasicGearLoadout",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 46,
+   "name": "RPCDebugRequestFinishTutorial",
+   "send": [
+    {
+     "function": "FUN_00854700",
+     "address": "0x00854700",
+     "call": "0x00854975"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 47,
+   "name": "RPCDebugRequestPVPLoadout",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 48,
+   "name": "RPCCombatResult",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ee9c0",
+     "address": "0x007EE9C0",
+     "call": "0x007EEC4E"
+    }
+   ]
+  },
+  {
+   "ordinal": 49,
+   "name": "RPCStopCharge",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_00800780",
+     "address": "0x00800780",
+     "call": "0x00800A45"
+    }
+   ]
+  },
+  {
+   "ordinal": 50,
+   "name": "RPCEventEffect",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f3280",
+     "address": "0x007F3280",
+     "call": "0x007F380D"
+    }
+   ]
+  },
+  {
+   "ordinal": 51,
+   "name": "RPCSetPlayerState",
+   "send": [
+    {
+     "function": "FUN_00b25d10",
+     "address": "0x00B25D10",
+     "call": "0x00B26045"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 52,
+   "name": "RPCSetPlayerMentalState",
+   "send": [
+    {
+     "function": "FUN_00b25950",
+     "address": "0x00B25950",
+     "call": "0x00B25C85"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 53,
+   "name": "RPCSetCharacterCustomisationData",
+   "send": [
+    {
+     "function": "FUN_00b21a10",
+     "address": "0x00B21A10",
+     "call": "0x00B21D6A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 54,
+   "name": "RPCQueueRecipeOnEntity",
+   "send": [
+    {
+     "function": "FUN_009531c0",
+     "address": "0x009531C0",
+     "call": "0x009535B4"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 55,
+   "name": "RPCCollectCraftedItemInSlot",
+   "send": [
+    {
+     "function": "FUN_00952d30",
+     "address": "0x00952D30",
+     "call": "0x0095313B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 56,
+   "name": "RPCCraftingFailed",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ef4c0",
+     "address": "0x007EF4C0",
+     "call": "0x007EF785"
+    }
+   ]
+  },
+  {
+   "ordinal": 57,
+   "name": "RPCDismantleFailed",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f0020",
+     "address": "0x007F0020",
+     "call": "0x007F032C"
+    }
+   ]
+  },
+  {
+   "ordinal": 58,
+   "name": "RPCNewResourceEncountered",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f8710",
+     "address": "0x007F8710",
+     "call": "0x007F8995"
+    }
+   ]
+  },
+  {
+   "ordinal": 59,
+   "name": "RPCInventoryItemDrop",
+   "send": [
+    {
+     "function": "FUN_00857880",
+     "address": "0x00857880",
+     "call": "0x00857C1A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 60,
+   "name": "RPCInventoryItemDestroy",
+   "send": [
+    {
+     "function": "FUN_00995800",
+     "address": "0x00995800",
+     "call": "0x00995B9A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 61,
+   "name": "RPCAssignCollectionResourcePickup",
+   "send": [
+    {
+     "function": "FUN_0098cae0",
+     "address": "0x0098CAE0",
+     "call": "0x0098CDF3"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 62,
+   "name": "RPCFinalizeCollectionResourcePickup",
+   "send": [
+    {
+     "function": "FUN_0098ce80",
+     "address": "0x0098CE80",
+     "call": "0x0098D193"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 63,
+   "name": "RPCInventoryItemTransfer",
+   "send": [
+    {
+     "function": "FUN_009960d0",
+     "address": "0x009960D0",
+     "call": "0x00996596"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 64,
+   "name": "RPCInventoryItemTransferToSlot",
+   "send": [
+    {
+     "function": "FUN_00996aa0",
+     "address": "0x00996AA0",
+     "call": "0x00996FAB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 65,
+   "name": "RPCInventoryItemTransferAll",
+   "send": [
+    {
+     "function": "FUN_00996620",
+     "address": "0x00996620",
+     "call": "0x00996A13"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 66,
+   "name": "RPCInventoryCompact",
+   "send": [
+    {
+     "function": "FUN_00995460",
+     "address": "0x00995460",
+     "call": "0x00995773"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 67,
+   "name": "RPCInventorySort",
+   "send": [
+    {
+     "function": "FUN_00997030",
+     "address": "0x00997030",
+     "call": "0x00997448"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 68,
+   "name": "RPCInventoryArrange",
+   "send": [
+    {
+     "function": "FUN_00995080",
+     "address": "0x00995080",
+     "call": "0x009953DA"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 69,
+   "name": "RPCInventoryItemSwap",
+   "send": [
+    {
+     "function": "FUN_00995c20",
+     "address": "0x00995C20",
+     "call": "0x00996044"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 70,
+   "name": "RPCStorageItemSell",
+   "send": [
+    {
+     "function": "FUN_00997870",
+     "address": "0x00997870",
+     "call": "0x00997BC2"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 71,
+   "name": "RPCStorageItemBuy",
+   "send": [
+    {
+     "function": "FUN_009974d0",
+     "address": "0x009974D0",
+     "call": "0x009977E0"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 72,
+   "name": "RPCTimeSync",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_008012d0",
+     "address": "0x008012D0",
+     "call": "0x00801633"
+    }
+   ]
+  },
+  {
+   "ordinal": 73,
+   "name": "RPCServerInfo",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fdfd0",
+     "address": "0x007FDFD0",
+     "call": "0x007FE27A"
+    }
+   ]
+  },
+  {
+   "ordinal": 74,
+   "name": "RPCEntityEvent",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f1a00",
+     "address": "0x007F1A00",
+     "call": "0x007F1DBE"
+    }
+   ]
+  },
+  {
+   "ordinal": 75,
+   "name": "RPCAoETriggered",
+   "send": [
+    {
+     "function": "FUN_00a51520",
+     "address": "0x00A51520",
+     "call": "0x00A51986"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007ebbd0",
+     "address": "0x007EBBD0",
+     "call": "0x007EBFFA"
+    }
+   ]
+  },
+  {
+   "ordinal": 76,
+   "name": "RPCSetInputMovement",
+   "send": [
+    {
+     "function": "FUN_00b24140",
+     "address": "0x00B24140",
+     "call": "0x00B24497"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 77,
+   "name": "RPCEntityPerformedAbility",
+   "send": [
+    {
+     "function": "FUN_00a77b10",
+     "address": "0x00A77B10",
+     "call": "0x00A78063"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007f21e0",
+     "address": "0x007F21E0",
+     "call": "0x007F2639"
+    }
+   ]
+  },
+  {
+   "ordinal": 78,
+   "name": "RPCEntityStartedSequentialCombo",
+   "send": [
+    {
+     "function": "FUN_00a780f0",
+     "address": "0x00A780F0",
+     "call": "0x00A784AF"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007f2a70",
+     "address": "0x007F2A70",
+     "call": "0x007F2DBA"
+    }
+   ]
+  },
+  {
+   "ordinal": 79,
+   "name": "RPCSetEntityActionState",
+   "send": [
+    {
+     "function": "FUN_00a78540",
+     "address": "0x00A78540",
+     "call": "0x00A78949"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007fedc0",
+     "address": "0x007FEDC0",
+     "call": "0x007FF15F"
+    }
+   ]
+  },
+  {
+   "ordinal": 80,
+   "name": "RPCEntityActionRecovery",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f0c60",
+     "address": "0x007F0C60",
+     "call": "0x007F1088"
+    }
+   ]
+  },
+  {
+   "ordinal": 81,
+   "name": "RPCExecuteEntityAction",
+   "send": [
+    {
+     "function": "FUN_00798040",
+     "address": "0x00798040",
+     "call": "0x00798427"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 82,
+   "name": "RPCSendBroadcastMessage",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fd7a0",
+     "address": "0x007FD7A0",
+     "call": "0x007FDA45"
+    }
+   ]
+  },
+  {
+   "ordinal": 83,
+   "name": "RPCCraftingNotification",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ef830",
+     "address": "0x007EF830",
+     "call": "0x007EFBBA"
+    }
+   ]
+  },
+  {
+   "ordinal": 84,
+   "name": "RPCCraftedItem",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ef0c0",
+     "address": "0x007EF0C0",
+     "call": "0x007EF40C"
+    }
+   ]
+  },
+  {
+   "ordinal": 85,
+   "name": "RPCGetUserToken",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f4980",
+     "address": "0x007F4980",
+     "call": "0x007F4BE3"
+    }
+   ]
+  },
+  {
+   "ordinal": 86,
+   "name": "RPCSetUserToken",
+   "send": [
+    {
+     "function": "FUN_00717e40",
+     "address": "0x00717E40",
+     "call": "0x00718109"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 87,
+   "name": "RPCApplyImpulse",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ec0c0",
+     "address": "0x007EC0C0",
+     "call": "0x007EC49B"
+    }
+   ]
+  },
+  {
+   "ordinal": 88,
+   "name": "RPCTemperaturePing",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_00800ed0",
+     "address": "0x00800ED0",
+     "call": "0x0080121E"
+    }
+   ]
+  },
+  {
+   "ordinal": 89,
+   "name": "RPCCoreTemperatureAdjustment",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007eed00",
+     "address": "0x007EED00",
+     "call": "0x007EF009"
+    }
+   ]
+  },
+  {
+   "ordinal": 90,
+   "name": "RPCAllowFriendToEditHomeIsland",
+   "send": [
+    {
+     "function": "FUN_009f56f0",
+     "address": "0x009F56F0",
+     "call": "0x009F5A2D"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 91,
+   "name": "RPCXPGained",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_008021b0",
+     "address": "0x008021B0",
+     "call": "0x008024F4"
+    }
+   ]
+  },
+  {
+   "ordinal": 92,
+   "name": "RPCInputStateChanged",
+   "send": [
+    {
+     "function": "FUN_00b251c0",
+     "address": "0x00B251C0",
+     "call": "0x00B254F5"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 93,
+   "name": "RPCMarkChallengeComplete",
+   "send": [
+    {
+     "function": "FUN_00930010",
+     "address": "0x00930010",
+     "call": "0x0093039E"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 94,
+   "name": "RPCHandInCQItems",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 95,
+   "name": "RPCPvPPlayerChangedTeam",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fb870",
+     "address": "0x007FB870",
+     "call": "0x007FBC2A"
+    }
+   ]
+  },
+  {
+   "ordinal": 96,
+   "name": "RPCPvPPlayerRequestJoinTeam",
+   "send": [
+    {
+     "function": "FUN_008fb0b0",
+     "address": "0x008FB0B0",
+     "call": "0x008FB3E5"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 97,
+   "name": "RPCPvPWaitingInfo",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_00925950",
+     "address": "0x00925950",
+     "call": "0x00925BF0"
+    }
+   ]
+  },
+  {
+   "ordinal": 98,
+   "name": "RPCMakeAFriendChallengeEvent",
+   "send": [
+    {
+     "function": "FUN_009f6a00",
+     "address": "0x009F6A00",
+     "call": "0x009F6C75"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 99,
+   "name": "RPCMovementConsumesStamina",
+   "send": [
+    {
+     "function": "FUN_00b30ae0",
+     "address": "0x00B30AE0",
+     "call": "0x00B30DC9"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 100,
+   "name": "RPCEndRace",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f0880",
+     "address": "0x007F0880",
+     "call": "0x007F0BAD"
+    }
+   ]
+  },
+  {
+   "ordinal": 101,
+   "name": "RPCPlacedVoxel",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f92a0",
+     "address": "0x007F92A0",
+     "call": "0x007F95BA"
+    }
+   ]
+  },
+  {
+   "ordinal": 102,
+   "name": "RPCCollectDailyReward",
+   "send": [
+    {
+     "function": "FUN_00a7fab0",
+     "address": "0x00A7FAB0",
+     "call": "0x00A7FD25"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 103,
+   "name": "RPCDailyRewardSentToMailbox",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007efcb0",
+     "address": "0x007EFCB0",
+     "call": "0x007EFF75"
+    }
+   ]
+  },
+  {
+   "ordinal": 104,
+   "name": "RPCShopItemsSentToMailbox",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ffff0",
+     "address": "0x007FFFF0",
+     "call": "0x008002B5"
+    }
+   ]
+  },
+  {
+   "ordinal": 105,
+   "name": "RPCNarrativeCompleted",
+   "send": [
+    {
+     "function": "FUN_00954cc0",
+     "address": "0x00954CC0",
+     "call": "0x00955148"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 106,
+   "name": "RPCLocomotionMovementTypeChanged",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f6e70",
+     "address": "0x007F6E70",
+     "call": "0x007F71D5"
+    }
+   ]
+  },
+  {
+   "ordinal": 107,
+   "name": "RPCPlayFullScreenVideo",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f9670",
+     "address": "0x007F9670",
+     "call": "0x007F99A7"
+    }
+   ]
+  },
+  {
+   "ordinal": 108,
+   "name": "RPCFullScreenVideoCompleted",
+   "send": [
+    {
+     "function": "FUN_007e50b0",
+     "address": "0x007E50B0",
+     "call": "0x007E53CC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 109,
+   "name": "RPCMenuOpened",
+   "send": [
+    {
+     "function": "FUN_00798870",
+     "address": "0x00798870",
+     "call": "0x00798BA5"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 110,
+   "name": "RPCMenuClosed",
+   "send": [
+    {
+     "function": "FUN_007984b0",
+     "address": "0x007984B0",
+     "call": "0x007987E5"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 111,
+   "name": "RPCActionShowDialog",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ea750",
+     "address": "0x007EA750",
+     "call": "0x007EAAED"
+    }
+   ]
+  },
+  {
+   "ordinal": 112,
+   "name": "RPCBlueprintCreationSetName",
+   "send": [
+    {
+     "function": "FUN_007af760",
+     "address": "0x007AF760",
+     "call": "0x007AFAAF"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 113,
+   "name": "RPCBlueprintCreationSetPhotoUUIDs",
+   "send": [
+    {
+     "function": "FUN_007afb40",
+     "address": "0x007AFB40",
+     "call": "0x007AFE9A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 114,
+   "name": "RPCBlueprintCreationSetTags",
+   "send": [
+    {
+     "function": "FUN_007aff20",
+     "address": "0x007AFF20",
+     "call": "0x007B027A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 115,
+   "name": "RPCBlueprintCreationSetAllowGenericProps",
+   "send": [
+    {
+     "function": "FUN_007af360",
+     "address": "0x007AF360",
+     "call": "0x007AF6CC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 116,
+   "name": "RPCBlueprintCreationDestroy",
+   "send": [
+    {
+     "function": "FUN_007aef40",
+     "address": "0x007AEF40",
+     "call": "0x007AF2D4"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 117,
+   "name": "RPCBlueprintCreationSubmit",
+   "send": [
+    {
+     "function": "FUN_007b0300",
+     "address": "0x007B0300",
+     "call": "0x007B0694"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 118,
+   "name": "RPCBlueprintSubmissionNotification",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007edb40",
+     "address": "0x007EDB40",
+     "call": "0x007EDDC0"
+    }
+   ]
+  },
+  {
+   "ordinal": 119,
+   "name": "RPCBlueprintConstructionConsumeDroppedItems",
+   "send": [
+    {
+     "function": "FUN_0088b410",
+     "address": "0x0088B410",
+     "call": "0x0088B876"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 120,
+   "name": "RPCBlueprintConstructionPurchaseRemainingItems",
+   "send": [
+    {
+     "function": "FUN_0088b900",
+     "address": "0x0088B900",
+     "call": "0x0088BCDC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 121,
+   "name": "RPCBlueprintConstructionCompleteWithHardCurrency",
+   "send": [
+    {
+     "function": "FUN_0088aff0",
+     "address": "0x0088AFF0",
+     "call": "0x0088B384"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 122,
+   "name": "RPCBlueprintConstructionComplete",
+   "send": [
+    {
+     "function": "FUN_0088ac50",
+     "address": "0x0088AC50",
+     "call": "0x0088AF63"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 123,
+   "name": "RPCBlueprintShopPurchaseStudioScroll",
+   "send": [
+    {
+     "function": "FUN_0088eb30",
+     "address": "0x0088EB30",
+     "call": "0x0088EDA5"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 124,
+   "name": "RPCBlueprintShopPurchaseBlueprint",
+   "send": [
+    {
+     "function": "FUN_00a1b0f0",
+     "address": "0x00A1B0F0",
+     "call": "0x00A1B42D"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 125,
+   "name": "RPCBlueprintShopPurchaseFailed",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ed270",
+     "address": "0x007ED270",
+     "call": "0x007ED5B9"
+    }
+   ]
+  },
+  {
+   "ordinal": 126,
+   "name": "RPCBlueprintShopRevoke",
+   "send": [
+    {
+     "function": "FUN_00a20ad0",
+     "address": "0x00A20AD0",
+     "call": "0x00A20DB2"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 127,
+   "name": "RPCBlueprintRevokeResult",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ec8a0",
+     "address": "0x007EC8A0",
+     "call": "0x007ECBFB"
+    }
+   ]
+  },
+  {
+   "ordinal": 128,
+   "name": "RPCBlueprintRequestSourceData",
+   "send": [
+    {
+     "function": "FUN_00a26660",
+     "address": "0x00A26660",
+     "call": "0x00A26948"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 129,
+   "name": "RPCBlueprintSourceDataRequested",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ed6c0",
+     "address": "0x007ED6C0",
+     "call": "0x007EDA1F"
+    }
+   ]
+  },
+  {
+   "ordinal": 130,
+   "name": "RPCBlueprintClaimBlueprintSalesCommission",
+   "send": [
+    {
+     "function": "FUN_00a206d0",
+     "address": "0x00A206D0",
+     "call": "0x00A20A3B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 131,
+   "name": "RPCBlueprintSaleClaimResult",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ecd00",
+     "address": "0x007ECD00",
+     "call": "0x007ED157"
+    }
+   ]
+  },
+  {
+   "ordinal": 132,
+   "name": "RPCJoinPvPWorld",
+   "send": [
+    {
+     "function": "FUN_007b8d40",
+     "address": "0x007B8D40",
+     "call": "0x007B9165"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 133,
+   "name": "RPCJoinHomeWorld",
+   "send": [
+    {
+     "function": "FUN_007b8990",
+     "address": "0x007B8990",
+     "call": "0x007B8CA9"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 134,
+   "name": "RPCJoinSocialHub",
+   "send": [
+    {
+     "function": "FUN_007b91f0",
+     "address": "0x007B91F0",
+     "call": "0x007B9509"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 135,
+   "name": "RPCJoinDestinationSelectionWorld",
+   "send": [
+    {
+     "function": "FUN_007b85e0",
+     "address": "0x007B85E0",
+     "call": "0x007B88F9"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 136,
+   "name": "RPCRequestAdventureStart",
+   "send": [
+    {
+     "function": "FUN_007b95a0",
+     "address": "0x007B95A0",
+     "call": "0x007B99CB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 137,
+   "name": "RPCRequestWorldTeleport",
+   "send": [
+    {
+     "function": "FUN_007b9a60",
+     "address": "0x007B9A60",
+     "call": "0x007B9F8A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 138,
+   "name": "RPCDisableTeleportingAnim",
+   "send": [
+    {
+     "function": "FUN_0086c1d0",
+     "address": "0x0086C1D0",
+     "call": "0x0086C4BF"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 139,
+   "name": "RPCRequestCharacterServerTeleport",
+   "send": [
+    {
+     "function": "FUN_009f6d00",
+     "address": "0x009F6D00",
+     "call": "0x009F7176"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 140,
+   "name": "RPCTransferToServer",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_008016f0",
+     "address": "0x008016F0",
+     "call": "0x00801B17"
+    }
+   ]
+  },
+  {
+   "ordinal": 141,
+   "name": "RPCDebugSetTeleporterTarget",
+   "send": [
+    {
+     "function": "FUN_008558a0",
+     "address": "0x008558A0",
+     "call": "0x00855CEE"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 142,
+   "name": "RPCRequestRespawn",
+   "send": [
+    {
+     "function": "FUN_00773aa0",
+     "address": "0x00773AA0",
+     "call": "0x00773D1B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 143,
+   "name": "RPCNewMailRecieved",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f83c0",
+     "address": "0x007F83C0",
+     "call": "0x007F8669"
+    }
+   ]
+  },
+  {
+   "ordinal": 144,
+   "name": "RPCMailRead",
+   "send": [
+    {
+     "function": "FUN_00958840",
+     "address": "0x00958840",
+     "call": "0x00958B28"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 145,
+   "name": "RPCMailCheck",
+   "send": [
+    {
+     "function": "FUN_00958530",
+     "address": "0x00958530",
+     "call": "0x009587AB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 146,
+   "name": "RPCDeleteMail",
+   "send": [
+    {
+     "function": "FUN_009581b0",
+     "address": "0x009581B0",
+     "call": "0x00958498"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 147,
+   "name": "RPCTakeMailAttachment",
+   "send": [
+    {
+     "function": "FUN_00958fe0",
+     "address": "0x00958FE0",
+     "call": "0x0095931C"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 148,
+   "name": "RPCRemoteMailSynced",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fc340",
+     "address": "0x007FC340",
+     "call": "0x007FC581"
+    }
+   ]
+  },
+  {
+   "ordinal": 149,
+   "name": "RPCSetMailBoostStatus",
+   "send": [
+    {
+     "function": "FUN_00958bc0",
+     "address": "0x00958BC0",
+     "call": "0x00958F4D"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 150,
+   "name": "RPCRequestMOTD",
+   "send": [
+    {
+     "function": "FUN_009e50b0",
+     "address": "0x009E50B0",
+     "call": "0x009E532B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 151,
+   "name": "RPCMessageOfTheDay",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_009e5560",
+     "address": "0x009E5560",
+     "call": "0x009E5980"
+    }
+   ]
+  },
+  {
+   "ordinal": 152,
+   "name": "RPCUpdateDailyInfo",
+   "send": [
+    {
+     "function": "FUN_009e6510",
+     "address": "0x009E6510",
+     "call": "0x009E67DF"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 153,
+   "name": "RPCEntityAdd",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f1140",
+     "address": "0x007F1140",
+     "call": "0x007F1507"
+    }
+   ]
+  },
+  {
+   "ordinal": 154,
+   "name": "RPCEntitySync",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f2e70",
+     "address": "0x007F2E70",
+     "call": "0x007F31BA"
+    }
+   ]
+  },
+  {
+   "ordinal": 155,
+   "name": "RPCEntityMoved",
+   "send": [
+    {
+     "function": "FUN_00b2a460",
+     "address": "0x00B2A460",
+     "call": "0x00B2A7BD"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 156,
+   "name": "RPCEntityRemoved",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f2700",
+     "address": "0x007F2700",
+     "call": "0x007F29C8"
+    }
+   ]
+  },
+  {
+   "ordinal": 157,
+   "name": "RPCUnlockPosition",
+   "send": [
+    {
+     "function": "FUN_007e5770",
+     "address": "0x007E5770",
+     "call": "0x007E59EB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 158,
+   "name": "RPCSetClientLocalPlayerEntity",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fe330",
+     "address": "0x007FE330",
+     "call": "0x007FE61D"
+    }
+   ]
+  },
+  {
+   "ordinal": 159,
+   "name": "RPCPlayerSpawned",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fac30",
+     "address": "0x007FAC30",
+     "call": "0x007FB06F"
+    }
+   ]
+  },
+  {
+   "ordinal": 160,
+   "name": "RPCSetLookAtDirection",
+   "send": [
+    {
+     "function": "FUN_0086d540",
+     "address": "0x0086D540",
+     "call": "0x0086D8F1"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 161,
+   "name": "RPCSetDefaultFacePose",
+   "send": [
+    {
+     "function": "FUN_00853500",
+     "address": "0x00853500",
+     "call": "0x0085383B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 162,
+   "name": "RPCSaveCharacterName",
+   "send": [
+    {
+     "function": "FUN_008113b0",
+     "address": "0x008113B0",
+     "call": "0x0081167F"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 163,
+   "name": "RPCCharacterCreationResponse",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007ede70",
+     "address": "0x007EDE70",
+     "call": "0x007EE176"
+    }
+   ]
+  },
+  {
+   "ordinal": 164,
+   "name": "RPCSetPlayerSigil",
+   "send": [
+    {
+     "function": "FUN_00949950",
+     "address": "0x00949950",
+     "call": "0x00949C72"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 165,
+   "name": "RPCStartOpeningMysteryBox",
+   "send": [
+    {
+     "function": "FUN_0095acb0",
+     "address": "0x0095ACB0",
+     "call": "0x0095AFC9"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 166,
+   "name": "RPCMysteryBoxPrizesDetermined",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f7b40",
+     "address": "0x007F7B40",
+     "call": "0x007F7F67"
+    }
+   ]
+  },
+  {
+   "ordinal": 167,
+   "name": "RPCCompleteCollectionMysteryBox",
+   "send": [
+    {
+     "function": "FUN_0095a900",
+     "address": "0x0095A900",
+     "call": "0x0095AC19"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 168,
+   "name": "RPCMysteryBoxOpenedNotification",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f7630",
+     "address": "0x007F7630",
+     "call": "0x007F7A2C"
+    }
+   ]
+  },
+  {
+   "ordinal": 169,
+   "name": "RPCSealedDoorOpenedNotification",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fd4c0",
+     "address": "0x007FD4C0",
+     "call": "0x007FD701"
+    }
+   ]
+  },
+  {
+   "ordinal": 170,
+   "name": "RPCTouchedVoxelTrackingSyncUp",
+   "send": [
+    {
+     "function": "FUN_00b2d5c0",
+     "address": "0x00B2D5C0",
+     "call": "0x00B2D89A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 171,
+   "name": "RPCActivateJobChallenge",
+   "send": [
+    {
+     "function": "FUN_0092fc60",
+     "address": "0x0092FC60",
+     "call": "0x0092FF7A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 172,
+   "name": "RPCActivateCommunityQuest",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 173,
+   "name": "RPCQuestContinueChoice",
+   "send": [
+    {
+     "function": "FUN_00905c10",
+     "address": "0x00905C10",
+     "call": "0x00905F97"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 174,
+   "name": "RPCEnableGMPower",
+   "send": [
+    {
+     "function": "FUN_0086c550",
+     "address": "0x0086C550",
+     "call": "0x0086C8EA"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 175,
+   "name": "RPCDebugRequestAddItemToInventory",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 176,
+   "name": "RPCDebugRequestGenerateInventoryItemJSON",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 177,
+   "name": "RPCReturnInventoryItemJSON",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 178,
+   "name": "RPCDebugEnableMechanic",
+   "send": [
+    {
+     "function": "FUN_008592b0",
+     "address": "0x008592B0",
+     "call": "0x0085964A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 179,
+   "name": "RPCDebugEnablePermission",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 180,
+   "name": "RPCDebugUseLocalInstanceConfigFile",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 181,
+   "name": "RPCDebugRequestAddEntity",
+   "send": [
+    {
+     "function": "FUN_008596e0",
+     "address": "0x008596E0",
+     "call": "0x00859B4B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 182,
+   "name": "RPCDebugRequestRespawnPlayer",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 183,
+   "name": "RPCDebugRequestDeleteEntity",
+   "send": [
+    {
+     "function": "FUN_00859be0",
+     "address": "0x00859BE0",
+     "call": "0x00859EF9"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 184,
+   "name": "RPCDebugRequestDeleteEntitiesWithComponent",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 185,
+   "name": "RPCDebugRequestAITree",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 186,
+   "name": "RPCDebugRequestEntityInfo",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 187,
+   "name": "RPCReturnAIInfo",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 188,
+   "name": "RPCReturnEntityInfo",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 189,
+   "name": "RPCDebugSetJobRank",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 190,
+   "name": "RPCDebugAddXP",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 191,
+   "name": "RPCDebugSetJobChallengeProgress",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 192,
+   "name": "RPCDebugActivateJobChallenge",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 193,
+   "name": "RPCDebugResetJobChallenge",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 194,
+   "name": "RPCDebugCompleteJobChallenge",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 195,
+   "name": "RPCDebugDeactivateJobChallenge",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 196,
+   "name": "RPCDebugForceSendTimedAdventureMail",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 197,
+   "name": "RPCDebugForceRefreshJobChallenges",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 198,
+   "name": "RPCDebugSetSigilRank",
+   "send": [
+    {
+     "function": "FUN_0085d8d0",
+     "address": "0x0085D8D0",
+     "call": "0x0085DC73"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 199,
+   "name": "RPCDebugAddSigilProgress",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 200,
+   "name": "RPCDebugSetEasyBuilding",
+   "send": [
+    {
+     "function": "FUN_00859f90",
+     "address": "0x00859F90",
+     "call": "0x0085A27F"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 201,
+   "name": "RPCDebugLearnRecipe",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 202,
+   "name": "RPCDebugForgetRecipe",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 203,
+   "name": "RPCDebugStartAdventure",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 204,
+   "name": "RPCDebugEndAdventure",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 205,
+   "name": "RPCDebugAddQuestToVendor",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 206,
+   "name": "RPCDebugRemoveQuestFromVendor",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 207,
+   "name": "RPCEnableDebugRendering",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 208,
+   "name": "RPCAddDebugPrimitiveAABox",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 209,
+   "name": "RPCAddDebugPrimitiveLine",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 210,
+   "name": "RPCAddDebugPrimitiveSphere",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 211,
+   "name": "RPCAddDebugPrimitiveCylinder",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 212,
+   "name": "RPCAddDebugPrimitiveCircle",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 213,
+   "name": "RPCAddDebugPrimitiveText",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 214,
+   "name": "RPCAddDebugPrimitiveTriangle",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 215,
+   "name": "RPCAddDebugPrimitiveQuad",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 216,
+   "name": "RPCAddDebugPrimitiveCone",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 217,
+   "name": "RPCRemoveDebugPrimitive",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 218,
+   "name": "RPCChangeDebugPrimitive",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 219,
+   "name": "RPCDebugSetTimeOfDay",
+   "send": [
+    {
+     "function": "FUN_0085ad00",
+     "address": "0x0085AD00",
+     "call": "0x0085B0B1"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 220,
+   "name": "RPCServerStats",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 221,
+   "name": "RPCServerProfiles",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 222,
+   "name": "RPCRequestServerProfiles",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 223,
+   "name": "RPCDebugPopulateLoadout",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 224,
+   "name": "RPCDebugEquipmentChanged",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 225,
+   "name": "RPCDebugDamageEntity",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 226,
+   "name": "RPCDebugAddPlayerPremiumSeconds",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 227,
+   "name": "RPCDebugSetDurabilityHealthFraction",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 228,
+   "name": "RPCDebugAdjustEntityHP",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 229,
+   "name": "RPCDebugUpdateEntityHPRegen",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 230,
+   "name": "RPCDebugSetInteractionEnabled",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 231,
+   "name": "RPCDebugSetArbitrarilySealed",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 232,
+   "name": "RPCDebugCreateInteractionTriggerEntity",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 233,
+   "name": "RPCDebugClearAllInteractionTriggerEntities",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 234,
+   "name": "RPCRunMeandrosActions",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fd110",
+     "address": "0x007FD110",
+     "call": "0x007FD415"
+    }
+   ]
+  },
+  {
+   "ordinal": 235,
+   "name": "RPCDebugRequestLootBalancerInfo",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 236,
+   "name": "RPCDebugReturnLootBalancerInfo",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 237,
+   "name": "RPCDebugDumpHeapToCSV",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 238,
+   "name": "RPCDebugDumpSyncDataStats",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 239,
+   "name": "RPCDebugSetInfiniteSpawnDistance",
+   "send": [
+    {
+     "function": "FUN_0085a710",
+     "address": "0x0085A710",
+     "call": "0x0085A98B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 240,
+   "name": "RPCDebugRenderAIEntityDetails",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 241,
+   "name": "RPCDebugRenderInfoAllAIEntities",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 242,
+   "name": "RPCDebugSetBuildOffState",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 243,
+   "name": "RPCDebugSetShortResetProgressDeadlines",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 244,
+   "name": "RPCDebugSetShortExpiryDeadlines",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 245,
+   "name": "RPCDebugCommand",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 246,
+   "name": "RPCDebugFillPowerBar",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 247,
+   "name": "RPCDebugPauseLogicNetwork",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 248,
+   "name": "RPCDebugStepLogicNetwork",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 249,
+   "name": "RPCDebugFeatureUnlockingUnlockAll",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 250,
+   "name": "RPCDebugFeatureUnlockingResetAll",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 251,
+   "name": "RPCDebugFeatureUnlockingSetUpdatesDisabled",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 252,
+   "name": "RPCDebugFeatureUnlockingSetIndividualUnlocked",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 253,
+   "name": "RPCDebugToggleActiveEvent",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 254,
+   "name": "RPCDebugRandomisePromotedShopItems",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 255,
+   "name": "RPCForcePhotoCapture",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f42d0",
+     "address": "0x007F42D0",
+     "call": "0x007F4559"
+    }
+   ]
+  },
+  {
+   "ordinal": 256,
+   "name": "RPCRefreshPhotoMetadata",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fbff0",
+     "address": "0x007FBFF0",
+     "call": "0x007FC299"
+    }
+   ]
+  },
+  {
+   "ordinal": 257,
+   "name": "RPCPlayerHitByAnother",
+   "send": [
+    {
+     "function": "FUN_00a3cc40",
+     "address": "0x00A3CC40",
+     "call": "0x00A3CFD6"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 258,
+   "name": "RPCBuildingGridActivated",
+   "send": [
+    {
+     "function": "FUN_00797d30",
+     "address": "0x00797D30",
+     "call": "0x00797FAB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 259,
+   "name": "RPCSetBuildOffScores",
+   "send": [
+    {
+     "function": "FUN_00893900",
+     "address": "0x00893900",
+     "call": "0x00893BDA"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 260,
+   "name": "RPCEquipmentMaterialChanged",
+   "send": [
+    {
+     "function": "FUN_0089e390",
+     "address": "0x0089E390",
+     "call": "0x0089E77F"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 261,
+   "name": "RPCTodoListTaskErase",
+   "send": [
+    {
+     "function": "FUN_009d3840",
+     "address": "0x009D3840",
+     "call": "0x009D3B15"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 262,
+   "name": "RPCTodoListTaskAdd",
+   "send": [
+    {
+     "function": "FUN_009d3430",
+     "address": "0x009D3430",
+     "call": "0x009D37AF"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 263,
+   "name": "RPCTodoListTaskRemove",
+   "send": [
+    {
+     "function": "FUN_009d3ba0",
+     "address": "0x009D3BA0",
+     "call": "0x009D3F1A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 264,
+   "name": "RPCTodoListSetTaskTimestamp",
+   "send": [
+    {
+     "function": "FUN_009d3080",
+     "address": "0x009D3080",
+     "call": "0x009D3398"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 265,
+   "name": "RPCNotifyPhotoCaptured",
+   "send": [
+    {
+     "function": "FUN_00862610",
+     "address": "0x00862610",
+     "call": "0x00862AAC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 266,
+   "name": "RPCPhotoDelete",
+   "send": [
+    {
+     "function": "FUN_00862b40",
+     "address": "0x00862B40",
+     "call": "0x00862E28"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 267,
+   "name": "RPCPhotoValidated",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f8e80",
+     "address": "0x007F8E80",
+     "call": "0x007F91F6"
+    }
+   ]
+  },
+  {
+   "ordinal": 268,
+   "name": "RPCRequestStartAnimationSequence",
+   "send": [
+    {
+     "function": "FUN_009615c0",
+     "address": "0x009615C0",
+     "call": "0x00961962"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 269,
+   "name": "RPCAnimationSequenceFadeComplete",
+   "send": [
+    {
+     "function": "FUN_00961190",
+     "address": "0x00961190",
+     "call": "0x00961532"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 270,
+   "name": "RPCSetAnimationSequenceProgressData",
+   "send": [
+    {
+     "function": "FUN_009619f0",
+     "address": "0x009619F0",
+     "call": "0x00961D50"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 271,
+   "name": "RPCAnimationSequenceCompleted",
+   "send": [
+    {
+     "function": "FUN_00960d60",
+     "address": "0x00960D60",
+     "call": "0x00961102"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 272,
+   "name": "RPCAnimationSequenceStarting",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007eb7e0",
+     "address": "0x007EB7E0",
+     "call": "0x007EBB1A"
+    }
+   ]
+  },
+  {
+   "ordinal": 273,
+   "name": "RPCDebugRequestStartAnimationSequence",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 274,
+   "name": "RPCDebugRequestAnimationSequenceNetworkCatchup",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 275,
+   "name": "RPCDebugAnimationSequenceCatchup",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 276,
+   "name": "RPCMoveItemToCraftingDropSlot",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 277,
+   "name": "RPCRemoveItemFromCraftingDropSlot",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 278,
+   "name": "RPCPerformCraftingDropSlotAction",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 279,
+   "name": "RPCRepairItem",
+   "send": [
+    {
+     "function": "FUN_0091f8c0",
+     "address": "0x0091F8C0",
+     "call": "0x0091FC1B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 280,
+   "name": "RPCPlayerDodged",
+   "send": [
+    {
+     "function": "FUN_00b25580",
+     "address": "0x00B25580",
+     "call": "0x00B258BB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 281,
+   "name": "RPCEntityDodged",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f15e0",
+     "address": "0x007F15E0",
+     "call": "0x007F1948"
+    }
+   ]
+  },
+  {
+   "ordinal": 282,
+   "name": "RPCNarrativeDidNotComplete",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f8060",
+     "address": "0x007F8060",
+     "call": "0x007F8313"
+    }
+   ]
+  },
+  {
+   "ordinal": 283,
+   "name": "RPCShopPurchaseWithCurrency",
+   "send": [
+    {
+     "function": "FUN_00a05020",
+     "address": "0x00A05020",
+     "call": "0x00A054A6"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 284,
+   "name": "RPCShopPurchaseWithInventoryItem",
+   "send": [
+    {
+     "function": "FUN_008a10e0",
+     "address": "0x008A10E0",
+     "call": "0x008A15DA"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 285,
+   "name": "RPCNPCShopSell",
+   "send": [
+    {
+     "function": "FUN_00921580",
+     "address": "0x00921580",
+     "call": "0x00921987"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 286,
+   "name": "RPCProjectileImpacted",
+   "send": [
+    {
+     "function": "FUN_00b2f4a0",
+     "address": "0x00B2F4A0",
+     "call": "0x00B2F800"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007fb130",
+     "address": "0x007FB130",
+     "call": "0x007FB44C"
+    }
+   ]
+  },
+  {
+   "ordinal": 287,
+   "name": "RPCBatch",
+   "send": [
+    {
+     "function": "FUN_00dbd8f0",
+     "address": "0x00DBD8F0",
+     "call": "0x00DBDCC7"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_00dbe1b0",
+     "address": "0x00DBE1B0",
+     "call": "0x00DBE4EA"
+    }
+   ]
+  },
+  {
+   "ordinal": 288,
+   "name": "RPCDeleteNotification",
+   "send": [
+    {
+     "function": "FUN_009c6a00",
+     "address": "0x009C6A00",
+     "call": "0x009C6D19"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 289,
+   "name": "RPCDebugAddNotification",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 290,
+   "name": "RPCAiStateAudioEvent",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007eafc0",
+     "address": "0x007EAFC0",
+     "call": "0x007EB328"
+    }
+   ]
+  },
+  {
+   "ordinal": 291,
+   "name": "RPCSetIslandPublished",
+   "send": [
+    {
+     "function": "FUN_00971ab0",
+     "address": "0x00971AB0",
+     "call": "0x00971E87"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 292,
+   "name": "RPCAllowHomeIslandToBeEdited",
+   "send": [
+    {
+     "function": "FUN_009712b0",
+     "address": "0x009712B0",
+     "call": "0x009715F3"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 293,
+   "name": "RPCExtraHomeIslandCreated",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f3f80",
+     "address": "0x007F3F80",
+     "call": "0x007F4229"
+    }
+   ]
+  },
+  {
+   "ordinal": 294,
+   "name": "RPCExtraBlueprintStudioCreated",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f38e0",
+     "address": "0x007F38E0",
+     "call": "0x007F3B89"
+    }
+   ]
+  },
+  {
+   "ordinal": 295,
+   "name": "RPCPerformJump",
+   "send": [
+    {
+     "function": "FUN_00b23e30",
+     "address": "0x00B23E30",
+     "call": "0x00B240AB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 296,
+   "name": "RPCEntityJumped",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f1e70",
+     "address": "0x007F1E70",
+     "call": "0x007F2138"
+    }
+   ]
+  },
+  {
+   "ordinal": 297,
+   "name": "RPCPlayerAcceptedFriendInvite",
+   "send": [
+    {
+     "function": "FUN_009e0c30",
+     "address": "0x009E0C30",
+     "call": "0x009E0F18"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 298,
+   "name": "RPCPlayerUnfriended",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 299,
+   "name": "RPCPlayerKicked",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fa160",
+     "address": "0x007FA160",
+     "call": "0x007FA441"
+    }
+   ]
+  },
+  {
+   "ordinal": 300,
+   "name": "RPCPlayerKickConfirmed",
+   "send": [
+    {
+     "function": "FUN_007e5460",
+     "address": "0x007E5460",
+     "call": "0x007E56DB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 301,
+   "name": "RPCPlayerRankedUp",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fa820",
+     "address": "0x007FA820",
+     "call": "0x007FAB7A"
+    }
+   ]
+  },
+  {
+   "ordinal": 302,
+   "name": "RPCDisplayPlayerJobRankUp",
+   "send": [
+    {
+     "function": "FUN_008ce860",
+     "address": "0x008CE860",
+     "call": "0x008CEC93"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007f03f0",
+     "address": "0x007F03F0",
+     "call": "0x007F07B5"
+    }
+   ]
+  },
+  {
+   "ordinal": 303,
+   "name": "RPCAddPerk",
+   "send": [
+    {
+     "function": "FUN_00b2c460",
+     "address": "0x00B2C460",
+     "call": "0x00B2C7C0"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 304,
+   "name": "RPCRemovePerk",
+   "send": [
+    {
+     "function": "FUN_00b2c850",
+     "address": "0x00B2C850",
+     "call": "0x00B2CBB6"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 305,
+   "name": "RPCSetFullBodyAnimationData",
+   "send": [
+    {
+     "function": "FUN_007c3ee0",
+     "address": "0x007C3EE0",
+     "call": "0x007C43B9"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 306,
+   "name": "RPCInformWorldLiked",
+   "send": [
+    {
+     "function": "FUN_00971680",
+     "address": "0x00971680",
+     "call": "0x00971A1A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 307,
+   "name": "RPCReportPublishWorldError",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fcda0",
+     "address": "0x007FCDA0",
+     "call": "0x007FD068"
+    }
+   ]
+  },
+  {
+   "ordinal": 308,
+   "name": "RPCGuildCreate",
+   "send": [
+    {
+     "function": "FUN_0095c5c0",
+     "address": "0x0095C5C0",
+     "call": "0x0095C95A"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 309,
+   "name": "RPCGuildIncreaseMemberLimit",
+   "send": [
+    {
+     "function": "FUN_0095c9f0",
+     "address": "0x0095C9F0",
+     "call": "0x0095CCD8"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 310,
+   "name": "RPCGuildLeave",
+   "send": [
+    {
+     "function": "FUN_00a71d10",
+     "address": "0x00A71D10",
+     "call": "0x00A71FF8"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 311,
+   "name": "RPCGuildInvite",
+   "send": [
+    {
+     "function": "FUN_009f6210",
+     "address": "0x009F6210",
+     "call": "0x009F65A3"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 312,
+   "name": "RPCGuildRemove",
+   "send": [
+    {
+     "function": "FUN_009f6630",
+     "address": "0x009F6630",
+     "call": "0x009F696C"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 313,
+   "name": "RPCGuildOperationResult",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f55e0",
+     "address": "0x007F55E0",
+     "call": "0x007F59B0"
+    }
+   ]
+  },
+  {
+   "ordinal": 314,
+   "name": "RPCGuildNotification",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f50e0",
+     "address": "0x007F50E0",
+     "call": "0x007F5512"
+    }
+   ]
+  },
+  {
+   "ordinal": 315,
+   "name": "RPCGuildInvitationResult",
+   "send": [
+    {
+     "function": "FUN_0095cd70",
+     "address": "0x0095CD70",
+     "call": "0x0095D0B3"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 316,
+   "name": "RPCExtraGuildIslandCreated",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f3c30",
+     "address": "0x007F3C30",
+     "call": "0x007F3ED9"
+    }
+   ]
+  },
+  {
+   "ordinal": 317,
+   "name": "RPCGroupRequest",
+   "send": [
+    {
+     "function": "FUN_009f5e90",
+     "address": "0x009F5E90",
+     "call": "0x009F6178"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 318,
+   "name": "RPCGroupRequestReject",
+   "send": [
+    {
+     "function": "FUN_009d8090",
+     "address": "0x009D8090",
+     "call": "0x009D83CC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 319,
+   "name": "RPCGroupRequestAccept",
+   "send": [
+    {
+     "function": "FUN_009d7cc0",
+     "address": "0x009D7CC0",
+     "call": "0x009D7FFC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 320,
+   "name": "RPCGroupLeave",
+   "send": [
+    {
+     "function": "FUN_0090d040",
+     "address": "0x0090D040",
+     "call": "0x0090D2BB"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 321,
+   "name": "RPCGroupKickPlayer",
+   "send": [
+    {
+     "function": "FUN_009f5ac0",
+     "address": "0x009F5AC0",
+     "call": "0x009F5DFC"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 322,
+   "name": "RPCGroupJoinLeader",
+   "send": [
+    {
+     "function": "FUN_008edc10",
+     "address": "0x008EDC10",
+     "call": "0x008EDE8B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 323,
+   "name": "RPCGroupNotification",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f4c80",
+     "address": "0x007F4C80",
+     "call": "0x007F502E"
+    }
+   ]
+  },
+  {
+   "ordinal": 324,
+   "name": "RPCInstanceOpenForMatchmakingNewPlayersState",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f6630",
+     "address": "0x007F6630",
+     "call": "0x007F68B9"
+    }
+   ]
+  },
+  {
+   "ordinal": 325,
+   "name": "RPCGroupOpenInstanceForMatchmakingNewPlayers",
+   "send": [
+    {
+     "function": "FUN_00890e90",
+     "address": "0x00890E90",
+     "call": "0x0089110B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 326,
+   "name": "RPCGameQueueRequest",
+   "send": [
+    {
+     "function": "FUN_00a708c0",
+     "address": "0x00A708C0",
+     "call": "0x00A70C47"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 327,
+   "name": "RPCGameQueueRespondToInvite",
+   "send": [
+    {
+     "function": "FUN_00a70cd0",
+     "address": "0x00A70CD0",
+     "call": "0x00A7100D"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 328,
+   "name": "RPCGameQueueInviteFailed",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007f4600",
+     "address": "0x007F4600",
+     "call": "0x007F48D2"
+    }
+   ]
+  },
+  {
+   "ordinal": 329,
+   "name": "RPCDebugNeverQueueForGames",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 330,
+   "name": "RPCAddLogicNetworkConnection",
+   "send": [
+    {
+     "function": "FUN_0094df10",
+     "address": "0x0094DF10",
+     "call": "0x0094E28F"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007eabb0",
+     "address": "0x007EABB0",
+     "call": "0x007EAF0F"
+    }
+   ]
+  },
+  {
+   "ordinal": 331,
+   "name": "RPCRemoveLogicNetworkConnection",
+   "send": [
+    {
+     "function": "FUN_0094e320",
+     "address": "0x0094E320",
+     "call": "0x0094E69F"
+    }
+   ],
+   "receive": [
+    {
+     "function": "FUN_007fc620",
+     "address": "0x007FC620",
+     "call": "0x007FC97F"
+    }
+   ]
+  },
+  {
+   "ordinal": 332,
+   "name": "RPCLogicNetworkDelayTimeUpdate",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 333,
+   "name": "RPCSyncLogicNetwork",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_00800af0",
+     "address": "0x00800AF0",
+     "call": "0x00800DEC"
+    }
+   ]
+  },
+  {
+   "ordinal": 334,
+   "name": "RPCLogicNetworkAlphaNumericChange",
+   "send": [
+    {
+     "function": "FUN_008b9d60",
+     "address": "0x008B9D60",
+     "call": "0x008BA0C6"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 335,
+   "name": "RPCRewardTrackStageBuy",
+   "send": [
+    {
+     "function": "FUN_00a2f420",
+     "address": "0x00A2F420",
+     "call": "0x00A2F75B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 336,
+   "name": "RPCRewardTrackStageClaimCompleted",
+   "send": [
+    {
+     "function": "FUN_00a2f7f0",
+     "address": "0x00A2F7F0",
+     "call": "0x00A2FB2B"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 337,
+   "name": "RPCPromotionAddedToIsland",
+   "send": [],
+   "receive": [
+    {
+     "function": "FUN_007fb500",
+     "address": "0x007FB500",
+     "call": "0x007FB7C8"
+    }
+   ]
+  },
+  {
+   "ordinal": 338,
+   "name": "RPCBuyIslandPromotions",
+   "send": [
+    {
+     "function": "FUN_009da2c0",
+     "address": "0x009DA2C0",
+     "call": "0x009DA5A8"
+    }
+   ],
+   "receive": []
+  },
+  {
+   "ordinal": 339,
+   "name": "RPCJoinBuildCompetition",
+   "send": [],
+   "receive": []
+  },
+  {
+   "ordinal": 340,
+   "name": "RPCRequestBuildVolume",
+   "send": [
+    {
+     "function": "FUN_00a7ede0",
+     "address": "0x00A7EDE0",
+     "call": "0x00A7F323"
+    }
+   ],
+   "receive": []
+  }
+ ]
+}

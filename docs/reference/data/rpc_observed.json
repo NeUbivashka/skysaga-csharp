@@ -1,0 +1,389 @@
+{
+ "rpcs": {
+  "RPCBeginSync": {
+   "count": 1,
+   "directions": [
+    "S2C"
+   ],
+   "first_example": "{\"numChunksToSync\": 500}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{\"numChunksToSync\": 500}",
+   "parse_errors": 0,
+   "schema": {
+    "numChunksToSync": {
+     "types": [
+      "int"
+     ]
+    }
+   }
+  },
+  "RPCClientConnected": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{\"clientVersionNumber\": \"20335948d8ece3bebf9e33bd936bef90\", \"connectInvisibly\": true, \"clientTestAppType\": 0, \"instanceIPAddress\": \"127.0.0.1\", \"characterUUID\": \"\"}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{\"clientVersionNumber\": \"20335948d8ece3bebf9e33bd936bef90\", \"connectInvisibly\": true, \"clientTestAppType\": 0, \"instanceIPAddress\": \"127.0.0.1\", \"characterUUID\": \"\"}",
+   "parse_errors": 0,
+   "schema": {
+    "characterUUID": {
+     "types": [
+      "string"
+     ]
+    },
+    "clientTestAppType": {
+     "types": [
+      "int"
+     ]
+    },
+    "clientVersionNumber": {
+     "types": [
+      "string"
+     ]
+    },
+    "connectInvisibly": {
+     "types": [
+      "bool"
+     ]
+    },
+    "instanceIPAddress": {
+     "types": [
+      "string"
+     ]
+    }
+   }
+  },
+  "RPCClientEntitiesSyncFinished": {
+   "count": 1,
+   "directions": [
+    "S2C"
+   ],
+   "first_example": "{}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{}",
+   "parse_errors": 0,
+   "schema": {}
+  },
+  "RPCClientInitialSyncFinished": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{}",
+   "parse_errors": 0,
+   "schema": {}
+  },
+  "RPCClientReadyToPlay": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{}",
+   "parse_errors": 0,
+   "schema": {}
+  },
+  "RPCClientReadyToSync": {
+   "count": 1,
+   "directions": [
+    "C2S"
+   ],
+   "first_example": "{\"primaryDataCentreID\": \"\"}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{\"primaryDataCentreID\": \"\"}",
+   "parse_errors": 0,
+   "schema": {
+    "primaryDataCentreID": {
+     "types": [
+      "string"
+     ]
+    }
+   }
+  },
+  "RPCMapDefinition": {
+   "count": 1,
+   "directions": [
+    "S2C"
+   ],
+   "first_example": "{\"mapHeader\": {\"MapSpec\": {\"searchable\": {\"biome\": \"Forest\", \"region\": \"\", \"adventure\": \"FTUE_The_Old_City\", \"difficulty\": \"Easy\", \"adventureType\": \"solo\", \"seed\": 1337, \"palette\": \"BiomePalette_FTUE_The_Old_City\", \"featureCreatureSet\": \"\", \"terrainCreatureSet\": \"\", \"caveCreatureSet\": \"\", \"timeOfDayPreset\": \"\", \"timeOfDayPresetList\": \"FTUE_The_Old_City\", \"mapSizeCategory\": \"Special\", \"mapSize\": \"MapSize_10x5x10\", \"terrainGenerator\": \"\", \"featureName\": \"FeatureGroup_Overground_FTUE_The_Old_City\", \"activeEvent\": \"NoEvent\"}, \"nonSearchable\": {\"forcedMap\": \"\", \"cost\": \"\"}, \"masteryLevels\": {\"Forest\": 0}, \"version\": \"\"}, \"AdventureType\": \"Adventure\", \"MapFileName\": \"TestMap\", \"GroupLock\": \"\", \"GameQueueCRC\": \"<<CRC Lookup Unavailable>>\", \"GameMode\": 1, \"Seed\": 0}}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{\"mapHeader\": {\"MapSpec\": {\"searchable\": {\"biome\": \"Forest\", \"region\": \"\", \"adventure\": \"FTUE_The_Old_City\", \"difficulty\": \"Easy\", \"adventureType\": \"solo\", \"seed\": 1337, \"palette\": \"BiomePalette_FTUE_The_Old_City\", \"featureCreatureSet\": \"\", \"terrainCreatureSet\": \"\", \"caveCreatureSet\": \"\", \"timeOfDayPreset\": \"\", \"timeOfDayPresetList\": \"FTUE_The_Old_City\", \"mapSizeCategory\": \"Special\", \"mapSize\": \"MapSize_10x5x10\", \"terrainGenerator\": \"\", \"featureName\": \"FeatureGroup_Overground_FTUE_The_Old_City\", \"activeEvent\": \"NoEvent\"}, \"nonSearchable\": {\"forcedMap\": \"\", \"cost\": \"\"}, \"masteryLevels\": {\"Forest\": 0}, \"version\": \"\"}, \"AdventureType\": \"Adventure\", \"MapFileName\": \"TestMap\", \"GroupLock\": \"\", \"GameQueueCRC\": \"<<CRC Lookup Unavailable>>\", \"GameMode\": 1, \"Seed\": 0}}",
+   "parse_errors": 0,
+   "schema": {
+    "mapHeader": {
+     "fields": {
+      "AdventureType": {
+       "types": [
+        "string"
+       ]
+      },
+      "GameMode": {
+       "types": [
+        "int"
+       ]
+      },
+      "GameQueueCRC": {
+       "types": [
+        "string"
+       ]
+      },
+      "GroupLock": {
+       "types": [
+        "string"
+       ]
+      },
+      "MapFileName": {
+       "types": [
+        "string"
+       ]
+      },
+      "MapSpec": {
+       "fields": {
+        "masteryLevels": {
+         "fields": {
+          "Forest": {
+           "types": [
+            "int"
+           ]
+          }
+         },
+         "types": [
+          "object"
+         ]
+        },
+        "nonSearchable": {
+         "fields": {
+          "cost": {
+           "types": [
+            "string"
+           ]
+          },
+          "forcedMap": {
+           "types": [
+            "string"
+           ]
+          }
+         },
+         "types": [
+          "object"
+         ]
+        },
+        "searchable": {
+         "fields": {
+          "activeEvent": {
+           "types": [
+            "string"
+           ]
+          },
+          "adventure": {
+           "types": [
+            "string"
+           ]
+          },
+          "adventureType": {
+           "types": [
+            "string"
+           ]
+          },
+          "biome": {
+           "types": [
+            "string"
+           ]
+          },
+          "caveCreatureSet": {
+           "types": [
+            "string"
+           ]
+          },
+          "difficulty": {
+           "types": [
+            "string"
+           ]
+          },
+          "featureCreatureSet": {
+           "types": [
+            "string"
+           ]
+          },
+          "featureName": {
+           "types": [
+            "string"
+           ]
+          },
+          "mapSize": {
+           "types": [
+            "string"
+           ]
+          },
+          "mapSizeCategory": {
+           "types": [
+            "string"
+           ]
+          },
+          "palette": {
+           "types": [
+            "string"
+           ]
+          },
+          "region": {
+           "types": [
+            "string"
+           ]
+          },
+          "seed": {
+           "types": [
+            "int"
+           ]
+          },
+          "terrainCreatureSet": {
+           "types": [
+            "string"
+           ]
+          },
+          "terrainGenerator": {
+           "types": [
+            "string"
+           ]
+          },
+          "timeOfDayPreset": {
+           "types": [
+            "string"
+           ]
+          },
+          "timeOfDayPresetList": {
+           "types": [
+            "string"
+           ]
+          }
+         },
+         "types": [
+          "object"
+         ]
+        },
+        "version": {
+         "types": [
+          "string"
+         ]
+        }
+       },
+       "types": [
+        "object"
+       ]
+      },
+      "Seed": {
+       "types": [
+        "int"
+       ]
+      }
+     },
+     "types": [
+      "object"
+     ]
+    }
+   }
+  },
+  "RPCQuitGame": {
+   "count": 3,
+   "directions": [
+    "C2S",
+    "S2C"
+   ],
+   "first_example": "{}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{}",
+   "parse_errors": 0,
+   "schema": {}
+  },
+  "RPCServerInfo": {
+   "count": 1,
+   "directions": [
+    "S2C"
+   ],
+   "first_example": "{\"serverInfo\": {\"ServerOwnerGUID\": \"\", \"WorldUUID\": \"f6d0a3e1-f429-c574-48d1-b6a952b37e0c\", \"ServerUUID\": \"3b9ec470-d486-a251-50c7-13f80164eb9a\", \"ServerOwnerName\": \"NeUbivashka\", \"ChatHost\": \"127.0.0.1\", \"MaxUsers\": 32, \"MinUsersRequiredToPlay\": 1, \"ChatPort\": 444, \"GameModeEntityID\": 0, \"IsOpenedToMatchmakingForMorePlayers\": false}}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{\"serverInfo\": {\"ServerOwnerGUID\": \"\", \"WorldUUID\": \"f6d0a3e1-f429-c574-48d1-b6a952b37e0c\", \"ServerUUID\": \"3b9ec470-d486-a251-50c7-13f80164eb9a\", \"ServerOwnerName\": \"NeUbivashka\", \"ChatHost\": \"127.0.0.1\", \"MaxUsers\": 32, \"MinUsersRequiredToPlay\": 1, \"ChatPort\": 444, \"GameModeEntityID\": 0, \"IsOpenedToMatchmakingForMorePlayers\": false}}",
+   "parse_errors": 0,
+   "schema": {
+    "serverInfo": {
+     "fields": {
+      "ChatHost": {
+       "types": [
+        "string"
+       ]
+      },
+      "ChatPort": {
+       "types": [
+        "int"
+       ]
+      },
+      "GameModeEntityID": {
+       "types": [
+        "int"
+       ]
+      },
+      "IsOpenedToMatchmakingForMorePlayers": {
+       "types": [
+        "bool"
+       ]
+      },
+      "MaxUsers": {
+       "types": [
+        "int"
+       ]
+      },
+      "MinUsersRequiredToPlay": {
+       "types": [
+        "int"
+       ]
+      },
+      "ServerOwnerGUID": {
+       "types": [
+        "string"
+       ]
+      },
+      "ServerOwnerName": {
+       "types": [
+        "string"
+       ]
+      },
+      "ServerUUID": {
+       "types": [
+        "string"
+       ]
+      },
+      "WorldUUID": {
+       "types": [
+        "string"
+       ]
+      }
+     },
+     "types": [
+      "object"
+     ]
+    }
+   }
+  },
+  "RPCSetClientLocalPlayerEntity": {
+   "count": 1,
+   "directions": [
+    "S2C"
+   ],
+   "first_example": "{\"playerEntityID\": 4}",
+   "last_seen": "2026-10-12T03:33:42",
+   "latest_example": "{\"playerEntityID\": 4}",
+   "parse_errors": 0,
+   "schema": {
+    "playerEntityID": {
+     "types": [
+      "int"
+     ]
+    }
+   }
+  }
+ },
+ "updated": "2026-10-12T03:33:42"
+}
