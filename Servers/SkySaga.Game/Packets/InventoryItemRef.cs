@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets;
+﻿namespace SkySaga.Game.Packets;
 
 /// <summary>
 /// The compound value FUN_007E9440 reads. Shared by KillOccurred (36), DismantleFailed (57) and
@@ -86,18 +86,6 @@ public class InventoryItemRef
 
     internal static void WriteOptionalUuid(BitStream bitStream, Guid? value)
     {
-        if (value is null)
-        {
-            bitStream.Write0();
-
-            return;
-        }
-
-        bitStream.Write1();
-
-        var bytes = value.Value.ToByteArray();
-
-        for (var offset = 0; offset < 16; offset += 4)
-            bitStream.WriteBits(BitConverter.GetBytes(BitConverter.ToUInt32(bytes, offset)), 32, true);
+        bitStream.WriteClientUuid(value);
     }
 }

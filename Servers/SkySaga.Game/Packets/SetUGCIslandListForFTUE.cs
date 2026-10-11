@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets;
+﻿namespace SkySaga.Game.Packets;
 
 /// <summary>
 /// Ordinal 27, server to client. Reader: FUN_007FFC80 -> FUN_00BB3E50(1, 0x1B, ...).
@@ -54,18 +54,6 @@ public class SetUGCIslandListForFTUE : ISerializablePacket
     /// <summary>One presence bit, then the 16 bytes as four 32-bit words - same as ServerInfo.</summary>
     private static void WriteUuid(BitStream bitStream, Guid? value)
     {
-        if (value is null)
-        {
-            bitStream.Write0();
-
-            return;
-        }
-
-        bitStream.Write1();
-
-        var bytes = value.Value.ToByteArray();
-
-        for (var offset = 0; offset < 16; offset += 4)
-            bitStream.WriteBits(BitConverter.GetBytes(BitConverter.ToUInt32(bytes, offset)), 32, true);
+        bitStream.WriteClientUuid(value);
     }
 }

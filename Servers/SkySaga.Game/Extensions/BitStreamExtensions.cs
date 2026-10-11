@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace SkySaga.Game.Extensions;
 
@@ -236,6 +236,42 @@ public static class BitStreamExtensions
 
         if (value is not null)
             write(value);
+    }
+
+    /// <summary>
+    /// A uuid the way the client keeps it: one presence bit, then four 32-bit words, each written
+    /// like every other 32-bit field (the client byte-reverses on read). Word i is the i-th group of
+    /// 8 hex digits of the canonical string, read with its digits reversed: the client's formatter
+    /// prints each word low nibble first. So "a7cfad0a-9634-..." goes out as words 0xa0dafc7a,
+    /// 0x14456943, ... and the client prints (and compares with the web service's strings) exactly
+    /// "a7cfad0a-9634-...".
+    ///
+    /// Measured 2026-10-12: Guid.ToByteArray() words (the old encoding) made ServerInfo's owner
+    /// a7cfad0a-9634-4154-8b33-95425743f4ae arrive as 7afcdaa0-1445-6943-2459-33b8ea4f3475.
+    /// </summary>
+    public static void WriteClientUuid(this BitStream bitStream, Guid? value)
+    {
+        if (value is null)
+        {
+            bitStream.Write0();
+
+            return;
+        }
+
+        bitStream.Write1();
+
+        var hex = value.Value.ToString("N");
+
+        for (var i = 0; i < 4; i++)
+        {
+            var chunk = hex.Substring(i * 8, 8).ToCharArray();
+
+            Array.Reverse(chunk);
+
+            var word = Convert.ToUInt32(new string(chunk), 16);
+
+            bitStream.WriteBits(BitConverter.GetBytes(System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(word)), 32, true);
+        }
     }
 
     public static void WriteGuid(this BitStream bitStream, Guid? value)

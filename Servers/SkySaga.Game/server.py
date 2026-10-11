@@ -29,6 +29,8 @@ http://127.0.0.1:5001 - the proxy sorts out which backend answers.
 
 import asyncio
 import datetime
+import json
+import os
 import lzma
 import ssl
 import sys
@@ -51,7 +53,31 @@ HTTPS_BACKEND = ("127.0.0.1", 5443)
 CERT_FILE = Path(r"C:\SkySagaCerts\server.crt")
 KEY_FILE = Path(r"C:\SkySagaCerts\server.key")
 
-PLAYER_NAME = "EDITz"
+# The single local account. Created once and kept in Data/account.json (not in git), so the
+# character keeps the same uuid across restarts. SKYSAGA_PLAYER_NAME overrides the name only
+# when the file is first created; edit the file to rename later.
+ACCOUNT_FILE = Path(__file__).resolve().parent / "Data" / "account.json"
+DEFAULT_PLAYER_NAME = os.environ.get("SKYSAGA_PLAYER_NAME", "NeUbivashka")
+
+
+def _load_account():
+    if ACCOUNT_FILE.exists():
+        account = json.loads(ACCOUNT_FILE.read_text(encoding="utf-8"))
+    else:
+        account = {}
+    changed = False
+    for key, default in (("name", DEFAULT_PLAYER_NAME), ("characterUuid", None), ("homeBiome", "Desert")):
+        if not account.get(key):
+            account[key] = default if default is not None else str(uuid.uuid4())
+            changed = True
+    if changed:
+        ACCOUNT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        ACCOUNT_FILE.write_text(json.dumps(account, indent=2), encoding="utf-8")
+    return account
+
+
+ACCOUNT = _load_account()
+PLAYER_NAME = ACCOUNT["name"]
 
 
 # ---------------------------------------------------------------------------
@@ -87,8 +113,10 @@ sys.stdout = _TimestampedStdout(sys.stdout)
 
 app = Flask(__name__)
 
-# In-memory "database" for the single local account.
-_state = {"character_uuid": None}
+# The account's character. Always present: the 36731 client never calls _create (it asks
+# characters/_active, and with character=null it walked into the world with characterUUID ""
+# and the world owner GUID did not match the player).
+_state = {"character_uuid": ACCOUNT["characterUuid"]}
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +258,7 @@ def _character():
     return {
         "uuid": _state["character_uuid"],
         "name": PLAYER_NAME,
-        "homeBiome": "Desert",
+        "homeBiome": ACCOUNT["homeBiome"],
         "positionInList": 0,
     }
 
@@ -268,8 +296,8 @@ def alpha10_characters_active():
 
 @app.route("/api/persistent-record/characters/_create", methods=["POST"])
 def alpha10_characters_create():
-    _state["character_uuid"] = str(uuid.uuid4())
-    print("=== alpha10 character created:", _state["character_uuid"], "===")
+    # One account, one character: creation hands back the existing uuid.
+    print("=== alpha10 character create ->", _state["character_uuid"], "===")
     return jsonify({"result": {"characterUUID": _state["character_uuid"]}}), 200
 
 
@@ -280,7 +308,7 @@ def get_guid():
     # ClientOwnerComponent expects. A mismatch here is what made home-island
     # locked items refuse placement.
     return jsonify({
-        "result": {"GUID": _state["character_uuid"] or "00000000-0000-0000-0000-000000000000"}
+        "result": {"GUID": _state["character_uuid"], "Name": PLAYER_NAME}
     }), 200
 
 

@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets;
+﻿namespace SkySaga.Game.Packets;
 
 /// <summary>
 /// Alpha 10 layout, read straight out of the client.
@@ -81,18 +81,6 @@ public class ServerInfo : ISerializablePacket
     /// </summary>
     private static void WriteUuid(BitStream bitStream, Guid? value)
     {
-        if (value is null)
-        {
-            bitStream.Write0();
-
-            return;
-        }
-
-        bitStream.Write1();
-
-        var bytes = value.Value.ToByteArray();
-
-        for (var offset = 0; offset < 16; offset += 4)
-            bitStream.WriteBits(BitConverter.GetBytes(BitConverter.ToUInt32(bytes, offset)), 32, true);
+        bitStream.WriteClientUuid(value);
     }
 }

@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Managers.Player;
+﻿namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
 {
@@ -23,7 +23,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         if (player.TryGetComponent<ClientPlayernameComponent>(out var clientPlayernameComponent))
             clientPlayernameComponent.Playername = !string.IsNullOrEmpty(save?.Playername)
                 ? save.Playername
-                : "NeUbivashka";
+                : Util.CharacterName();
 
         if (player.TryGetComponent<ClientHealthComponent>(out var clientHealthComponent))
         {

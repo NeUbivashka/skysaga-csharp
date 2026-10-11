@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets;
+﻿namespace SkySaga.Game.Packets;
 
 public static class ClientConnected
 {
@@ -53,7 +53,7 @@ public static class ClientConnected
             WorldUuid = WorldUuid,
             ServerUuid = ServerUuid,
 
-            ServerOwnerName = "NeUbivashka",
+            ServerOwnerName = Util.CharacterName(),
 
             ChatHost = "127.0.0.1",
             ChatPort = 444,

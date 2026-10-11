@@ -116,6 +116,16 @@ public static class Util
 
     private static string? _characterUuid;
 
+    private static string? _characterName;
+
+    /// <summary>The account's character name, from the web service's /GetGUID (Data/account.json there).</summary>
+    public static string CharacterName()
+    {
+        CharacterUuid();
+
+        return _characterName ?? "NeUbivashka";
+    }
+
 
 
 
@@ -146,7 +156,12 @@ public static class Util
 
             using var document = System.Text.Json.JsonDocument.Parse(json);
 
-            _characterUuid = document.RootElement.GetProperty("result").GetProperty("GUID").GetString();
+            var result = document.RootElement.GetProperty("result");
+
+            _characterUuid = result.GetProperty("GUID").GetString();
+
+            if (result.TryGetProperty("Name", out var name))
+                _characterName = name.GetString();
         }
         catch (Exception exception)
         {

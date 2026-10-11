@@ -15,6 +15,7 @@ it was seen, and the first and latest example payloads.
     python rpc_observe.py [engine.log ...]     # default: the client's engine.log
 """
 
+import hashlib
 import json
 import re
 import sys
@@ -85,7 +86,13 @@ def main():
         if not log.exists():
             print(f"skip {log}: not found")
             continue
-        for raw in log.read_text(encoding="utf-8", errors="replace").splitlines():
+        text = log.read_text(encoding="utf-8", errors="replace")
+        digest = hashlib.sha1(text.encode("utf-8")).hexdigest()
+        if digest in data.setdefault("processed", []):
+            print(f"skip {log}: already harvested")
+            continue
+        data["processed"].append(digest)
+        for raw in text.splitlines():
             m = LINE.search(raw)
             if not m:
                 continue
