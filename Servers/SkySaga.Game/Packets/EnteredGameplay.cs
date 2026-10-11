@@ -52,6 +52,8 @@ public static class EnteredGameplay
             return true;
         }
 
+        SendIsLocal(connection);
+
         var playVideoStream = playVideo.Serialize();
 
         connection.Send(playVideoStream);
@@ -139,6 +141,52 @@ public static class EnteredGameplay
     private const float TrailingFloatValue = 1.0f;
 
     private static bool _teleportSent;
+
+    /// <summary>
+    /// Tell the owner its player entity is the local one: EntitySync carrying only "islocal" = true.
+    ///
+    /// This is what lifts the white screen. The client keeps islocal as bit 0x08 of the player
+    /// entity's flags byte (+0x81), and every local-player path gates on it. The portal fade does
+    /// too: FUN_0086B9C0 (entity events) and FUN_0086BD40 (tick) return early without it. With
+    /// the bit clear, the PortalFade that TeleportBegins leaves on ui_portalfade (screen 0x42) is
+    /// never faded out.
+    ///
+    /// It goes out as a parameter change, not in the initial EntityAdd, for two reasons:
+    ///  - the change itself is the trigger: FUN_0086B8A0 (on-parameters-changed) handles binding 17
+    ///    by firing entity event 0xB and, with the bit now set, requesting PortalFadeEnterBiome
+    ///    (+0x91 = 1, +0x92 = 0), which fades the white out;
+    ///  - in the initial add it crashed the client in READY_TO_PLAY (0x00D45EDC, see WorldManager).
+    ///
+    /// Owner-only, because islocal must stay false for every other client.
+    ///
+    /// Timing, measured (run 2026-10-11 14:40): a copy sent in the same tick as EnteredGameplay
+    /// was ignored - flags stayed 0xF0. The same packet 2 s later applied at once: flags 0xF8,
+    /// ui_portalfade +0x138 = 1, frame went from white (avg 250) to the intro video (avg ~20).
+    /// So the client drops entity syncs for a moment after entering gameplay. The delay is an
+    /// empirical stand-in; the proper trigger (whatever the client waits for) is still to be found.
+    /// See docs/client/loading-screen.md.
+    /// </summary>
+    private static void SendIsLocal(PlayerConnection connection)
+    {
+        _ = Task.Delay(IsLocalDelay).ContinueWith(_ =>
+        {
+            if (connection.PlayerEntity is null)
+                return;
+
+            var entitySync = new EntitySync
+            {
+                Id = connection.PlayerEntity.Id,
+                SyncData = connection.PlayerEntity.GetSyncData(newEntity: false, forOwner: true, onlyParameter: "islocal")
+            };
+
+            connection.Send(entitySync);
+
+            Console.WriteLine($"[EnteredGameplay] Sent EntitySync(EntityId={entitySync.Id}, islocal=true) to the owner, "
+                + $"{IsLocalDelay.TotalMilliseconds:0} ms after gameplay entry.");
+        });
+    }
+
+    private static readonly TimeSpan IsLocalDelay = TimeSpan.FromSeconds(2);
 
     private static void SendTeleportBegins(PlayerConnection connection)
     {

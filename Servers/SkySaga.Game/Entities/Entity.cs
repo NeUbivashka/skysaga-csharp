@@ -52,18 +52,32 @@ public class Entity
         return true;
     }
 
-    public BitStream GetSyncData(bool newEntity)
+    /// <param name="forOwner">
+    /// True when the recipient is the client that controls this entity. Only that client may see
+    /// Player.islocal = true - see PlayerAspectsComponent.IsLocal.
+    /// </param>
+    /// <param name="onlyParameter">
+    /// Sync just this one parameter, regardless of dirty state, and leave the dirty bits alone.
+    /// For per-recipient pushes that must not swallow changes meant for every client.
+    /// </param>
+    public BitStream GetSyncData(bool newEntity, bool forOwner = false, string? onlyParameter = null)
     {
         var bitArray = new BitArray(_entityData.SyncedParametersCount);
 
         var parameterBitStream = new BitStream();
 
+        foreach (var component in _components.Values)
+            component.SyncingForOwner = forOwner;
+
         for (var i = 0; i < _entityData.SyncedParametersCount; i++)
         {
-            if (!newEntity && !_sync[i])
+            if (onlyParameter is null && !newEntity && !_sync[i])
                 continue;
 
             if (!_entityData.TryGetSyncedParameterInfo(i, out var componentName, out var parameterName))
+                continue;
+
+            if (onlyParameter is not null && !parameterName.Equals(onlyParameter, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             if (!_components.TryGetValue(componentName, out var component))
@@ -75,6 +89,9 @@ public class Entity
 
             }
         }
+
+        foreach (var component in _components.Values)
+            component.SyncingForOwner = false;
 
         var syncData = new BitStream();
 
@@ -100,7 +117,8 @@ public class Entity
         if (parameterBitStream.GetNumberOfBitsUsed() > 0)
             syncData.Write(parameterBitStream);
 
-        _sync.SetAll(false);
+        if (onlyParameter is null)
+            _sync.SetAll(false);
 
         return syncData;
     }

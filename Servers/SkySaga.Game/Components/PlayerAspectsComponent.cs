@@ -13,9 +13,27 @@ public class PlayerAspectsComponent : Component
     public string? Tags { get; set => SetIfChanged(ref field, value); }
     public int AccountLevel { get; set => SetIfChanged(ref field, value); }
 
+    /// <summary>
+    /// "islocal" (clientplayeraspectscomponent binding 17). Not stored: it is true exactly when the
+    /// sync data is going to the entity's owner, false for every other client.
+    ///
+    /// The client keeps it in the player entity's flags (+0x81 bit 0x08). Every local-player path
+    /// gates on that bit, the portal fade among them: FUN_0086B9C0 / FUN_0086BD40 return
+    /// early without it. Without the bit, the white PortalFade that TeleportBegins leaves on screen
+    /// is never faded out (PortalFadeEnterBiome / CancelFade on ui_portalfade, screen 0x42).
+    /// That was the white screen. See docs/client/loading-screen.md.
+    /// </summary>
+    public bool IsLocal => SyncingForOwner;
+
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
-        if (parameterName.Equals(nameof(CanEditMap), StringComparison.OrdinalIgnoreCase))
+        if (parameterName.Equals(nameof(IsLocal), StringComparison.OrdinalIgnoreCase))
+        {
+            bitStream.Write(IsLocal);
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(CanEditMap), StringComparison.OrdinalIgnoreCase))
         {
             bitStream.Write(CanEditMap);
 

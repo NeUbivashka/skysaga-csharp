@@ -10,6 +10,12 @@ public abstract class Component
 
     public event ParameterChangedEventHandler? ParameterChanged;
 
+    /// <summary>
+    /// True while Entity.GetSyncData is building sync data for the client that owns this entity.
+    /// Lets per-recipient parameters (Player's "islocal") differ between the owner and everyone else.
+    /// </summary>
+    public bool SyncingForOwner { get; internal set; }
+
     protected bool SetIfChanged<T>(ref T field, T value, [CallerMemberName] string? parameterName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))
