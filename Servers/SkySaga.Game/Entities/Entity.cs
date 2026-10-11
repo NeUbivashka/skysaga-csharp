@@ -105,16 +105,37 @@ public class Entity
 
         bitArray.CopyTo(data, 0);
 
-        // Also rounded up: with 169 bits, Count / 32 is 5 and the last 9 bits would keep the wrong
-        // byte order.
-        for (int i = 0; i < wordCount; i++)
+        // The client's mask reader (FUN_00B44AD0) reads each full 32-bit word and byte-reverses it,
+        // so full words go big-endian. The tail (Count % 32 bits, 9 for Player) is read right-aligned
+        // into a little-endian int and swapped only on a big-endian host (FUN_00EA76A0 is an ntohl
+        // test), so never on x86: the tail stays in CopyTo's natural order. Reversing it too, as this
+        // used to, put parameters 160..168 outside the bits the client reads, so they never synced.
+        for (int i = 0; i < bitArray.Count / 32; i++)
             Array.Reverse(data, i * 4, 4);
 
-        syncData.WriteBits(data, (uint)bitArray.Count);
+        syncData.WriteBits(data, (uint)bitArray.Count, true);
 
-        syncData.WriteBits(BitConverter.GetBytes(parameterBitStream.GetNumberOfBitsUsed()), 32 - Util.NumBitsRequiredUInt32(0x20000));
+        // The parameter block length is read by FUN_007D7490, the same reader as the outer length in
+        // EntityAdd/EntitySync: an escape bit (set = 32-bit length, clear = 18-bit length), then the
+        // length. The escape bit was missing here. The client took the top bit of our length as the
+        // escape, folded the first parameter bit into the length, and read every parameter one bit
+        // late, for every entity in every EntityAdd and EntitySync. A lone "islocal" bool was read
+        // from whatever followed the packet's last bit. That is why it was accepted "sometimes" and
+        // then cleared by an identical copy (measured with Tools/trace/trace_islocal.py).
+        var parameterBits = parameterBitStream.GetNumberOfBitsUsed();
 
-        if (parameterBitStream.GetNumberOfBitsUsed() > 0)
+        if (parameterBits <= 0x20000)
+        {
+            syncData.Write0();
+            syncData.WriteBits(BitConverter.GetBytes(parameterBits), 32 - Util.NumBitsRequiredUInt32(0x20000), true);
+        }
+        else
+        {
+            syncData.Write1();
+            syncData.WriteBits(BitConverter.GetBytes(parameterBits), 32, true);
+        }
+
+        if (parameterBits > 0)
             syncData.Write(parameterBitStream);
 
         if (onlyParameter is null)

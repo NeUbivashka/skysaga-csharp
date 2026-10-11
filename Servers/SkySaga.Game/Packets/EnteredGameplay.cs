@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 namespace SkySaga.Game.Packets;
 
@@ -172,10 +172,11 @@ public static class EnteredGameplay
     ///
     /// Owner-only, because islocal must stay false for every other client.
     ///
-    /// Timing, measured (run 2026-10-11 14:40): a copy sent in the same tick as EnteredGameplay
-    /// was ignored - flags stayed 0xF0. A copy 2 s later applied (flags 0xF8, ui_portalfade
-    /// +0x138 = 1, frame white -> intro video). The delay is an empirical stand-in; the proper
-    /// trigger (whatever the client waits for) is still to be found.
+    /// Timing: sent on the next server tick after EnteredGameplay. The old observations ("a copy in
+    /// the same tick was ignored", "accepted in some runs", "cleared by itself ~4 s later") were all
+    /// one bug: Entity.GetSyncData lacked the escape bit before the parameter-block length, so the
+    /// client read the bool from the bits after the packet's end. Fixed there; traced with
+    /// Tools/trace/trace_islocal.py (2026-10-12: first copy applied, later copies are no-ops).
     ///
     /// The send itself happens in PlayerConnection.Tick, on the server thread - see the note on
     /// PlayerConnection.IsLocalDueUtc for the race that made it unreliable from a Task.Delay.
@@ -183,17 +184,12 @@ public static class EnteredGameplay
     /// </summary>
     private static void SendIsLocal(PlayerConnection connection)
     {
-        // Five copies, 2..10 s, sent from the server thread (PlayerConnection.Tick). Measured: a single
-        // copy at 2 s is accepted in some runs and ignored in others. The first copy that lands lifts
-        // the fade, and later copies are no-ops because the client keeps the last value it received.
-        // Open: about 4 s later the client clears islocal by itself and stops sending EntityMoved.
-        // The white does not come back, but local-player control does not survive it.
+        // Immediately, plus one safety copy a second later (a no-op if the first applied: the client
+        // only reacts to a change of the value).
         var now = DateTime.UtcNow;
-        for (var s = 2; s <= 10; s += 2)
-            connection.IsLocalDueUtc.Enqueue(now + TimeSpan.FromSeconds(s));
+        connection.IsLocalDueUtc.Enqueue(now);
+        connection.IsLocalDueUtc.Enqueue(now + TimeSpan.FromSeconds(1));
     }
-
-    private static readonly TimeSpan IsLocalDelay = TimeSpan.FromSeconds(2);
 
     private static void SendTeleportBegins(PlayerConnection connection)
     {

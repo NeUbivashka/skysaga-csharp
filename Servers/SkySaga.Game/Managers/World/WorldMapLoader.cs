@@ -115,6 +115,24 @@ public static class WorldMapLoader
                 for (int cz = 0; cz < sizeZ; cz++)
                     chunkManager.GetOrCreateChunk(new Vector3Int(cx, cy, cz));
 
+        // SKYSAGA_SOLID_FLOOR=1: fill every chunk of the bottom layer completely with block 1. A full
+        // 32-voxel slab is a floor whatever axis order the client uses for chunk data, so it tells an
+        // axis-order mismatch apart from other causes (the player falling through the 2-layer floor).
+        if (Environment.GetEnvironmentVariable("SKYSAGA_SOLID_FLOOR") == "1")
+        {
+            for (int cx = 0; cx < sizeX; cx++)
+                for (int cz = 0; cz < sizeZ; cz++)
+                {
+                    var chunk = chunkManager.GetOrCreateChunk(new Vector3Int(cx, 0, cz));
+                    for (int x = 0; x < 32; x++)
+                        for (int y = 0; y < 32; y++)
+                            for (int z = 0; z < 32; z++)
+                                chunk.SetVoxel(x, y, z, 1, 0);
+                }
+
+            Console.WriteLine("[WorldMapLoader] SKYSAGA_SOLID_FLOOR - bottom chunk layer filled solid.");
+        }
+
         // MapSpec.Ftue hard-coded slot 11 (MapSizes) = 7 = MapSize_10x5x10, while this map is
         // sizeX x sizeY x sizeZ. The client then expected a 10x5x10 world and lit it from a top
         // the server never sent. Describe the map we actually load.
