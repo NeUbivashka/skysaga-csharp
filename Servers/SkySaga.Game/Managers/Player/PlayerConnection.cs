@@ -1,4 +1,4 @@
-﻿using SkySaga.Game.Packets;
+using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
 
@@ -184,20 +184,25 @@ public class PlayerConnection
         if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
             health.Revive();
 
+        Teleport(SpawnPosition, SpawnYawDegrees);
+
+        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {SpawnPosition}.");
+    }
+
+    public void Teleport(Vector3 position, float yawDegrees)
+    {
         if (PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform))
         {
-            transform.Position = SpawnPosition;
-            transform.YawDegrees = SpawnYawDegrees;
+            transform.Position = position;
+            transform.YawDegrees = yawDegrees;
         }
 
         Send(new PlayerSpawned
         {
             EntityId = PlayerEntity.Id,
-            Position = SpawnPosition,
-            YawDegrees = SpawnYawDegrees
+            Position = position,
+            YawDegrees = yawDegrees
         });
-
-        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {SpawnPosition}.");
     }
 
     public void Send(BitStream bitStream)

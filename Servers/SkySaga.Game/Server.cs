@@ -18,6 +18,8 @@ public class Server : IDisposable
 
     private readonly Dictionary<ulong, PlayerConnection> _connections = [];
     private readonly AiManager _aiManager;
+    private readonly ChatCommands _chatCommands;
+    private readonly System.Collections.Concurrent.ConcurrentQueue<(string Text, TaskCompletionSource<string?> Reply)> _commands = new();
 
     public Server(IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager, string password = "Something about penguins\0", ushort port = 42069)
     {
@@ -28,6 +30,7 @@ public class Server : IDisposable
         _port = port;
 
         _aiManager = new AiManager(_worldManager);
+        _chatCommands = new ChatCommands(_worldManager, _playerInitializer, _playerConnectionManager);
 
         _peer = RakPeerInterface.GetInstance();
 
@@ -69,12 +72,39 @@ public class Server : IDisposable
         }
 
         ProcessPackets();
+        ProcessCommands();
 
         _aiManager.Tick();
 
         ProcessMaps();
         ProcessConnections();
         Autosave();
+    }
+
+    public Task<string?> RunCommandAsync(string nickname, string text)
+    {
+        var reply = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        _commands.Enqueue((text, reply));
+
+        return reply.Task;
+    }
+
+    private void ProcessCommands()
+    {
+        while (_commands.TryDequeue(out var command))
+        {
+            try
+            {
+                var connection = _connections.Values.FirstOrDefault(c => c.IsPlayerInitialized);
+
+                command.Reply.SetResult(connection is null ? "No player in the world." : _chatCommands.Execute(connection, command.Text));
+            }
+            catch (Exception exception)
+            {
+                command.Reply.SetResult($"Error: {exception.Message}");
+            }
+        }
     }
 
     private void Autosave()

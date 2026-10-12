@@ -243,6 +243,19 @@ public class IrcClient : IDisposable
 
         var message = line[(messageStart + 1)..];
 
+        if (_server.CommandHandler is { } handler && message.Length > 1 && message[0] is '!' or '/')
+        {
+            var reply = await handler(_nickname, message[1..]);
+
+            if (reply is not null)
+            {
+                foreach (var replyLine in reply.Split('\n'))
+                    await SendAsync($":Server PRIVMSG {target} :{replyLine}");
+
+                return;
+            }
+        }
+
         if (target.StartsWith("#"))
         {
             // Channel message

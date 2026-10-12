@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
@@ -137,6 +137,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayerAspectsComponent.CanDamageDevices = true;
             clientPlayerAspectsComponent.IsDebugPlayer = true;
             clientPlayerAspectsComponent.AccountLevel = 2;
+            clientPlayerAspectsComponent.Permissions = [.. PlayerAspectsComponent.DefaultPermissions];
         }
 
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
@@ -461,7 +462,21 @@ public class PlayerInitializer(IWorldManager worldManager)
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, string itemName, int count = 1)
         => CreateAndEquipInventoryItem(inventory, slot, Util.ComputeCrc32(itemName), count);
 
-    private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
+    public Entity? GiveItem(ClientInventoryComponent inventory, string itemName, int count)
+    {
+        var free = inventory.InventoryEntityList.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
+
+        if (free < 0)
+            return null;
+
+        var item = CreateAndEquipInventoryItem(inventory, free, Util.ComputeCrc32(itemName), count);
+
+        inventory.InventoryEntityList = [.. inventory.InventoryEntityList];
+
+        return item;
+    }
+
+    private Entity? CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
         var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1";
@@ -498,5 +513,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             inventory.InventoryEntityList[slot] = item.Id;
         }
+
+        return item;
     }
 }

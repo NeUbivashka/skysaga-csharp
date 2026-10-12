@@ -13,6 +13,8 @@ public class IrcServer(ILogger<IrcServer> logger) : IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
     private Task? _serverTask;
 
+    public Func<string, string, Task<string?>>? CommandHandler { get; set; }
+
     /// <summary>
     /// Starts the IRC server.
     /// </summary>

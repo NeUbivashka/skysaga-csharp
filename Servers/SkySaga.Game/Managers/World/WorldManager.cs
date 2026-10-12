@@ -215,25 +215,39 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 continue;
             }
 
-            var loadoutItems = CreatureLoadoutTable.CreateItems(spec.Name, EntityManager);
-
-            if (!EntityManager.TryCreateEntity(spec.Name, out var entity))
+            if (SpawnCreature(spec.Name, position).Count == 0)
             {
                 Console.WriteLine($"[WorldManager] Unknown entity name '{spec.Name}' in WorldMap.json, skipping.");
                 continue;
             }
 
-            if (entity.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransform))
-                smoothedTransform.Position = position;
-            else if (entity.TryGetComponent<TransformComponent>(out var transform))
-                transform.Position = position;
-
-            CreatureLoadoutTable.Equip(entity, loadoutItems);
-
             spawned++;
         }
 
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
+    }
+
+    public List<Entity> SpawnCreature(string name, Vector3 position)
+    {
+        var loadoutItems = CreatureLoadoutTable.CreateItems(name, EntityManager);
+
+        if (!EntityManager.TryCreateEntity(name, out var entity))
+        {
+            foreach (var item in loadoutItems)
+                if (item.Item is { } itemEntity)
+                    EntityManager.RemoveEntity(itemEntity);
+
+            return [];
+        }
+
+        if (entity.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransform))
+            smoothedTransform.Position = position;
+        else if (entity.TryGetComponent<TransformComponent>(out var transform))
+            transform.Position = position;
+
+        CreatureLoadoutTable.Equip(entity, loadoutItems);
+
+        return [.. loadoutItems.Select(item => item.Item).OfType<Entity>(), entity];
     }
 
     public void SendInitialChunks(PlayerConnection connection)

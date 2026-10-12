@@ -2,6 +2,7 @@ namespace SkySaga.Game;
 
 public class IrcServerHostedService(
     IrcServer ircServer,
+    Server server,
     ILogger<IrcServerHostedService> logger) : IHostedService
 {
     private readonly IrcServer _ircServer = ircServer ?? throw new ArgumentNullException(nameof(ircServer));
@@ -10,6 +11,7 @@ public class IrcServerHostedService(
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting IRC server...");
+        _ircServer.CommandHandler = server.RunCommandAsync;
         _ = _ircServer.StartAsync();
         _logger.LogInformation("IRC server started");
 
