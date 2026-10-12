@@ -23,6 +23,9 @@
     <None Update="Data\Durability.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\Materials.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\WorldMap.json" Condition="Exists('Data\WorldMap.json')">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

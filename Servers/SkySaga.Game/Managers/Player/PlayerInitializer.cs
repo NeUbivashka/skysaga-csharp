@@ -387,9 +387,21 @@ public class PlayerInitializer(IWorldManager worldManager)
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
+        var hasMaterials = MaterialTable.TryGet(nameHash, out var materials);
 
-        if (_entityManager.TryCreateEntity(durable ? "DurableInventoryItem" : "BasicInventoryItem", out var item))
+        var entityType = (durable, hasMaterials) switch
         {
+            (true, true) => "MaterialDurableInventoryItem",
+            (false, true) => "MaterialBasedInventoryItem",
+            (true, false) => "DurableInventoryItem",
+            _ => "BasicInventoryItem"
+        };
+
+        if (_entityManager.TryCreateEntity(entityType, out var item))
+        {
+            if (hasMaterials && item.TryGetComponent<MaterialCompositionComponent>(out var composition))
+                composition.MaterialList = materials;
+
             if (durable && item.TryGetComponent<ClientDurabilityComponent>(out var durability))
             {
                 durability.DurabilityMax = durabilityMax;
