@@ -11,6 +11,7 @@ ATTACHMENT_SLOTS = ["HeadTop", "HeadSides", "HeadFront", "Back", "Tail"]
 CUSTOMISATION_SLOTS = ["PatternA", "PatternB", "PatternEmissive", "PatternPalette",
                        "DecalA", "DecalB", "DecalPalette", "Eye", "Mouth"]
 GENDERS = {"Male": 0, "Female": 1}
+TRIBE_CATEGORIES = {"Skin": "CharacterSkin", "Eye": "CharacterEyes"}
 
 
 class Bits:
@@ -47,6 +48,10 @@ def main():
     def index(table, name):
         return tables[table].get(name or "", 0)
 
+    tribe_materials = {}
+    for m in sorted(d["Materials"], key=lambda m: (not m["IsDefaultForCategory"], m["SortId"], m["Index"])):
+        tribe_materials.setdefault((m["Category"], m["LockedToTribe"]), m["Name"])
+
     def first(values, key):
         values = values.get("Values", [])
         return values[0].get(key, "") if values else ""
@@ -64,6 +69,8 @@ def main():
         b.count(len(MATERIAL_SLOTS), 2, 3)
         for slot in MATERIAL_SLOTS:
             name = first(materials.get(slot, {}).get("ValidMaterials", {}), "Material")
+            if not name and slot in TRIBE_CATEGORIES:
+                name = tribe_materials.get((TRIBE_CATEGORIES[slot], e.get("Tribe")), "")
             b.ranged(index("Materials", name), widths["Materials"])
 
         attachments = e.get("AttachmentEntries", {})
