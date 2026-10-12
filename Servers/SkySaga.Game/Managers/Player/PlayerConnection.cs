@@ -150,6 +150,7 @@ public class PlayerConnection
             PacketId.SetCharacterCustomisationData => SetCharacterCustomisationData.Handle(this, bitStream),
             PacketId.SaveCharacterName => SaveCharacterName.Handle(this, bitStream),
             PacketId.RequestEquipInventoryItem => RequestEquipInventoryItem.Handle(this, bitStream),
+            PacketId.RequestUnEquipInventoryItem => RequestUnEquipInventoryItem.Handle(this, bitStream),
             PacketId.EnteredGameplay => EnteredGameplay.Handle(this, bitStream),
             PacketId.FullScreenVideoCompleted => FullScreenVideoCompleted.Handle(this, bitStream),
             PacketId.RequestStartAnimationSequence => RequestStartAnimationSequenceReceived.Handle(this, bitStream),

@@ -33,12 +33,28 @@ public class ClientEquippedItemComponent : Component
     public const uint SlotCount = 9;
 
     /// <summary>Item table index per slot (see ItemTable); 0 = empty.</summary>
-    public ushort[] EquippedItems { get; set => SetIfChanged(ref field, value); } = new ushort[SlotCount];
+    public ushort[] EquippedItems { get; set => SetIfChanged(ref field, value, "EquippedItemSpecs"); } = new ushort[SlotCount];
 
     /// <summary>The inventory item's UUID per slot, linking the equipped item to its inventory entity.</summary>
-    public Guid?[] EquippedItemUuids { get; set => SetIfChanged(ref field, value); } = new Guid?[SlotCount];
+    public Guid?[] EquippedItemUuids { get; set => SetIfChanged(ref field, value, "EquippedItemSpecs"); } = new Guid?[SlotCount];
 
     public bool AutoEquip { get; set => SetIfChanged(ref field, value); } = true;
+
+    /// <summary>Put an item (table index, 0 = empty) into an equipment slot.</summary>
+    public void SetSlot(uint slot, ushort itemIndex, Guid? itemUuid)
+    {
+        if (slot >= SlotCount)
+            return;
+
+        var items = (ushort[])EquippedItems.Clone();
+        var uuids = (Guid?[])EquippedItemUuids.Clone();
+
+        items[slot] = itemIndex;
+        uuids[slot] = itemIndex != 0 ? itemUuid : null;
+
+        EquippedItemUuids = uuids;
+        EquippedItems = items;
+    }
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {

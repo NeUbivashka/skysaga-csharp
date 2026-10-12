@@ -13,6 +13,8 @@ Conventions: "ranged max M" is `32 - clz32(M)` bits. "Full-width u32" is 32 bits
 |---:|---|---|---|
 | 18 | UISettingsSetHotbarSlotItemSpec | `FUN_009C3BE0` | slot ranged max 5 (3 bits), hand ranged max 2 (2 bits, 0 = left, 1 = right), item reference (writer `FUN_0085A490`) |
 | 19 | UISettingsSelectHotbarSlot | `FUN_009C30B0` | slot ranged max 5 (3 bits) |
+| 15 | RequestEquipInventoryItem | `FUN_00956A20` | location (equipment slot) ranged max 9 (4 bits), inventoryOwner full-width u32, inventory slot ranged max 0xF9 (8 bits, `FUN_008575B0`), fromUserCommand 1 bit, findSuitableSlot 1 bit |
+| 16 | RequestUnEquipInventoryItem | `FUN_00956F70` | location ranged max 9 (4 bits), fromUserCommand 1 bit |
 | 17 | UISettingsSetGameplayCameraState | `FUN_009C37D0` | third-person camera 1 bit, state ranged max 1 (1 bit, unknown) |
 | 20 | UISettingsSetMiniMapSettings | `FUN_009C4080` | 2 bools, then two lists (`FUN_009C4C90`: count escaped at 0x19; `FUN_009C2F80`). Not handled yet |
 | 21 | UISettingsSetUISettings | `FUN_009C4420` | see below, 8 bits |
@@ -71,3 +73,14 @@ server-side counterpart, not yet synced.
 Device, Backpack, AdditionalHeadFeature (names at `0x013415D4`). `autoequip` (sync 9) is 1 bit, and
 `legactions` (sync 102) is a presence bit + u32. With armour equipped and the camera in third person,
 the customised character shows in the world (verified 2026-10-12).
+
+Picking a hotbar slot sends RequestUnEquipInventoryItem for the hand being freed, then
+RequestEquipInventoryItem for the slot's item, then SelectHotbarSlot. The client only holds the
+item after equippeditemspecs says so. Pressing the active slot again unequips both hands. Items
+are matched by UUID, so inventory item UUIDs must survive a relog (they are saved with the
+inventory). With the pickaxe held, the right mouse button swings it: the client sends
+EntityPerformedAbility (77) and RunActionList (29, action list 1731) about every 0.35 s.
+
+Server-side component properties that do not share the sync parameter's name must pass that name
+to `SetIfChanged`. Otherwise runtime changes never set the parameter's mask bit and never reach the
+client.

@@ -61,5 +61,6 @@ public class PlayerSaveData
         public int Slot { get; set; }
         public uint NameHash { get; set; }
         public int Count { get; set; }
+        public string? ItemUuid { get; set; }
     }
 }

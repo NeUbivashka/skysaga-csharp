@@ -176,7 +176,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                     if (entry.Slot < 0 || entry.Slot >= clientInventoryComponent.MaxInventorySlots)
                         continue;
 
-                    CreateAndEquipInventoryItem(clientInventoryComponent, entry.Slot, entry.NameHash, entry.Count);
+                    CreateAndEquipInventoryItem(clientInventoryComponent, entry.Slot, entry.NameHash, entry.Count, entry.ItemUuid);
                 }
             }
             else
@@ -315,7 +315,8 @@ public class PlayerInitializer(IWorldManager worldManager)
                 {
                     Slot = slot,
                     NameHash = inventoryItemComponent.InventorySlotData.Name.Value,
-                    Count = inventoryItemComponent.InventorySlotData.Count
+                    Count = inventoryItemComponent.InventorySlotData.Count,
+                    ItemUuid = inventoryItemComponent.InventorySlotData.ItemUUID
                 });
             }
         }
@@ -413,7 +414,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
 
 
-    private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1)
+    private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         if (_entityManager.TryCreateEntity("BasicInventoryItem", out var item))
         {
@@ -421,7 +422,8 @@ public class PlayerInitializer(IWorldManager worldManager)
             {
                 inventoryItemComponent.InventorySlotData.Name = nameHash;
                 inventoryItemComponent.InventorySlotData.Count = count;
-                inventoryItemComponent.InventorySlotData.ItemUUID = Util.NewGuid();
+                // Kept across sessions: the hotbar and the equipped items refer to items by UUID.
+                inventoryItemComponent.InventorySlotData.ItemUUID = itemUuid ?? Util.NewGuid();
             }
 
             inventory.InventoryEntityList[slot] = item.Id;

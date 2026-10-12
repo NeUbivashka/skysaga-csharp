@@ -31,7 +31,7 @@ public class ClientSettingsComponent : Component
     public const uint LastActivatedSlotMax = HotbarSlotCount - 1;
 
     /// <summary>Hotbar items per slot: [slot * 2] = left hand, [slot * 2 + 1] = right hand.</summary>
-    public InventoryItemRef?[] HotbarItems { get; set => SetIfChanged(ref field, value); } = new InventoryItemRef?[HotbarSlotCount * 2];
+    public InventoryItemRef?[] HotbarItems { get; set => SetIfChanged(ref field, value, "HotbarSlotResources"); } = new InventoryItemRef?[HotbarSlotCount * 2];
 
     public uint LastActivatedSlot { get; set => SetIfChanged(ref field, Math.Min(value, LastActivatedSlotMax)); }
 
@@ -46,17 +46,17 @@ public class ClientSettingsComponent : Component
         HotbarItems = items;
     }
 
-    public bool DisableAutoQuestTracking { get; set => SetIfChanged(ref field, value); }
-    public bool DisableSocialNotifications { get; set => SetIfChanged(ref field, value); }
-    public bool DisableMysteryBoxNotifications { get; set => SetIfChanged(ref field, value); }
-    public uint DisplayTimeMode { get; set => SetIfChanged(ref field, Math.Min(value, DisplayTimeModeMax)); }
-    public uint QuestTrackerSort { get; set => SetIfChanged(ref field, Math.Min(value, QuestTrackerSortMax)); }
+    public bool DisableAutoQuestTracking { get; set => SetIfChanged(ref field, value, "UISettings"); }
+    public bool DisableSocialNotifications { get; set => SetIfChanged(ref field, value, "UISettings"); }
+    public bool DisableMysteryBoxNotifications { get; set => SetIfChanged(ref field, value, "UISettings"); }
+    public uint DisplayTimeMode { get; set => SetIfChanged(ref field, Math.Min(value, DisplayTimeModeMax), "UISettings"); }
+    public uint QuestTrackerSort { get; set => SetIfChanged(ref field, Math.Min(value, QuestTrackerSortMax), "UISettings"); }
 
     /// <summary>Third-person gameplay camera. Defaults on: in first person the player never sees their character.</summary>
-    public bool ThirdPersonCamera { get; set => SetIfChanged(ref field, value); } = true;
-    public uint CameraState { get; set => SetIfChanged(ref field, Math.Min(value, CameraStateMax)); }
+    public bool ThirdPersonCamera { get; set => SetIfChanged(ref field, value, "CurrentGameplayCameraState"); } = true;
+    public uint CameraState { get; set => SetIfChanged(ref field, Math.Min(value, CameraStateMax), "CurrentGameplayCameraState"); }
 
-    public bool ControlFlag { get; set => SetIfChanged(ref field, value); }
+    public bool ControlFlag { get; set => SetIfChanged(ref field, value, "ControlSettings"); }
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
