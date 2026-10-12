@@ -176,6 +176,8 @@ public class PlayerInitializer(IWorldManager worldManager)
 
                     CreateAndEquipInventoryItem(clientInventoryComponent, entry.Slot, entry.NameHash, entry.Count, entry.ItemUuid);
                 }
+
+                EnsureItem(clientInventoryComponent, save.Inventory, "Tool_Explorer_Generic_Pickaxe_1");
             }
             else
             {
@@ -191,6 +193,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 CreateAndEquipInventoryItem(clientInventoryComponent, 14, "Weapon_Forest_Royalist_Dagger_0", 1);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 15, "Weapon_Forest_Royalist_Sword_0", 1);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 16, "Tool_Explorer_Generic_Pickaxe_0", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Tool_Explorer_Generic_Pickaxe_1", 1);
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 17, "Stone", 10);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Clay", 10);
@@ -382,6 +385,19 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         equipped.EquippedItems = items;
         equipped.EquippedItemUuids = uuids;
+    }
+
+    private void EnsureItem(ClientInventoryComponent inventory, List<PlayerSaveData.InventoryEntry> saved, string itemName)
+    {
+        var crc = Util.ComputeCrc32(itemName);
+
+        if (saved.Any(e => e.NameHash == crc))
+            return;
+
+        var free = inventory.InventoryEntityList.IndexOf(0);
+
+        if (free >= 0)
+            CreateAndEquipInventoryItem(inventory, free, crc);
     }
 
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, string itemName, int count = 1)
