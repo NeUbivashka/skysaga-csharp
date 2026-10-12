@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SkySaga.Game.Components;
 
 public class ClientJobRankComponent : Component
@@ -6,12 +8,12 @@ public class ClientJobRankComponent : Component
 
     private static readonly bool SyncJobList = true;
     private static readonly bool SyncActiveJobChallengeList = false;
-    private static readonly bool SyncCompletedJobChallengeList = false;
+    private static readonly bool CompleteAllChallenges = Environment.GetEnvironmentVariable("SKYSAGA_COMPLETE_CHALLENGES") == "1";
     private static readonly bool SyncNumberOfJobChallengeScrollsUsed = false;
 
     private const int JobListMax = 64;
     private const int ActiveJobChallengeListMax = 1024;
-    private const int CompletedJobChallengeListMax = 16384;
+    private const uint CompletedJobChallengeListEscape = 0x4000;
 
     public bool LocationSpecificQuestsReady { get; set => SetIfChanged(ref field, value); } = true;
 
@@ -19,7 +21,7 @@ public class ClientJobRankComponent : Component
 
     public List<int> ActiveJobChallengeList { get; set => SetIfChanged(ref field, value); } = [];
 
-    public List<int> CompletedJobChallengeList { get; set => SetIfChanged(ref field, value); } = [];
+    public List<uint> CompletedJobChallengeList { get; set => SetIfChanged(ref field, value); } = CompleteAllChallenges ? AllChallengeCrcs() : [];
 
     public int NumberOfJobChallengeScrollsUsed { get; set => SetIfChanged(ref field, value); }
 
@@ -42,7 +44,17 @@ public class ClientJobRankComponent : Component
             return SyncActiveJobChallengeList && WriteList(bitStream, ActiveJobChallengeList, ActiveJobChallengeListMax);
 
         if (parameterName.Equals(nameof(CompletedJobChallengeList), StringComparison.OrdinalIgnoreCase))
-            return SyncCompletedJobChallengeList && WriteList(bitStream, CompletedJobChallengeList, CompletedJobChallengeListMax);
+        {
+            bitStream.WriteEscapedCount((uint)CompletedJobChallengeList.Count, CompletedJobChallengeListEscape);
+
+            foreach (var crc in CompletedJobChallengeList)
+            {
+                bitStream.Write1();
+                bitStream.WriteFullWidthUInt32(crc);
+            }
+
+            return true;
+        }
 
         if (parameterName.Equals(nameof(NumberOfJobChallengeScrollsUsed), StringComparison.OrdinalIgnoreCase))
         {
@@ -55,6 +67,16 @@ public class ClientJobRankComponent : Component
         }
 
         return false;
+    }
+
+    private static List<uint> AllChallengeCrcs()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "JobChallenges.txt");
+
+        if (!File.Exists(path))
+            return [];
+
+        return [.. File.ReadLines(path).Where(l => l.Length > 0).Select(l => Util.ComputeCrc32(l.Trim())).Order()];
     }
 
     private static bool WriteList(BitStream bitStream, List<int> values, int maxCount)
