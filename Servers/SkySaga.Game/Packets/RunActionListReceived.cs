@@ -9,6 +9,7 @@ public static class RunActionListReceived
     private const int PickaxeVoxelStrength = 75;
     private const int DefaultVoxelDurability = 160;
     private const byte Air = 0;
+    private static readonly bool SendVoxelDamage = Environment.GetEnvironmentVariable("SKYSAGA_VOXEL_DAMAGE") == "1";
 
     private static readonly ConcurrentDictionary<Vector3Int, int> VoxelDamage = new();
 
@@ -57,7 +58,8 @@ public static class RunActionListReceived
 
         if (damage < DefaultVoxelDurability)
         {
-            connection.PlayerConnectionManager.BroadcastToAll(new UpdateVoxelDamage
+            if (SendVoxelDamage)
+                connection.PlayerConnectionManager.BroadcastToAll(new UpdateVoxelDamage
             {
                 DamageId = damageId,
                 Amount = (uint)damage,
@@ -71,7 +73,8 @@ public static class RunActionListReceived
             return true;
         }
 
-        connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
+        if (SendVoxelDamage)
+            connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
         VoxelDamage.TryRemove(voxel, out _);
         var removedBlock = GetWorldVoxel(connection, voxel);
         SetWorldVoxel(connection, voxel, Air);
