@@ -1,4 +1,4 @@
-namespace SkySaga.Game;
+﻿namespace SkySaga.Game;
 
 public static class BlockCrcMapping
 {
@@ -20,6 +20,15 @@ public static class BlockCrcMapping
         { 0xCF8D9267, 36 },
         { 0x8AF2B179, 37 },
     };
+
+    public static uint? GetItemCrc(int blockId)
+    {
+        foreach (var (crc, id) in CrcToBlockId)
+            if (id == blockId && crc != 0)
+                return crc;
+
+        return null;
+    }
 
     public static int? GetBlockId(uint crc)
     {

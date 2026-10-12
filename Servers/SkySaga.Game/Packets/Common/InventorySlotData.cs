@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Packets.Common;
+﻿namespace SkySaga.Game.Packets.Common;
 
 public class InventorySlotData : ISerializableType
 {
@@ -16,6 +16,13 @@ public class InventorySlotData : ISerializableType
     public int CraftRandomSeed;
 
     public string? ItemUUID;
+
+    public InventorySlotData WithCount(int count)
+    {
+        var copy = (InventorySlotData)MemberwiseClone();
+        copy.Count = count;
+        return copy;
+    }
 
     public void Serialize(BitStream bitStream)
     {
