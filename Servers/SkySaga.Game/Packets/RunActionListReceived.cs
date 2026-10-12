@@ -1,100 +1,115 @@
-using System.Linq;
+using System.Collections.Concurrent;
+using System.Numerics;
 
 namespace SkySaga.Game.Packets;
 
 public static class RunActionListReceived
 {
-    private static readonly bool EchoToRequester = false;
+    private const int ChunkSize = 32;
+    private const int PickaxeVoxelStrength = 75;
+    private const int DefaultVoxelDurability = 160;
+    private const byte Air = 0;
 
-    private static readonly bool StartAnimationSequence = false;
-
-    private const byte SequenceIndexByte = 0x38;
-
-    private static readonly bool BroadcastToOthers = false;
+    private static readonly ConcurrentDictionary<Vector3Int, int> VoxelDamage = new();
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var totalBits = bitStream.GetNumberOfBitsUsed();
+        if (!bitStream.ReadFullWidthUInt32(out var actionListId)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
+        if (!ReadOptionalUInt32(bitStream, out _)) return false;
+        if (!ReadOptionalUInt32(bitStream, out _)) return false;
+        if (!ReadPosition(bitStream, out _)) return false;
+        if (!ReadDirection(bitStream, out _)) return false;
+        if (!bitStream.ReadInt32(0x20, out _)) return false;
 
-        var remainingBits = (uint)Math.Max(0, totalBits - 8);
-        var payload = new byte[(remainingBits + 7) / 8];
+        if (!bitStream.ReadInt32(1, out var hasVoxel)) return false;
+        if (!bitStream.ReadInt32(0x400, out var voxelX)) return false;
+        if (!bitStream.ReadInt32(0xE0, out var voxelY)) return false;
+        if (!bitStream.ReadInt32(0x400, out var voxelZ)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var targetEntityId)) return false;
+        if (!ReadPosition(bitStream, out _)) return false;
+        if (!ReadDirection(bitStream, out var hitNormal)) return false;
 
-        var readOk = remainingBits == 0 || bitStream.ReadBits(payload, remainingBits, alignBitsToRight: true);
+        var voxel = new Vector3Int(voxelX, voxelY, voxelZ);
 
-        var hex = string.Join(" ", payload.Select(b => b.ToString("x2")));
+        Console.WriteLine($"[RunActionList] list {actionListId} entity {entityId} voxel {(hasVoxel == 1 ? voxel.ToString() : "-")} target {targetEntityId} normal {hitNormal}");
 
-        var actionListId = payload.Length >= 4
-            ? (payload[0] << 24) | (payload[1] << 16) | (payload[2] << 8) | payload[3]
-            : -1;
+        if (hasVoxel != 1 || targetEntityId != 0)
+            return true;
 
-        var entityId = payload.Length >= 8
-            ? (payload[4] << 24) | (payload[5] << 16) | (payload[6] << 8) | payload[7]
-            : -1;
-
-        var expectedId = connection.PlayerEntity.Id;
-        var idNote = entityId == expectedId
-            ? "the player entity"
-            : $"NOT the player entity ({expectedId})";
-
-        Console.WriteLine($"[RunActionList] Received (ordinal 29). totalBits={totalBits} "
-            + $"payloadBits={remainingBits} readOk={readOk} raw: {hex}");
-        Console.WriteLine($"[RunActionList] ActionListId={actionListId} EntityId={entityId} ({idNote}).");
-
-        if (!readOk)
+        if (connection.RightHandBlockId is int blockId && blockId != 0)
         {
-            Console.WriteLine("[RunActionList] Payload read FAILED - not echoing.");
+            var placeAt = new Vector3Int(
+                voxel.X + (int)MathF.Round(hitNormal.X),
+                voxel.Y + (int)MathF.Round(hitNormal.Y),
+                voxel.Z + (int)MathF.Round(hitNormal.Z));
 
+            SetWorldVoxel(connection, placeAt, (byte)blockId);
+            VoxelDamage.TryRemove(placeAt, out _);
+
+            Console.WriteLine($"[Voxel] placed {blockId} at {placeAt}");
             return true;
         }
 
-        if (EchoToRequester)
-        {
-            connection.Send(new RawPayloadPacket
-            {
-                PacketId = PacketId.RunActionList,
-                Payload = payload,
-                PayloadBits = remainingBits
-            });
+        var damage = VoxelDamage.AddOrUpdate(voxel, PickaxeVoxelStrength, (_, current) => current + PickaxeVoxelStrength);
 
-            Console.WriteLine($"[RunActionList] Echoed ordinal 29 back to the requester, "
-                + $"{remainingBits} payload bits.");
+        if (damage < DefaultVoxelDurability)
+        {
+            Console.WriteLine($"[Voxel] {voxel} damage {damage}/{DefaultVoxelDurability}");
+            return true;
         }
 
-        if (StartAnimationSequence && entityId > 0)
-        {
-            var sequencePayload = new byte[]
-            {
-                (byte)(entityId >> 24),
-                (byte)(entityId >> 16),
-                (byte)(entityId >> 8),
-                (byte)entityId,
-                SequenceIndexByte
-            };
+        VoxelDamage.TryRemove(voxel, out _);
+        SetWorldVoxel(connection, voxel, Air);
 
-            connection.Send(new RawPayloadPacket
-            {
-                PacketId = PacketId.AnimationSequenceStarting,
-                Payload = sequencePayload,
-                PayloadBits = (uint)sequencePayload.Length * 8
-            });
+        Console.WriteLine($"[Voxel] removed {voxel}");
+        return true;
+    }
 
-            Console.WriteLine($"[RunActionList] Sent AnimationSequenceStarting (ordinal 272) "
-                + $"unprompted for EntityId={entityId}, sequence index {SequenceIndexByte >> 3}, "
-                + $"payload {string.Join(" ", sequencePayload.Select(b => b.ToString("x2")))}.");
-        }
+    private static void SetWorldVoxel(PlayerConnection connection, Vector3Int voxel, byte blockType)
+    {
+        if (voxel.X < 0 || voxel.Y < 0 || voxel.Z < 0)
+            return;
 
-        if (BroadcastToOthers)
-        {
-            connection.PlayerConnectionManager.BroadcastToAllExcept(connection.Guid.g, new RawPayloadPacket
-            {
-                PacketId = PacketId.RunActionList,
-                Payload = payload,
-                PayloadBits = remainingBits
-            });
+        var chunk = new Vector3Int(voxel.X / ChunkSize, voxel.Y / ChunkSize, voxel.Z / ChunkSize);
+        var local = new Vector3Int(voxel.X % ChunkSize, voxel.Y % ChunkSize, voxel.Z % ChunkSize);
 
-            Console.WriteLine("[RunActionList] Forwarded ordinal 29 to the other connections.");
-        }
+        connection.WorldManager.ChunkManager.SetVoxel(chunk, local, blockType);
+    }
 
+    private static bool ReadOptionalUInt32(BitStream bitStream, out uint? value)
+    {
+        value = null;
+
+        if (!bitStream.ReadInt32(1, out var present)) return false;
+        if (present == 0) return true;
+        if (!bitStream.ReadFullWidthUInt32(out var raw)) return false;
+
+        value = raw;
+        return true;
+    }
+
+    private static bool ReadPosition(BitStream bitStream, out Vector3 position)
+    {
+        position = default;
+
+        if (!bitStream.ReadInt32(0x10000, out var x)) return false;
+        if (!bitStream.ReadInt32(0x7F80, out var y)) return false;
+        if (!bitStream.ReadInt32(0x10000, out var z)) return false;
+
+        position = new Vector3(x / 64f, (y - 0x3FC0) / 64f, z / 64f);
+        return true;
+    }
+
+    private static bool ReadDirection(BitStream bitStream, out Vector3 direction)
+    {
+        direction = default;
+
+        if (!bitStream.ReadInt32(0x80, out var x)) return false;
+        if (!bitStream.ReadInt32(0x80, out var y)) return false;
+        if (!bitStream.ReadInt32(0x80, out var z)) return false;
+
+        direction = new Vector3((x - 0x40) / 64f, (y - 0x40) / 64f, (z - 0x40) / 64f);
         return true;
     }
 }

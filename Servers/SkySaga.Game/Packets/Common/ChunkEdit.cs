@@ -1,33 +1,24 @@
-﻿namespace SkySaga.Game.Packets.Common;
+namespace SkySaga.Game.Packets.Common;
 
 public class ChunkEdit : ISerializableType
 {
+    private const uint VoxelCoordCountEscape = 8;
+    private const uint LocalCoordMax = 0x20;
+
     public byte VoxelIndex;
 
     public List<Vector3Int> VoxelCoordList = [];
-    private const int VoxelCoordListDefaultCount = 7;
 
     public void Serialize(BitStream bitStream)
     {
         bitStream.WriteBits([VoxelIndex], 8, true);
-
-        if (VoxelCoordList.Count < VoxelCoordListDefaultCount)
-        {
-            bitStream.WriteBits(BitConverter.GetBytes(VoxelCoordList.Count - 1), 32 - Util.NumBitsRequiredUInt32(VoxelCoordListDefaultCount), true);
-        }
-        else
-        {
-            bitStream.WriteBits(BitConverter.GetBytes(VoxelCoordListDefaultCount - 1), 32 - Util.NumBitsRequiredUInt32(VoxelCoordListDefaultCount), true);
-
-            bitStream.Write1();
-            bitStream.Write(VoxelCoordList.Count);
-        }
+        bitStream.WriteEscapedCount((uint)VoxelCoordList.Count, VoxelCoordCountEscape);
 
         foreach (var voxelCoord in VoxelCoordList)
         {
-            bitStream.WriteBits(BitConverter.GetBytes(voxelCoord.X), 32 - Util.NumBitsRequiredUInt32(32), true);
-            bitStream.WriteBits(BitConverter.GetBytes(voxelCoord.Y), 32 - Util.NumBitsRequiredUInt32(32), true);
-            bitStream.WriteBits(BitConverter.GetBytes(voxelCoord.Z), 32 - Util.NumBitsRequiredUInt32(32), true);
+            bitStream.WriteRanged((uint)voxelCoord.X, LocalCoordMax);
+            bitStream.WriteRanged((uint)voxelCoord.Y, LocalCoordMax);
+            bitStream.WriteRanged((uint)voxelCoord.Z, LocalCoordMax);
         }
     }
 }
