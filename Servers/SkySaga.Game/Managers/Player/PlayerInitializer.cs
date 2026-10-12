@@ -31,8 +31,8 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
         }
 
-        if (player.TryGetComponent<ClientOwnerComponent>(out var owner) && clientPlayernameComponent is not null)
-            owner.Owner = new Guid(System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(clientPlayernameComponent.Playername ?? "")));
+        if (player.TryGetComponent<ClientOwnerComponent>(out var owner) && Guid.TryParse(Util.CharacterUuid(), out var characterUuid))
+            owner.Owner = characterUuid;
 
         if (player.TryGetComponent<ClientShopComponent>(out var shop))
             shop.ShopList = [0];

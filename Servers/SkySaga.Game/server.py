@@ -78,6 +78,7 @@ def _load_account():
 
 ACCOUNT = _load_account()
 PLAYER_NAME = ACCOUNT["name"]
+ACCOUNT_CREATED = int(ACCOUNT_FILE.stat().st_ctime)
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +292,7 @@ def alpha10_characters_active():
     # character" as an error blocks it from reaching character creation.
     if _state["character_uuid"] is None:
         return jsonify({"result": {"character": None}}), 200
-    return jsonify({"result": {"character": _character()}}), 200
+    return jsonify({"result": {"character": _character(), **_character()}}), 200
 
 
 @app.route("/api/persistent-record/characters/_create", methods=["POST"])
@@ -323,6 +324,26 @@ def alpha10_account_check_name():
     verdict = {"valid": True, "profane": False, "containsNotAllowedCharacters": False,
                "alreadyExists": False}
     return jsonify({"result": dict(verdict), **verdict}), 200
+
+
+@app.route("/api/social-graph/character/profile/batch", methods=["POST"])
+def alpha10_character_profile_batch():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body)
+    recipients = params.get("recipients") or [_state["character_uuid"]]
+    print("=== alpha10 character profile batch", request.get_data(as_text=True), "===", flush=True)
+    return jsonify({"result": [_character_profile(uuid_) for uuid_ in recipients]}), 200
+
+
+def _character_profile(character_uuid):
+    return {
+        "characterOnlineData": {
+            "characterUuid": character_uuid,
+            "characterName": PLAYER_NAME,
+        },
+        "counts": {"follows": 0, "followedBy": 0, "friends": 0},
+        "accountCreated": ACCOUNT_CREATED,
+    }
 
 
 @app.route("/api/account/get", methods=["POST"])
