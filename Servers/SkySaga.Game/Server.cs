@@ -134,7 +134,7 @@ public class Server : IDisposable
             if (packet is null)
                 return;
 
-            var bitStream = new BitStream(packet.data, packet.length, false);
+            var bitStream = new BitStream(packet.data, packet.length, true);
 
             var messageId = bitStream.ReadMessageId(out var messageIdWasExtended);
 

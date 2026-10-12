@@ -102,7 +102,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
             return;
         }
 
-        if (WorldMapLoader.TryLoad(ChunkManager, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
+        var mapPath = Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map
+            ? Path.Combine("Data", map)
+            : WorldMapLoader.DefaultPath;
+
+        if (WorldMapLoader.TryLoad(ChunkManager, out var loadedDefinition, out var loadedEntities, mapPath) && loadedDefinition is not null)
         {
             Definition = loadedDefinition;
 

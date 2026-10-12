@@ -5,7 +5,10 @@ namespace SkySaga.Game.Managers.World;
 public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : IMapChunkManager
 {
     private const int ChunkSize = 32;
-    private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", "world_edits.json");
+    private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves",
+        Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map
+            ? $"world_edits_{Path.GetFileNameWithoutExtension(map)}.json"
+            : "world_edits.json");
 
     private readonly Dictionary<Vector3Int, WorldChunk> _chunks = [];
     private readonly Dictionary<Vector3Int, byte> _edits = [];
