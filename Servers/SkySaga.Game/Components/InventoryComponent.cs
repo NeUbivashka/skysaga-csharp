@@ -11,6 +11,8 @@ public class InventoryComponent : Component
 
     public List<int> InventoryEntityList { get; set => SetIfChanged(ref field, value); } = [];
 
+    public int VaultInventoryEntity { get; set => SetIfChanged(ref field, value); }
+
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
         if (parameterName.Equals(nameof(MaxInventorySlots), StringComparison.OrdinalIgnoreCase))
@@ -40,6 +42,15 @@ public class InventoryComponent : Component
 
             foreach (var inventoryEntity in InventoryEntityList)
                 bitStream.WriteFullWidthUInt32((uint)inventoryEntity);
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(VaultInventoryEntity), StringComparison.OrdinalIgnoreCase))
+        {
+            if (VaultInventoryEntity == 0)
+                return false;
+
+            bitStream.WriteFullWidthUInt32((uint)VaultInventoryEntity);
 
             return true;
         }

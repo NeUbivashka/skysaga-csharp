@@ -52,6 +52,13 @@ public class PlayerConnection
 
         if (PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
         {
+            if (inventory.VaultInventoryEntity != 0)
+            {
+                _worldManager.EntityManager.RemoveEntity(inventory.VaultInventoryEntity);
+
+                _playerConnectionManager.BroadcastToAll(new EntityRemoved { Id = inventory.VaultInventoryEntity });
+            }
+
             foreach (var itemId in inventory.InventoryEntityList)
             {
                 if (itemId == 0)

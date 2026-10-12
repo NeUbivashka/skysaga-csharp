@@ -4,6 +4,7 @@ namespace SkySaga.Game.Managers.Player;
 public class PlayerInitializer(IWorldManager worldManager)
 {
     private const uint ForestMasterSigil = 10;
+    private const byte VaultSlots = 200;
     private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
 
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
@@ -29,6 +30,12 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayernameComponent.AvailablePlayerSigilList = [.. StarterSigils.Select(index => (index, sigilA, sigilB))];
             clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
         }
+
+        if (player.TryGetComponent<ClientOwnerComponent>(out var owner) && clientPlayernameComponent is not null)
+            owner.Owner = new Guid(System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(clientPlayernameComponent.Playername ?? "")));
+
+        if (player.TryGetComponent<ClientShopComponent>(out var shop))
+            shop.ShopList = [0];
 
         if (player.TryGetComponent<TagsComponent>(out var tags))
             tags.TagList = [Util.ComputeCrc32("Player")];
@@ -204,6 +211,8 @@ public class PlayerInitializer(IWorldManager worldManager)
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 19, "Flint_and_Tinder", 1);
             }
+
+            CreateVault(clientInventoryComponent);
 
             if (player.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
                 EquipArmourFromInventory(clientInventoryComponent, equipped);
@@ -436,6 +445,17 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (free >= 0)
             CreateAndEquipInventoryItem(inventory, free, crc);
+    }
+
+    private void CreateVault(ClientInventoryComponent inventory)
+    {
+        if (!_entityManager.TryCreateEntity("VaultInventory", out var vault)
+            || !vault.TryGetComponent<ClientInventoryComponent>(out var vaultInventory))
+            return;
+
+        vaultInventory.MaxInventorySlots = VaultSlots;
+        vaultInventory.InventoryEntityList = [.. Enumerable.Repeat(0, VaultSlots)];
+        inventory.VaultInventoryEntity = vault.Id;
     }
 
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, string itemName, int count = 1)
