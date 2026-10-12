@@ -107,7 +107,11 @@ def main():
                              "x": EDGE + (i % per_row) * 6,
                              "y": GROUND_Y,
                              "z": gallery_end_z + 8 + (i // per_row) * 6})
-    entities.append({"name": "Airship", "x": sx - 24, "y": GROUND_Y + 8, "z": sz - 24})
+    creatures = entities[1:]
+    entities.append({"name": "Airship",
+                     "x": (min(e["x"] for e in creatures) + max(e["x"] for e in creatures)) // 2,
+                     "y": GROUND_Y,
+                     "z": max(e["z"] for e in creatures) + 14})
 
     world = {"mapSizeChunks": {"x": SIZE_CHUNKS[0], "y": SIZE_CHUNKS[1], "z": SIZE_CHUNKS[2]},
              "biomeName": "Forest", "gameMode": 1, "voxels": voxels, "entities": entities}

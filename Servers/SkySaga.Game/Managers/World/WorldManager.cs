@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace SkySaga.Game.Managers.World;
@@ -150,10 +150,21 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         AirshipPosition = position;
 
-        if (EntityManager.TryCreateEntity("Airship", out var airShip) &&
-            airShip.TryGetComponent<TransformComponent>(out var transformComponent))
-        {
+        if (!EntityManager.TryCreateEntity("Airship", out var airShip))
+            return;
+
+        if (airShip.TryGetComponent<TransformComponent>(out var transformComponent))
             transformComponent.Position = position;
+
+        if (airShip.TryGetComponent<ClientPickupComponent>(out var pickup))
+        {
+            var nameHash = Util.ComputeCrc32("Airship");
+
+            pickup.InventoryItemSpec = new InventoryItemRef
+            {
+                Kind = (ushort)ItemTable.IndexOf(nameHash),
+                Amounts = MaterialTable.TryGet(nameHash, out var materials) ? [.. materials] : []
+            };
         }
     }
 
