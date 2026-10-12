@@ -589,6 +589,48 @@ A component's <code>TrySync</code> must return <code>false</code> for every para
 </tr>
 </tbody>
 </table>
+<h3 id="inventory-item-slot-inventoryitemcomponentinventoryslotdata">Inventory item slot (<code>inventoryitemcomponent.inventoryslotdata</code>)</h3>
+<p><code>inventorydefinition::ItemSlot</code>, field names from the reflection registration <code>FUN_00E02D10</code>,
+binary reader <code>FUN_00C08300</code>:</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>wire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ResourceNameCRC</td>
+<td>ranged index into the item table (11 bits, <code>FUN_007D8110</code>), <strong>not a CRC</strong></td>
+</tr>
+<tr>
+<td>Amount</td>
+<td>1 bit "large", then 32 bits if set, else ranged max 0x40 (7 bits) (<code>FUN_00C07960</code>)</td>
+</tr>
+<tr>
+<td>IsUnlimited</td>
+<td>1 bit</td>
+</tr>
+<tr>
+<td>LosableAmount</td>
+<td>as Amount</td>
+</tr>
+<tr>
+<td>CraftRandomSeed</td>
+<td>ranged max 0x10000 (17 bits, <code>FUN_00C078D0</code>)</td>
+</tr>
+<tr>
+<td>UUID</td>
+<td>presence bit + 4 full-width u32 (<code>FUN_007EA3B0</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The item table index is GeoData <code>Resources</code> Index + 1: the client keeps the 1809 resources in
+order behind a null entry 0 (live check: entry <code>+0x8</code> = name CRC, <code>+0xC</code> = index). The server
+reads the order from <code>Data/Resources.txt</code> (<code>ItemTable</code>). Sending the 32-bit name CRC here was the
+FTL index assert at <code>0x00BA8306</code> that <code>SKYSAGA_NO_INVENTORY</code> used to dodge (fixed 2026-10-12).
+An unknown name maps to index 0 and shows as an empty placeholder in the inventory.</p>
 <h3 id="movement">Movement</h3>
 <p>The owning client sends <strong>RPCSetInputMovement</strong> (76): direction 3 × 8 bits (v + 0x40) and speed
 7 bits. It moves only after the server has applied the input to <code>clientcharacterphysicscomponent</code>

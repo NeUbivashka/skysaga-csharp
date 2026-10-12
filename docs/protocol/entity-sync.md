@@ -175,6 +175,26 @@ Checked and correct: the aspect bools (CanEditMap 0 … IsSpectator 5, IsDebugPl
 | item uuid | presence + 4 × u32 |
 | detail | 2-bit kind; 0 → optional uuid, 1 → string, 2 → nothing |
 
+### Inventory item slot (`inventoryitemcomponent.inventoryslotdata`)
+
+`inventorydefinition::ItemSlot`, field names from the reflection registration `FUN_00E02D10`,
+binary reader `FUN_00C08300`:
+
+| field | wire |
+|-------|------|
+| ResourceNameCRC | ranged index into the item table (11 bits, `FUN_007D8110`), **not a CRC** |
+| Amount | 1 bit "large", then 32 bits if set, else ranged max 0x40 (7 bits) (`FUN_00C07960`) |
+| IsUnlimited | 1 bit |
+| LosableAmount | as Amount |
+| CraftRandomSeed | ranged max 0x10000 (17 bits, `FUN_00C078D0`) |
+| UUID | presence bit + 4 full-width u32 (`FUN_007EA3B0`) |
+
+The item table index is GeoData `Resources` Index + 1: the client keeps the 1809 resources in
+order behind a null entry 0 (live check: entry `+0x8` = name CRC, `+0xC` = index). The server
+reads the order from `Data/Resources.txt` (`ItemTable`). Sending the 32-bit name CRC here was the
+FTL index assert at `0x00BA8306` that `SKYSAGA_NO_INVENTORY` used to dodge (fixed 2026-10-12).
+An unknown name maps to index 0 and shows as an empty placeholder in the inventory.
+
 ### Movement
 
 The owning client sends **RPCSetInputMovement** (76): direction 3 × 8 bits (v + 0x40) and speed

@@ -158,10 +158,9 @@ public class PlayerInitializer(IWorldManager worldManager)
             for (int i = 0; i < clientInventoryComponent.MaxInventorySlots; i++)
                 clientInventoryComponent.InventoryEntityList.Add(0);
 
-            // SKYSAGA_NO_INVENTORY=1: create no item entities (test switch). Since EntityAdd data
-            // actually reaches the client (2026-10-12), an item's spec trips an FTL index assert
-            // at 0x00BA8306 (component +0xA0 -> spec +0x28 index >= table size at
-            // DAT_01487BCC+0x1F2C) right after the item is created.
+            // SKYSAGA_NO_INVENTORY=1: create no item entities (test switch). The FTL index assert at
+            // 0x00BA8306 it used to avoid was InventorySlotData sending the item name CRC where the
+            // client reads an item-table index (fixed 2026-10-12, see InventorySlotData).
             if (Environment.GetEnvironmentVariable("SKYSAGA_NO_INVENTORY") == "1")
             {
             }
@@ -177,24 +176,25 @@ public class PlayerInitializer(IWorldManager worldManager)
             }
             else
             {
-
-                CreateAndEquipInventoryItem(clientInventoryComponent, 2, "ExplorerArmourHead");
-                CreateAndEquipInventoryItem(clientInventoryComponent, 3, "ExplorerArmourTorso");
-                CreateAndEquipInventoryItem(clientInventoryComponent, 4, "ExplorerArmourArms");
-                CreateAndEquipInventoryItem(clientInventoryComponent, 5, "ExplorerArmourLegs");
+                // Names must exist in GeoData Resources (Data/Resources.txt); an unknown name maps to
+                // item index 0 and shows as an empty placeholder.
+                CreateAndEquipInventoryItem(clientInventoryComponent, 2, "Armour_Explorer_Generic_Medium_1_Head");
+                CreateAndEquipInventoryItem(clientInventoryComponent, 3, "Armour_Explorer_Generic_Medium_1_Torso");
+                CreateAndEquipInventoryItem(clientInventoryComponent, 4, "Armour_Explorer_Generic_Medium_1_Arms");
+                CreateAndEquipInventoryItem(clientInventoryComponent, 5, "Armour_Explorer_Generic_Medium_1_Legs");
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 9, "Dirt", 10);
-                CreateAndEquipInventoryItem(clientInventoryComponent, 10, "Torch", 10);
-                CreateAndEquipInventoryItem(clientInventoryComponent, 11, "Anvil", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 10, "Tool_Explorer_Generic_Torch", 10);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 11, "Anvil_2x1x1", 1);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 13, "Camp_Fire", 1);
-                CreateAndEquipInventoryItem(clientInventoryComponent, 14, "Metal_Dagger", 1);
-                CreateAndEquipInventoryItem(clientInventoryComponent, 15, "Metal_Sword", 1);
-                CreateAndEquipInventoryItem(clientInventoryComponent, 16, "Metal_Pickaxe", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 14, "Weapon_Forest_Royalist_Dagger_0", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 15, "Weapon_Forest_Royalist_Sword_0", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 16, "Tool_Explorer_Generic_Pickaxe_0", 1);
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 17, "Stone", 10);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Clay", 10);
 
-                CreateAndEquipInventoryItem(clientInventoryComponent, 19, "Sharp_Rock", 10);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 19, "Flint_and_Tinder", 1);
 
             }
         }

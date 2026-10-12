@@ -17,6 +17,9 @@
     <None Update="Data\Entities.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\Resources.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\WorldMap.json" Condition="Exists('Data\WorldMap.json')">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
