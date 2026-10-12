@@ -22,7 +22,7 @@ public static class MaterialTable
                 continue;
 
             map.TryAdd(Util.ComputeCrc32(parts[0]),
-                [.. parts.Skip(1).Select(m => m == "-" ? (uint?)null : Util.ComputeCrc32(m))]);
+                [.. parts.Skip(1).Where(m => m != "-").Select(m => (uint?)Util.ComputeCrc32(m))]);
         }
 
         return map;

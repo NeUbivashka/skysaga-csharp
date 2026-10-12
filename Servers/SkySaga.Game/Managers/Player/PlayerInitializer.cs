@@ -26,6 +26,9 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
         }
 
+        if (player.TryGetComponent<TagsComponent>(out var tags))
+            tags.TagList = [Util.ComputeCrc32("Player")];
+
         if (player.TryGetComponent<ClientCharacterCustomisationComponent>(out var customisation) && save is not null)
         {
             customisation.IsCharacterCustomised = save.IsCharacterCustomised;
@@ -401,6 +404,9 @@ public class PlayerInitializer(IWorldManager worldManager)
         {
             if (hasMaterials && item.TryGetComponent<MaterialCompositionComponent>(out var composition))
                 composition.MaterialList = materials;
+
+            if (ItemTagTable.TryGet(nameHash, out var itemTags) && item.TryGetComponent<TagsComponent>(out var tagsComponent))
+                tagsComponent.TagList = itemTags;
 
             if (durable && item.TryGetComponent<ClientDurabilityComponent>(out var durability))
             {
