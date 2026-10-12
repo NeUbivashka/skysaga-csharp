@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Managers.World;
+﻿namespace SkySaga.Game.Managers.World;
 
 public interface IMapChunkManager
 {
@@ -13,6 +13,8 @@ public interface IMapChunkManager
     byte GetVoxel(Vector3Int chunkPosition, Vector3Int voxelPosition);
 
     void SetVoxel(Vector3Int chunkPosition, Vector3Int voxelPosition, byte blockType, byte metaValue = 0x00);
+
+    void LoadSavedEdits();
 
     IEnumerable<WorldChunk> GetLoadedChunks();
 

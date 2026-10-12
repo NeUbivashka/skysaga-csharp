@@ -97,6 +97,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             SpawnAirship(meandrosAirshipPosition);
             PlayerSpawnPosition = meandrosPlayerSpawnPosition;
+            ChunkManager.LoadSavedEdits();
 
             return;
         }
@@ -131,6 +132,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             PlayerSpawnPosition = null;
         }
 
+        ChunkManager.LoadSavedEdits();
         SpawnTimeOfDay();
         SpawnWorldComposition();
     }
