@@ -38,8 +38,11 @@ class Bits:
                 raise ValueError("long lists are not needed here")
 
     def to_bytes(self):
-        padded = self.bits + [0] * (-len(self.bits) % 8)
-        return bytes(int("".join(map(str, padded[i:i + 8])), 2) for i in range(0, len(padded), 8))
+        full = len(self.bits) // 8 * 8
+        data = [int("".join(map(str, self.bits[i:i + 8])), 2) for i in range(0, full, 8)]
+        if full < len(self.bits):
+            data.append(int("".join(map(str, self.bits[full:])), 2))
+        return bytes(data)
 
 
 def main():
