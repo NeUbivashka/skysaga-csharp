@@ -193,10 +193,10 @@ public class PlayerInitializer(IWorldManager worldManager)
             }
             else
             {
-                CreateAndEquipInventoryItem(clientInventoryComponent, 2, "Armour_Explorer_Generic_Medium_1_Head");
-                CreateAndEquipInventoryItem(clientInventoryComponent, 3, "Armour_Explorer_Generic_Medium_1_Torso");
-                CreateAndEquipInventoryItem(clientInventoryComponent, 4, "Armour_Explorer_Generic_Medium_1_Arms");
-                CreateAndEquipInventoryItem(clientInventoryComponent, 5, "Armour_Explorer_Generic_Medium_1_Legs");
+                CreateAndEquipInventoryItem(clientInventoryComponent, (int)ClientEquippedItemComponent.Slot.Head, "Armour_Explorer_Generic_Medium_1_Head");
+                CreateAndEquipInventoryItem(clientInventoryComponent, (int)ClientEquippedItemComponent.Slot.Torso, "Armour_Explorer_Generic_Medium_1_Torso");
+                CreateAndEquipInventoryItem(clientInventoryComponent, (int)ClientEquippedItemComponent.Slot.Legs, "Armour_Explorer_Generic_Medium_1_Legs");
+                CreateAndEquipInventoryItem(clientInventoryComponent, (int)ClientEquippedItemComponent.Slot.Arms, "Armour_Explorer_Generic_Medium_1_Arms");
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 9, "Dirt", 10);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 10, "Tool_Explorer_Generic_Torch", 10);
@@ -336,8 +336,10 @@ public class PlayerInitializer(IWorldManager worldManager)
 
     private void FillDefaultHotbar(ClientInventoryComponent inventory, ClientSettingsComponent settings)
     {
-        foreach (var entityId in inventory.InventoryEntityList)
+        for (var position = 0; position < Math.Min(inventory.InventoryEntityList.Count, (int)ClientEquippedItemComponent.SlotCount); position++)
         {
+            var entityId = inventory.InventoryEntityList[position];
+
             if (entityId == 0
                 || !_entityManager.TryGetEntity(entityId, out var itemEntity)
                 || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
@@ -395,44 +397,70 @@ public class PlayerInitializer(IWorldManager worldManager)
 
     private void EquipArmourFromInventory(ClientInventoryComponent inventory, ClientEquippedItemComponent equipped)
     {
+        PutArmourInItsSlots(inventory);
+
         var items = new ushort[ClientEquippedItemComponent.SlotCount];
         var uuids = new Guid?[ClientEquippedItemComponent.SlotCount];
         var materialLists = new uint?[ClientEquippedItemComponent.SlotCount][];
 
-        foreach (var entityId in inventory.InventoryEntityList)
+        for (var position = 0; position < Math.Min(inventory.InventoryEntityList.Count, (int)ClientEquippedItemComponent.SlotCount); position++)
         {
-            if (entityId == 0
+            var entityId = inventory.InventoryEntityList[position];
+
+            if (ArmourSlotOf(entityId) is not { } slot || (int)slot != position
                 || !_entityManager.TryGetEntity(entityId, out var itemEntity)
                 || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
                 || item.InventorySlotData.Name is not { } crc)
                 continue;
 
-            var index = ItemTable.IndexOf(crc);
-            var name = ItemTable.NameOf(index);
-
-            if (!name.StartsWith("Armour_", StringComparison.Ordinal))
-                continue;
-
-            ClientEquippedItemComponent.Slot? slot = name switch
-            {
-                _ when name.EndsWith("_Head", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Head,
-                _ when name.EndsWith("_Torso", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Torso,
-                _ when name.EndsWith("_Legs", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Legs,
-                _ when name.EndsWith("_Arms", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Arms,
-                _ => null,
-            };
-
-            if (slot is null)
-                continue;
-
-            items[(int)slot] = index;
-            uuids[(int)slot] = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null;
-            materialLists[(int)slot] = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
+            items[position] = ItemTable.IndexOf(crc);
+            uuids[position] = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null;
+            materialLists[position] = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
         }
 
         equipped.EquippedItemMaterials = materialLists;
         equipped.EquippedItems = items;
         equipped.EquippedItemUuids = uuids;
+    }
+
+    private void PutArmourInItsSlots(ClientInventoryComponent inventory)
+    {
+        var list = new List<int>(inventory.InventoryEntityList);
+
+        for (var position = (int)ClientEquippedItemComponent.Slot.Head; position < Math.Min(list.Count, (int)ClientEquippedItemComponent.SlotCount); position++)
+        {
+            if (ArmourSlotOf(list[position]) is not { } slot || (int)slot == position || (int)slot >= list.Count
+                || ArmourSlotOf(list[(int)slot]) == slot)
+                continue;
+
+            (list[(int)slot], list[position]) = (list[position], list[(int)slot]);
+            position--;
+        }
+
+        inventory.InventoryEntityList = list;
+    }
+
+    private ClientEquippedItemComponent.Slot? ArmourSlotOf(int entityId)
+    {
+        if (entityId == 0
+            || !_entityManager.TryGetEntity(entityId, out var itemEntity)
+            || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
+            || item.InventorySlotData.Name is not { } crc)
+            return null;
+
+        var name = ItemTable.NameOf(ItemTable.IndexOf(crc));
+
+        if (!name.StartsWith("Armour_", StringComparison.Ordinal))
+            return null;
+
+        return name switch
+        {
+            _ when name.EndsWith("_Head", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Head,
+            _ when name.EndsWith("_Torso", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Torso,
+            _ when name.EndsWith("_Legs", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Legs,
+            _ when name.EndsWith("_Arms", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Arms,
+            _ => null,
+        };
     }
 
     private void EnsureItem(ClientInventoryComponent inventory, List<PlayerSaveData.InventoryEntry> saved, string itemName)

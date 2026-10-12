@@ -306,7 +306,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         connection.IsPlayerInitialized = true;
 
-        foreach (var entity in EntityManager.Entities)
+        foreach (var entity in InventoryFirst(EntityManager.Entities))
         {
             var entityAdd = new EntityAdd
             {
@@ -327,6 +327,34 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         connection.Send(new ClientEntitiesSyncFinished());
+    }
+
+    private IEnumerable<Entity> InventoryFirst(IEnumerable<Entity> entities)
+    {
+        var sent = new HashSet<int>();
+        var ordered = new List<Entity>();
+
+        void Visit(Entity entity)
+        {
+            if (!sent.Add(entity.Id))
+                return;
+
+            InventoryComponent? inventory = entity.TryGetComponent<ClientInventoryComponent>(out var clientInventory)
+                ? clientInventory
+                : entity.TryGetComponent<InventoryComponent>(out var serverInventory) ? serverInventory : null;
+
+            if (inventory is not null)
+                foreach (var id in inventory.InventoryEntityList.Append(inventory.VaultInventoryEntity))
+                    if (id != 0 && EntityManager.TryGetEntity(id, out var item))
+                        Visit(item);
+
+            ordered.Add(entity);
+        }
+
+        foreach (var entity in entities)
+            Visit(entity);
+
+        return ordered;
     }
 
     public void Reset()

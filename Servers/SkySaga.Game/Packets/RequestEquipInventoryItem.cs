@@ -23,6 +23,17 @@ public static class RequestEquipInventoryItem
 
         var nameCrc = inventoryItemComponent.InventorySlotData.Name ?? 0;
 
+        if (location > (int)ClientEquippedItemComponent.Slot.RightHand
+            && location < ClientEquippedItemComponent.SlotCount
+            && location < clientInventoryComponent.InventoryEntityList.Count
+            && slotId != location)
+        {
+            var list = new List<int>(clientInventoryComponent.InventoryEntityList);
+
+            (list[location], list[slotId]) = (list[slotId], list[location]);
+            clientInventoryComponent.InventoryEntityList = list;
+        }
+
         if (location < ClientEquippedItemComponent.SlotCount
             && connection.PlayerEntity.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
         {
