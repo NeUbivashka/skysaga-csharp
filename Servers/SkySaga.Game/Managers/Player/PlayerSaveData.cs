@@ -36,6 +36,18 @@ public class PlayerSaveData
         public bool ThirdPersonCamera { get; set; } = true;
         public uint CameraState { get; set; }
         public bool ControlFlag { get; set; }
+        public uint LastActivatedSlot { get; set; }
+
+        /// <summary>Null for saves from before the hotbar was kept: the initializer fills a default.</summary>
+        public List<HotbarEntry>? Hotbar { get; set; }
+    }
+
+    public class HotbarEntry
+    {
+        public uint Slot { get; set; }
+        public uint Hand { get; set; }
+        public string Item { get; set; } = "";
+        public Guid? ItemUuid { get; set; }
     }
 
     public class CurrencyEntry

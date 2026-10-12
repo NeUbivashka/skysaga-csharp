@@ -73,6 +73,48 @@ public class InventoryItemRef
             bitStream.WriteString(DetailName);
     }
 
+    /// <summary>Reads what Encode writes (the client's writer is FUN_0085A490).</summary>
+    public static bool TryDecode(BitStream bitStream, out InventoryItemRef result)
+    {
+        result = new InventoryItemRef();
+
+        if (!bitStream.ReadInt32(ItemTableCount - 1, out var kind)) return false;
+        result.Kind = (ushort)kind;
+
+        if (!bitStream.ReadEscapedCount(AmountCountMax, out var count)) return false;
+
+        for (var i = 0; i < count; i++)
+        {
+            if (!ReadOptionalUInt32(bitStream, out var amount)) return false;
+            result.Amounts.Add(amount);
+        }
+
+        if (!ReadOptionalUInt32(bitStream, out result.Quantity)) return false;
+        if (!bitStream.ReadClientUuid(out result.ItemUuid)) return false;
+        if (!bitStream.ReadInt32(DetailKindMax, out var detailKind)) return false;
+        result.DetailKind = (uint)detailKind;
+
+        if (detailKind == 0)
+            return bitStream.ReadClientUuid(out result.DetailUuid);
+
+        if (detailKind == 1)
+            result.DetailName = bitStream.ReadString();
+
+        return true;
+    }
+
+    private static bool ReadOptionalUInt32(BitStream bitStream, out uint? value)
+    {
+        value = null;
+
+        if (!bitStream.ReadInt32(1, out var present)) return false;
+        if (present == 0) return true;
+        if (!bitStream.ReadFullWidthUInt32(out var v)) return false;
+
+        value = v;
+        return true;
+    }
+
     internal static void WriteUInt32(BitStream bitStream, uint value)
     {
         var bytes = BitConverter.GetBytes(value);

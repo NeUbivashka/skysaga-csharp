@@ -143,6 +143,56 @@ public static class BitStreamExtensions
         return true;
     }
 
+    /// <summary>Counterpart of WriteClientUuid: presence bit, then four full-width words.</summary>
+    public static bool ReadClientUuid(this BitStream bitStream, out Guid? result)
+    {
+        result = null;
+
+        if (!bitStream.ReadInt32(1, out var present))
+            return false;
+
+        if (present == 0)
+            return true;
+
+        var hex = new System.Text.StringBuilder(32);
+
+        for (var i = 0; i < 4; i++)
+        {
+            if (!bitStream.ReadFullWidthUInt32(out var word))
+                return false;
+
+            var chunk = word.ToString("x8").ToCharArray();
+
+            Array.Reverse(chunk);
+            hex.Append(chunk);
+        }
+
+        result = Guid.ParseExact(hex.ToString(), "N");
+        return true;
+    }
+
+    /// <summary>Counterpart of WriteEscapedCount.</summary>
+    public static bool ReadEscapedCount(this BitStream bitStream, uint escape, out uint count)
+    {
+        count = 0;
+
+        if (!bitStream.ReadInt32(escape, out var value))
+            return false;
+
+        count = (uint)value;
+
+        if (count == escape)
+        {
+            if (!bitStream.ReadInt32(1, out var present))
+                return false;
+
+            if (present != 0 && !bitStream.ReadFullWidthUInt32(out count))
+                return false;
+        }
+
+        return true;
+    }
+
     #endregion
 
     #region Write

@@ -1,13 +1,27 @@
 namespace SkySaga.Game.Packets;
 
-public class UISettingsSetHotbarSlotItemSpec : ISerializablePacket
+/// <summary>
+/// RPCUISettingsSetHotbarSlotItemSpec, ordinal 18, client to server (send stub FUN_009C3BE0):
+///
+///   slot   ranged max 5 (3 bits)
+///   hand   ranged max 2 (2 bits); 0 = left, 1 = right
+///   item   item reference (writer FUN_0085A490, the counterpart of InventoryItemRef)
+///
+/// Stored on ClientSettingsComponent.HotbarItems, synced back through hotbarslotresources.
+/// </summary>
+public static class UISettingsSetHotbarSlotItemSpec
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadInt32(ClientSettingsComponent.LastActivatedSlotMax, out var slot)) return false;
+        if (!bitStream.ReadInt32(2, out var hand)) return false;
+        if (!InventoryItemRef.TryDecode(bitStream, out var item)) return false;
 
-        bitStream.WritePacketId(PacketId.UISettingsSetHotbarSlotItemSpec);
+        if (connection.PlayerEntity.TryGetComponent<ClientSettingsComponent>(out var settings))
+            settings.SetHotbarItem((uint)slot, (uint)hand, item);
 
-        return bitStream;
+        Console.WriteLine($"[Hotbar] slot {slot} hand {hand} = {ItemTable.NameOf(item.Kind)} ({item.Kind})");
+
+        return true;
     }
 }

@@ -11,6 +11,8 @@ Conventions: "ranged max M" is `32 - clz32(M)` bits. "Full-width u32" is 32 bits
 
 | Ordinal | RPC | Stub | Payload |
 |---:|---|---|---|
+| 18 | UISettingsSetHotbarSlotItemSpec | `FUN_009C3BE0` | slot ranged max 5 (3 bits), hand ranged max 2 (2 bits, 0 = left, 1 = right), item reference (writer `FUN_0085A490`) |
+| 19 | UISettingsSelectHotbarSlot | `FUN_009C30B0` | slot ranged max 5 (3 bits) |
 | 17 | UISettingsSetGameplayCameraState | `FUN_009C37D0` | third-person camera 1 bit, state ranged max 1 (1 bit, unknown) |
 | 20 | UISettingsSetMiniMapSettings | `FUN_009C4080` | 2 bools, then two lists (`FUN_009C4C90`: count escaped at 0x19; `FUN_009C2F80`). Not handled yet |
 | 21 | UISettingsSetUISettings | `FUN_009C4420` | see below, 8 bits |
@@ -46,8 +48,8 @@ them there and the binding syncs them back. They are also saved in `player.json`
 
 | binding | sync | parameter | wire |
 |---|---|---|---|
-| 0 | 74 | hotbarslotresources | not sent yet |
-| 1 | 94 | lastactivatedslot | not sent yet |
+| 0 | 74 | hotbarslotresources | count escaped at 6 (3 bits), then per slot a full-width u32 (the server sends the slot number) and two item references, left hand then right hand (`FUN_00C26E70` / `FUN_00C26D30`). Verified: items show on the hotbar |
+| 1 | 94 | lastactivatedslot | ranged max 5 (3 bits, `FUN_00C25D30`) |
 | 2 | 33 | currentgameplaycamerastate | third-person camera 1 bit (`+0xBD`; 0 = first person, the client default, so the player never sees their own character), then state ranged max 1 (`+0xBC`, `FUN_00C25C50`) |
 | 3 | 116 | minimapsettings | not sent yet |
 | 4 | 161 | uisettings | the same 8 bits as RPC 21 (`FUN_00C27030`) |

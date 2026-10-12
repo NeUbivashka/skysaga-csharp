@@ -44,6 +44,11 @@ public class PlayerInitializer(IWorldManager worldManager)
             settings.ThirdPersonCamera = saved.ThirdPersonCamera;
             settings.CameraState = saved.CameraState;
             settings.ControlFlag = saved.ControlFlag;
+            settings.LastActivatedSlot = saved.LastActivatedSlot;
+
+            foreach (var entry in saved.Hotbar ?? [])
+                settings.SetHotbarItem(entry.Slot, entry.Hand,
+                    new InventoryItemRef { Kind = ItemTable.IndexOf(entry.Item), ItemUuid = entry.ItemUuid });
         }
 
         if (player.TryGetComponent<ClientHealthComponent>(out var clientHealthComponent))
@@ -199,6 +204,9 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             if (player.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
                 EquipArmourFromInventory(clientInventoryComponent, equipped);
+
+            if (player.TryGetComponent<ClientSettingsComponent>(out var hotbarSettings) && save?.Settings?.Hotbar is null)
+                FillDefaultHotbar(clientInventoryComponent, hotbarSettings);
         }
 
 
@@ -240,6 +248,17 @@ public class PlayerInitializer(IWorldManager worldManager)
                 ThirdPersonCamera = settings.ThirdPersonCamera,
                 CameraState = settings.CameraState,
                 ControlFlag = settings.ControlFlag,
+                LastActivatedSlot = settings.LastActivatedSlot,
+                Hotbar = [.. settings.HotbarItems
+                    .Select((item, i) => (item, i))
+                    .Where(x => x.item is not null)
+                    .Select(x => new PlayerSaveData.HotbarEntry
+                    {
+                        Slot = (uint)x.i / 2,
+                        Hand = (uint)x.i % 2,
+                        Item = ItemTable.NameOf(x.item!.Kind),
+                        ItemUuid = x.item.ItemUuid,
+                    })],
             };
         }
 
@@ -306,6 +325,43 @@ public class PlayerInitializer(IWorldManager worldManager)
 
 
 
+
+    /// <summary>
+    /// First-time hotbar: sword and pickaxe in the right hand of slots 1 and 2, torch in the left hand
+    /// of slot 3, dirt in slot 4 - whichever of these the inventory holds.
+    /// </summary>
+    private void FillDefaultHotbar(ClientInventoryComponent inventory, ClientSettingsComponent settings)
+    {
+        foreach (var entityId in inventory.InventoryEntityList)
+        {
+            if (entityId == 0
+                || !_entityManager.TryGetEntity(entityId, out var itemEntity)
+                || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
+                || item.InventorySlotData.Name is not { } crc)
+                continue;
+
+            var index = ItemTable.IndexOf(crc);
+            var name = ItemTable.NameOf(index);
+
+            (uint Slot, uint Hand)? place = name switch
+            {
+                _ when name.StartsWith("Weapon_", StringComparison.Ordinal) && name.Contains("_Sword_") => (0u, 1u),
+                _ when name.Contains("_Pickaxe", StringComparison.Ordinal) => (1u, 1u),
+                _ when name.EndsWith("_Torch", StringComparison.Ordinal) => (2u, 0u),
+                "Dirt" => (3u, 1u),
+                _ => null,
+            };
+
+            if (place is not { } p)
+                continue;
+
+            settings.SetHotbarItem(p.Slot, p.Hand, new InventoryItemRef
+            {
+                Kind = index,
+                ItemUuid = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null,
+            });
+        }
+    }
 
     /// <summary>
     /// Wear every armour piece found in the inventory: the slot comes from the resource name's
