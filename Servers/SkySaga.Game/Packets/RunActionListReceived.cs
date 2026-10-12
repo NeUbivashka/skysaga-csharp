@@ -63,7 +63,7 @@ public static class RunActionListReceived
                 Amount = (uint)damage,
                 EntityId = 0,
                 SourceId = connection.PlayerEntity.Id,
-                Position = new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f),
+                Position = new Vector3(voxel.X, voxel.Y, voxel.Z),
                 Timestamp = (ulong)Environment.TickCount64
             });
 
