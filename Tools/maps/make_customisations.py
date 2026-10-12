@@ -14,8 +14,7 @@ CUSTOMISATION_SLOTS = ["PatternA", "PatternB", "PatternEmissive", "PatternPalett
 GENDERS = {"Male": 0, "Female": 1}
 TRIBE_CATEGORIES = {"Skin": "CharacterSkin", "Eye": "CharacterEyes"}
 OTHER_GENDER_MARK = {"Male": "_Fem", "Female": "_Mal"}
-TRIBE_CUSTOMISATIONS = {"Eye": "Eye", "DecalA": "Decal", "DecalPalette": "DecalPalette"}
-CLIENT_LEFT_EMPTY = {"Mouth"}
+TRIBE_CUSTOMISATIONS = {"Eye": "Eye", "Mouth": "Mouth", "DecalA": "Decal", "DecalPalette": "DecalPalette"}
 
 
 class Bits:
@@ -103,8 +102,6 @@ def main():
         b.count(len(CUSTOMISATION_SLOTS), 4, 9)
         for slot in CUSTOMISATION_SLOTS:
             name = first(customisations.get(slot, {}).get("ValidMaterialCustomisations", {}), "MaterialCustomisation")
-            if slot in CLIENT_LEFT_EMPTY:
-                name = ""
             if not name and slot in TRIBE_CUSTOMISATIONS:
                 name = choose([m["Name"] for m in d["MaterialCustomisations"]
                                if m["LockedToTribe"] == tribe and m["Type"] == TRIBE_CUSTOMISATIONS[slot]
