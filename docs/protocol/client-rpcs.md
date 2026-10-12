@@ -17,7 +17,7 @@ Conventions: "ranged max M" is `32 - clz32(M)` bits. "Full-width u32" is 32 bits
 | 22 | UISettingsSetControlSettings | `FUN_009C3460` | 1 bit (meaning unknown) |
 | 51 | SetPlayerState | `FUN_00B25D10` | state ranged max 10 (4 bits) |
 | 76 | SetInputMovement | `FUN_00B24140` | direction 3 × ranged 0x80 of (v + 0x40), speed ranged 0x78 (see entity-sync.md) |
-| 135 | JoinDestinationSelectionWorld | `FUN_007B85E0` | full-width u32 |
+| 135 | JoinDestinationSelectionWorld | `FUN_007B85E0` | triggeringEntityID: full-width u32 |
 | 155 | EntityMoved | `FUN_00B2A460` | X 17, Y 15 (+0x3FC0), Z 17, yaw 15 bits (see entity-sync.md) |
 | 160 | SetLookAtDirection | `FUN_0086D540` | pitch, yaw: each ranged max 0x6400 of (v + 0x3200), 15 bits, 1/32° (`FUN_00859000`) |
 | 170 | TouchedVoxelTrackingSyncUp | `FUN_00B2D5C0` | count escaped at 100 (7 bits), then per entry a full-width u32 and 8 bits (`FUN_00B2DB60`). Not handled yet |

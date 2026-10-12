@@ -130,5 +130,8 @@ payload is 264 bits: the 32-bit entity id, then this struct.
   IsCharacterCustomised was synced it looped Gameplay ↔ CharacterCreation.
 - `ClientCharacterCustomisationComponent` syncs the raw struct, absent CRCs and the flag. All of
   it is persisted in the player save (`IsCharacterCustomised`, `CustomisationData` as base64).
-- Not handled yet: RPCJoinDestinationSelectionWorld (135, C2S, `{"triggeringEntityID":5}`), sent
-  when the player uses the airship map.
+  Synced by default since 2026-10-12. The earlier crash (FUN_00C18D00) was the shifted Player
+  stream, not the struct. With the third-person camera and equipped armour, the created character
+  (MiNo) shows in the world with its hair and colours.
+- RPCJoinDestinationSelectionWorld (135, C2S, `{"triggeringEntityID":5}`, sent when the player uses
+  the airship map) is parsed and logged, not acted on yet.

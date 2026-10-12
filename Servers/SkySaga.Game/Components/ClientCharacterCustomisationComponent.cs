@@ -30,10 +30,10 @@ public class ClientCharacterCustomisationComponent : Component
         {
             // Nothing to send until the creator has produced a struct; the client keeps its default.
             //
-            // Off unless SKYSAGA_SYNC_APPEARANCE=1: the saved struct crashed the client on the home
-            // island (2026-10-12, FTL in FUN_00C18D00 from component post-init FUN_008475C0, an
-            // index past the table at [0x01487BCC]+0x3E6C, count +0x3E70). Not understood yet.
-            if (CustomisationData is null || Environment.GetEnvironmentVariable("SKYSAGA_SYNC_APPEARANCE") != "1")
+            // The crash this was once gated for (FTL in FUN_00C18D00, an index past the material
+            // customisation table) came from the shifted Player stream (sync index 12 sent with no
+            // data), not from the struct. Synced by default since 2026-10-12.
+            if (CustomisationData is null)
                 return false;
 
             bitStream.WriteBits(CustomisationData, CustomisationDataBits, true);

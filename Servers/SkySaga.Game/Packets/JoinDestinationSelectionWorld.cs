@@ -2,7 +2,8 @@ namespace SkySaga.Game.Packets;
 
 /// <summary>
 /// RPCJoinDestinationSelectionWorld, ordinal 135, client to server (send stub FUN_007B85E0, caller
-/// FUN_007B7550): one full-width (big-endian) u32. Not acted on yet.
+/// FUN_007B7550): triggeringEntityID, one full-width (big-endian) u32 (the engine log prints
+/// {"triggeringEntityID":5}, the player). Sent when the player uses the airship map. Not acted on yet.
 /// </summary>
 public static class JoinDestinationSelectionWorld
 {
@@ -10,7 +11,7 @@ public static class JoinDestinationSelectionWorld
     {
         if (!bitStream.ReadFullWidthUInt32(out var value)) return false;
 
-        Console.WriteLine($"[JoinDestinationSelectionWorld] value=0x{value:X8}");
+        Console.WriteLine($"[JoinDestinationSelectionWorld] triggeringEntityID={value}");
 
         return true;
     }

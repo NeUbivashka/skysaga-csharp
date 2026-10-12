@@ -86,7 +86,7 @@ field names are only known where a printer could be read. The stub addresses are
 <td style="text-align: right;">135</td>
 <td>JoinDestinationSelectionWorld</td>
 <td><code>FUN_007B85E0</code></td>
-<td>full-width u32</td>
+<td>triggeringEntityID: full-width u32</td>
 </tr>
 <tr>
 <td style="text-align: right;">155</td>
@@ -2286,9 +2286,12 @@ payload is 264 bits: the 32-bit entity id, then this struct.</p>
   Verified 2026-10-12: the client leaves the creator and stays in Gameplay. Before
   IsCharacterCustomised was synced it looped Gameplay ↔ CharacterCreation.</li>
 <li><code>ClientCharacterCustomisationComponent</code> syncs the raw struct, absent CRCs and the flag. All of
-  it is persisted in the player save (<code>IsCharacterCustomised</code>, <code>CustomisationData</code> as base64).</li>
-<li>Not handled yet: RPCJoinDestinationSelectionWorld (135, C2S, <code>{"triggeringEntityID":5}</code>), sent
-  when the player uses the airship map.</li>
+  it is persisted in the player save (<code>IsCharacterCustomised</code>, <code>CustomisationData</code> as base64).
+  Synced by default since 2026-10-12. The earlier crash (FUN_00C18D00) was the shifted Player
+  stream, not the struct. With the third-person camera and equipped armour, the created character
+  (MiNo) shows in the world with its hair and colours.</li>
+<li>RPCJoinDestinationSelectionWorld (135, C2S, <code>{"triggeringEntityID":5}</code>, sent when the player uses
+  the airship map) is parsed and logged, not acted on yet.</li>
 </ul><h2 id="doc-client-loading-screen">Loading screen / &quot;white screen&quot; (client 36731) <span class="addr">docs/client/loading-screen.md</span></h2>
 <p>All addresses are <code>SkySagaU.exe</code> 36731 (image base 0x400000, Ghidra program <code>/36731</code>).
 Status markers: <strong>[code]</strong> read out of the disassembly, <strong>[run]</strong> observed on a live client,
@@ -6511,12 +6514,13 @@ Balance         32 bits, full width -&gt; big-endian
   &quot;triggeringEntityID&quot;: 5
 }</code></pre></details>
 <div class="doc"><p>RPCJoinDestinationSelectionWorld, ordinal 135, client to server (send stub FUN_007B85E0, caller
-FUN_007B7550): one full-width (big-endian) u32. Not acted on yet.</p></div>
+FUN_007B7550): triggeringEntityID, one full-width (big-endian) u32 (the engine log prints
+{"triggeringEntityID":5}, the player). Sent when the player uses the airship map. Not acted on yet.</p></div>
 <details><summary>Handle (client &rarr; server parser)</summary><pre><code>public static bool Handle(PlayerConnection connection, BitStream bitStream)
 {
     if (!bitStream.ReadFullWidthUInt32(out var value)) return false;
 
-    Console.WriteLine($&quot;[JoinDestinationSelectionWorld] value=0x{value:X8}&quot;);
+    Console.WriteLine($&quot;[JoinDestinationSelectionWorld] triggeringEntityID={value}&quot;);
 
     return true;
 }</code></pre></details>
