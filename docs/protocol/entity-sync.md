@@ -151,7 +151,7 @@ Fixed 2026-10-12. Together these were why the player could not move and the HUD 
 
 | sync | parameter | client reader | wire |
 |------|-----------|---------------|------|
-| 12, 36 | availableplayersigillist, currentsigil | ClientPlayerNameComponent | not sent (TrySync returned true without data) |
+| 12, 36 | availableplayersigillist, currentsigil | ClientPlayerNameComponent | were not sent at all (TrySync returned true without data). Now: list = count escaped at 0x100 (9 bits), per entry sigil index (5 bits) + 2 full-width u32 (FUN_00C535D0 / FUN_00C53760); currentsigil = ranged index into the 27-entry sigil table (5 bits, FUN_00C53190) |
 | 28 | craftingdropslots | FUN_00D18620 | count escaped at 2 (2 bits), then exactly 2 item refs |
 | 78 | inputmovementdirection | FUN_00BF46F0 case 2 / FUN_007D6590 | 3 × ranged 0x80 of (v + 0x40), ×1/64 |
 | 79 | inputmovementspeed | case 3 / FUN_00BF4580 | ranged 0x78, ×1/8 |

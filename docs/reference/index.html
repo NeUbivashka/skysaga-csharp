@@ -503,7 +503,7 @@ A component's <code>TrySync</code> must return <code>false</code> for every para
 <td>12, 36</td>
 <td>availableplayersigillist, currentsigil</td>
 <td>ClientPlayerNameComponent</td>
-<td>not sent (TrySync returned true without data)</td>
+<td>were not sent at all (TrySync returned true without data). Now: list = count escaped at 0x100 (9 bits), per entry sigil index (5 bits) + 2 full-width u32 (FUN_00C535D0 / FUN_00C53760); currentsigil = ranged index into the 27-entry sigil table (5 bits, FUN_00C53190)</td>
 </tr>
 <tr>
 <td>28</td>

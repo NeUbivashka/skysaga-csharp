@@ -43,12 +43,10 @@ public class FeatureUnlockComponent : Component
     ];
 
     /// <summary>
-    /// Features the server leaves locked because unlocking them crashes the client with what the
-    /// server sends today. Sigils: the playername component then walks its default
-    /// AvailablePlayerSigilList and an id falls outside the sigil table (FTL at 0x00948F99 in
-    /// FUN_00948D80, index past [0x01487BCC]+0x1EBC). Needs a real sigil list first.
+    /// Features the server leaves locked. Empty since the sigil parameters are synced (2026-10-12):
+    /// the "Sigils crash" (FUN_00948D80 walking a garbage list) came from the shifted Player stream.
     /// </summary>
-    public static readonly string[] KeptLocked = ["Sigils"];
+    public static readonly string[] KeptLocked = [];
 
     private const uint CountMax = 62;
 
