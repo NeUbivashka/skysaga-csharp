@@ -19,6 +19,31 @@ SMALL_SET = [
     "HUB_NPC_Explorer", "HUB_NPC_Gladiator_OldCity",
 ]
 
+BROKEN_GROUPS = [
+    ("NPCs", r"^HUB_NPC_"),
+    ("Underking", r"^Arctic_HumanA_"),
+    ("Wasteland", r"^Arctic_Human_(?!Beast_|WarBeast_)"),
+    ("Dervish", r"^Desert_Cat_(?!Beast_)"),
+    ("Outlaw", r"^Forest_HumanA_"),
+    ("Brigand", r"^Forest_Human_"),
+    ("Ronin", r"^Jungle_Lizard_"),
+    ("Other", r"^(FTUE_CityGuard_|Test_Biped|Jungle_Monkey_Mastery|Desert_Chicken$|Midwinter_Chicken$)"),
+]
+ROW_SPACING = 6
+COLUMN_SPACING = 4
+
+
+def broken_rows():
+    data = json.load(open(os.path.join(GAME, "Data", "Entities.json"), encoding="utf-8"))
+    entities = data["Entities"] if isinstance(data, dict) else data
+    seen, names = set(), []
+    for e in entities:
+        key = re.sub(r"_\d+$", "", e["Name"])
+        if key not in seen:
+            seen.add(key)
+            names.append(e["Name"])
+    return [(title, [n for n in names if re.search(pattern, n)]) for title, pattern in BROKEN_GROUPS]
+
 
 def voxel_types():
     rows = []
@@ -65,13 +90,24 @@ def main():
     gallery_end_z = EDGE + ((len(types) - 1) // per_row) * 4 + 6
 
     entities = [{"name": "Player", "x": sx // 2, "y": GROUND_Y, "z": gallery_end_z}]
-    per_row = (sx - 2 * EDGE) // 6
-    names = creature_names(all_types)
-    for i, name in enumerate(names):
-        entities.append({"name": name,
-                         "x": EDGE + (i % per_row) * 6,
-                         "y": GROUND_Y,
-                         "z": gallery_end_z + 8 + (i // per_row) * 6})
+    if "--broken" in sys.argv:
+        rows = broken_rows()
+        names = [n for _, row in rows for n in row]
+        for r, (title, row) in enumerate(rows):
+            z = gallery_end_z + 8 + r * ROW_SPACING
+            left = sx // 2 + (len(row) - 1) * COLUMN_SPACING // 2
+            print(f"row {r + 1} {title}:")
+            for i, name in enumerate(row):
+                entities.append({"name": name, "x": left - i * COLUMN_SPACING, "y": GROUND_Y, "z": z})
+                print(f"  {i + 1}: {name}")
+    else:
+        per_row = (sx - 2 * EDGE) // 6
+        names = creature_names(all_types)
+        for i, name in enumerate(names):
+            entities.append({"name": name,
+                             "x": EDGE + (i % per_row) * 6,
+                             "y": GROUND_Y,
+                             "z": gallery_end_z + 8 + (i // per_row) * 6})
     entities.append({"name": "Airship", "x": sx - 24, "y": GROUND_Y + 8, "z": sz - 24})
 
     world = {"mapSizeChunks": {"x": SIZE_CHUNKS[0], "y": SIZE_CHUNKS[1], "z": SIZE_CHUNKS[2]},

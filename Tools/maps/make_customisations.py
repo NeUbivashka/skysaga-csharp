@@ -1,4 +1,5 @@
 import base64
+import zlib
 import json
 import os
 
@@ -12,6 +13,9 @@ CUSTOMISATION_SLOTS = ["PatternA", "PatternB", "PatternEmissive", "PatternPalett
                        "DecalA", "DecalB", "DecalPalette", "Eye", "Mouth"]
 GENDERS = {"Male": 0, "Female": 1}
 TRIBE_CATEGORIES = {"Skin": "CharacterSkin", "Eye": "CharacterEyes"}
+OTHER_GENDER_MARK = {"Male": "_Fem", "Female": "_Mal"}
+TRIBE_CUSTOMISATIONS = {"Eye": "Eye", "DecalA": "Decal", "DecalPalette": "DecalPalette"}
+CLIENT_LEFT_EMPTY = {"Mouth"}
 
 
 class Bits:
@@ -52,6 +56,10 @@ def main():
     for m in sorted(d["Materials"], key=lambda m: (not m["IsDefaultForCategory"], m["SortId"], m["Index"])):
         tribe_materials.setdefault((m["Category"], m["LockedToTribe"]), m["Name"])
 
+    def choose(options, seed):
+        options = sorted(options)
+        return options[zlib.crc32(seed.encode()) % len(options)] if options else ""
+
     def first(values, key):
         values = values.get("Values", [])
         return values[0].get(key, "") if values else ""
@@ -61,8 +69,11 @@ def main():
         if not lst.get("Entries"):
             continue
         e = lst["Entries"][0]
+        tribe = e.get("Tribe")
+        gender = first(e.get("ValidGenders", {}), "Gender") or "Male"
+        seed = lst["Name"].lower()
         b = Bits()
-        b.ranged(GENDERS.get(first(e.get("ValidGenders", {}), "Gender"), 0), 2)
+        b.ranged(GENDERS.get(gender, 0), 2)
         b.ranged(index("Tribes", e.get("Tribe")), widths["Tribes"])
 
         materials = e.get("MaterialEntries", {})
@@ -70,7 +81,7 @@ def main():
         for slot in MATERIAL_SLOTS:
             name = first(materials.get(slot, {}).get("ValidMaterials", {}), "Material")
             if not name and slot in TRIBE_CATEGORIES:
-                name = tribe_materials.get((TRIBE_CATEGORIES[slot], e.get("Tribe")), "")
+                name = tribe_materials.get((TRIBE_CATEGORIES[slot], tribe), "")
             b.ranged(index("Materials", name), widths["Materials"])
 
         attachments = e.get("AttachmentEntries", {})
@@ -79,6 +90,12 @@ def main():
             entry = attachments.get(slot, {})
             attachment = first(entry.get("ValidAttachments", {}), "CharacterAttachment")
             material = first(entry.get("ValidAttachmentMaterials", {}), "Material")
+            if not attachment and slot == "HeadTop":
+                attachment = choose([a["Name"] for a in d["CharacterAttachments"]
+                                     if a["LockedToTribe"] == tribe and a["PrimaryLocation"] == slot
+                                     and a["Gender"] == gender], seed + slot)
+            if attachment and not material:
+                material = tribe_materials.get(("CharacterHair", tribe), "")
             b.ranged(index("CharacterAttachments", attachment), widths["CharacterAttachments"])
             b.ranged(index("Materials", material), widths["Materials"])
 
@@ -86,6 +103,12 @@ def main():
         b.count(len(CUSTOMISATION_SLOTS), 4, 9)
         for slot in CUSTOMISATION_SLOTS:
             name = first(customisations.get(slot, {}).get("ValidMaterialCustomisations", {}), "MaterialCustomisation")
+            if slot in CLIENT_LEFT_EMPTY:
+                name = ""
+            if not name and slot in TRIBE_CUSTOMISATIONS:
+                name = choose([m["Name"] for m in d["MaterialCustomisations"]
+                               if m["LockedToTribe"] == tribe and m["Type"] == TRIBE_CUSTOMISATIONS[slot]
+                               and OTHER_GENDER_MARK[gender] not in m["Name"]], seed + slot)
             b.ranged(index("MaterialCustomisations", name), widths["MaterialCustomisations"])
 
         b.ranged(0, widths["Backstories"])

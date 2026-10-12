@@ -251,6 +251,9 @@ public class EntityManager : IMapEntityManager
         if (targetType == typeof(byte))
             return value.TryGetByte(out var byteValue) ? byteValue : null;
 
+        if (targetType == typeof(uint?) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } name)
+            return (uint?)Util.ComputeCrc32(name);
+
         return null;
     }
 

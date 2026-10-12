@@ -215,6 +215,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 continue;
             }
 
+            var loadoutItems = CreatureLoadoutTable.CreateItems(spec.Name, EntityManager);
+
             if (!EntityManager.TryCreateEntity(spec.Name, out var entity))
             {
                 Console.WriteLine($"[WorldManager] Unknown entity name '{spec.Name}' in WorldMap.json, skipping.");
@@ -225,6 +227,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 smoothedTransform.Position = position;
             else if (entity.TryGetComponent<TransformComponent>(out var transform))
                 transform.Position = position;
+
+            CreatureLoadoutTable.Equip(entity, loadoutItems);
 
             spawned++;
         }
