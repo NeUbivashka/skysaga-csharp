@@ -137,6 +137,13 @@ public class PlayerConnection
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
             PacketId.SetInputMovement => SetInputMovement.Handle(this, bitStream),
             PacketId.SetLookAtDirection => SetLookAtDirection.Handle(this, bitStream),
+            PacketId.SetPlayerState => SetPlayerState.Handle(this, bitStream),
+            PacketId.PlayerDodged => PlayerDodged.Handle(this, bitStream),
+            PacketId.PerformJump => PerformJump.Handle(this, bitStream),
+            PacketId.JoinDestinationSelectionWorld => JoinDestinationSelectionWorld.Handle(this, bitStream),
+            PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
+            PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
+            PacketId.UISettingsSetGameplayCameraState => UISettingsSetGameplayCameraState.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
             PacketId.SetCharacterCustomisationData => SetCharacterCustomisationData.Handle(this, bitStream),
             PacketId.SaveCharacterName => SaveCharacterName.Handle(this, bitStream),
@@ -170,6 +177,13 @@ public class PlayerConnection
     /// Applied to the Player at SaveCharacterName.
     /// </summary>
     public byte[]? CustomisationPayload { get; set; }
+
+    /// <summary>Last RPCSetPlayerState value (0..10, names unknown).</summary>
+    public int PlayerState { get; set; }
+
+    /// <summary>Last RPCSetLookAtDirection angles, in degrees.</summary>
+    public float LookPitch { get; set; }
+    public float LookYaw { get; set; }
 
     public void Tick()
     {

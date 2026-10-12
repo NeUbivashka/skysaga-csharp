@@ -128,3 +128,66 @@ Snapshot taken from a live client in gameplay. `?` means the name hash matched n
 | 0x7A | `ui_blueprintBrowser_backplate` | `0x012F45B8` |
 | 0x7B | `ui_overhead_icons` | `0x012E6F64` |
 | 0x7C | `ui_hud_mailIcon_v3` | `0x012E713C` |
+
+## HUD visibility
+
+Being open is not enough for a HUD screen to show anything. `ui_hud_v3a` (0x02), `ui_xpBar_v3`,
+`ui_minimap_v3`, the quest tracker and the rest stay empty until two things hold:
+
+1. **ScreenManager `+0xEE5` ("HUD shown") is set.** `FUN_00792310` recomputes it as
+   `ScreenManager+0xD98 != 0 && !(ScreenManager+0xEBC & 0x80)`. `+0xEBC` is the OR of every open
+   screen's flag word (`widget+0x114`, set with `FUN_009A4920(bit, on)` and merged by
+   `FUN_00790D70`); bit 4 is cursor mode, and bit 7 is set by full-screen menus such as the pause
+   menu. When `+0xEE5` drops, `+0xE9C` records the frame (`[0x01447A2C]`). When it changes,
+   every open screen gets vtable slot 24 (`+0x60`), which for the HUD is `FUN_008C54E0`.
+   About twenty HUD functions test `+0xEE5`.
+2. **The player has the feature unlocked.** `FUN_008C64D0` (from slot 24, from OnOpen, and from the
+   `FeatureUnlockData` UI message handler `FUN_008C6620`) shows the hotbar (`hud+0x2CA`) only if
+   `+0xEE5` is set, the frame is past `+0xE9C + 1`, and `IsFeatureUnlocked(Hotbar)`. The hotkeys
+   strip (`hud+0x1BD`) needs `Hotkeys`. OnOpen (`FUN_008C4CB0`) also caches `ChargeBar` (`+0x2C5`)
+   and `HealthBar` (`+0x2C6`).
+
+`IsFeatureUnlocked(enum)` (`FUN_00C42220`, ECX = the local player's feature component, `hud+0x308`)
+hashes the enum name with the 32-bit UI hash (`FUN_006E4CA0`) and **binary-searches** the
+component's set at `+0x24` (`FUN_00C42320` -> `FUN_00C2BFF0`). The server must send the CRCs sorted
+ascending. An unsorted set looks complete in memory, but most lookups miss, so the HUD stayed hidden
+(fixed 2026-10-12).
+
+The component (vtable `0x01331D74`) also keeps the previously announced set at `+0x40`. Slot 8
+(`FUN_00B29730`) posts one `FeatureUnlockData {feature enum, 1}` per newly added feature
+(`FUN_00B297B0`, only while the owning entity is local: `entity+0x81 & 8`). It skips the very first
+set it sees. The UI message bus is synchronous (`FUN_00C1F930` calls each subscriber in turn;
+subscribe with `FUN_00C1F8D0`).
+
+HUD animation names are 32-bit UI hashes. Reversed so far: `Initialise`, `Hide`, `HealthBarFlash`,
+`HitFadeOut`, `ShowPowerMarker`, `HidePowerMarker`, `string_cursorMode`, `showString_cursorMode`,
+`hideString_cursorMode`.
+
+### Feature enum (client order)
+
+The name table is at `0x01405278` (`FUN_00BE86D0`). This index is what `IsFeatureUnlocked` takes.
+The server sends names, so the order only matters when reading the client.
+
+| # | Feature | # | Feature | # | Feature |
+|---|---|---|---|---|---|
+| 0 | Backpack | 21 | GuildUI | 42 | QuestLog |
+| 1 | Vault | 22 | GameQueue | 43 | DestinationSelectionHotkey |
+| 2 | Chat | 23 | GameQueue_SettlerPVP | 44 | DestinationSelectionBiomes |
+| 3 | HandCrafting | 24 | GameQueue_GladiatorPVP | 45 | BlueprintStudio |
+| 4 | ArmourSlots | 25 | GameQueue_EndGame | 46 | GlobalShop |
+| 5 | Hotbar | 26 | DailyLoginRewardTrack | 47 | UGC_CommunityIslands_FTUE |
+| 6 | Photo | 27 | MessageOfTheDay | 48 | BonusAdventures |
+| 7 | DailyAdventures | 28 | WelcomeHint | 49 | ContentRotationAdventures |
+| 8 | PickupEntities | 29 | WelcomeIslandTitle | 50 | ChargeBar |
+| 9 | RepairItem | 30 | Mail | 51 | HealthBar |
+| 10 | DismantleItem | 31 | Map | 52 | Hotkeys |
+| 11 | DestroyItem | 32 | Sigils | 53 | FactionMarkIcon |
+| 12 | DiscardItem | 33 | GameMessages | 54 | HardCurrencyIcon |
+| 13 | SocialUI | 34 | MysteryBoxShop | 55 | KnotsIcon |
+| 14 | UGC_CommunityIslands | 35 | HomeIslandStorageChests | 56 | DestinationSelectionFTUEForest |
+| 15 | UGC_Blueprints | 36 | DetailedItemTooltips | 57 | Profile |
+| 16 | Friends | 37 | AddPersonalQuests | 58 | EquipItem |
+| 17 | ProfileUI_Islands | 38 | XPBar | 59 | ToggleCursor |
+| 18 | Groups | 39 | DirectionalIndicator | 60 | ReticuleEntityText |
+| 19 | CoFL | 40 | ImmobiliseWarning | 61 | JumpToLocation |
+| 20 | IslandPublishing | 41 | CurrencyConverter | 62 | Noof |

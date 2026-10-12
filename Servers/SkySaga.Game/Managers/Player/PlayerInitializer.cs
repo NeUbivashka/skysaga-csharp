@@ -34,6 +34,18 @@ public class PlayerInitializer(IWorldManager worldManager)
                 customisation.CustomisationData = Convert.FromBase64String(save.CustomisationData);
         }
 
+        if (player.TryGetComponent<ClientSettingsComponent>(out var settings) && save?.Settings is { } saved)
+        {
+            settings.DisableAutoQuestTracking = saved.DisableAutoQuestTracking;
+            settings.DisableSocialNotifications = saved.DisableSocialNotifications;
+            settings.DisableMysteryBoxNotifications = saved.DisableMysteryBoxNotifications;
+            settings.DisplayTimeMode = saved.DisplayTimeMode;
+            settings.QuestTrackerSort = saved.QuestTrackerSort;
+            settings.CameraFlag = saved.CameraFlag;
+            settings.CameraState = saved.CameraState;
+            settings.ControlFlag = saved.ControlFlag;
+        }
+
         if (player.TryGetComponent<ClientHealthComponent>(out var clientHealthComponent))
         {
             clientHealthComponent.InitialHP = save is { InitialHP: > 0 } ? save.InitialHP : 10;
@@ -212,6 +224,21 @@ public class PlayerInitializer(IWorldManager worldManager)
         {
             data.IsCharacterCustomised = customisation.IsCharacterCustomised;
             data.CustomisationData = customisation.CustomisationData is { } bytes ? Convert.ToBase64String(bytes) : null;
+        }
+
+        if (player.TryGetComponent<ClientSettingsComponent>(out var settings))
+        {
+            data.Settings = new PlayerSaveData.SettingsEntry
+            {
+                DisableAutoQuestTracking = settings.DisableAutoQuestTracking,
+                DisableSocialNotifications = settings.DisableSocialNotifications,
+                DisableMysteryBoxNotifications = settings.DisableMysteryBoxNotifications,
+                DisplayTimeMode = settings.DisplayTimeMode,
+                QuestTrackerSort = settings.QuestTrackerSort,
+                CameraFlag = settings.CameraFlag,
+                CameraState = settings.CameraState,
+                ControlFlag = settings.ControlFlag,
+            };
         }
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))

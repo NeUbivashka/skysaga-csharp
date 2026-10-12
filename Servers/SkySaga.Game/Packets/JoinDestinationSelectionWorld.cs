@@ -1,13 +1,17 @@
 namespace SkySaga.Game.Packets;
 
-public class JoinDestinationSelectionWorld : ISerializablePacket
+/// <summary>
+/// RPCJoinDestinationSelectionWorld, ordinal 135, client to server (send stub FUN_007B85E0, caller
+/// FUN_007B7550): one full-width (big-endian) u32. Not acted on yet.
+/// </summary>
+public static class JoinDestinationSelectionWorld
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var value)) return false;
 
-        bitStream.WritePacketId(PacketId.JoinDestinationSelectionWorld);
+        Console.WriteLine($"[JoinDestinationSelectionWorld] value=0x{value:X8}");
 
-        return bitStream;
+        return true;
     }
 }

@@ -1,13 +1,7 @@
 namespace SkySaga.Game.Packets;
 
-public class PerformJump : ISerializablePacket
+/// <summary>RPCPerformJump, ordinal 295, client to server (send stub FUN_00B23E30). No payload.</summary>
+public static class PerformJump
 {
-    public BitStream Serialize()
-    {
-        var bitStream = new BitStream();
-
-        bitStream.WritePacketId(PacketId.PerformJump);
-
-        return bitStream;
-    }
+    public static bool Handle(PlayerConnection connection, BitStream bitStream) => true;
 }

@@ -158,7 +158,7 @@ Fixed 2026-10-12. Together these were why the player could not move and the HUD 
 | 81 | inventoryentitylist | FUN_00BC7550 | count escaped at 0xF9 (8 bits), full-width u32 ids |
 | 114 | maxinventoryslots | FUN_00C3F490 | ranged 0xF0 = 8 bits (was 6) |
 | 135 | position | FUN_00BF88F0 / FUN_007D66A0 | X 17, Y 15 of (y·64 + 0x3FC0), Z 17 (was 17/17/17) |
-| 162 | unlockedfeaturecrcset | FUN_00C426B0 | count escaped at 62, then presence bit + full-width CRC32 of the feature name |
+| 162 | unlockedfeaturecrcset | FUN_00C426B0 | count escaped at 62, then presence bit + full-width CRC32 of the feature name, **sorted ascending** (the client binary-searches the set; see client/ui-screens.md, HUD visibility) |
 | — | scale | FUN_007D6410 | ranged 0x38, ×1/8 (was raw float bits) |
 
 Checked and correct: the aspect bools (CanEditMap 0 … IsSpectator 5, IsDebugPlayer 9, IsLocal 0x11:

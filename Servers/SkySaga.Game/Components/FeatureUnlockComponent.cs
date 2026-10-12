@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SkySaga.Game.Components;
 
 /// <summary>
@@ -12,6 +14,11 @@ namespace SkySaga.Game.Components;
 ///             real count as a full-width (big-endian) u32.
 ///   entries   count times: presence bit + full-width u32 CRC of the feature name (absent = the
 ///             empty hash). The CRC is the engine's lower-case CRC32, Util.ComputeCrc32.
+///
+/// The entries must be sorted by CRC, ascending (unsigned). The client keeps them as received and
+/// IsFeatureUnlocked (FUN_00C42220 -> FUN_00C42320 -> FUN_00C2BFF0) binary-searches them, so an
+/// unsorted set makes most lookups miss: the features were "in" the set but read as locked, and the
+/// HUD (hotbar = Hotbar, enum 5) never showed.
 ///
 /// The old server synced "featureislockedstatuslist", a name this build does not have, so the
 /// set was never sent.
@@ -52,12 +59,14 @@ public class FeatureUnlockComponent : Component
         if (!parameterName.Equals("UnlockedFeatureCRCSet", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        bitStream.WriteEscapedCount((uint)UnlockedFeatures.Count, CountMax);
+        var crcs = UnlockedFeatures.Select(feature => Util.ComputeCrc32(feature)).Distinct().Order().ToList();
 
-        foreach (var feature in UnlockedFeatures)
+        bitStream.WriteEscapedCount((uint)crcs.Count, CountMax);
+
+        foreach (var crc in crcs)
         {
             bitStream.Write1();
-            bitStream.WriteFullWidthUInt32(Util.ComputeCrc32(feature));
+            bitStream.WriteFullWidthUInt32(crc);
         }
 
         return true;

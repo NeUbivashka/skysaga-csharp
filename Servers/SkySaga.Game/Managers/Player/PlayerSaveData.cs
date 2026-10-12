@@ -15,6 +15,9 @@ public class PlayerSaveData
     public float PositionZ { get; set; }
     public float YawDegrees { get; set; }
 
+    /// <summary>ClientSettingsComponent (RPCUISettings*). Null for saves from before it existed.</summary>
+    public SettingsEntry? Settings { get; set; }
+
     public int InitialHP { get; set; }
     public int WholeHearts { get; set; }
     public int HalfHearts { get; set; }
@@ -22,6 +25,18 @@ public class PlayerSaveData
     public List<CurrencyEntry> Currencies { get; set; } = [];
 
     public List<InventoryEntry> Inventory { get; set; } = [];
+
+    public class SettingsEntry
+    {
+        public bool DisableAutoQuestTracking { get; set; }
+        public bool DisableSocialNotifications { get; set; }
+        public bool DisableMysteryBoxNotifications { get; set; }
+        public uint DisplayTimeMode { get; set; }
+        public uint QuestTrackerSort { get; set; }
+        public bool CameraFlag { get; set; }
+        public uint CameraState { get; set; }
+        public bool ControlFlag { get; set; }
+    }
 
     public class CurrencyEntry
     {

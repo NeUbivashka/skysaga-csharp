@@ -125,6 +125,24 @@ public static class BitStreamExtensions
         return true;
     }
 
+    /// <summary>
+    /// A full-width u32 as the client writes it: the four bytes in network (big-endian) order.
+    /// Counterpart of WriteFullWidthUInt32.
+    /// </summary>
+    public static bool ReadFullWidthUInt32(this BitStream bitStream, out uint result)
+    {
+        var buffer = new byte[4];
+
+        if (!bitStream.ReadBits(buffer, 32, alignBitsToRight: true))
+        {
+            result = 0;
+            return false;
+        }
+
+        result = (uint)(buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3]);
+        return true;
+    }
+
     #endregion
 
     #region Write

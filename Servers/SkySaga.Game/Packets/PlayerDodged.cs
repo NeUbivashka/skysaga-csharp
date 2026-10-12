@@ -1,13 +1,17 @@
 namespace SkySaga.Game.Packets;
 
-public class PlayerDodged : ISerializablePacket
+/// <summary>
+/// RPCPlayerDodged, ordinal 280, client to server (send stub FUN_00B25580): one value ranged max 8
+/// (4 bits), sent with player state 7.
+/// </summary>
+public static class PlayerDodged
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadInt32(8, out var value)) return false;
 
-        bitStream.WritePacketId(PacketId.PlayerDodged);
+        Console.WriteLine($"[PlayerDodged] value={value}");
 
-        return bitStream;
+        return true;
     }
 }
