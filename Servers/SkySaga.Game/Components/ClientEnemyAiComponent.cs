@@ -6,7 +6,10 @@ public class ClientEnemyAiComponent : Component
     public string EnemyType { get; set => SetIfChanged(ref field, value); } = string.Empty;
     public string EnemySubtype { get; set => SetIfChanged(ref field, value); } = string.Empty;
     public int MaxRangedAttackDistance { get; set => SetIfChanged(ref field, value); }
+    public const uint MoodMax = 6;
+
     public string Mood { get; set => SetIfChanged(ref field, value); } = string.Empty;
+    public uint MoodIndex { get; set => SetIfChanged(ref field, Math.Min(value, MoodMax), nameof(Mood)); }
     public string RelationshipTable { get; set => SetIfChanged(ref field, value); } = string.Empty;
     public Vector3 SpawnPosition { get; set => SetIfChanged(ref field, value); }
     public string StateName { get; set => SetIfChanged(ref field, value); } = string.Empty;
@@ -40,7 +43,7 @@ public class ClientEnemyAiComponent : Component
         }
         else if (parameterName.Equals(nameof(Mood), StringComparison.OrdinalIgnoreCase))
         {
-            bitStream.WriteString(Mood);
+            bitStream.WriteRanged(MoodIndex, MoodMax);
 
             return true;
         }
@@ -66,7 +69,7 @@ public class ClientEnemyAiComponent : Component
         }
         else if (parameterName.Equals(nameof(TargetEntityId), StringComparison.OrdinalIgnoreCase))
         {
-            bitStream.Write(TargetEntityId);
+            bitStream.WriteFullWidthUInt32((uint)TargetEntityId);
 
             return true;
         }

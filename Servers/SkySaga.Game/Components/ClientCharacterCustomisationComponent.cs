@@ -7,6 +7,21 @@ public class ClientCharacterCustomisationComponent : Component
     public byte[]? CustomisationData { get; set => SetIfChanged(ref field, value); }
     public bool IsCharacterCustomised { get; set => SetIfChanged(ref field, value); }
 
+    public string? CustomisationListCrc
+    {
+        get;
+        set
+        {
+            field = value;
+
+            if (CustomisationData is null && value is not null && CustomisationTable.TryGet(value, out var data))
+            {
+                CustomisationData = data;
+                IsCharacterCustomised = true;
+            }
+        }
+    }
+
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
         if (parameterName.Equals(nameof(CustomisationData), StringComparison.OrdinalIgnoreCase))
@@ -15,13 +30,6 @@ public class ClientCharacterCustomisationComponent : Component
                 return false;
 
             bitStream.WriteBits(CustomisationData, CustomisationDataBits, true);
-
-            return true;
-        }
-        else if (parameterName.Equals("CustomisationListCRC", StringComparison.OrdinalIgnoreCase)
-                 || parameterName.Equals("ScaleRangeCRC", StringComparison.OrdinalIgnoreCase))
-        {
-            bitStream.Write0();
 
             return true;
         }
