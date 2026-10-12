@@ -49,9 +49,9 @@ def voxel_types():
     with open(os.path.join(GAME, "Data", "VoxelStats.txt"), encoding="utf-8") as f:
         for line in f:
             parts = line.split()
-            if len(parts) >= 6 and int(parts[0]) != 0 and parts[4] == "1":
+            if len(parts) >= 6 and parts[4] == "1":
                 rows.append((int(parts[0]), parts[5]))
-    return rows
+    return [row for row in rows if row[0] != 0] + [row for row in rows if row[0] == 0]
 
 
 def creature_names(all_types):

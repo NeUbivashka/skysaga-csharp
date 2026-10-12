@@ -32,7 +32,7 @@ public static class PerformVoxelActions
         var chunkPos = new Vector3Int(chunkCoordX, chunkCoordY, chunkCoordZ);
         var voxelPos = new Vector3Int(voxelCoordX, voxelCoordY, voxelCoordZ);
 
-        int blockId = 0;
+        int blockId = WorldChunk.Air;
         if (location == ActionLocation.LeftHand && connection.LeftHandBlockId.HasValue)
         {
             voxelPos += new Vector3Int(directionX, directionY, directionZ);

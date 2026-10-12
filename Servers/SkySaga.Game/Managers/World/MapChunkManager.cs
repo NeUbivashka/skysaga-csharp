@@ -1,14 +1,16 @@
-﻿using System.Linq;
+using System.Linq;
 
 namespace SkySaga.Game.Managers.World;
 
 public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : IMapChunkManager
 {
     private const int ChunkSize = 32;
-    private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves",
-        Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map
-            ? $"world_edits_{Path.GetFileNameWithoutExtension(map)}.json"
-            : "world_edits.json");
+    private static readonly string MapSuffix = Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map
+        ? $"_{Path.GetFileNameWithoutExtension(map)}"
+        : "";
+    private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"voxel_edits{MapSuffix}.json");
+    private static readonly string LegacyEditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"world_edits{MapSuffix}.json");
+    private const byte LegacyAir = 0;
 
     private readonly Dictionary<Vector3Int, WorldChunk> _chunks = [];
     private readonly Dictionary<Vector3Int, byte> _edits = [];
@@ -44,7 +46,7 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
     public byte GetVoxel(Vector3Int chunkPosition, Vector3Int voxelPosition)
     {
         if (!TryGetChunk(chunkPosition, out var chunk))
-            return 0;
+            return WorldChunk.Air;
 
         return chunk.GetVoxel(voxelPosition);
     }
@@ -64,23 +66,31 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
     public void LoadSavedEdits()
     {
-        if (!File.Exists(EditsPath))
+        var legacy = !File.Exists(EditsPath);
+        var path = legacy ? LegacyEditsPath : EditsPath;
+
+        if (!File.Exists(path))
             return;
 
         int[][]? entries;
 
         try
         {
-            entries = JsonSerializer.Deserialize<int[][]>(File.ReadAllText(EditsPath));
+            entries = JsonSerializer.Deserialize<int[][]>(File.ReadAllText(path));
         }
         catch (Exception ex) when (ex is JsonException or IOException)
         {
-            Console.WriteLine($"[World] Failed to read '{EditsPath}': {ex.Message}");
+            Console.WriteLine($"[World] Failed to read '{path}': {ex.Message}");
             return;
         }
 
         if (entries is null)
             return;
+
+        if (legacy)
+            foreach (var entry in entries)
+                if (entry.Length == 4 && entry[3] == LegacyAir)
+                    entry[3] = WorldChunk.Air;
 
         lock (_editsLock)
         {
@@ -130,11 +140,6 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
     public static PartialChunkEditsSync GetPartialChunkEditSync(Vector3Int chunkPosition, Vector3Int voxelPosition, byte oldBlockType, byte newBlockType)
     {
-        if (newBlockType == 0)
-        {
-            newBlockType = 255;
-        }
-
         return new PartialChunkEditsSync
         {
             ChunkCoord = chunkPosition,
@@ -181,7 +186,7 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
         for (int i = 0; i < dataSize; i++)
         {
-            syncData[1 + i] = (voxelData[i] == 0) ? (byte)255 : voxelData[i];
+            syncData[1 + i] = voxelData[i];
         }
 
         Array.Fill<byte>(syncMeta, 0x00);

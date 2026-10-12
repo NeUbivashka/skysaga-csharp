@@ -9,7 +9,7 @@ public static class RunActionListReceived
     private const float HandVoxelStrength = 1;
     private const float HandMiningPowerTier = 1;
     private const float ZeroStrengthToolVoxelStrength = 200;
-    private const byte Air = 0;
+    private const byte Air = WorldChunk.Air;
     private static readonly bool SendVoxelDamage = Environment.GetEnvironmentVariable("SKYSAGA_VOXEL_DAMAGE") == "1";
 
     private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 0), (0, 10), (40, 50)];
@@ -44,7 +44,7 @@ public static class RunActionListReceived
         var usedItemCrc = UsedItemCrc(connection);
         var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
 
-        if (blockId is int placedBlock && placedBlock != 0)
+        if (blockId is int placedBlock)
         {
             var placeAt = new Vector3Int(
                 voxel.X + (int)MathF.Round(hitNormal.X),

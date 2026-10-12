@@ -141,7 +141,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerInitializer playerIn
         var chunk = new Vector3Int(FloorDiv(voxel.X), FloorDiv(voxel.Y), FloorDiv(voxel.Z));
         var local = new Vector3Int(voxel.X - chunk.X * ChunkSize, voxel.Y - chunk.Y * ChunkSize, voxel.Z - chunk.Z * ChunkSize);
 
-        return worldManager.ChunkManager.TryGetChunk(chunk, out _) && worldManager.ChunkManager.GetVoxel(chunk, local) != 0;
+        return worldManager.ChunkManager.TryGetChunk(chunk, out _) && worldManager.ChunkManager.GetVoxel(chunk, local) != WorldChunk.Air;
     }
 
     private static int FloorDiv(int value) => (int)MathF.Floor(value / (float)ChunkSize);

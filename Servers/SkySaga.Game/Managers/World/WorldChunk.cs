@@ -1,11 +1,15 @@
-﻿namespace SkySaga.Game.Managers.World;
+using System.Linq;
+
+namespace SkySaga.Game.Managers.World;
 
 public class WorldChunk(Vector3Int position)
 {
+    public const byte Air = 255;
+
     private const int _chunkSize = 32;
     private const int _chunkVolume = _chunkSize * _chunkSize * _chunkSize;
 
-    private readonly byte[] _voxels = new byte[_chunkVolume];
+    private readonly byte[] _voxels = Enumerable.Repeat(Air, _chunkVolume).ToArray();
     private readonly byte[] _metadata = new byte[_chunkVolume];
 
     public Vector3Int Position { get; } = position;
@@ -77,7 +81,7 @@ public class WorldChunk(Vector3Int position)
 
     public void Clear()
     {
-        Array.Clear(_voxels, 0, _chunkVolume);
+        Array.Fill(_voxels, Air);
         Array.Clear(_metadata, 0, _chunkVolume);
     }
 
