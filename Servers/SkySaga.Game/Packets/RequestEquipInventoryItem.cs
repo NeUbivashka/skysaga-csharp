@@ -27,7 +27,8 @@ public static class RequestEquipInventoryItem
             && connection.PlayerEntity.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
         {
             equipped.SetSlot((uint)location, ItemTable.IndexOf(nameCrc),
-                Guid.TryParse(inventoryItemComponent.InventorySlotData.ItemUUID, out var uuid) ? uuid : null);
+                Guid.TryParse(inventoryItemComponent.InventorySlotData.ItemUUID, out var uuid) ? uuid : null,
+                itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : null);
         }
 
         var blockID = BlockCrcMapping.GetBlockId(nameCrc);

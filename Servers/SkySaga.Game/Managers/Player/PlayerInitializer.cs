@@ -208,8 +208,13 @@ public class PlayerInitializer(IWorldManager worldManager)
             if (player.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
                 EquipArmourFromInventory(clientInventoryComponent, equipped);
 
-            if (player.TryGetComponent<ClientSettingsComponent>(out var hotbarSettings) && save?.Settings?.Hotbar is null)
-                FillDefaultHotbar(clientInventoryComponent, hotbarSettings);
+            if (player.TryGetComponent<ClientSettingsComponent>(out var hotbarSettings))
+            {
+                if (save?.Settings?.Hotbar is null)
+                    FillDefaultHotbar(clientInventoryComponent, hotbarSettings);
+                else
+                    AttachHotbarMaterials(clientInventoryComponent, hotbarSettings);
+            }
         }
 
         if (save is null)
@@ -347,15 +352,42 @@ public class PlayerInitializer(IWorldManager worldManager)
             settings.SetHotbarItem(p.Slot, p.Hand, new InventoryItemRef
             {
                 Kind = index,
+                Amounts = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? [.. composition.MaterialList] : [],
                 ItemUuid = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null,
             });
         }
+    }
+
+    private void AttachHotbarMaterials(ClientInventoryComponent inventory, ClientSettingsComponent settings)
+    {
+        var materialsByUuid = new Dictionary<Guid, uint?[]>();
+
+        foreach (var entityId in inventory.InventoryEntityList)
+        {
+            if (entityId != 0
+                && _entityManager.TryGetEntity(entityId, out var itemEntity)
+                && itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
+                && Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid)
+                && itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition))
+                materialsByUuid[uuid] = composition.MaterialList;
+        }
+
+        var items = (InventoryItemRef?[])settings.HotbarItems.Clone();
+
+        for (var i = 0; i < items.Length; i++)
+        {
+            if (items[i] is { ItemUuid: { } uuid } item && materialsByUuid.TryGetValue(uuid, out var materials))
+                item.Amounts = [.. materials];
+        }
+
+        settings.HotbarItems = items;
     }
 
     private void EquipArmourFromInventory(ClientInventoryComponent inventory, ClientEquippedItemComponent equipped)
     {
         var items = new ushort[ClientEquippedItemComponent.SlotCount];
         var uuids = new Guid?[ClientEquippedItemComponent.SlotCount];
+        var materialLists = new uint?[ClientEquippedItemComponent.SlotCount][];
 
         foreach (var entityId in inventory.InventoryEntityList)
         {
@@ -385,8 +417,10 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             items[(int)slot] = index;
             uuids[(int)slot] = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null;
+            materialLists[(int)slot] = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
         }
 
+        equipped.EquippedItemMaterials = materialLists;
         equipped.EquippedItems = items;
         equipped.EquippedItemUuids = uuids;
     }
@@ -410,10 +444,7 @@ public class PlayerInitializer(IWorldManager worldManager)
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
-        var itemName = ItemTable.NameOf(ItemTable.IndexOf(nameHash));
-        var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1"
-            && (Environment.GetEnvironmentVariable("SKYSAGA_TOOL_MATERIALS") == "1"
-                || !(itemName.StartsWith("Tool_") || itemName.StartsWith("Weapon_")));
+        var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1";
         var hasMaterials = MaterialTable.TryGet(nameHash, out var materials) && materialsAllowed;
 
         var entityType = (durable, hasMaterials) switch

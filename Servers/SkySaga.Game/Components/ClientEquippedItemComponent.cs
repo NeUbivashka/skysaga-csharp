@@ -21,19 +21,24 @@ public class ClientEquippedItemComponent : Component
 
     public Guid?[] EquippedItemUuids { get; set => SetIfChanged(ref field, value, "EquippedItemSpecs"); } = new Guid?[SlotCount];
 
+    public uint?[][] EquippedItemMaterials { get; set => SetIfChanged(ref field, value, "EquippedItemSpecs"); } = new uint?[SlotCount][];
+
     public bool AutoEquip { get; set => SetIfChanged(ref field, value); } = true;
 
-    public void SetSlot(uint slot, ushort itemIndex, Guid? itemUuid)
+    public void SetSlot(uint slot, ushort itemIndex, Guid? itemUuid, uint?[]? materials = null)
     {
         if (slot >= SlotCount)
             return;
 
         var items = (ushort[])EquippedItems.Clone();
         var uuids = (Guid?[])EquippedItemUuids.Clone();
+        var materialLists = (uint?[][])EquippedItemMaterials.Clone();
 
         items[slot] = itemIndex;
         uuids[slot] = itemIndex != 0 ? itemUuid : null;
+        materialLists[slot] = itemIndex != 0 ? materials ?? [] : [];
 
+        EquippedItemMaterials = materialLists;
         EquippedItemUuids = uuids;
         EquippedItems = items;
     }
@@ -49,6 +54,7 @@ public class ClientEquippedItemComponent : Component
                 new InventoryItemRef
                 {
                     Kind = EquippedItems[i],
+                    Amounts = EquippedItems[i] != 0 && EquippedItemMaterials[i] is { } materials ? [.. materials] : [],
                     ItemUuid = EquippedItems[i] != 0 ? EquippedItemUuids[i] : null,
                 }.Encode(bitStream);
             }
