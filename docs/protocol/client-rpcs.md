@@ -11,7 +11,7 @@ Conventions: "ranged max M" is `32 - clz32(M)` bits. "Full-width u32" is 32 bits
 
 | Ordinal | RPC | Stub | Payload |
 |---:|---|---|---|
-| 17 | UISettingsSetGameplayCameraState | `FUN_009C37D0` | flag 1 bit, state ranged max 1 (1 bit) |
+| 17 | UISettingsSetGameplayCameraState | `FUN_009C37D0` | third-person camera 1 bit, state ranged max 1 (1 bit, unknown) |
 | 20 | UISettingsSetMiniMapSettings | `FUN_009C4080` | 2 bools, then two lists (`FUN_009C4C90`: count escaped at 0x19; `FUN_009C2F80`). Not handled yet |
 | 21 | UISettingsSetUISettings | `FUN_009C4420` | see below, 8 bits |
 | 22 | UISettingsSetControlSettings | `FUN_009C3460` | 1 bit (meaning unknown) |
@@ -48,7 +48,7 @@ them there and the binding syncs them back. They are also saved in `player.json`
 |---|---|---|---|
 | 0 | 74 | hotbarslotresources | not sent yet |
 | 1 | 94 | lastactivatedslot | not sent yet |
-| 2 | 33 | currentgameplaycamerastate | flag 1 bit (`+0xBD`), then state ranged max 1 (`+0xBC`, `FUN_00C25C50`) |
+| 2 | 33 | currentgameplaycamerastate | third-person camera 1 bit (`+0xBD`; 0 = first person, the client default, so the player never sees their own character), then state ranged max 1 (`+0xBC`, `FUN_00C25C50`) |
 | 3 | 116 | minimapsettings | not sent yet |
 | 4 | 161 | uisettings | the same 8 bits as RPC 21 (`FUN_00C27030`) |
 | 5 | 27 | controlsettings | 1 bit (`+0xBE`) |
@@ -60,3 +60,12 @@ The value is the local character state byte (character state object `+0x28`), se
 also sends PlayerDodged. If entity table entry 0x5B exists, it also sends the RPC from `FUN_00B251C0`.
 The state names have not been found. The Player's own `characterstateid` (sync 22) is the
 server-side counterpart, not yet synced.
+
+## Equipped items
+
+`clientequippeditemcomponent` (bindings vtable `0x01341B1C`, read `FUN_00BFF590`):
+`equippeditemspecs` (sync 50) is a count escaped at 9 (4 bits), then one item reference
+(`FUN_007E9440`) per equipment slot. The slots are LeftHand, RightHand, Head, Torso, Legs, Arms,
+Device, Backpack, AdditionalHeadFeature (names at `0x013415D4`). `autoequip` (sync 9) is 1 bit, and
+`legactions` (sync 102) is a presence bit + u32. With armour equipped and the camera in third person,
+the customised character shows in the world (verified 2026-10-12).

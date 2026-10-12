@@ -41,7 +41,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             settings.DisableMysteryBoxNotifications = saved.DisableMysteryBoxNotifications;
             settings.DisplayTimeMode = saved.DisplayTimeMode;
             settings.QuestTrackerSort = saved.QuestTrackerSort;
-            settings.CameraFlag = saved.CameraFlag;
+            settings.ThirdPersonCamera = saved.ThirdPersonCamera;
             settings.CameraState = saved.CameraState;
             settings.ControlFlag = saved.ControlFlag;
         }
@@ -195,8 +195,10 @@ public class PlayerInitializer(IWorldManager worldManager)
                 CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Clay", 10);
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 19, "Flint_and_Tinder", 1);
-
             }
+
+            if (player.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
+                EquipArmourFromInventory(clientInventoryComponent, equipped);
         }
 
 
@@ -235,7 +237,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 DisableMysteryBoxNotifications = settings.DisableMysteryBoxNotifications,
                 DisplayTimeMode = settings.DisplayTimeMode,
                 QuestTrackerSort = settings.QuestTrackerSort,
-                CameraFlag = settings.CameraFlag,
+                ThirdPersonCamera = settings.ThirdPersonCamera,
                 CameraState = settings.CameraState,
                 ControlFlag = settings.ControlFlag,
             };
@@ -304,6 +306,49 @@ public class PlayerInitializer(IWorldManager worldManager)
 
 
 
+
+    /// <summary>
+    /// Wear every armour piece found in the inventory: the slot comes from the resource name's
+    /// suffix (_Head, _Torso, _Legs, _Arms).
+    /// </summary>
+    private void EquipArmourFromInventory(ClientInventoryComponent inventory, ClientEquippedItemComponent equipped)
+    {
+        var items = new ushort[ClientEquippedItemComponent.SlotCount];
+        var uuids = new Guid?[ClientEquippedItemComponent.SlotCount];
+
+        foreach (var entityId in inventory.InventoryEntityList)
+        {
+            if (entityId == 0
+                || !_entityManager.TryGetEntity(entityId, out var itemEntity)
+                || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
+                || item.InventorySlotData.Name is not { } crc)
+                continue;
+
+            var index = ItemTable.IndexOf(crc);
+            var name = ItemTable.NameOf(index);
+
+            if (!name.StartsWith("Armour_", StringComparison.Ordinal))
+                continue;
+
+            ClientEquippedItemComponent.Slot? slot = name switch
+            {
+                _ when name.EndsWith("_Head", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Head,
+                _ when name.EndsWith("_Torso", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Torso,
+                _ when name.EndsWith("_Legs", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Legs,
+                _ when name.EndsWith("_Arms", StringComparison.Ordinal) => ClientEquippedItemComponent.Slot.Arms,
+                _ => null,
+            };
+
+            if (slot is null)
+                continue;
+
+            items[(int)slot] = index;
+            uuids[(int)slot] = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null;
+        }
+
+        equipped.EquippedItems = items;
+        equipped.EquippedItemUuids = uuids;
+    }
 
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, string itemName, int count = 1)
         => CreateAndEquipInventoryItem(inventory, slot, Util.ComputeCrc32(itemName), count);

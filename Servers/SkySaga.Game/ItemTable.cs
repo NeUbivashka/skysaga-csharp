@@ -13,6 +13,7 @@ public static class ItemTable
     public const uint Count = 1810;
 
     private static readonly Lazy<Dictionary<uint, ushort>> ByCrc = new(Load);
+    private static readonly List<string> Names = [""];
 
     private static Dictionary<uint, ushort> Load()
     {
@@ -33,6 +34,7 @@ public static class ItemTable
                 continue;
 
             map.TryAdd(Util.ComputeCrc32(line), ++index);
+            Names.Add(line);
         }
 
         return map;
@@ -42,4 +44,11 @@ public static class ItemTable
     public static ushort IndexOf(uint nameCrc) => ByCrc.Value.GetValueOrDefault(nameCrc);
 
     public static ushort IndexOf(string name) => IndexOf(Util.ComputeCrc32(name));
+
+    /// <summary>Resource name at a wire index; empty for 0 or an unknown index.</summary>
+    public static string NameOf(ushort index)
+    {
+        _ = ByCrc.Value;
+        return index < Names.Count ? Names[index] : "";
+    }
 }

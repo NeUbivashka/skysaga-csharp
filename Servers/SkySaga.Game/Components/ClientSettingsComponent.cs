@@ -9,8 +9,9 @@ namespace SkySaga.Game.Components;
 ///   -------  --------------------------  ------------------------------------------------------
 ///      0     hotbarslotresources         not sent yet
 ///      1     lastactivatedslot           not sent yet
-///      2     currentgameplaycamerastate  1 bit flag, then the state ranged max 1 (1 bit)
-///                                        (FUN_00C25E30 / FUN_00C25C50)
+///      2     currentgameplaycamerastate  1 bit third-person camera (0 = first person, the
+///                                        client's default), then a state ranged max 1 (1 bit,
+///                                        meaning unknown) (FUN_00C25E30 / FUN_00C25C50)
 ///      3     minimapsettings             not sent yet
 ///      4     uisettings                  3 bools (DisableAutoQuestTracking, DisableSocialNotifications,
 ///                                        DisableMysteryBoxNotifications), DisplayTimeMode ranged max 2
@@ -30,7 +31,8 @@ public class ClientSettingsComponent : Component
     public uint DisplayTimeMode { get; set => SetIfChanged(ref field, Math.Min(value, DisplayTimeModeMax)); }
     public uint QuestTrackerSort { get; set => SetIfChanged(ref field, Math.Min(value, QuestTrackerSortMax)); }
 
-    public bool CameraFlag { get; set => SetIfChanged(ref field, value); }
+    /// <summary>Third-person gameplay camera. Defaults on: in first person the player never sees their character.</summary>
+    public bool ThirdPersonCamera { get; set => SetIfChanged(ref field, value); } = true;
     public uint CameraState { get; set => SetIfChanged(ref field, Math.Min(value, CameraStateMax)); }
 
     public bool ControlFlag { get; set => SetIfChanged(ref field, value); }
@@ -39,7 +41,7 @@ public class ClientSettingsComponent : Component
     {
         if (parameterName.Equals("CurrentGameplayCameraState", StringComparison.OrdinalIgnoreCase))
         {
-            bitStream.Write(CameraFlag);
+            bitStream.Write(ThirdPersonCamera);
             bitStream.WriteRanged(CameraState, CameraStateMax);
 
             return true;

@@ -33,7 +33,7 @@ public class PlayerSaveData
         public bool DisableMysteryBoxNotifications { get; set; }
         public uint DisplayTimeMode { get; set; }
         public uint QuestTrackerSort { get; set; }
-        public bool CameraFlag { get; set; }
+        public bool ThirdPersonCamera { get; set; } = true;
         public uint CameraState { get; set; }
         public bool ControlFlag { get; set; }
     }

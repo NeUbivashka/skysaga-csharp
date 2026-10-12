@@ -50,7 +50,7 @@ field names are only known where a printer could be read. The stub addresses are
 <td style="text-align: right;">17</td>
 <td>UISettingsSetGameplayCameraState</td>
 <td><code>FUN_009C37D0</code></td>
-<td>flag 1 bit, state ranged max 1 (1 bit)</td>
+<td>third-person camera 1 bit, state ranged max 1 (1 bit, unknown)</td>
 </tr>
 <tr>
 <td style="text-align: right;">20</td>
@@ -183,7 +183,7 @@ them there and the binding syncs them back. They are also saved in <code>player.
 <td>2</td>
 <td>33</td>
 <td>currentgameplaycamerastate</td>
-<td>flag 1 bit (<code>+0xBD</code>), then state ranged max 1 (<code>+0xBC</code>, <code>FUN_00C25C50</code>)</td>
+<td>third-person camera 1 bit (<code>+0xBD</code>; 0 = first person, the client default, so the player never sees their own character), then state ranged max 1 (<code>+0xBC</code>, <code>FUN_00C25C50</code>)</td>
 </tr>
 <tr>
 <td>3</td>
@@ -210,7 +210,14 @@ them there and the binding syncs them back. They are also saved in <code>player.
 <code>FUN_00B24BB0</code> whenever it changes. Values seen: 0, 2, 3, 4, 5. When the state is 7, the same function
 also sends PlayerDodged. If entity table entry 0x5B exists, it also sends the RPC from <code>FUN_00B251C0</code>.
 The state names have not been found. The Player's own <code>characterstateid</code> (sync 22) is the
-server-side counterpart, not yet synced.</p><h2 id="doc-protocol-entity-sync">Entity sync format (36731) <span class="addr">docs/protocol/entity-sync.md</span></h2>
+server-side counterpart, not yet synced.</p>
+<h2 id="equipped-items">Equipped items</h2>
+<p><code>clientequippeditemcomponent</code> (bindings vtable <code>0x01341B1C</code>, read <code>FUN_00BFF590</code>):
+<code>equippeditemspecs</code> (sync 50) is a count escaped at 9 (4 bits), then one item reference
+(<code>FUN_007E9440</code>) per equipment slot. The slots are LeftHand, RightHand, Head, Torso, Legs, Arms,
+Device, Backpack, AdditionalHeadFeature (names at <code>0x013415D4</code>). <code>autoequip</code> (sync 9) is 1 bit, and
+<code>legactions</code> (sync 102) is a presence bit + u32. With armour equipped and the camera in third person,
+the customised character shows in the world (verified 2026-10-12).</p><h2 id="doc-protocol-entity-sync">Entity sync format (36731) <span class="addr">docs/protocol/entity-sync.md</span></h2>
 <p>How entity state travels from server to client: the <code>EntityAdd</code> / <code>EntitySync</code> packets, the
 per-entity sync block inside them, and the parameter encodings of the world-level entities
 (TimeOfDay, WorldComposition). All addresses are <code>SkySagaU.exe</code> 36731 (no ASLR).</p>
@@ -3936,21 +3943,21 @@ that class is untouched here and its field layout is still a guess.</p></div>
 <h3><span class="ord">#17</span> RPCUISettingsSetGameplayCameraState <span class="badge dir-C2S">C2S</span> <span class="badge st-handled">handled</span></h3>
 <table class="kv"><tr><th>Ordinal</th><td>17 (0x11)</td></tr><tr><th>Client sender</th><td><code>FUN_009c37d0</code> <span class="addr">0x009C37D0</span></td></tr><tr><th>Emulator handler</th><td><code>UISettingsSetGameplayCameraState.Handle</code></td></tr><tr><th>Emulator class</th><td><code>UISettingsSetGameplayCameraState</code> <span class="addr">Servers/SkySaga.Game/Packets/UISettingsSetGameplayCameraState.cs</span></td></tr></table>
 <div class="doc"><p>RPCUISettingsSetGameplayCameraState, ordinal 17, client to server (send stub FUN_009C37D0):</p>
-<p>flag    1 bit
-  state   ranged max 1 (1 bit)</p>
+<p>third person   1 bit (0 = first person)
+  state          ranged max 1 (1 bit, meaning unknown)</p>
 <p>Stored on ClientSettingsComponent (currentgameplaycamerastate binding, read FUN_00C25E30).</p></div>
 <details><summary>Handle (client &rarr; server parser)</summary><pre><code>public static bool Handle(PlayerConnection connection, BitStream bitStream)
 {
-    if (!bitStream.ReadInt32(1, out var flag)) return false;
+    if (!bitStream.ReadInt32(1, out var thirdPerson)) return false;
     if (!bitStream.ReadInt32(ClientSettingsComponent.CameraStateMax, out var state)) return false;
 
     if (connection.PlayerEntity.TryGetComponent&lt;ClientSettingsComponent&gt;(out var settings))
     {
-        settings.CameraFlag = flag != 0;
+        settings.ThirdPersonCamera = thirdPerson != 0;
         settings.CameraState = (uint)state;
     }
 
-    Console.WriteLine($&quot;[UISettings] camera flag={flag} state={state}&quot;);
+    Console.WriteLine($&quot;[UISettings] camera thirdPerson={thirdPerson} state={state}&quot;);
 
     return true;
 }</code></pre></details>
