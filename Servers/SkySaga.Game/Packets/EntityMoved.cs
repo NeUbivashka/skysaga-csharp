@@ -1,17 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// RPCEntityMoved, ordinal 155, client to server (send stub FUN_00B2A460). The owning client reports
-/// its character's position, 64 bits, no entity id:
-///
-///   X     ranged max 0x10000, 1/64 voxel                 17 bits   (FUN_00859080)
-///   Y     ranged max 0x7F80 of (y + 0x3FC0), 1/64 voxel  15 bits
-///   Z     ranged max 0x10000, 1/64 voxel                 17 bits
-///   yaw   ranged max 0x6400 of (yaw + 0x3200), 1/32 deg  15 bits   (FUN_00859000)
-///
-/// This used to read a 32-bit entity id first and treated every Y as unsigned, so it failed on
-/// every packet and the server never saw the player move.
-/// </summary>
 public static class EntityMoved
 {
     public static bool Handle(PlayerConnection connection, BitStream bitStream)

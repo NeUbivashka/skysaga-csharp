@@ -1,11 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 88, server to client. Reader: FUN_00800ED0 -> FUN_00BB3E50(1, 0x58, ...).
-///
-///     EntityId      32 bits, full width -> big-endian
-///     Temperature   FUN_007D6490: ranged, max 0x40 -> 7 bits
-/// </summary>
 public class TemperaturePing : ISerializablePacket
 {
     private const uint TemperatureMax = 0x40;

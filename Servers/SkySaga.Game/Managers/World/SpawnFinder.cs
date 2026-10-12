@@ -4,11 +4,6 @@ public static class SpawnFinder
 {
     private const int ChunkSize = 32;
 
-
-
-
-
-    /// <summary>True when the voxel containing <paramref name="position"/> is not air.</summary>
     public static bool IsSolidAt(IMapChunkManager chunkManager, Vector3 position)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
@@ -37,10 +32,6 @@ public static class SpawnFinder
         return -1;
     }
 
-
-
-
-
     public static Vector3 FindSafeSpawnPoint(IMapChunkManager chunkManager, Vector3Int mapSizeChunks)
     {
         int sizeXVoxels = Math.Max(mapSizeChunks.X, 1) * ChunkSize;
@@ -55,14 +46,8 @@ public static class SpawnFinder
         if (found is { } point)
             return point;
 
-
-
         return new Vector3(centerX + 0.5f, sizeYVoxels * 0.6f, centerZ + 0.5f);
     }
-
-
-
-
 
     public static Vector3 SnapToGroundOrDefault(IMapChunkManager chunkManager, float worldX, float worldZ, int mapHeightVoxels, Vector3 fallback)
     {
@@ -73,11 +58,6 @@ public static class SpawnFinder
 
         return new Vector3(worldX, groundY + 1.1f, worldZ);
     }
-
-
-
-
-
 
     public static Vector3? FindEdgeSpawnPoint(IMapChunkManager chunkManager, Vector3Int mapSizeChunks, Random random)
     {
@@ -94,7 +74,6 @@ public static class SpawnFinder
         int cols = (sizeX / step) + 1;
         int rows = (sizeZ / step) + 1;
         var heights = new int[cols, rows];
-
 
         for (int cx = 0; cx < cols; cx++)
         {
@@ -157,11 +136,6 @@ public static class SpawnFinder
         return false;
     }
 
-
-
-
-
-
     public static Vector3 FindSpawnNearPoint(IMapChunkManager chunkManager, Vector3 center, int minRadius, int maxRadius, Vector3Int mapSizeChunks, Random random)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
@@ -202,8 +176,6 @@ public static class SpawnFinder
 
         if (candidates.Count > 0)
             return candidates[random.Next(candidates.Count)];
-
-
 
         var widened = FindGroundNearby(chunkManager, centerX, centerZ, sizeX, sizeZ, sizeY);
 

@@ -1,11 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 330, server to client. Reader: FUN_007EABB0 -> FUN_00BB3E50(1, 0x14A, ...).
-///
-///     Connection   one LogicNetworkConnection (FUN_007E96F0)
-///     Reason       ranged, max 3 -> 2 bits
-/// </summary>
 public class AddLogicNetworkConnection : ISerializablePacket
 {
     private const uint ReasonMax = 3;

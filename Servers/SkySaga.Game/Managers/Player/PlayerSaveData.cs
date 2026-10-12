@@ -6,7 +6,6 @@ public class PlayerSaveData
 
     public bool IsCharacterCustomised { get; set; }
 
-    /// <summary>ClientCharacterCustomisationComponent.CustomisationData, base64 of the raw bits.</summary>
     public string? CustomisationData { get; set; }
 
     public bool HasPosition { get; set; }
@@ -15,7 +14,6 @@ public class PlayerSaveData
     public float PositionZ { get; set; }
     public float YawDegrees { get; set; }
 
-    /// <summary>ClientSettingsComponent (RPCUISettings*). Null for saves from before it existed.</summary>
     public SettingsEntry? Settings { get; set; }
 
     public int InitialHP { get; set; }
@@ -38,7 +36,6 @@ public class PlayerSaveData
         public bool ControlFlag { get; set; }
         public uint LastActivatedSlot { get; set; }
 
-        /// <summary>Null for saves from before the hotbar was kept: the initializer fills a default.</summary>
         public List<HotbarEntry>? Hotbar { get; set; }
     }
 

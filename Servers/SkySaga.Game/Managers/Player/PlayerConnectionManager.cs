@@ -4,36 +4,26 @@ public sealed class PlayerConnectionManager
 {
     private readonly Dictionary<ulong, PlayerConnection> _connections = [];
 
-
-
     public void AddConnection(ulong guid, PlayerConnection connection)
     {
         ArgumentNullException.ThrowIfNull(connection);
         _connections.TryAdd(guid, connection);
     }
 
-
-
     public void RemoveConnection(ulong guid)
     {
         _connections.Remove(guid);
     }
-
-
 
     public bool TryGetConnection(ulong guid, [NotNullWhen(true)] out PlayerConnection? connection)
     {
         return _connections.TryGetValue(guid, out connection);
     }
 
-
-
     public IEnumerable<PlayerConnection> GetAllConnections()
     {
         return _connections.Values;
     }
-
-
 
     public void BroadcastToAll(ISerializablePacket packet)
     {
@@ -42,8 +32,6 @@ public sealed class PlayerConnectionManager
             connection.Send(packet);
         }
     }
-
-
 
     public void BroadcastToAllExcept(ulong excludeGuid, ISerializablePacket packet)
     {
@@ -56,4 +44,3 @@ public sealed class PlayerConnectionManager
         }
     }
 }
-

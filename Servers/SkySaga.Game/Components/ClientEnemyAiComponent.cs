@@ -52,10 +52,6 @@ public class ClientEnemyAiComponent : Component
         }
         else if (parameterName.Equals(nameof(SpawnPosition), StringComparison.OrdinalIgnoreCase))
         {
-
-
-
-
             bitStream.WriteBits(BitConverter.GetBytes((int)(SpawnPosition.X * 64f)), 32 - Util.NumBitsRequiredUInt32(0x10000u), true);
             bitStream.WriteBits(BitConverter.GetBytes((int)(SpawnPosition.Y * 64f)), 32 - Util.NumBitsRequiredUInt32(0x10000u), true);
             bitStream.WriteBits(BitConverter.GetBytes((int)(SpawnPosition.Z * 64f)), 32 - Util.NumBitsRequiredUInt32(0x10000u), true);

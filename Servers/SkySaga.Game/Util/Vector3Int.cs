@@ -6,8 +6,6 @@ public readonly struct Vector3Int(int x, int y, int z) : IEquatable<Vector3Int>
     public int Y { get; } = y;
     public int Z { get; } = z;
 
-
-
     public int GetComponent(int index) => index switch
     {
         0 => X,
@@ -16,11 +14,7 @@ public readonly struct Vector3Int(int x, int y, int z) : IEquatable<Vector3Int>
         _ => throw new ArgumentOutOfRangeException(nameof(index), "Index must be 0, 1, or 2")
     };
 
-
-
     public int GetLinearIndex(int gridSize = 32) => X + Y * gridSize + Z * gridSize * gridSize;
-
-
 
     public static Vector3Int FromLinearIndex(int index, int gridSize = 32)
     {

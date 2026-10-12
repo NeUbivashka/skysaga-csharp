@@ -1,13 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 80, server to client. Reader: FUN_007F0C60 -> FUN_00BB3E50(1, 0x50, ...).
-///
-///     EntityId       32 bits, full width -> big-endian
-///     ActionId       1 presence bit + 32 bits
-///     State          ranged, max 3 -> 2 bits
-///     RecoveryTime   FUN_007D67B0: ranged, max 0xA00 -> 12 bits
-/// </summary>
 public class EntityActionRecovery : ISerializablePacket
 {
     private const uint StateMax = 3;

@@ -5,11 +5,6 @@ namespace SkySaga.Game.Packets;
 
 public class SendChatChannelData : ISerializablePacket
 {
-
-
-
-
-
     private const byte Ordinal = 243;
 
     public BitStream Serialize()

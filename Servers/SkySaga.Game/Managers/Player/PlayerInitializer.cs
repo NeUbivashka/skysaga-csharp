@@ -7,14 +7,6 @@ public class PlayerInitializer(IWorldManager worldManager)
     private readonly Random _random = new();
     private IMapEntityManager _entityManager => _worldManager.EntityManager;
 
-
-
-
-
-
-
-
-
     public void InitializePlayer(Entity player)
     {
         ArgumentNullException.ThrowIfNull(player);
@@ -62,16 +54,6 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {
-
-
-
-
-
-            // A saved position inside a solid voxel is worse than none: the camera sits inside the
-            // terrain and the client renders black, with only the odd purple face edge visible.
-            // That happened for real - the save held (0, 0, 0) while the map's ground occupies
-            // y = 0..1, because EntityMoved is not handled yet and the position never updated before
-            // being written back.
             var savedPosition = save is { HasPosition: true }
                 ? new Vector3(save.PositionX, save.PositionY, save.PositionZ)
                 : (Vector3?)null;
@@ -99,7 +81,6 @@ public class PlayerInitializer(IWorldManager worldManager)
                         _random);
             }
 
-            // SKYSAGA_SPAWN_Y overrides the spawn height, for testing what the camera sees from above.
             if (float.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_SPAWN_Y"),
                     System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var spawnY))
             {
@@ -163,9 +144,6 @@ public class PlayerInitializer(IWorldManager worldManager)
             for (int i = 0; i < clientInventoryComponent.MaxInventorySlots; i++)
                 clientInventoryComponent.InventoryEntityList.Add(0);
 
-            // SKYSAGA_NO_INVENTORY=1: create no item entities (test switch). The FTL index assert at
-            // 0x00BA8306 it used to avoid was InventorySlotData sending the item name CRC where the
-            // client reads an item-table index (fixed 2026-10-12, see InventorySlotData).
             if (Environment.GetEnvironmentVariable("SKYSAGA_NO_INVENTORY") == "1")
             {
             }
@@ -181,8 +159,6 @@ public class PlayerInitializer(IWorldManager worldManager)
             }
             else
             {
-                // Names must exist in GeoData Resources (Data/Resources.txt); an unknown name maps to
-                // item index 0 and shows as an empty placeholder.
                 CreateAndEquipInventoryItem(clientInventoryComponent, 2, "Armour_Explorer_Generic_Medium_1_Head");
                 CreateAndEquipInventoryItem(clientInventoryComponent, 3, "Armour_Explorer_Generic_Medium_1_Torso");
                 CreateAndEquipInventoryItem(clientInventoryComponent, 4, "Armour_Explorer_Generic_Medium_1_Arms");
@@ -209,17 +185,9 @@ public class PlayerInitializer(IWorldManager worldManager)
                 FillDefaultHotbar(clientInventoryComponent, hotbarSettings);
         }
 
-
-
         if (save is null)
             PlayerSaveStore.Save(CaptureSaveData(player));
     }
-
-
-
-
-
-
 
     public PlayerSaveData CaptureSaveData(Entity player)
     {
@@ -324,13 +292,6 @@ public class PlayerInitializer(IWorldManager worldManager)
         return data;
     }
 
-
-
-
-    /// <summary>
-    /// First-time hotbar: sword and pickaxe in the right hand of slots 1 and 2, torch in the left hand
-    /// of slot 3, dirt in slot 4 - whichever of these the inventory holds.
-    /// </summary>
     private void FillDefaultHotbar(ClientInventoryComponent inventory, ClientSettingsComponent settings)
     {
         foreach (var entityId in inventory.InventoryEntityList)
@@ -364,10 +325,6 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
     }
 
-    /// <summary>
-    /// Wear every armour piece found in the inventory: the slot comes from the resource name's
-    /// suffix (_Head, _Torso, _Legs, _Arms).
-    /// </summary>
     private void EquipArmourFromInventory(ClientInventoryComponent inventory, ClientEquippedItemComponent equipped)
     {
         var items = new ushort[ClientEquippedItemComponent.SlotCount];
@@ -410,10 +367,6 @@ public class PlayerInitializer(IWorldManager worldManager)
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, string itemName, int count = 1)
         => CreateAndEquipInventoryItem(inventory, slot, Util.ComputeCrc32(itemName), count);
 
-
-
-
-
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         if (_entityManager.TryCreateEntity("BasicInventoryItem", out var item))
@@ -422,7 +375,6 @@ public class PlayerInitializer(IWorldManager worldManager)
             {
                 inventoryItemComponent.InventorySlotData.Name = nameHash;
                 inventoryItemComponent.InventorySlotData.Count = count;
-                // Kept across sessions: the hotbar and the equipped items refer to items by UUID.
                 inventoryItemComponent.InventorySlotData.ItemUUID = itemUuid ?? Util.NewGuid();
             }
 

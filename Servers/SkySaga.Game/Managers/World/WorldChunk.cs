@@ -5,14 +5,10 @@ public class WorldChunk(Vector3Int position)
     private const int _chunkSize = 32;
     private const int _chunkVolume = _chunkSize * _chunkSize * _chunkSize;
 
-
-
     private readonly byte[] _voxels = new byte[_chunkVolume];
     private readonly byte[] _metadata = new byte[_chunkVolume];
 
     public Vector3Int Position { get; } = position;
-
-
 
     public byte GetVoxel(int x, int y, int z)
     {
@@ -27,13 +23,9 @@ public class WorldChunk(Vector3Int position)
         return _metadata[CalculateIndex(x, y, z)];
     }
 
-
-
     public byte GetVoxel(Vector3Int localPos) => GetVoxel(localPos.X, localPos.Y, localPos.Z);
 
     public byte GetVoxelMeta(Vector3Int localPos) => GetVoxelMeta(localPos.X, localPos.Y, localPos.Z);
-
-
 
     public void SetVoxel(int x, int y, int z, byte blockType, byte metaValue = 0x00)
     {
@@ -43,17 +35,9 @@ public class WorldChunk(Vector3Int position)
         _metadata[index] = metaValue;
     }
 
-
-
     public void SetVoxel(Vector3Int localPos, byte blockType, byte metaValue = 0x00) => SetVoxel(localPos.X, localPos.Y, localPos.Z, blockType, metaValue);
 
-
-
-
     public byte[] GetVoxelData() => (byte[])_voxels.Clone();
-
-
-
 
     public void SetVoxelData(byte[] data)
     {
@@ -91,15 +75,11 @@ public class WorldChunk(Vector3Int position)
         return data2;
     }
 
-
-
     public void Clear()
     {
         Array.Clear(_voxels, 0, _chunkVolume);
         Array.Clear(_metadata, 0, _chunkVolume);
     }
-
-
 
     public void Fill(byte blockType, byte metaValue = 0)
     {
@@ -108,11 +88,7 @@ public class WorldChunk(Vector3Int position)
         Array.Fill(_metadata, metaValue);
     }
 
-
-
     private static int CalculateIndex(int x, int y, int z) => x + z * _chunkSize + y * _chunkSize * _chunkSize;
-
-
 
     private static void ValidateCoordinates(int x, int y, int z)
     {

@@ -1,9 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Diagnostic readers for animation-sequence RPCs. These handlers do not alter game state;
-/// they make packet direction observable while reconstructing the original client/server flow.
-/// </summary>
 public static class AnimationSequenceNetworkDiagnostics
 {
     public static bool HandleRequestStart(PlayerConnection connection, BitStream bitStream)

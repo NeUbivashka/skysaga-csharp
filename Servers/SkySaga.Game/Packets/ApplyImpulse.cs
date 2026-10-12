@@ -1,16 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 87, server to client. Reader: FUN_007EC0C0 -> FUN_00BB3E50(1, 0x57, ...).
-///
-///     EntityId    32 bits, full width -> big-endian
-///     Direction   FUN_007D6590: three components, ranged max 0x80 -> 8 bits each
-///     Strength    FUN_007D6310: ranged, max 0xFC -> 8 bits
-///     Flag        1 bit
-///
-/// Direction is the same reader AoETriggered and EventEffect use, and the same FUN_0077A330 clamp
-/// to +-0x40 follows it - hence the bias here.
-/// </summary>
 public class ApplyImpulse : ISerializablePacket
 {
     private const uint DirectionMax = 0x80;
@@ -19,7 +8,6 @@ public class ApplyImpulse : ISerializablePacket
 
     public int EntityId;
 
-    /// <summary>Each component is clamped to -64..+64 by the client.</summary>
     public Vector3Int Direction;
 
     public uint Strength;

@@ -1,5 +1,4 @@
 ﻿
-
 Console.SetOut(new TimestampedTextWriter(Console.Out));
 
 if (!File.Exists("RakNet.dll"))
@@ -34,7 +33,6 @@ catch
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-
         services.AddSingleton<PlayerConnectionManager>();
         services.AddSingleton<IWorldManager, WorldManager>();
         services.AddSingleton(sp => new PlayerInitializer(sp.GetRequiredService<IWorldManager>()));
@@ -50,10 +48,6 @@ var builder = Host.CreateDefaultBuilder(args)
     {
         logging.ClearProviders();
         logging.AddConsole();
-
-
-
-
 
         logging.SetMinimumLevel(LogLevel.Information);
     });

@@ -76,10 +76,6 @@ public class EntityManager : IMapEntityManager
 
                 if (parameterProperty.Value.TryGetPropertyIgnoreCase("Value", out var valueElement))
                 {
-
-
-
-
                     parameterInfo.Value = valueElement.Clone();
                 }
 
@@ -108,16 +104,6 @@ public class EntityManager : IMapEntityManager
                 if (!componentProperty.Value.TryGetPropertyIgnoreCase("Bindings", out var bindingsElement))
                     continue;
 
-                // Two shapes exist in the wild.
-                //
-                // Object form, as in the older extraction:
-                //     "bindings": { "joblist": { "mapsto": "joblist" } }
-                //
-                // Array form, as in the definitions extracted directly from this client build:
-                //     "bindings": [ "joblist", "activejobchallengelist", ... ]
-                //
-                // In the array form the binding name and the parameter it maps to are the same
-                // string, so it is just the object form with the identity mapping left implicit.
                 if (bindingsElement.ValueKind == JsonValueKind.Object)
                 {
                     foreach (var bindingProperty in bindingsElement.EnumerateObject())
@@ -160,9 +146,6 @@ public class EntityManager : IMapEntityManager
             _entityTemplates.Add(entityName, new EntityData(entityName, parameters, components));
         }
 
-        // Loud enough to settle "did the new definitions actually load?" without guessing from
-        // packet sizes. Player has 89 synced parameters in the older extraction and 169 in the one
-        // taken from this client build, so that number alone identifies the file.
         Console.WriteLine($"[EntityManager] Loaded {_entityTemplates.Count} entity templates.");
 
         if (_entityTemplates.TryGetValue("Player", out var playerTemplate))
@@ -213,19 +196,10 @@ public class EntityManager : IMapEntityManager
         return true;
     }
 
-
-
-
-
-
-
     private static void ApplyDefaultParameterValues(Component component, Type componentType, EntityData.ComponentData componentData, EntityData entityData)
     {
         foreach (var binding in componentData.Bindings)
         {
-
-
-
             var parameter = entityData.Parameters.Find(p =>
                 string.Equals(p.Name, binding.Value, StringComparison.OrdinalIgnoreCase));
 
@@ -247,10 +221,6 @@ public class EntityManager : IMapEntityManager
             property.SetValue(component, convertedValue);
         }
     }
-
-
-
-
 
     private static object? ConvertJsonElement(JsonElement value, Type targetType)
     {

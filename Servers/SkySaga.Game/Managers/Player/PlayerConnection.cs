@@ -18,10 +18,6 @@ public class PlayerConnection
     public int? LeftHandBlockId { get; set; }
     public int? RightHandBlockId { get; set; }
 
-
-
-
-
     public string? CurrentVideoFileName { get; set; }
 
     public PlayerConnection(Server server, RakNetGUID guid, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
@@ -44,25 +40,6 @@ public class PlayerConnection
     {
     }
 
-    /// <summary>
-    /// Tears down everything this connection created, not just the player entity.
-    ///
-    /// A teleport makes the client disconnect and come straight back - that is the protocol, not a
-    /// fault - so this runs on every world transition, and anything it leaves behind accumulates.
-    /// It used to remove only PlayerEntity, while PlayerInitializer creates a fresh
-    /// BasicInventoryItem entity per occupied slot on every connection. One reconnect and the
-    /// world held two players' worth of items:
-    ///
-    ///   connection 1: player Id=4,  items Id=5..18
-    ///   connection 2: player Id=19, items Id=5..18 resent, plus new items Id=20..33
-    ///
-    /// The second client was being sent 28 items, half of them belonging to a player entity it
-    /// never received - Id=4 was already gone by then, so those items had a dangling owner.
-    ///
-    /// The items are reachable from the player's own inventory component, so they come out with
-    /// it. Removal order is items first, then the player, so nothing is ever left referring to a
-    /// player that no longer exists.
-    /// </summary>
     public void OnDisconnected()
     {
         SaveState();
@@ -97,16 +74,6 @@ public class PlayerConnection
             + $"{PlayerEntity.Id} and {removedItems} inventory item(s).");
     }
 
-
-
-
-
-    /// <summary>
-    /// Set once the player entity has been loaded from the save (SendInitialEntities). Until then it
-    /// holds defaults, and saving it would overwrite the real save with an empty name, position
-    /// (0, 0, 0) and no character - which the autosave did on 2026-10-12, whenever its timer fired
-    /// between ClientConnected and the initial entity send.
-    /// </summary>
     public bool IsPlayerInitialized { get; set; }
 
     public void SaveState()
@@ -129,10 +96,6 @@ public class PlayerConnection
             PacketId.ClientInitialSyncFinished => ClientInitialSyncFinished.Handle(this, bitStream),
             PacketId.InventoryItemSwap => InventoryItemSwap.Handle(this, bitStream),
             PacketId.ExecuteEntityAction => ExecuteEntityAction.Handle(this, bitStream),
-
-
-
-
 
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
             PacketId.SetInputMovement => SetInputMovement.Handle(this, bitStream),
@@ -157,34 +120,18 @@ public class PlayerConnection
             PacketId.AnimationSequenceCompleted => AnimationSequenceCompletedReceived.Handle(this, bitStream),
             PacketId.NarrativeCompleted => NarrativeCompletedReceived.Handle(this, bitStream),
 
-
-
-
-
             (PacketId)241 => PerformVoxelActions.Handle(this, bitStream),
             (PacketId)242 => RequestChatChannelData.Handle(this, bitStream),
             _ => false
         };
     }
 
-    /// <summary>
-    /// When to push Player.islocal = true to this client (see EnteredGameplay.ScheduleIsLocal).
-    /// Sent from Tick, i.e. on the server thread: it used to go out from a Task.Delay continuation,
-    /// which raced ProcessMaps over Component.SyncingForOwner and sent islocal = false roughly
-    /// every other time - the client applied the bit, then the next copy cleared it again.
-    /// </summary>
     public Queue<DateTime> IsLocalDueUtc { get; } = new();
 
-    /// <summary>
-    /// The latest CustomisationData struct from the character creator (raw bits, not decoded yet).
-    /// Applied to the Player at SaveCharacterName.
-    /// </summary>
     public byte[]? CustomisationPayload { get; set; }
 
-    /// <summary>Last RPCSetPlayerState value (0..10, names unknown).</summary>
     public int PlayerState { get; set; }
 
-    /// <summary>Last RPCSetLookAtDirection angles, in degrees.</summary>
     public float LookPitch { get; set; }
     public float LookYaw { get; set; }
 

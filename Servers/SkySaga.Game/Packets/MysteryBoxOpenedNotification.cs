@@ -1,13 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 168, server to client. Reader: FUN_007F7630 -> FUN_00BB3E50(1, 0xA8, ...).
-///
-///     EntityId     32 bits, full width -> big-endian
-///     BoxId        32 bits, full width -> big-endian
-///     PlayerName   string
-///     Prize        one MysteryBoxPrize (FUN_007E92D0)
-/// </summary>
 public class MysteryBoxOpenedNotification : ISerializablePacket
 {
     public int EntityId;

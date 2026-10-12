@@ -118,18 +118,12 @@ public static class Util
 
     private static string? _characterName;
 
-    /// <summary>The account's character name, from the web service's /GetGUID (Data/account.json there).</summary>
     public static string CharacterName()
     {
         CharacterUuid();
 
         return _characterName ?? "NeUbivashka";
     }
-
-
-
-
-
 
     public static string CharacterUuid()
     {
@@ -142,8 +136,6 @@ public static class Util
         {
             var handler = new System.Net.Http.HttpClientHandler
             {
-
-
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true
             };
 

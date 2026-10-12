@@ -1,13 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// RPCRequestUnEquipInventoryItem, ordinal 16, client to server (send stub FUN_00956F70):
-///
-///   location          equipment slot, ranged max 9 (4 bits)
-///   fromUserCommand   1 bit
-///
-/// Clears that slot of equippeditemspecs.
-/// </summary>
 public static class RequestUnEquipInventoryItem
 {
     private const uint LocationMax = 9;

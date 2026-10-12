@@ -34,7 +34,6 @@ public class WalletData : ISerializableType
 
     public void Serialize(BitStream bitStream)
     {
-
         if (CurrencyList.Count < CurrencyListDefaultCount)
         {
             bitStream.WriteBits(BitConverter.GetBytes(CurrencyList.Count), 32 - Util.NumBitsRequiredUInt32(CurrencyListDefaultCount), true);

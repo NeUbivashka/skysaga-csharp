@@ -43,9 +43,6 @@ public class AiManager
             if (!entity.TryGetComponent<ClientEnemyAiComponent>(out var ai))
                 continue;
 
-
-
-
             if (!entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
                 continue;
 
@@ -68,7 +65,6 @@ public class AiManager
         {
             if (!wasFleeing)
             {
-
                 Console.WriteLine(
                     $"[AiManager] Chicken {entity.Id} startled - before: {transform.Position}, playerPos: {playerPosition}, playerDistance: {playerDistance:F2}");
             }
@@ -80,8 +76,6 @@ public class AiManager
             var away = transform.Position - playerPosition;
             away.Y = 0f;
 
-
-
             if (away.LengthSquared() < 0.0001f)
                 away = new Vector3(1f, 0f, 0f);
 
@@ -90,7 +84,6 @@ public class AiManager
 
             if (!wasFleeing)
             {
-
                 Console.WriteLine($"[AiManager] Chicken {entity.Id} startled - after: {transform.Position}");
             }
 
@@ -136,16 +129,6 @@ public class AiManager
         SnapToGround(transform, delta);
     }
 
-
-
-
-
-
-
-
-
-
-
     private void SnapToGround(TransformComponent transform, float delta)
     {
         int mapHeightVoxels = Math.Max(_worldManager.Definition.MapSizeChunks.Y, 1) * 32;
@@ -180,8 +163,6 @@ public class AiManager
 
         foreach (var entity in _worldManager.EntityManager.Entities)
         {
-
-
             if (!entity.TryGetComponent<ClientPlayerAspectsComponent>(out _))
                 continue;
 

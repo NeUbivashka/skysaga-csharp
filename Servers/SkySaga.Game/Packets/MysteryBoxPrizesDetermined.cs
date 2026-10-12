@@ -1,13 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 166, server to client. Reader: FUN_007F7B40 -> FUN_00BB3E50(1, 0xA6, ...).
-///
-///     BoxId     32 bits, full width -> big-endian
-///     Prizes    FUN_007E7320: count ranged max 8 (escape at 8), then that many MysteryBoxPrize
-///     Seed      FUN_007D6830: ranged, max 0x3C00 -> 14 bits
-///     Unnamed   32 bits, full width -> big-endian
-/// </summary>
 public class MysteryBoxPrizesDetermined : ISerializablePacket
 {
     private const uint PrizeCountMax = 8;

@@ -31,8 +31,6 @@ public class ServerHostedService(
         _tickCancellation = new CancellationTokenSource();
         _tickTask = Task.Run(() => TickLoop(_tickCancellation.Token), cancellationToken);
 
-
-
         _logger.LogInformation("Type 'reset' + Enter to reload the map and respawn everything (disconnect clients first).");
         _logger.LogInformation("Type 'chickens' + Enter to list every chicken's current position, spawn point, distance traveled, and AI state.");
         _consoleTask = Task.Run(() => ConsoleCommandLoop(_tickCancellation.Token), cancellationToken);
@@ -72,9 +70,6 @@ public class ServerHostedService(
 
     private void ConsoleCommandLoop(CancellationToken cancellationToken)
     {
-
-
-
         while (!cancellationToken.IsCancellationRequested)
         {
             var line = Console.ReadLine();

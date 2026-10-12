@@ -1,11 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 84, server to client. Reader: FUN_007EF0C0 -> FUN_00BB3E50(1, 0x54, ...).
-///
-///     EntityId   32 bits, full width -> big-endian
-///     ItemId     32 bits, full width -> big-endian
-/// </summary>
 public class CraftedItem : ISerializablePacket
 {
     public int EntityId;

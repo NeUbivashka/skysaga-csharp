@@ -1,19 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// The nested value FUN_007E8220 reads, carried inside EntityPerformedAbility.
-///
-///     Flag        1 bit
-///     Extents     FUN_007D6C10: three ranged components, max 0x400, 0xE0, 0x400 -> 11, 8, 11 bits
-///     TargetId    32 bits, full width -> big-endian
-///     Position    FUN_007D66A0: X 17 bits, Y 15 bits biased by -0x3FC0, Z 17 bits
-///     Direction   FUN_007D6590: three components, ranged max 0x80 -> 8 bits each
-///
-/// The three FUN_0077A2B0 and FUN_0077A330 calls interleaved with these read nothing - they clamp
-/// and zero locals. Extents is the one field whose bias is not established: the caller primes the
-/// locals to zero rather than to a negative default the way Position and Direction are primed, so
-/// it is written unbiased here.
-/// </summary>
 public class AbilityTarget
 {
     private const uint ExtentXMax = 0x400;
@@ -36,7 +22,6 @@ public class AbilityTarget
 
     public Vector3 Position;
 
-    /// <summary>Each component is clamped to -64..+64 by the client.</summary>
     public Vector3Int Direction;
 
     public void Encode(BitStream bitStream)

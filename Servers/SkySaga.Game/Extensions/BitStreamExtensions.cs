@@ -4,27 +4,11 @@ namespace SkySaga.Game.Extensions;
 
 public static class BitStreamExtensions
 {
-    /// <summary>
-    /// Ordinals whose direct byte encoding (ordinal + ID_USER_PACKET_ENUM) would reach 0xFF have
-    /// to use the escape form, because 0xFF is the escape marker itself. That threshold is
-    /// ordinal 121 (121 + 134 == 255), so the escape byte carries (ordinal - 121) and covers
-    /// ordinals 121..376 - comfortably past the highest ordinal in <see cref="PacketId"/> (340).
-    /// </summary>
-    private const int EscapeBias = byte.MaxValue + 1 - (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM; // 122
+    private const int EscapeBias = byte.MaxValue + 1 - (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
 
     #region Read
 
     public static int ReadMessageId(this BitStream bitStream) => bitStream.ReadMessageId(out _);
-
-
-
-
-
-
-
-
-
-
 
     public static int ReadMessageId(this BitStream bitStream, out bool wasExtended)
     {
@@ -38,29 +22,6 @@ public static class BitStreamExtensions
 
         wasExtended = true;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // The escape form is 0xFF followed by ONE byte holding (ordinal - EscapeBias + 1),
-        // which is exactly what WritePacketId emits. This used to read 16 bits here, which is
-        // where "UNHANDLED user packet raw=0x93 messageId=281 (TakeMailAttachment)" came from:
-        // the client's 'ff 93' is ordinal 0x93 + 121 = 268 (RequestStartAnimationSequence), but
-        // the 16-bit read swallowed the following payload byte and decoded 147 instead.
-        // EntityAdd (ordinal 153) going out as 'ff 20' - 153 - 121 = 0x20 - and being accepted
-        // by the real client is the proof that the one-byte escape is the on-wire format.
         bitStream.Read(out byte escapedPart);
 
         var ordinal = escapedPart + (EscapeBias - 1);
@@ -125,10 +86,6 @@ public static class BitStreamExtensions
         return true;
     }
 
-    /// <summary>
-    /// A full-width u32 as the client writes it: the four bytes in network (big-endian) order.
-    /// Counterpart of WriteFullWidthUInt32.
-    /// </summary>
     public static bool ReadFullWidthUInt32(this BitStream bitStream, out uint result)
     {
         var buffer = new byte[4];
@@ -143,7 +100,6 @@ public static class BitStreamExtensions
         return true;
     }
 
-    /// <summary>Counterpart of WriteClientUuid: presence bit, then four full-width words.</summary>
     public static bool ReadClientUuid(this BitStream bitStream, out Guid? result)
     {
         result = null;
@@ -171,7 +127,6 @@ public static class BitStreamExtensions
         return true;
     }
 
-    /// <summary>Counterpart of WriteEscapedCount.</summary>
     public static bool ReadEscapedCount(this BitStream bitStream, uint escape, out uint count)
     {
         count = 0;
@@ -197,25 +152,9 @@ public static class BitStreamExtensions
 
     #region Write
 
-
-
-
-
-
-
     public static void WritePacketId(this BitStream bitStream, PacketId packetId)
         => bitStream.WritePacketId((ushort)packetId);
 
-    /// <summary>
-    /// Single writer for every packet id. Ordinals below the escape threshold go out as one byte
-    /// (ordinal + ID_USER_PACKET_ENUM); everything from 121 up goes out as 0xFF followed by one
-    /// byte holding (ordinal - 121).
-    ///
-    /// This replaces the old pair of overloads. The byte overload produced the correct bytes but
-    /// only by relying on unsigned wraparound, and the separate WritePacketIdExtended wrote a
-    /// 16-bit index that nothing on the client reads - it was only reachable for ordinals >= 255,
-    /// so every packet in the 255..340 range (the whole animation-sequence block) was malformed.
-    /// </summary>
     public static void WritePacketId(this BitStream bitStream, ushort ordinal)
     {
         var direct = ordinal + (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
@@ -238,18 +177,11 @@ public static class BitStreamExtensions
 
     public static void WriteRangedIndex(this BitStream bitStream, uint value, uint tableCount)
     {
-
-
-
         var bitsToWrite = 32 - Util.NumBitsRequiredUInt32(tableCount - 1);
 
         bitStream.WriteBits(BitConverter.GetBytes(value), bitsToWrite, true);
     }
 
-    /// <summary>
-    /// A full-width 32-bit field. The client reads these through FUN_006FB780 and byte-swaps them
-    /// in this build (DAT_01449B5E is zero), so they go out big-endian.
-    /// </summary>
     public static void WriteFullWidthUInt32(this BitStream bitStream, uint value)
     {
         var bytes = BitConverter.GetBytes(value);
@@ -259,11 +191,6 @@ public static class BitStreamExtensions
         bitStream.WriteBits(bytes, 32, true);
     }
 
-    /// <summary>
-    /// A list count as the client's list readers take it: ranged up to <paramref name="escape"/>;
-    /// the value <paramref name="escape"/> itself is followed by a presence bit and the real count
-    /// as a full-width u32 (e.g. FUN_00BC7550, FUN_00C426B0, FUN_00D18620).
-    /// </summary>
     public static void WriteEscapedCount(this BitStream bitStream, uint count, uint escape)
     {
         bitStream.WriteRanged(Math.Min(count, escape), escape);
@@ -277,9 +204,6 @@ public static class BitStreamExtensions
 
     public static void WriteRanged(this BitStream bitStream, uint value, uint max)
     {
-
-
-
         var bitsToWrite = 32 - Util.NumBitsRequiredUInt32(max);
 
         bitStream.WriteBits(BitConverter.GetBytes(value), bitsToWrite, true);
@@ -335,17 +259,6 @@ public static class BitStreamExtensions
             write(value);
     }
 
-    /// <summary>
-    /// A uuid the way the client keeps it: one presence bit, then four 32-bit words, each written
-    /// like every other 32-bit field (the client byte-reverses on read). Word i is the i-th group of
-    /// 8 hex digits of the canonical string, read with its digits reversed: the client's formatter
-    /// prints each word low nibble first. So "a7cfad0a-9634-..." goes out as words 0xa0dafc7a,
-    /// 0x14456943, ... and the client prints (and compares with the web service's strings) exactly
-    /// "a7cfad0a-9634-...".
-    ///
-    /// Measured 2026-10-12: Guid.ToByteArray() words (the old encoding) made ServerInfo's owner
-    /// a7cfad0a-9634-4154-8b33-95425743f4ae arrive as 7afcdaa0-1445-6943-2459-33b8ea4f3475.
-    /// </summary>
     public static void WriteClientUuid(this BitStream bitStream, Guid? value)
     {
         if (value is null)
@@ -400,11 +313,6 @@ public static class BitStreamExtensions
 
 public static void WriteCompactSmall(this BitStream bitStream, uint value, uint threshold)
     {
-
-
-
-
-
         var bitsToWrite = 32 - Util.NumBitsRequiredUInt32(threshold);
 
         bitStream.WriteBits(BitConverter.GetBytes(value), bitsToWrite, true);
@@ -414,9 +322,6 @@ public static void WriteCompactSmall(this BitStream bitStream, uint value, uint 
 
     public static void WriteCrc32List(this BitStream bitStream, IReadOnlyList<uint> values)
     {
-
-
-
         bitStream.WriteCompactSmall((uint)values.Count, 16);
 
         foreach (var value in values)

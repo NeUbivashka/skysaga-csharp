@@ -18,10 +18,6 @@ public static class MeandrosSceneLoader
 
     private record struct RawPlacement(string Name, double X, double Y, double Z);
 
-
-
-
-
     public static bool TryLoad(IMapChunkManager chunkManager, out MapDefinition? definition, out List<WorldMapEntityData> entities, double scale = 1.0, string path = DefaultPath)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
@@ -87,8 +83,6 @@ public static class MeandrosSceneLoader
 
         int placedVoxels = 0;
 
-
-
         for (int vx = 0; vx < widthVoxels; vx++)
         {
             for (int vz = 0; vz < depthVoxels; vz++)
@@ -104,8 +98,6 @@ public static class MeandrosSceneLoader
         {
             MapSizeChunks = new Vector3Int(sizeXChunks, sizeYChunks, sizeZChunks),
 
-
-
             Spec = MapSpec.Ftue(seed: 1337),
             GameMode = 1,
         };
@@ -118,13 +110,6 @@ public static class MeandrosSceneLoader
 
         return true;
     }
-
-
-
-
-
-
-
 
     private static List<RawPlacement> ExtractPlacements(string text)
     {

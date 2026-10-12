@@ -46,8 +46,6 @@ public static class PlayerSaveStore
 
             var json = JsonSerializer.Serialize(data, SerializerOptions);
 
-
-
             File.WriteAllText(tempPath, json);
             File.Move(tempPath, path, overwrite: true);
         }

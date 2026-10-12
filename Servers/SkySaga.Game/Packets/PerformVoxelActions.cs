@@ -4,7 +4,6 @@ public static class PerformVoxelActions
 {
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-
         if (!ReadLocation(bitStream, out var location)) return false;
 
         if (!ReadChunkCoordinate(bitStream, out var chunkCoordX)) return false;

@@ -1,16 +1,7 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 286, server to client. Reader: FUN_007FB130 -> FUN_00BB3E50(1, 0x11E, ...).
-///
-///     ProjectileId   32 bits, full width -> big-endian
-///     Position       FUN_007D66A0: X 17 bits, Y 15 bits biased by -0x3FC0, Z 17 bits
-///
-/// Field names are by role; the widths and the order come from the reader.
-/// </summary>
 public class ProjectileImpacted : ISerializablePacket
 {
-
     public int ProjectileId;
     public Vector3 Position;
 

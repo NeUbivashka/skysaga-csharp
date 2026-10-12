@@ -21,8 +21,6 @@ public static class BlockCrcMapping
         { 0x8AF2B179, 37 },
     };
 
-
-
     public static int? GetBlockId(uint crc)
     {
         if (!CrcToBlockId.TryGetValue(crc, out var blockId))

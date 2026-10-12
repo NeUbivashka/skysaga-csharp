@@ -79,9 +79,6 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
     public void GenerateInitialChunks()
     {
-
-
-
     }
 
     public void ClearAll()
@@ -102,11 +99,8 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
         int dataSize = layerSize * layersToSync;
 
-
-
         var syncData = new byte[dataSize + 1];
         var syncMeta = new byte[dataSize + 1];
-
 
         for (int i = 0; i < dataSize; i++)
         {
@@ -115,11 +109,6 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
         Array.Fill<byte>(syncMeta, 0x00);
 
-        // Chunk arrays start with an encoding byte (client FUN_00C225B0): 0 raw, 1 RLE pairs,
-        // 2 counts-then-values, 3 uniform (one value byte follows), 4 run-ends. The client's
-        // "nothing received" fill is 0xFF for Data1 and 0xFD for Data2, and FUN_00C2B240 treats a
-        // uniform-0xFD Data2 specially. Test switch: SKYSAGA_DATA2_UNIFORM=fd sends Data2 as
-        // "03 <value>" instead of 32768 zero bytes.
         if (Environment.GetEnvironmentVariable("SKYSAGA_DATA2_UNIFORM") is { Length: > 0 } uniformHex
             && byte.TryParse(uniformHex, System.Globalization.NumberStyles.HexNumber, null, out var uniformValue))
         {
@@ -130,12 +119,6 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
         {
             Coords = new Vector3Int(chunkPosition.X, chunkPosition.Y, chunkPosition.Z),
             Data1 = syncData,
-
-
-
-
-
-
 
             Data2 = syncMeta,
         };

@@ -31,8 +31,6 @@ public class Server : IDisposable
 
         _peer = RakPeerInterface.GetInstance();
 
-
-
         _peer.SetIncomingPassword(_password, _password.Length);
         _peer.SetMaximumIncomingConnections(MaxConnections);
     }
@@ -44,16 +42,6 @@ public class Server : IDisposable
         return status == StartupResult.RAKNET_STARTED;
     }
 
-
-
-
-
-
-
-
-
-
-
     public void ResetWorld()
     {
         _resetRequested = true;
@@ -61,10 +49,6 @@ public class Server : IDisposable
 
     private volatile bool _resetRequested;
     private volatile bool _listChickensRequested;
-
-
-
-
 
     private static readonly TimeSpan AutosaveInterval = TimeSpan.FromSeconds(15);
     private DateTime _lastAutosaveUtc = DateTime.UtcNow;
@@ -76,7 +60,6 @@ public class Server : IDisposable
             _resetRequested = false;
             _worldManager.Reset();
             return;
-
         }
 
         if (_listChickensRequested)
@@ -106,11 +89,6 @@ public class Server : IDisposable
         foreach (var connection in _playerConnectionManager.GetAllConnections())
             connection.SaveState();
     }
-
-
-
-
-
 
     public void RequestListChickens()
     {
@@ -147,11 +125,6 @@ public class Server : IDisposable
 
     private void ProcessPackets()
     {
-
-
-
-
-
         const int maxPacketsPerTick = 512;
 
         for (int i = 0; i < maxPacketsPerTick; i++)
@@ -165,14 +138,7 @@ public class Server : IDisposable
 
             var messageId = bitStream.ReadMessageId(out var messageIdWasExtended);
 
-
-
-
-
-
             var fullRawHex = string.Join(" ", packet.data.Take((int)packet.length).Select(b => b.ToString("x2")));
-
-
 
             if (messageId < (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM)
             {
@@ -221,11 +187,6 @@ public class Server : IDisposable
                 var rawUserId = messageId - (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
                 var packetId = (PacketId)rawUserId;
 
-
-
-
-
-
                 bool handled;
                 try
                 {
@@ -239,27 +200,6 @@ public class Server : IDisposable
 
                 if (!handled)
                 {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                     var totalBits = packet.length * 8;
                     var consumedBits = messageIdWasExtended ? 16 : 8;
                     var remainingBits = (uint)Math.Max(0, totalBits - consumedBits);
@@ -281,12 +221,6 @@ public class Server : IDisposable
                 }
                 else
                 {
-
-
-
-
-
-
                     Console.WriteLine($"[recv] handled raw=0x{rawUserId:X2} ({packetId}) len={packet.length} guid={packet.guid.g:X} data: {fullRawHex}");
                 }
             }
@@ -330,14 +264,12 @@ public class Server : IDisposable
 
     private void OnConnectionAdded(PlayerConnection connection)
     {
-
         _playerConnectionManager.AddConnection(connection.Guid.g, connection);
         connection.OnConnected();
     }
 
     private void OnConnectionRemoved(PlayerConnection connection)
     {
-
         _playerConnectionManager.RemoveConnection(connection.Guid.g);
 
         _connections.Remove(connection.Guid.g);

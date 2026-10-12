@@ -13,9 +13,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     public IMapEntityManager EntityManager { get; }
     public IMapChunkManager ChunkManager => _chunkManager;
-    // Assigned on every path through InitializeWorld(), which the constructor calls - see the
-    // [MemberNotNull] there. It cannot be assigned in the constructor instead, because
-    // SpawnAirship() reads Definition.MapSizeChunks and runs inside InitializeWorld().
     public MapDefinition Definition { get; set; }
     public Vector3 AirshipPosition { get; private set; }
     public Vector3? PlayerSpawnPosition { get; private set; }
@@ -30,18 +27,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
         InitializeWorld();
         SetupMapFileWatcher();
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     private void SetupMapFileWatcher()
     {
@@ -75,7 +60,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     private void OnMapFileChanged(object sender, FileSystemEventArgs e)
     {
-
         _reloadDebounceTimer?.Dispose();
         _reloadDebounceTimer = new System.Threading.Timer(_ =>
         {
@@ -101,31 +85,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
         _reloadDebounceTimer?.Dispose();
     }
 
-
-
-
-
-
-
-
-
-
-
-    // Tells the null-flow analysis that Definition is non-null once this returns, which clears
-    // CS8618 on the constructor. Unlike `= null!` on the property, this is verified: if a
-    // future branch here forgets to assign Definition, the compiler reports it (CS8774)
-    // instead of silently letting a null through.
     [MemberNotNull(nameof(Definition))]
     private void InitializeWorld()
     {
-
-
-
-
-
-
-
-
         const bool meandrosEnabled = false;
         if (meandrosEnabled && MeandrosSceneLoader.TryLoad(ChunkManager, out var meandrosDefinition, out var meandrosEntities) && meandrosDefinition is not null)
         {
@@ -158,12 +120,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
             {
                 MapSizeChunks = new Vector3Int(4, 4, 4),
 
-
-
-
-
-
-
                 Spec = MapSpec.Ftue(seed: 1337),
                 GameMode = 1,
                 AdventureType = "Adventure",
@@ -178,10 +134,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
         SpawnTimeOfDay();
         SpawnWorldComposition();
     }
-
-
-
-
 
     private void SpawnAirship(Vector3? mapPosition)
     {
@@ -198,20 +150,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
     }
 
-
-
-
-
-    /// <summary>
-    /// WorldComposition carries the biome palette and terrain type. Without it the client has no
-    /// palette to colour voxels or sky with.
-    /// </summary>
     private void SpawnWorldComposition()
     {
         if (EntityManager.TryCreateEntity("WorldComposition", out var worldComposition) &&
             worldComposition.TryGetComponent<ClientWorldCompositionComponent>(out var composition))
         {
-            // SKYSAGA_PALETTE overrides the palette wire index (1..45) for testing.
             composition.PaletteCrc =
                 uint.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_PALETTE"), out var palette)
                     ? palette : Definition.Spec.Palette;
@@ -225,7 +168,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (EntityManager.TryCreateEntity("TimeOfDay", out var timeOfDay) &&
             timeOfDay.TryGetComponent<ClientTimeOfDayComponent>(out var clientTimeOfDayComponent))
         {
-            // SKYSAGA_TIME_OF_DAY overrides the start time (0..65535) for testing without a rebuild.
             clientTimeOfDayComponent.StartTimeOfDay =
                 int.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_TIME_OF_DAY"), out var tod) ? tod : 32768;
             clientTimeOfDayComponent.FixedTimeOfDay = true;
@@ -233,24 +175,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
             clientTimeOfDayComponent.RealWorldStartTime = RakNet.RakNet.GetTime();
             clientTimeOfDayComponent.TimeStretch = 8;
 
-
-
-
-
-
-
             clientTimeOfDayComponent.TimeOfDayOffset = 0;
         }
     }
-
-
-
-
-
-
-
-
-
 
     private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition, out Vector3? playerSpawnPosition)
     {
@@ -298,8 +225,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
     }
 
-
-
     public void SendInitialChunks(PlayerConnection connection)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -323,10 +248,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         foreach (var chunkSync in chunkSyncData)
         {
-
-
-
-
             var chunkSyncStream = chunkSync.Serialize();
             chunkSyncStream.PrintHex(out var chunkSyncHex);
             Console.WriteLine($"[SendInitialChunks] ChunkSync Coords={chunkSync.Coords} "
@@ -338,8 +259,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
             connection.Send(chunkSync);
         }
     }
-
-
 
     public void SendInitialEntities(PlayerConnection connection, Entity player, PlayerInitializer playerInitializer)
     {
@@ -357,16 +276,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
             {
                 Id = entity.Id,
                 NameHash = Util.ComputeCrc32(entity.Name),
-                // islocal stays false here on purpose. Measured (17:40 run): with islocal = true in the
-                // initial add, the player object's bit never got set at all, and the later EntitySync
-                // pushes became no-ops - the client only reacts to a *change* of the parameter.
-                // (The 0x00D45EDC crash once blamed on this is unrelated and intermittent; it is
-                // patched by Tools/patch/client_patches.py.)
                 SyncData = entity.GetSyncData(newEntity: true)
             };
-
-
-
 
             var entityAddStream = entityAdd.Serialize();
             entityAddStream.PrintHex(out var entityAddHex);
@@ -379,13 +290,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
             connection.Send(entityAdd);
         }
 
-
-
-
         connection.Send(new ClientEntitiesSyncFinished());
     }
-
-
 
     public void Reset()
     {

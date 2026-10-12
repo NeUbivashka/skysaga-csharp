@@ -1,21 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 75. Reader: FUN_007EBBD0 -> FUN_00BB3E50(1, 0x4B, ...).
-///
-/// This one travels both ways - the client has a sender too (FUN_00A51520) - so the same layout
-/// serves for receiving it later.
-///
-///     SourceId    FUN_007EA4B0: 1 presence bit + 32 bits
-///     Shape       FUN_007D6410: ranged, max 0x38 -> 6 bits
-///     Position    FUN_007D66A0: X 17 bits, Y 15 bits biased by -0x3FC0, Z 17 bits
-///     Direction   FUN_007D6590: three components, ranged max 0x80 -> 8 bits each
-///     Radius      FUN_007D6390: ranged, max 0x18 -> 5 bits
-///
-/// Same position reader as PlayerSpawned and EventEffect, so the same 64-units-per-world-unit
-/// scale and the same narrow biased Y. Direction is clamped to +-0x40 by FUN_0077A330 right after
-/// it is read, which is where the bias here comes from.
-/// </summary>
 public class AoETriggered : ISerializablePacket
 {
     private const uint ShapeMax = 0x38;
@@ -35,7 +19,6 @@ public class AoETriggered : ISerializablePacket
 
     public Vector3 Position;
 
-    /// <summary>Each component is clamped to -64..+64 by the client.</summary>
     public Vector3Int Direction;
 
     public uint Radius;

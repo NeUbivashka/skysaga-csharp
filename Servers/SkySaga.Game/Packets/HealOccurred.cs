@@ -1,19 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 38, server to client. Reader: FUN_007F5A60 -> FUN_00BB3E50(1, 0x26, ...).
-///
-///     TargetEntityId   32 bits, full width -> big-endian
-///     SourceEntityId   32 bits, full width -> big-endian
-///     Amount           FUN_007D69B0: ranged, max 0x7FFF -> 15 bits
-///     Kind             ranged, max 9 -> 4 bits
-///     Unnamed          32 bits, full width -> big-endian
-///
-/// Five fields, in that order. The widths come from the reader; the names are by role, since the
-/// logger's name pointers are lost to the packed thunks in this stub. Two entity ids followed by
-/// an amount is the obvious reading of a heal event, but treat the names as provisional and the
-/// layout as solid.
-/// </summary>
 public class HealOccurred : ISerializablePacket
 {
     private const uint AmountMax = 0x7FFF;

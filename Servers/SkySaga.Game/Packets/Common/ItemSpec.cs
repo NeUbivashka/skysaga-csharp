@@ -2,8 +2,6 @@
 
 public class ItemSpec : ISerializableType
 {
-
-
     public uint? NameHash;
 
     public List<int?> MaterialList = [0, 0, 0, 0];

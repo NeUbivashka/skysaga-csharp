@@ -1,27 +1,5 @@
 namespace SkySaga.Game.Components;
 
-/// <summary>
-/// The player's UI, camera and control settings. The client changes them through the
-/// RPCUISettings* calls and expects them back through sync. Client bindings object vtable
-/// 0x013456C0, read function FUN_00C265A0:
-///
-///   binding  parameter                   wire
-///   -------  --------------------------  ------------------------------------------------------
-///      0     hotbarslotresources         count escaped at 6 (3 bits, FUN_00C032A0), then per slot
-///                                        (FUN_00C26E70): a full-width u32 (sent as the slot number)
-///                                        and two item references, left hand then right hand
-///                                        (FUN_00C26D30 -> FUN_007E9440)
-///      1     lastactivatedslot           ranged max 5 (3 bits, FUN_00C25D30)
-///      2     currentgameplaycamerastate  1 bit third-person camera (0 = first person, the
-///                                        client's default), then a state ranged max 1 (1 bit,
-///                                        meaning unknown) (FUN_00C25E30 / FUN_00C25C50)
-///      3     minimapsettings             not sent yet
-///      4     uisettings                  3 bools (DisableAutoQuestTracking, DisableSocialNotifications,
-///                                        DisableMysteryBoxNotifications), DisplayTimeMode ranged max 2
-///                                        (2 bits), QuestTrackerSort ranged max 4 (3 bits)
-///                                        (FUN_00C27030, names from the RPC printer FUN_009C4AF0)
-///      5     controlsettings             1 bit
-/// </summary>
 public class ClientSettingsComponent : Component
 {
     public const uint DisplayTimeModeMax = 2;
@@ -30,12 +8,10 @@ public class ClientSettingsComponent : Component
     public const uint HotbarSlotCount = 6;
     public const uint LastActivatedSlotMax = HotbarSlotCount - 1;
 
-    /// <summary>Hotbar items per slot: [slot * 2] = left hand, [slot * 2 + 1] = right hand.</summary>
     public InventoryItemRef?[] HotbarItems { get; set => SetIfChanged(ref field, value, "HotbarSlotResources"); } = new InventoryItemRef?[HotbarSlotCount * 2];
 
     public uint LastActivatedSlot { get; set => SetIfChanged(ref field, Math.Min(value, LastActivatedSlotMax)); }
 
-    /// <summary>Put an item (or null) on a hotbar slot; hand 0 = left, 1 = right.</summary>
     public void SetHotbarItem(uint slot, uint hand, InventoryItemRef? item)
     {
         if (slot >= HotbarSlotCount || hand > 1)
@@ -52,7 +28,6 @@ public class ClientSettingsComponent : Component
     public uint DisplayTimeMode { get; set => SetIfChanged(ref field, Math.Min(value, DisplayTimeModeMax), "UISettings"); }
     public uint QuestTrackerSort { get; set => SetIfChanged(ref field, Math.Min(value, QuestTrackerSortMax), "UISettings"); }
 
-    /// <summary>Third-person gameplay camera. Defaults on: in first person the player never sees their character.</summary>
     public bool ThirdPersonCamera { get; set => SetIfChanged(ref field, value, "CurrentGameplayCameraState"); } = true;
     public uint CameraState { get; set => SetIfChanged(ref field, Math.Min(value, CameraStateMax), "CurrentGameplayCameraState"); }
 

@@ -1,13 +1,5 @@
 namespace SkySaga.Game.Components;
 
-/// <summary>
-/// Character physics. On top of the physics flags it carries the movement input
-/// (inputmovementdirection, inputmovementspeed), which the client reports with RPCSetInputMovement
-/// and expects back through sync. Encodings as in the client's RPC writers:
-///
-///   inputmovementdirection   3 x ranged max 0x80 of (component + 0x40), i.e. -64..63 (FUN_008621B0)
-///   inputmovementspeed       ranged max 0x78 (FUN_00B23870)
-/// </summary>
 public class ClientCharacterPhysicsComponent : ClientPhysicsComponent
 {
     public const uint DirectionMax = 0x80;

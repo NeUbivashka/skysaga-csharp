@@ -6,13 +6,7 @@ public interface IWorldManager
     IMapChunkManager ChunkManager { get; }
     MapDefinition Definition { get; set; }
 
-
-
-
     Vector3 AirshipPosition { get; }
-
-
-
 
     Vector3? PlayerSpawnPosition { get; }
 

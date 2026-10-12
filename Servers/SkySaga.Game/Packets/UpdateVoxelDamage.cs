@@ -1,22 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 32, server to client. Reader: FUN_00801C20 -> FUN_00BB3E50(1, 0x20, ...).
-///
-///     DamageId    32 bits, full width -> big-endian
-///     Amount      FUN_007D76B0: ranged, max 0x7FFF -> 15 bits
-///     EntityId    32 bits, full width -> big-endian
-///     SourceId    32 bits, full width -> big-endian
-///     Position    FUN_007D66A0: X 17 bits, Y 15 bits biased by -0x3FC0, Z 17 bits
-///     Timestamp   FUN_00C715B0: 64 bits -> big-endian
-///
-/// This one sat unfinished for a while on FUN_00C715B0, which turns out to be nothing exotic:
-/// 0x40 bits with an eight-byte swap, the 64-bit sibling of the 32-bit full-width reads. The rest
-/// of that function formats a local value and reads nothing more.
-///
-/// Position is the same reader PlayerSpawned, EventEffect and AoETriggered use - 64 units per
-/// world unit, narrow biased Y. Do not substitute the entity-sync encoding.
-/// </summary>
 public class UpdateVoxelDamage : ISerializablePacket
 {
     private const uint AmountMax = 0x7FFF;

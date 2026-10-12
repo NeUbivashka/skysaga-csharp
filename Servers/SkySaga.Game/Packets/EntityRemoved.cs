@@ -2,7 +2,6 @@
 
 public class EntityRemoved : ISerializablePacket
 {
-
     public int Id;
 
     public BitStream Serialize()

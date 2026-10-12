@@ -1,13 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 290, server to client. Reader: FUN_007EAFC0 -> FUN_00BB3E50(1, 0x122, ...).
-///
-///     EntityId       32 bits, full width -> big-endian
-///     AudioState     ranged, max 0xD
-///
-/// Field names are by role; the widths and the order come from the reader.
-/// </summary>
 public class AiStateAudioEvent : ISerializablePacket
 {
     private const uint AudioStateMax = 0xD;

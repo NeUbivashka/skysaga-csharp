@@ -1,12 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 267, server to client. Reader: FUN_007F8E80 -> FUN_00BB3E50(1, 0x10B, ...).
-///
-///     Result     FUN_007D7630: an escape bit, then 7 bits, or 32 if the bit is set
-///     PhotoUuid  1 presence bit + 4 x 32 bits
-///     OwnerUuid  1 presence bit + 4 x 32 bits
-/// </summary>
 public class PhotoValidated : ISerializablePacket
 {
     private const uint ResultShortMax = 0x7F;

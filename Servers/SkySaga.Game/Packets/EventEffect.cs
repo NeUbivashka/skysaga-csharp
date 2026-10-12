@@ -1,24 +1,5 @@
 namespace SkySaga.Game.Packets;
 
-/// <summary>
-/// Ordinal 50, server to client. Reader: FUN_007F3280 -> FUN_00BB3E50(1, 0x32, ...).
-///
-///     EffectIndex   ranged, max 0xD0 -> 8 bits
-///     EntityId      32 bits, full width -> big-endian
-///     SourceId      32 bits, full width -> big-endian
-///     ParamA        FUN_007D8110   16 bits
-///     ParamB        FUN_007D8110   16 bits
-///     Position      FUN_007D66A0   X 17 bits, Y 15 bits biased by -0x3FC0, Z 17 bits
-///     Direction     FUN_007D6590   three components, ranged max 0x80 -> 8 bits each
-///     Magnitude     FUN_007D76B0   ranged, max 0x7FFF -> 15 bits
-///
-/// FUN_007D66A0 is the same position reader PlayerSpawned uses, so the scale is 64 units per world
-/// unit and Y is the narrow, biased one. Do not copy the entity-sync encoding here.
-///
-/// Between the position and the direction the stub calls FUN_0077A330, which reads nothing at all -
-/// it copies three ints and clamps each to +-0x40. That clamp is why Direction is treated as a
-/// biased value here: the wire carries 0..128 and the client works in -64..+64.
-/// </summary>
 public class EventEffect : ISerializablePacket
 {
     private const uint EffectIndexMax = 0xD0;
@@ -44,7 +25,6 @@ public class EventEffect : ISerializablePacket
 
     public Vector3 Position;
 
-    /// <summary>Each component is clamped to -64..+64 by the client.</summary>
     public Vector3Int Direction;
 
     public uint Magnitude;
