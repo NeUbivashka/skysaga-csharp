@@ -406,7 +406,8 @@ public class PlayerInitializer(IWorldManager worldManager)
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
-        var hasMaterials = MaterialTable.TryGet(nameHash, out var materials);
+        var hasMaterials = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1"
+            & MaterialTable.TryGet(nameHash, out var materials);
 
         var entityType = (durable, hasMaterials) switch
         {
