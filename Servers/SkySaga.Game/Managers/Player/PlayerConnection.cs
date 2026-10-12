@@ -18,6 +18,8 @@ public class PlayerConnection
     public int? LeftHandBlockId { get; set; }
     public int? RightHandBlockId { get; set; }
 
+    public DateTime LastFallRespawn { get; set; }
+
     public string? CurrentVideoFileName { get; set; }
 
     public PlayerConnection(Server server, RakNetGUID guid, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
