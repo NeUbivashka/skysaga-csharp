@@ -22,7 +22,11 @@ public class PlayerInitializer(IWorldManager worldManager)
                 ? save.Playername
                 : Util.CharacterName();
 
-            clientPlayernameComponent.AvailablePlayerSigilList = [.. StarterSigils.Select(index => (index, 0u, 0u))];
+            var sigilFields = (Environment.GetEnvironmentVariable("SKYSAGA_SIGIL_FIELDS") ?? "0,0").Split(',');
+            var sigilA = uint.TryParse(sigilFields[0], out var a) ? a : 0u;
+            var sigilB = sigilFields.Length > 1 && uint.TryParse(sigilFields[1], out var b) ? b : 0u;
+
+            clientPlayernameComponent.AvailablePlayerSigilList = [.. StarterSigils.Select(index => (index, sigilA, sigilB))];
             clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
         }
 
@@ -406,8 +410,11 @@ public class PlayerInitializer(IWorldManager worldManager)
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
-        var hasMaterials = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1"
-            & MaterialTable.TryGet(nameHash, out var materials);
+        var itemName = ItemTable.NameOf(ItemTable.IndexOf(nameHash));
+        var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1"
+            && (Environment.GetEnvironmentVariable("SKYSAGA_TOOL_MATERIALS") == "1"
+                || !(itemName.StartsWith("Tool_") || itemName.StartsWith("Weapon_")));
+        var hasMaterials = MaterialTable.TryGet(nameHash, out var materials) && materialsAllowed;
 
         var entityType = (durable, hasMaterials) switch
         {
