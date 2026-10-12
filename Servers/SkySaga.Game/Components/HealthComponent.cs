@@ -1,7 +1,16 @@
-﻿namespace SkySaga.Game.Components;
+namespace SkySaga.Game.Components;
 
 public class HealthComponent : Component
 {
+    private const uint HpMax = 0x7FFF;
+
+    public int MaxHP { get; set; } = 1000;
+
+    public int? SyncedFullHPValues { get; set => SetIfChanged(ref field, value); }
+
+    public void Damage(int amount)
+        => SyncedFullHPValues = Math.Max((SyncedFullHPValues ?? MaxHP) - amount, 0);
+
     public int WholeHearts { get; set => SetIfChanged(ref field, value); }
     public int HalfHearts { get; set => SetIfChanged(ref field, value); }
     public int InitialHP { get; set => SetIfChanged(ref field, value); }
@@ -12,7 +21,17 @@ public class HealthComponent : Component
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
-        if (parameterName.Equals(nameof(WholeHearts), StringComparison.OrdinalIgnoreCase))
+        if (parameterName.Equals(nameof(SyncedFullHPValues), StringComparison.OrdinalIgnoreCase))
+        {
+            if (SyncedFullHPValues is not { } hp)
+                return false;
+
+            bitStream.WriteRanged((uint)Math.Clamp(hp, 0, (int)HpMax), HpMax);
+            bitStream.Write0();
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(WholeHearts), StringComparison.OrdinalIgnoreCase))
         {
             bitStream.WriteBits(BitConverter.GetBytes(WholeHearts), 32 - Util.NumBitsRequiredUInt32(0x200), true);
 

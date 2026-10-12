@@ -13,10 +13,9 @@ FLOOR_BLOCK = 1
 EDGE = 8
 
 SMALL_SET = [
-    "Desert_Chicken", "Arctic_Rabbit", "Arctic_Penguin", "Desert_Boar", "Arctic_Goat",
-    "Arctic_Wolf_Fighter_0", "Arctic_Bear_Fighter_0", "Arctic_Yeti_Fighter_0",
-    "Arctic_Human_Fighter_0", "Desert_Cat_Fighter_0",
-    "HUB_NPC_Explorer", "HUB_NPC_Gladiator_OldCity",
+    "HUB_NPC_ExplorerShop", "HUB_NPC_FoodShop",
+    "Forest_Chicken", "Forest_Sheep",
+    "Forest_Skitterling_Fighter_0", "Forest_Skitterling_Spitter_0",
 ]
 
 BROKEN_GROUPS = [

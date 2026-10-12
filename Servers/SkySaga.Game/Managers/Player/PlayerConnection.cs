@@ -114,6 +114,7 @@ public class PlayerConnection
             PacketId.SetPlayerState => SetPlayerState.Handle(this, bitStream),
             PacketId.PlayerDodged => PlayerDodged.Handle(this, bitStream),
             PacketId.PerformJump => PerformJump.Handle(this, bitStream),
+            PacketId.EntityLanded => Packets.EntityLanded.Handle(this, bitStream),
             PacketId.JoinDestinationSelectionWorld => JoinDestinationSelectionWorld.Handle(this, bitStream),
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
