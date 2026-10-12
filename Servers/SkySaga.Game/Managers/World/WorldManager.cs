@@ -6,7 +6,7 @@ namespace SkySaga.Game.Managers.World;
 public sealed class WorldManager : IWorldManager, IDisposable
 {
     private readonly MapChunkManager _chunkManager;
-    private readonly Random _random = new();
+    private readonly Random _random = new(1337);
     private FileSystemWatcher? _mapFileWatcher;
     private System.Threading.Timer? _reloadDebounceTimer;
     private readonly object _reloadLock = new();
@@ -133,6 +133,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         ChunkManager.LoadSavedEdits();
+        PlayerSpawnPosition ??= SpawnFinder.FindSpawnNearPoint(ChunkManager, AirshipPosition, 5, 10, Definition.MapSizeChunks, _random);
         SpawnTimeOfDay();
         SpawnWorldComposition();
     }

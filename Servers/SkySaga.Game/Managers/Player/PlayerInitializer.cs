@@ -60,8 +60,17 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             if (savedPosition is { } position && SpawnFinder.IsSolidAt(_worldManager.ChunkManager, position))
             {
-                Console.WriteLine($"[PlayerInitializer] Saved position {position} is inside a solid voxel - ignoring it.");
-                savedPosition = null;
+                var lifted = position with { Y = MathF.Floor(position.Y) + 1 };
+
+                if (SpawnFinder.IsSolidAt(_worldManager.ChunkManager, lifted))
+                {
+                    Console.WriteLine($"[PlayerInitializer] Saved position {position} is inside a solid voxel - ignoring it.");
+                    savedPosition = null;
+                }
+                else
+                {
+                    savedPosition = lifted;
+                }
             }
 
             if (savedPosition is { } validPosition)
