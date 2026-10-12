@@ -6,12 +6,15 @@ namespace SkySaga.Game.Packets;
 public static class RunActionListReceived
 {
     private const int ChunkSize = 32;
-    private const int PickaxeVoxelStrength = 75;
-    private const int DefaultVoxelDurability = 160;
+    private const float HandVoxelStrength = 1;
+    private const float HandMiningPowerTier = 1;
+    private const float ZeroStrengthToolVoxelStrength = 200;
     private const byte Air = 0;
     private static readonly bool SendVoxelDamage = Environment.GetEnvironmentVariable("SKYSAGA_VOXEL_DAMAGE") == "1";
 
-    private static readonly ConcurrentDictionary<Vector3Int, int> VoxelDamage = new();
+    private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 0), (0, 10), (40, 50)];
+
+    private static readonly ConcurrentDictionary<Vector3Int, float> VoxelDamage = new();
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
@@ -38,25 +41,44 @@ public static class RunActionListReceived
         if (hasVoxel != 1 || targetEntityId != 0)
             return true;
 
-        if (UsedBlockId(connection) is int blockId && blockId != 0)
+        var usedItemCrc = UsedItemCrc(connection);
+        var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
+
+        if (blockId is int placedBlock && placedBlock != 0)
         {
             var placeAt = new Vector3Int(
                 voxel.X + (int)MathF.Round(hitNormal.X),
                 voxel.Y + (int)MathF.Round(hitNormal.Y),
                 voxel.Z + (int)MathF.Round(hitNormal.Z));
 
-            SetWorldVoxel(connection, placeAt, (byte)blockId);
+            SetWorldVoxel(connection, placeAt, (byte)placedBlock);
             VoxelDamage.TryRemove(placeAt, out _);
 
-            Console.WriteLine($"[Voxel] placed {blockId} at {placeAt}");
+            Console.WriteLine($"[Voxel] placed {placedBlock} at {placeAt}");
             return true;
         }
 
-        var damage = VoxelDamage.AddOrUpdate(voxel, PickaxeVoxelStrength, (_, current) => current + PickaxeVoxelStrength);
+        var voxelType = GetWorldVoxel(connection, voxel);
+
+        if (!VoxelTable.TryGet(voxelType, out var voxelStats) || !voxelStats.IsDiggable)
+            return true;
+
+        var (strength, powerTier) = usedItemCrc is uint toolCrc && ToolStatTable.TryGet(toolCrc, out var tool)
+            ? (tool.VoxelStrength > 0 ? tool.VoxelStrength : ZeroStrengthToolVoxelStrength, tool.MiningPowerTier)
+            : (HandVoxelStrength, HandMiningPowerTier);
+
+        if (powerTier < voxelStats.MiningToughnessTier)
+        {
+            Console.WriteLine($"[Voxel] {voxel} type {voxelType} needs mining tier {voxelStats.MiningToughnessTier}, tool has {powerTier}");
+            return true;
+        }
+
+        var hitDamage = DigDamage(strength - voxelStats.Resistance);
+        var damage = VoxelDamage.AddOrUpdate(voxel, hitDamage, (_, current) => current + hitDamage);
 
         var damageId = DamageIdOf(voxel);
 
-        if (damage < DefaultVoxelDurability)
+        if (damage < voxelStats.Durability)
         {
             if (SendVoxelDamage)
                 connection.PlayerConnectionManager.BroadcastToAll(new UpdateVoxelDamage
@@ -69,16 +91,15 @@ public static class RunActionListReceived
                 Timestamp = (ulong)Environment.TickCount64
             });
 
-            Console.WriteLine($"[Voxel] {voxel} damage {damage}/{DefaultVoxelDurability}");
+            Console.WriteLine($"[Voxel] {voxel} type {voxelType} damage {damage}/{voxelStats.Durability} (+{hitDamage})");
             return true;
         }
 
         if (SendVoxelDamage)
             connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
         VoxelDamage.TryRemove(voxel, out _);
-        var removedBlock = GetWorldVoxel(connection, voxel);
         SetWorldVoxel(connection, voxel, Air);
-        CollectBlock(connection, removedBlock);
+        CollectBlock(connection, voxelType);
 
         Console.WriteLine($"[Voxel] removed {voxel}");
         return true;
@@ -88,11 +109,30 @@ public static class RunActionListReceived
 
     private static int DamageIdOf(Vector3Int voxel) => (voxel.X << 20) | (voxel.Y << 11) | voxel.Z | 1 << 30;
 
-    private static int? UsedBlockId(PlayerConnection connection)
+    private static float DigDamage(float input)
+    {
+        if (input <= DigDamageLut[0].Input)
+            return DigDamageLut[0].Output;
+
+        for (var i = 1; i < DigDamageLut.Length; i++)
+        {
+            var (x1, y1) = DigDamageLut[i];
+
+            if (input <= x1)
+            {
+                var (x0, y0) = DigDamageLut[i - 1];
+                return y0 + (y1 - y0) * (input - x0) / (x1 - x0);
+            }
+        }
+
+        return DigDamageLut[^1].Output;
+    }
+
+    private static uint? UsedItemCrc(PlayerConnection connection)
     {
         if (connection.LastUsedItemId is not int usedId
             || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
-            return connection.RightHandBlockId;
+            return null;
 
         var entityId = inventory.InventoryEntityList.Contains(usedId)
             ? usedId
@@ -102,10 +142,10 @@ public static class RunActionListReceived
             || !connection.WorldManager.EntityManager.TryGetEntity(entityId, out var itemEntity)
             || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
             || item.InventorySlotData.Name is not uint crc)
-            return connection.RightHandBlockId;
+            return null;
 
         Console.WriteLine($"[RunActionList] used item {usedId} = {ItemTable.NameOf(ItemTable.IndexOf(crc))}");
-        return BlockCrcMapping.GetBlockId(crc);
+        return crc;
     }
 
     private static void CollectBlock(PlayerConnection connection, byte blockId)
