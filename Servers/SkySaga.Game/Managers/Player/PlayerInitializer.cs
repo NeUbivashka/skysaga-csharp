@@ -3,6 +3,9 @@ namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
 {
+    private const uint ForestMasterSigil = 10;
+    private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
+
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
     private readonly Random _random = new();
     private IMapEntityManager _entityManager => _worldManager.EntityManager;
@@ -14,9 +17,14 @@ public class PlayerInitializer(IWorldManager worldManager)
         var save = PlayerSaveStore.Load();
 
         if (player.TryGetComponent<ClientPlayernameComponent>(out var clientPlayernameComponent))
+        {
             clientPlayernameComponent.Playername = !string.IsNullOrEmpty(save?.Playername)
                 ? save.Playername
                 : Util.CharacterName();
+
+            clientPlayernameComponent.AvailablePlayerSigilList = [.. StarterSigils.Select(index => (index, 0u, 0u))];
+            clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
+        }
 
         if (player.TryGetComponent<ClientCharacterCustomisationComponent>(out var customisation) && save is not null)
         {
