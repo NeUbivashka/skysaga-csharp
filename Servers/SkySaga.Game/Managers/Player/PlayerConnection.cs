@@ -115,6 +115,7 @@ public class PlayerConnection
             PacketId.PlayerDodged => PlayerDodged.Handle(this, bitStream),
             PacketId.PerformJump => PerformJump.Handle(this, bitStream),
             PacketId.EntityLanded => Packets.EntityLanded.Handle(this, bitStream),
+            PacketId.RequestRespawn => Packets.RequestRespawn.Handle(this, bitStream),
             PacketId.JoinDestinationSelectionWorld => JoinDestinationSelectionWorld.Handle(this, bitStream),
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
@@ -150,6 +151,14 @@ public class PlayerConnection
 
     public void Tick()
     {
+        if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
+        {
+            if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= RespawnDelaySeconds)
+                Respawn();
+
+            health.Regenerate(DateTime.UtcNow);
+        }
+
         if (IsLocalDueUtc.TryPeek(out var due) && DateTime.UtcNow >= due)
         {
             IsLocalDueUtc.Dequeue();
@@ -162,6 +171,33 @@ public class PlayerConnection
 
             Console.WriteLine($"[PlayerConnection] Sent EntitySync(EntityId={PlayerEntity.Id}, islocal=true) to the owner.");
         }
+    }
+
+    private const double RespawnDelaySeconds = 10;
+
+    public Vector3 SpawnPosition { get; set; }
+
+    public float SpawnYawDegrees { get; set; }
+
+    public void Respawn()
+    {
+        if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
+            health.Revive();
+
+        if (PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform))
+        {
+            transform.Position = SpawnPosition;
+            transform.YawDegrees = SpawnYawDegrees;
+        }
+
+        Send(new PlayerSpawned
+        {
+            EntityId = PlayerEntity.Id,
+            Position = SpawnPosition,
+            YawDegrees = SpawnYawDegrees
+        });
+
+        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {SpawnPosition}.");
     }
 
     public void Send(BitStream bitStream)

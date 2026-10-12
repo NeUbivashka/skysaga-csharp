@@ -23,6 +23,9 @@ public static class ClientReadyToPlay
             playerSpawned.YawDegrees = transform.YawDegrees;
         }
 
+        connection.SpawnPosition = playerSpawned.Position;
+        connection.SpawnYawDegrees = playerSpawned.YawDegrees;
+
         connection.Send(playerSpawned);
 
         Console.WriteLine($"[ClientReadyToPlay] Sent SetClientLocalPlayerEntity(EntityId={connection.PlayerEntity.Id}), "

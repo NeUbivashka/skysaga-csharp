@@ -8,8 +8,56 @@ public class HealthComponent : Component
 
     public int? SyncedFullHPValues { get; set => SetIfChanged(ref field, value); }
 
+    private const double RegenPauseSeconds = 7.5;
+    private const double RegenPerSecond = 12.5;
+    private const double RegenSyncSeconds = 1;
+
+    private DateTime _lastDamageUtc;
+    private DateTime _lastRegenUtc;
+    private double _regenCarry;
+
+    public bool IsDead { get; set => SetIfChanged(ref field, value); }
+
     public void Damage(int amount)
-        => SyncedFullHPValues = Math.Max((SyncedFullHPValues ?? MaxHP) - amount, 0);
+    {
+        if (IsDead)
+            return;
+
+        SyncedFullHPValues = Math.Max((SyncedFullHPValues ?? MaxHP) - amount, 0);
+        _lastDamageUtc = DateTime.UtcNow;
+        _regenCarry = 0;
+
+        if (SyncedFullHPValues == 0)
+        {
+            IsDead = true;
+            DiedUtc = _lastDamageUtc;
+        }
+    }
+
+    public DateTime DiedUtc { get; private set; }
+
+    public void Revive()
+    {
+        SyncedFullHPValues = MaxHP;
+        IsDead = false;
+    }
+
+    public void Regenerate(DateTime now)
+    {
+        if (IsDead || SyncedFullHPValues is not { } hp || hp >= MaxHP)
+            return;
+
+        if ((now - _lastDamageUtc).TotalSeconds < RegenPauseSeconds || (now - _lastRegenUtc).TotalSeconds < RegenSyncSeconds)
+            return;
+
+        var elapsed = Math.Min((now - _lastRegenUtc).TotalSeconds, (now - _lastDamageUtc).TotalSeconds - RegenPauseSeconds);
+        _lastRegenUtc = now;
+        _regenCarry += elapsed * RegenPerSecond;
+
+        var gain = (int)_regenCarry;
+        _regenCarry -= gain;
+        SyncedFullHPValues = Math.Min(hp + gain, MaxHP);
+    }
 
     public int WholeHearts { get; set => SetIfChanged(ref field, value); }
     public int HalfHearts { get; set => SetIfChanged(ref field, value); }
@@ -28,6 +76,12 @@ public class HealthComponent : Component
 
             bitStream.WriteRanged((uint)Math.Clamp(hp, 0, (int)HpMax), HpMax);
             bitStream.Write0();
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(IsDead), StringComparison.OrdinalIgnoreCase))
+        {
+            bitStream.Write(IsDead);
 
             return true;
         }

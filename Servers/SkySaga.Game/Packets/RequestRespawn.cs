@@ -1,13 +1,15 @@
 namespace SkySaga.Game.Packets;
 
-public class RequestRespawn : ISerializablePacket
+public static class RequestRespawn
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        Console.WriteLine($"[RequestRespawn] {bitStream.GetNumberOfUnreadBits()} payload bits");
 
-        bitStream.WritePacketId(PacketId.RequestRespawn);
+        connection.Respawn();
 
-        return bitStream;
+        bitStream.IgnoreBits(bitStream.GetNumberOfUnreadBits());
+
+        return true;
     }
 }
