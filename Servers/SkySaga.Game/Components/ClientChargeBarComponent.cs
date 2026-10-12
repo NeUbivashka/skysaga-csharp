@@ -5,7 +5,7 @@ public class ClientChargeBarComponent : Component
     public const uint ChargeMax = 40000;
     public const uint LockIndexMax = 3;
 
-    public uint CurrentCharge { get; set => SetIfChanged(ref field, Math.Min(value, ChargeMax)); } = ChargeMax;
+    public uint CurrentCharge { get; set => SetIfChanged(ref field, Math.Min(value, ChargeMax)); }
 
     public uint? SecondaryCharge { get; set => SetIfChanged(ref field, value is { } v ? Math.Min(v, ChargeMax) : null, nameof(CurrentCharge)); }
 
