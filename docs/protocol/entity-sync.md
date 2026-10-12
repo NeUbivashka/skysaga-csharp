@@ -139,6 +139,62 @@ Components: `clientnodecomponent` (nodecrc, disableworldnode, inifiniteupdatedis
 deletenodeatdistance) and `sealevelcomponent` (seafloorlevel, sealevel, showsea). Sync: nodecrc 0,
 seafloorlevel 1, sealevel 2, showsea 3 (default true). The readers have not been traced yet.
 
+## Player parameters checked against the client readers
+
+One wrong width shifts every later parameter of the entity, and nothing on the client reports
+it: values silently become garbage. `SKYSAGA_SYNC_TRACE=1` logs every parameter the server writes
+(sync index, component, name, width) so each one can be compared with the reader below.
+A component's `TrySync` must return `false` for every parameter it does not write. Returning
+`true` sets the mask bit without data.
+
+Fixed 2026-10-12. Together these were why the player could not move and the HUD never unlocked:
+
+| sync | parameter | client reader | wire |
+|------|-----------|---------------|------|
+| 12, 36 | availableplayersigillist, currentsigil | ClientPlayerNameComponent | not sent (TrySync returned true without data) |
+| 28 | craftingdropslots | FUN_00D18620 | count escaped at 2 (2 bits), then exactly 2 item refs |
+| 78 | inputmovementdirection | FUN_00BF46F0 case 2 / FUN_007D6590 | 3 × ranged 0x80 of (v + 0x40), ×1/64 |
+| 79 | inputmovementspeed | case 3 / FUN_00BF4580 | ranged 0x78, ×1/8 |
+| 81 | inventoryentitylist | FUN_00BC7550 | count escaped at 0xF9 (8 bits), full-width u32 ids |
+| 114 | maxinventoryslots | FUN_00C3F490 | ranged 0xF0 = 8 bits (was 6) |
+| 135 | position | FUN_00BF88F0 / FUN_007D66A0 | X 17, Y 15 of (y·64 + 0x3FC0), Z 17 (was 17/17/17) |
+| 162 | unlockedfeaturecrcset | FUN_00C426B0 | count escaped at 62, then presence bit + full-width CRC32 of the feature name |
+| — | scale | FUN_007D6410 | ranged 0x38, ×1/8 (was raw float bits) |
+
+Checked and correct: the aspect bools (CanEditMap 0 … IsSpectator 5, IsDebugPlayer 9, IsLocal 0x11:
+1 bit each, FUN_00C75410), takeonly (1 bit), joblist (count escaped at 64), locationspecificquestsready
+(1 bit), playername (string), yawdegrees (15 bits), the customisation flag and CRCs.
+
+### Item reference (FUN_007E9440, `InventoryItemRef`)
+
+| field | wire |
+|-------|------|
+| kind | ranged index into the item table (`[0x01487BCC]+0x1F28`, count `+0x1F2C` = 1810) → 11 bits |
+| amounts | count escaped at 4 (3 bits), each presence + u32 |
+| quantity | presence + full-width u32 |
+| item uuid | presence + 4 × u32 |
+| detail | 2-bit kind; 0 → optional uuid, 1 → string, 2 → nothing |
+
+### Movement
+
+The owning client sends **RPCSetInputMovement** (76): direction 3 × 8 bits (v + 0x40) and speed
+7 bits. It moves only after the server has applied the input to `clientcharacterphysicscomponent`
+and synced it back. **RPCEntityMoved** (155) reports the resulting position: X 17, Y 15 (+0x3FC0),
+Z 17, yaw 15 bits, with no entity id. Verified 2026-10-12: holding W moved the character from
+z = 3.5 to 26.9 in 3 s.
+
+### Live table sizes (`[0x01487BCC]` + offset, 36731)
+
+| offset | table | count |
+|--------|-------|-------|
+| 0x19C8 | backstories | 22 |
+| 0x19E0 | biome palettes | 46 |
+| 0x1DDC | materials | 522 |
+| 0x1EC0 | sigils | 27 |
+| 0x1F2C | items | 1810 |
+| 0x201C | tribes | 36 |
+| 0x3E70 | material customisations | 266 |
+
 ## UUIDs on the wire
 
 Four 32-bit words, behind a presence bit. The client prints each word low nibble first, so word

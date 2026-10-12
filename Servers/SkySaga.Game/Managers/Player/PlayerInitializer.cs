@@ -1,4 +1,5 @@
-﻿namespace SkySaga.Game.Managers.Player;
+﻿using System.Linq;
+namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
 {
@@ -92,7 +93,8 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
 
         if (player.TryGetComponent<ClientFeatureUnlockComponent>(out var clientFeatureUnlockComponent))
-            clientFeatureUnlockComponent.FeatureIsLockedStatusList.Add(true);
+            clientFeatureUnlockComponent.UnlockedFeatures =
+                [.. FeatureUnlockComponent.AllFeatures.Except(FeatureUnlockComponent.KeptLocked)];
 
         if (player.TryGetComponent<ClientCraftingDropSlotsComponent>(out var clientCraftingDropSlotsComponent))
             clientCraftingDropSlotsComponent.CraftingDropSlots = [0, 0];

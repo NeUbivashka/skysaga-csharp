@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Entities;
+﻿namespace SkySaga.Game.Entities;
 
 public class Entity
 {
@@ -12,6 +12,13 @@ public class Entity
     public string Name => _entityData.Name;
 
     public bool SyncRequired => _sync.HasAnySet();
+
+    /// <summary>
+    /// SKYSAGA_SYNC_TRACE=1 logs every parameter written into sync data with its width, so each one
+    /// can be checked against the client's binding reader. One wrong width shifts every later
+    /// parameter of the entity.
+    /// </summary>
+    private static readonly bool SyncTrace = Environment.GetEnvironmentVariable("SKYSAGA_SYNC_TRACE") == "1";
 
     public Entity(int id, EntityData entityData, IReadOnlyCollection<Component> components)
     {
@@ -83,10 +90,15 @@ public class Entity
             if (!_components.TryGetValue(componentName, out var component))
                 continue;
 
+            var bitsBefore = parameterBitStream.GetNumberOfBitsUsed();
+
             if (component.TrySync(parameterName, parameterBitStream))
             {
                 bitArray.Set(i, true);
 
+                if (SyncTrace)
+                    Console.WriteLine($"[SyncTrace] {Name}#{Id} [{i}] {componentName}.{parameterName} "
+                        + $"{parameterBitStream.GetNumberOfBitsUsed() - bitsBefore} bits");
             }
         }
 

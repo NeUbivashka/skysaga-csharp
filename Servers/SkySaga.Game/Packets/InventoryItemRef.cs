@@ -7,12 +7,16 @@
 ///
 /// Field order and widths, straight from the reader:
 ///
-///     Kind       FUN_007D8110   16 bits
+///     Kind       FUN_007D8110   ranged index into the item table ([0x01487BCC]+0x1F28, count
+///                               at +0x1F2C = 1810 in a live client) -> 11 bits. It was written as
+///                               16 bits, 5 too many.
 ///     Amounts    FUN_007E6140   count: ranged max 4 -> 3 bits, escape at 4 (1 bit + 32 bits);
 ///                               then per entry: 1 presence bit, and 32 bits if set
 ///     Quantity   FUN_007EA4B0   1 presence bit + 32 bits
 ///     ItemUuid   FUN_007EA3B0   1 presence bit + 4 x 32 bits
-///     Detail     FUN_007EA060   ranged max 2 -> 2 bits, then a string, then another optional UUID
+///     Detail     FUN_007EA060   a variant: ranged max 2 -> 2 bits of kind, then for kind 0 an
+///                               optional UUID, for kind 1 a string (FUN_007EA530), else nothing.
+///                               It was written as kind + string + UUID.
 ///
 /// Names are by role. Nothing here names itself: the loggers for all three packets run through
 /// packed thunks and lose their string pointers. The shape is solid, the labels are a reading.
@@ -20,6 +24,9 @@
 public class InventoryItemRef
 {
     private const uint AmountCountMax = 4;
+
+    /// <summary>Item table size in this build (live client, [0x01487BCC]+0x1F2C).</summary>
+    public const uint ItemTableCount = 1810;
     private const uint DetailKindMax = 2;
 
     public ushort Kind;
@@ -38,7 +45,7 @@ public class InventoryItemRef
 
     public void Encode(BitStream bitStream)
     {
-        bitStream.WriteBits(BitConverter.GetBytes(Kind), 16, true);
+        bitStream.WriteRangedIndex(Kind, ItemTableCount);
 
         var count = (uint)Amounts.Count;
 
@@ -56,9 +63,14 @@ public class InventoryItemRef
         WriteOptionalUInt32(bitStream, Quantity);
         WriteOptionalUuid(bitStream, ItemUuid);
 
-        bitStream.WriteRanged(Math.Min(DetailKind, DetailKindMax), DetailKindMax);
-        bitStream.WriteString(DetailName);
-        WriteOptionalUuid(bitStream, DetailUuid);
+        var detailKind = Math.Min(DetailKind, DetailKindMax);
+
+        bitStream.WriteRanged(detailKind, DetailKindMax);
+
+        if (detailKind == 0)
+            WriteOptionalUuid(bitStream, DetailUuid);
+        else if (detailKind == 1)
+            bitStream.WriteString(DetailName);
     }
 
     internal static void WriteUInt32(BitStream bitStream, uint value)

@@ -101,8 +101,19 @@ public class PlayerConnection
 
 
 
+    /// <summary>
+    /// Set once the player entity has been loaded from the save (SendInitialEntities). Until then it
+    /// holds defaults, and saving it would overwrite the real save with an empty name, position
+    /// (0, 0, 0) and no character - which the autosave did on 2026-10-12, whenever its timer fired
+    /// between ClientConnected and the initial entity send.
+    /// </summary>
+    public bool IsPlayerInitialized { get; set; }
+
     public void SaveState()
     {
+        if (!IsPlayerInitialized)
+            return;
+
         PlayerSaveStore.Save(_playerInitializer.CaptureSaveData(PlayerEntity));
     }
 
@@ -124,6 +135,7 @@ public class PlayerConnection
 
 
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
+            PacketId.SetInputMovement => SetInputMovement.Handle(this, bitStream),
             PacketId.SetLookAtDirection => SetLookAtDirection.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
             PacketId.SetCharacterCustomisationData => SetCharacterCustomisationData.Handle(this, bitStream),

@@ -349,6 +349,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         playerInitializer.InitializePlayer(player);
 
+        connection.IsPlayerInitialized = true;
+
         foreach (var entity in EntityManager.Entities)
         {
             var entityAdd = new EntityAdd

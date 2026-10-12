@@ -181,15 +181,18 @@ public class MapSpec
     }
 
     /// <summary>
-    /// The adventure to host, from SKYSAGA_ADVENTURE: "ftue" (default) for FTUE_The_Old_City,
-    /// "airship" for DestinationSelection, "home" for the home island.
+    /// The adventure to host. SKYSAGA_ADVENTURE forces one ("ftue", "airship", "home"). Without it
+    /// the player save decides: no character yet -> DestinationSelection, where the creator runs;
+    /// character created -> the home island. The FTUE is only hosted on request, because the Old
+    /// City map itself does not exist on the server yet.
     /// </summary>
     public static MapSpec FromEnvironment(uint seed)
         => Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.ToLowerInvariant() switch
         {
             "home" => HomeIsland(seed),
             "airship" => DestinationSelection(seed),
-            _ => Ftue(seed),
+            "ftue" => Ftue(seed),
+            _ => PlayerSaveStore.Load()?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
         };
 
     /// <summary>

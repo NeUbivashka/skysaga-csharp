@@ -178,6 +178,35 @@ public static class BitStreamExtensions
         bitStream.WriteBits(BitConverter.GetBytes(value), bitsToWrite, true);
     }
 
+    /// <summary>
+    /// A full-width 32-bit field. The client reads these through FUN_006FB780 and byte-swaps them
+    /// in this build (DAT_01449B5E is zero), so they go out big-endian.
+    /// </summary>
+    public static void WriteFullWidthUInt32(this BitStream bitStream, uint value)
+    {
+        var bytes = BitConverter.GetBytes(value);
+
+        Array.Reverse(bytes);
+
+        bitStream.WriteBits(bytes, 32, true);
+    }
+
+    /// <summary>
+    /// A list count as the client's list readers take it: ranged up to <paramref name="escape"/>;
+    /// the value <paramref name="escape"/> itself is followed by a presence bit and the real count
+    /// as a full-width u32 (e.g. FUN_00BC7550, FUN_00C426B0, FUN_00D18620).
+    /// </summary>
+    public static void WriteEscapedCount(this BitStream bitStream, uint count, uint escape)
+    {
+        bitStream.WriteRanged(Math.Min(count, escape), escape);
+
+        if (count >= escape)
+        {
+            bitStream.Write1();
+            bitStream.WriteFullWidthUInt32(count);
+        }
+    }
+
     public static void WriteRanged(this BitStream bitStream, uint value, uint max)
     {
 

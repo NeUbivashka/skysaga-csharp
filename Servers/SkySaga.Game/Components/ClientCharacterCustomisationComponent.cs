@@ -29,7 +29,11 @@ public class ClientCharacterCustomisationComponent : Component
         if (parameterName.Equals(nameof(CustomisationData), StringComparison.OrdinalIgnoreCase))
         {
             // Nothing to send until the creator has produced a struct; the client keeps its default.
-            if (CustomisationData is null)
+            //
+            // Off unless SKYSAGA_SYNC_APPEARANCE=1: the saved struct crashed the client on the home
+            // island (2026-10-12, FTL in FUN_00C18D00 from component post-init FUN_008475C0, an
+            // index past the table at [0x01487BCC]+0x3E6C, count +0x3E70). Not understood yet.
+            if (CustomisationData is null || Environment.GetEnvironmentVariable("SKYSAGA_SYNC_APPEARANCE") != "1")
                 return false;
 
             bitStream.WriteBits(CustomisationData, CustomisationDataBits, true);
