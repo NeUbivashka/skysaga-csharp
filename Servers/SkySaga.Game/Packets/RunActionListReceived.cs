@@ -53,12 +53,25 @@ public static class RunActionListReceived
 
         var damage = VoxelDamage.AddOrUpdate(voxel, PickaxeVoxelStrength, (_, current) => current + PickaxeVoxelStrength);
 
+        var damageId = DamageIdOf(voxel);
+
         if (damage < DefaultVoxelDurability)
         {
+            connection.PlayerConnectionManager.BroadcastToAll(new UpdateVoxelDamage
+            {
+                DamageId = damageId,
+                Amount = (uint)damage,
+                EntityId = 0,
+                SourceId = connection.PlayerEntity.Id,
+                Position = new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f),
+                Timestamp = (ulong)Environment.TickCount64
+            });
+
             Console.WriteLine($"[Voxel] {voxel} damage {damage}/{DefaultVoxelDurability}");
             return true;
         }
 
+        connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
         VoxelDamage.TryRemove(voxel, out _);
         var removedBlock = GetWorldVoxel(connection, voxel);
         SetWorldVoxel(connection, voxel, Air);
@@ -69,6 +82,8 @@ public static class RunActionListReceived
     }
 
     private const int StackLimit = 64;
+
+    private static int DamageIdOf(Vector3Int voxel) => (voxel.X << 20) | (voxel.Y << 11) | voxel.Z | 1 << 30;
 
     private static int? UsedBlockId(PlayerConnection connection)
     {

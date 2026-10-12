@@ -394,7 +394,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         if (saved.Any(e => e.NameHash == crc))
             return;
 
-        var free = inventory.InventoryEntityList.IndexOf(0);
+        var free = inventory.InventoryEntityList.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
 
         if (free >= 0)
             CreateAndEquipInventoryItem(inventory, free, crc);
