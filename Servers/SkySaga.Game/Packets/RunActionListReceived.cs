@@ -37,7 +37,7 @@ public static class RunActionListReceived
         if (hasVoxel != 1 || targetEntityId != 0)
             return true;
 
-        if (connection.RightHandBlockId is int blockId && blockId != 0)
+        if (UsedBlockId(connection) is int blockId && blockId != 0)
         {
             var placeAt = new Vector3Int(
                 voxel.X + (int)MathF.Round(hitNormal.X),
@@ -69,6 +69,26 @@ public static class RunActionListReceived
     }
 
     private const int StackLimit = 64;
+
+    private static int? UsedBlockId(PlayerConnection connection)
+    {
+        if (connection.LastUsedItemId is not int usedId
+            || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+            return connection.RightHandBlockId;
+
+        var entityId = inventory.InventoryEntityList.Contains(usedId)
+            ? usedId
+            : usedId >= 0 && usedId < inventory.InventoryEntityList.Count ? inventory.InventoryEntityList[usedId] : 0;
+
+        if (entityId == 0
+            || !connection.WorldManager.EntityManager.TryGetEntity(entityId, out var itemEntity)
+            || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
+            || item.InventorySlotData.Name is not uint crc)
+            return connection.RightHandBlockId;
+
+        Console.WriteLine($"[RunActionList] used item {usedId} = {ItemTable.NameOf(ItemTable.IndexOf(crc))}");
+        return BlockCrcMapping.GetBlockId(crc);
+    }
 
     private static void CollectBlock(PlayerConnection connection, byte blockId)
     {

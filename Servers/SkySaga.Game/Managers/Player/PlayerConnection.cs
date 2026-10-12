@@ -20,6 +20,8 @@ public class PlayerConnection
 
     public DateTime LastFallRespawn { get; set; }
 
+    public int? LastUsedItemId { get; set; }
+
     public string? CurrentVideoFileName { get; set; }
 
     public PlayerConnection(Server server, RakNetGUID guid, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
@@ -112,6 +114,7 @@ public class PlayerConnection
             PacketId.UISettingsSetHotbarSlotItemSpec => UISettingsSetHotbarSlotItemSpec.Handle(this, bitStream),
             PacketId.UISettingsSelectHotbarSlot => UISettingsSelectHotbarSlot.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
+            PacketId.EntityPerformedAbility => EntityPerformedAbilityReceived.Handle(this, bitStream),
             PacketId.SetCharacterCustomisationData => SetCharacterCustomisationData.Handle(this, bitStream),
             PacketId.SaveCharacterName => SaveCharacterName.Handle(this, bitStream),
             PacketId.RequestEquipInventoryItem => RequestEquipInventoryItem.Handle(this, bitStream),
