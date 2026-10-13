@@ -39,8 +39,7 @@ public static class Combat
             return;
 
         var player = connection.PlayerEntity;
-        var weaponLevel = CharacterStats(player).WeaponLevel + EquipmentStats(entityManager, player).WeaponLevel
-            + (usedItemCrc is uint crc && CombatStatTable.TryGet(crc, out var weapon) ? weapon.WeaponLevel : 0);
+        var weaponLevel = AttackLevel(entityManager, player, usedItemCrc);
         var armourLevel = CharacterStats(target).ArmourLevel + EquipmentStats(entityManager, target).ArmourLevel;
 
         var damage = attacks.Sum(attack => attack.ForceZeroDamage
@@ -69,6 +68,20 @@ public static class Combat
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
     }
+
+    private static float AttackLevel(IMapEntityManager entityManager, Entity player, uint? usedItemCrc)
+    {
+        if (usedItemCrc is uint toolCrc && IsDiggingTool(toolCrc) && ToolStatTable.TryGet(toolCrc, out var tool))
+            return tool.DigLevel;
+
+        return CharacterStats(player).WeaponLevel + EquipmentStats(entityManager, player).WeaponLevel
+            + (usedItemCrc is uint crc && CombatStatTable.TryGet(crc, out var weapon) ? weapon.WeaponLevel : 0);
+    }
+
+    private static readonly uint DiggingToolTag = Util.ComputeCrc32("DiggingTool");
+
+    private static bool IsDiggingTool(uint itemCrc)
+        => ItemTagTable.TryGet(itemCrc, out var tags) && tags.Contains(DiggingToolTag);
 
     private static CombatStats CharacterStats(Entity entity)
         => CombatStatTable.TryGet(entity.Name, out var stats) ? stats : default;
