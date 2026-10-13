@@ -18,8 +18,8 @@ public class KillOccurred : ISerializablePacket
 
         bitStream.WritePacketId(PacketId.KillOccurred);
 
-        InventoryItemRef.WriteUInt32(bitStream, (uint)TargetEntityId);
         InventoryItemRef.WriteUInt32(bitStream, (uint)SourceEntityId);
+        InventoryItemRef.WriteUInt32(bitStream, (uint)TargetEntityId);
 
         Item.Encode(bitStream);
 

@@ -19,8 +19,8 @@ public class HitOccurred : ISerializablePacket
         var bitStream = new BitStream();
         bitStream.WritePacketId(PacketId.HitOccurred);
 
-        InventoryItemRef.WriteUInt32(bitStream, (uint)TargetEntityId);
         InventoryItemRef.WriteUInt32(bitStream, (uint)SourceEntityId);
+        InventoryItemRef.WriteUInt32(bitStream, (uint)TargetEntityId);
 
         bitStream.WriteRanged(Math.Min(Amount, AmountMax), AmountMax);
         bitStream.WriteRanged(Math.Min(Kind, KindMax), KindMax);

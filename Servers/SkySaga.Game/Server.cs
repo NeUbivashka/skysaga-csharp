@@ -29,7 +29,7 @@ public class Server : IDisposable
         _password = password ?? throw new ArgumentNullException(nameof(password));
         _port = port;
 
-        _aiManager = new AiManager(_worldManager);
+        _aiManager = new AiManager(_worldManager, _playerConnectionManager);
         _chatCommands = new ChatCommands(_worldManager, _playerInitializer, _playerConnectionManager);
 
         _peer = RakPeerInterface.GetInstance();

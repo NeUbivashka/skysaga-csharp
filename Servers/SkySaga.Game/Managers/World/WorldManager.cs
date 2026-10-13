@@ -285,6 +285,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             transform.Position = position;
 
         CreatureLoadoutTable.Equip(entity, loadoutItems);
+        Combat.ApplyMaxHealth(entity);
 
         return [.. loadoutItems.Select(item => item.Item).OfType<Entity>(), entity];
     }

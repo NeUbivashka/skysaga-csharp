@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SkySaga.Game.Managers.Entities;
 
 public class AiManager
@@ -12,6 +14,7 @@ public class AiManager
     private const float GroundSnapSpeed = 4f;
 
     private readonly IWorldManager _worldManager;
+    private readonly PlayerConnectionManager _playerConnectionManager;
     private readonly Random _random = new();
     private readonly Dictionary<int, WanderState> _wanderStates = [];
 
@@ -23,9 +26,10 @@ public class AiManager
         public DateTime NextDecisionTime;
     }
 
-    public AiManager(IWorldManager worldManager)
+    public AiManager(IWorldManager worldManager, PlayerConnectionManager playerConnectionManager)
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
+        _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
     }
 
     public void Tick()
@@ -38,9 +42,14 @@ public class AiManager
         var delta = (float)(now - _lastUpdate).TotalSeconds;
         _lastUpdate = now;
 
+        RemoveCorpses(now);
+
         foreach (var entity in _worldManager.EntityManager.Entities)
         {
             if (!entity.TryGetComponent<ClientEnemyAiComponent>(out var ai))
+                continue;
+
+            if (entity.TryGetComponent<HealthComponent>(out var health) && health.IsDead)
                 continue;
 
             if (!entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
@@ -50,6 +59,33 @@ public class AiManager
                 continue;
 
             UpdateChicken(entity, ai, transform, now, delta);
+        }
+    }
+
+    private void RemoveCorpses(DateTime now)
+    {
+        var corpses = _worldManager.EntityManager.Entities
+            .Where(entity => entity.TryGetComponent<ClientEnemyAiComponent>(out _)
+                && entity.TryGetComponent<HealthComponent>(out var health)
+                && health.IsDead
+                && now - health.DiedUtc >= Combat.CorpseLifetime)
+            .ToList();
+
+        foreach (var corpse in corpses)
+        {
+            var removed = corpse.TryGetComponent<ClientInventoryComponent>(out var inventory)
+                ? inventory.InventoryEntityList.Where(id => id != 0).Append(corpse.Id).ToList()
+                : [corpse.Id];
+
+            foreach (var id in removed)
+            {
+                _worldManager.EntityManager.RemoveEntity(id);
+                _playerConnectionManager.BroadcastToAll(new EntityRemoved { Id = id });
+            }
+
+            _wanderStates.Remove(corpse.Id);
+
+            Console.WriteLine($"[AiManager] Removed the corpse of {corpse.Name}#{corpse.Id}.");
         }
     }
 

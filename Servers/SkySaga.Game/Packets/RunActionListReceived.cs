@@ -38,10 +38,16 @@ public static class RunActionListReceived
 
         Console.WriteLine($"[RunActionList] list {actionListId} entity {entityId} voxel {(hasVoxel == 1 ? voxel.ToString() : "-")} target {targetEntityId} normal {hitNormal}");
 
-        if (hasVoxel != 1 || targetEntityId != 0)
-            return true;
-
         var usedItemCrc = UsedItemCrc(connection);
+
+        if (targetEntityId != 0)
+        {
+            Combat.PlayerAttack(connection, (int)targetEntityId, usedItemCrc);
+            return true;
+        }
+
+        if (hasVoxel != 1)
+            return true;
         var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
 
         if (blockId is int placedBlock)
