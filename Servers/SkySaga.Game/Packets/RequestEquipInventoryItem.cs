@@ -28,10 +28,7 @@ public static class RequestEquipInventoryItem
             && location < clientInventoryComponent.InventoryEntityList.Count
             && slotId != location)
         {
-            var list = new List<int>(clientInventoryComponent.InventoryEntityList);
-
-            (list[location], list[slotId]) = (list[slotId], list[location]);
-            clientInventoryComponent.InventoryEntityList = list;
+            clientInventoryComponent.ApplyClientPredictedSwap(location, slotId);
         }
 
         if (location < ClientEquippedItemComponent.SlotCount

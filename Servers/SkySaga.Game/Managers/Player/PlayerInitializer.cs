@@ -197,7 +197,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 CreateAndEquipInventoryItem(clientInventoryComponent, 14, "Weapon_Forest_Royalist_Dagger_0", 1);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 15, "Weapon_Forest_Royalist_Sword_0", 1);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 16, "Tool_Explorer_Generic_Pickaxe_0", 1);
-                CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Tool_Explorer_Generic_Pickaxe_1", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 12, "Tool_Explorer_Generic_Pickaxe_1", 1);
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 17, "Stone", 10);
                 CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Clay", 10);

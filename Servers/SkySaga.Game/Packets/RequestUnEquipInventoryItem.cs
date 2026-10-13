@@ -19,13 +19,11 @@ public static class RequestUnEquipInventoryItem
             && location < inventory.InventoryEntityList.Count
             && inventory.InventoryEntityList[location] != 0)
         {
-            var list = new List<int>(inventory.InventoryEntityList);
-            var free = list.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
+            var free = inventory.InventoryEntityList.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
 
             if (free >= 0)
             {
-                (list[free], list[location]) = (list[location], 0);
-                inventory.InventoryEntityList = list;
+                inventory.ApplyClientPredictedSwap(location, free);
                 Console.WriteLine($"[Equip] {(ClientEquippedItemComponent.Slot)location} unequipped to inventory slot {free}");
             }
         }
