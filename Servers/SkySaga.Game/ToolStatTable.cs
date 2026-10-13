@@ -1,6 +1,6 @@
 namespace SkySaga.Game;
 
-public readonly record struct ToolStats(float VoxelStrength, float MiningPowerTier);
+public readonly record struct ToolStats(float DigLevel, float MiningPowerTier);
 
 public static class ToolStatTable
 {
@@ -19,9 +19,9 @@ public static class ToolStatTable
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             if (parts.Length == 3
-                && float.TryParse(parts[1], System.Globalization.CultureInfo.InvariantCulture, out var strength)
+                && float.TryParse(parts[1], System.Globalization.CultureInfo.InvariantCulture, out var digLevel)
                 && float.TryParse(parts[2], System.Globalization.CultureInfo.InvariantCulture, out var tier))
-                map.TryAdd(Util.ComputeCrc32(parts[0]), new ToolStats(strength, tier));
+                map.TryAdd(Util.ComputeCrc32(parts[0]), new ToolStats(digLevel, tier));
         }
 
         return map;

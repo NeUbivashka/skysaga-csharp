@@ -5,9 +5,7 @@ namespace SkySaga.Game.Managers.World;
 public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : IMapChunkManager
 {
     private const int ChunkSize = 32;
-    private static readonly string MapSuffix = Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map
-        ? $"_{Path.GetFileNameWithoutExtension(map)}"
-        : "";
+    private static readonly string MapSuffix = $"_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}";
     private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"voxel_edits{MapSuffix}.json");
     private static readonly string LegacyEditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"world_edits{MapSuffix}.json");
     private const byte LegacyAir = 0;

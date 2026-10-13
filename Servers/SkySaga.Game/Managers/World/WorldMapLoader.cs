@@ -1,17 +1,21 @@
-﻿namespace SkySaga.Game.Managers.World;
+namespace SkySaga.Game.Managers.World;
 
 using System.IO.Compression;
 
 public static class WorldMapLoader
 {
-    public const string DefaultPath = @"Data\WorldMap.json";
+    public const string DefaultMap = "TestZoo.json";
+
+    public static string MapFileName { get; } = Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map ? map : DefaultMap;
+
+    public static string MapPath => Path.Combine("Data", MapFileName);
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public static bool TryLoad(IMapChunkManager chunkManager, out MapDefinition? definition, out List<WorldMapEntityData> entities, string path = DefaultPath)
+    public static bool TryLoad(IMapChunkManager chunkManager, out MapDefinition? definition, out List<WorldMapEntityData> entities, string path)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
 

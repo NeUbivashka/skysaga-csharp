@@ -6,13 +6,13 @@ namespace SkySaga.Game.Packets;
 public static class RunActionListReceived
 {
     private const int ChunkSize = 32;
-    private const float HandVoxelStrength = 1;
+    private const float HandDigLevel = 1;
     private const float HandMiningPowerTier = 1;
-    private const float ZeroStrengthToolVoxelStrength = 200;
+    private const uint SwingPowerMax = 0x20;
     private const byte Air = WorldChunk.Air;
     private static readonly bool SendVoxelDamage = Environment.GetEnvironmentVariable("SKYSAGA_VOXEL_DAMAGE") == "1";
 
-    private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 0), (0, 10), (40, 50)];
+    private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 5), (-10, 13), (0, 38), (10, 63), (20, 125), (40, 500)];
 
     private static readonly ConcurrentDictionary<Vector3Int, float> VoxelDamage = new();
 
@@ -24,7 +24,7 @@ public static class RunActionListReceived
         if (!ReadOptionalUInt32(bitStream, out _)) return false;
         if (!ReadPosition(bitStream, out _)) return false;
         if (!ReadDirection(bitStream, out _)) return false;
-        if (!bitStream.ReadInt32(0x20, out _)) return false;
+        if (!bitStream.ReadInt32(SwingPowerMax, out var swingPower)) return false;
 
         if (!bitStream.ReadInt32(1, out var hasVoxel)) return false;
         if (!bitStream.ReadInt32(0x400, out var voxelX)) return false;
@@ -63,9 +63,11 @@ public static class RunActionListReceived
         if (!VoxelTable.TryGet(voxelType, out var voxelStats) || !voxelStats.IsDiggable)
             return true;
 
-        var (strength, powerTier) = usedItemCrc is uint toolCrc && ToolStatTable.TryGet(toolCrc, out var tool)
-            ? (tool.VoxelStrength > 0 ? tool.VoxelStrength : ZeroStrengthToolVoxelStrength, tool.MiningPowerTier)
-            : (HandVoxelStrength, HandMiningPowerTier);
+        var (digLevel, powerTier) = usedItemCrc is uint toolCrc && ToolStatTable.TryGet(toolCrc, out var tool)
+            ? (tool.DigLevel, tool.MiningPowerTier)
+            : (HandDigLevel, HandMiningPowerTier);
+
+        var strength = digLevel * swingPower / (float)SwingPowerMax;
 
         if (powerTier < voxelStats.MiningToughnessTier)
         {

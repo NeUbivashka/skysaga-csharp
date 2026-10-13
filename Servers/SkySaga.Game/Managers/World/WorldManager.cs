@@ -32,7 +32,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     {
         try
         {
-            string fullPath = Path.GetFullPath(WorldMapLoader.DefaultPath);
+            string fullPath = Path.GetFullPath(WorldMapLoader.MapPath);
             string? dir = Path.GetDirectoryName(fullPath);
             if (string.IsNullOrEmpty(dir))
                 return;
@@ -41,7 +41,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             _mapFileWatcher = new FileSystemWatcher(dir)
             {
-                Filter = "WorldMap.json*",
+                Filter = WorldMapLoader.MapFileName + "*",
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
                 EnableRaisingEvents = true
             };
@@ -102,11 +102,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             return;
         }
 
-        var mapPath = Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map
-            ? Path.Combine("Data", map)
-            : WorldMapLoader.DefaultPath;
-
-        if (WorldMapLoader.TryLoad(ChunkManager, out var loadedDefinition, out var loadedEntities, mapPath) && loadedDefinition is not null)
+        if (WorldMapLoader.TryLoad(ChunkManager, out var loadedDefinition, out var loadedEntities, WorldMapLoader.MapPath) && loadedDefinition is not null)
         {
             Definition = loadedDefinition;
 
@@ -118,7 +114,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         else
         {
             Console.WriteLine(
-                $"[WorldManager] No map found at '{WorldMapLoader.DefaultPath}' - starting an empty world. " +
+                $"[WorldManager] No map found at '{WorldMapLoader.MapPath}' - starting an empty world. " +
                 "Export a map from the terrain editor and place it there.");
 
             Definition = new MapDefinition
