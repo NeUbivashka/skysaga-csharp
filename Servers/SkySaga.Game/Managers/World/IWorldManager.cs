@@ -11,5 +11,6 @@ public interface IWorldManager
     void SendInitialChunks(PlayerConnection connection);
     void SendInitialEntities(PlayerConnection connection, Entity player, PlayerInitializer playerInitializer);
     List<Entity> SpawnCreature(string name, Vector3 position);
+    List<Entity> RespawnMapCreature(Entity creature);
     void Reset();
 }

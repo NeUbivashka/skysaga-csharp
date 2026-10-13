@@ -86,6 +86,18 @@ public class AiManager
             _wanderStates.Remove(corpse.Id);
 
             Console.WriteLine($"[AiManager] Removed the corpse of {corpse.Name}#{corpse.Id}.");
+
+            foreach (var entity in _worldManager.RespawnMapCreature(corpse))
+            {
+                _playerConnectionManager.BroadcastToAll(new EntityAdd
+                {
+                    Id = entity.Id,
+                    NameHash = Util.ComputeCrc32(entity.Name),
+                    SyncData = entity.GetSyncData(newEntity: true)
+                });
+
+                Console.WriteLine($"[AiManager] Respawned {entity.Name}#{entity.Id}.");
+            }
         }
     }
 

@@ -16,6 +16,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
     public MapDefinition Definition { get; set; }
     public Entity? Airship { get; private set; }
 
+    private readonly Dictionary<int, Vector3> _mapCreatureSpawns = [];
+
     private const int LandingSearchRadius = 16;
 
     public WorldManager(PlayerConnectionManager playerConnectionManager)
@@ -254,16 +256,33 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (string.Equals(spec.Name, "Player", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            if (SpawnCreature(spec.Name, position).Count == 0)
+            var creature = SpawnCreature(spec.Name, position);
+
+            if (creature.Count == 0)
             {
                 Console.WriteLine($"[WorldManager] Unknown entity name '{spec.Name}' in WorldMap.json, skipping.");
                 continue;
             }
 
+            _mapCreatureSpawns[creature[^1].Id] = position;
+
             spawned++;
         }
 
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
+    }
+
+    public List<Entity> RespawnMapCreature(Entity creature)
+    {
+        if (!_mapCreatureSpawns.Remove(creature.Id, out var position))
+            return [];
+
+        var entities = SpawnCreature(creature.Name, position);
+
+        if (entities.Count > 0)
+            _mapCreatureSpawns[entities[^1].Id] = position;
+
+        return entities;
     }
 
     public List<Entity> SpawnCreature(string name, Vector3 position)
@@ -389,6 +408,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     public void Reset()
     {
         ((EntityManager)EntityManager).Clear();
+        _mapCreatureSpawns.Clear();
         ChunkManager.ClearAll();
         InitializeWorld();
     }
