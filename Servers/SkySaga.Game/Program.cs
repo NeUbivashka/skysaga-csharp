@@ -1,5 +1,6 @@
 ﻿
-Console.SetOut(new TimestampedTextWriter(Console.Out));
+Console.SetOut(TextWriter.Synchronized(new TimestampedTextWriter(Console.Out,
+    new StreamWriter(Path.Combine(AppContext.BaseDirectory, "server.log"), append: false) { AutoFlush = true })));
 
 if (!File.Exists("RakNet.dll"))
 {
@@ -63,14 +64,32 @@ Console.WriteLine("""
 
 Console.ReadKey();
 
-sealed class TimestampedTextWriter(TextWriter inner) : TextWriter
+sealed class TimestampedTextWriter(TextWriter inner, TextWriter log) : TextWriter
 {
     public override System.Text.Encoding Encoding => inner.Encoding;
 
-    public override void WriteLine(string? value) =>
-        inner.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {value}");
+    public override void WriteLine(string? value)
+    {
+        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {value}";
+        inner.WriteLine(line);
+        log.WriteLine(line);
+    }
 
-    public override void Write(char value) => inner.Write(value);
-    public override void Write(string? value) => inner.Write(value);
-    public override void Flush() => inner.Flush();
+    public override void Write(char value)
+    {
+        inner.Write(value);
+        log.Write(value);
+    }
+
+    public override void Write(string? value)
+    {
+        inner.Write(value);
+        log.Write(value);
+    }
+
+    public override void Flush()
+    {
+        inner.Flush();
+        log.Flush();
+    }
 }
