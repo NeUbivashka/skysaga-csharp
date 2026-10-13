@@ -10,6 +10,7 @@ SIZE_CHUNKS = (6, 4, 6)
 FLOOR_Y = 31
 GROUND_Y = FLOOR_Y + 1
 FLOOR_BLOCK = 1
+FLOOR_DEPTH = 4
 EDGE = 8
 
 SMALL_SET = [
@@ -76,8 +77,8 @@ def creature_names(all_types):
 def main():
     all_types = "--all" in sys.argv
     sx, sz = SIZE_CHUNKS[0] * 32, SIZE_CHUNKS[2] * 32
-    voxels = [{"x": x, "y": FLOOR_Y, "z": z, "block": FLOOR_BLOCK, "meta": 0}
-              for x in range(sx) for z in range(sz)]
+    voxels = [{"x": x, "y": y, "z": z, "block": FLOOR_BLOCK, "meta": 0}
+              for y in range(FLOOR_Y - FLOOR_DEPTH + 1, FLOOR_Y + 1) for x in range(sx) for z in range(sz)]
 
     per_row = (sx - 2 * EDGE) // 3
     types = voxel_types()
