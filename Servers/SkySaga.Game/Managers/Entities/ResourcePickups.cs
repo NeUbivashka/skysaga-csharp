@@ -11,15 +11,45 @@ public static class ResourcePickups
     private const float Scatter = 0.3f;
     private const float PopSpeed = 4f;
     private const float FallSpeed = 3f;
+    private const float CreatureDropHeight = 0.75f;
 
     public static void SpawnFromVoxel(PlayerConnection connection, Vector3Int voxel, byte voxelType)
     {
         if (voxelType == WorldChunk.Air || BlockCrcMapping.GetItemCrc(voxelType) is not uint itemCrc)
             return;
 
+        Spawn(connection, itemCrc, 1, new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f), voxel);
+    }
+
+    public static void SpawnCreatureLoot(PlayerConnection connection, Entity creature)
+    {
+        if (LootTableName(creature.Name) is not { } tableName
+            || !creature.TryGetComponent<SmoothedTransformComponent>(out var transform))
+            return;
+
+        var drops = LootTable.Roll(tableName, creature.Name.Split('_')[0]);
+        var position = transform.Position;
+        var voxel = new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y) + 1, (int)MathF.Floor(position.Z));
+
+        Console.WriteLine($"[Loot] {creature.Name}#{creature.Id} rolled {tableName}: {(drops.Count == 0 ? "nothing" : string.Join(", ", drops.Select(drop => $"{drop.Count} x {ItemTable.NameOf(ItemTable.IndexOf(drop.ItemCrc))}")))}");
+
+        foreach (var drop in drops)
+            Spawn(connection, drop.ItemCrc, drop.Count, position + new Vector3(0, CreatureDropHeight, 0), voxel);
+    }
+
+    private static string? LootTableName(string entityName)
+        => entityName.Split('_')
+            .Select(token => $"Base_{token}_LootTable")
+            .FirstOrDefault(LootTable.Exists);
+
+    private static void Spawn(PlayerConnection connection, uint itemCrc, int count, Vector3 start, Vector3Int groundFrom)
+    {
+        if (ItemTable.IndexOf(itemCrc) == 0)
+            return;
+
         var entityManager = connection.WorldManager.EntityManager;
 
-        if (connection.PlayerInitializer.CreateInventoryItem(itemCrc, 1) is not { } item)
+        if (connection.PlayerInitializer.CreateInventoryItem(itemCrc, count) is not { } item)
             return;
 
         if (!entityManager.TryCreateEntity("Pickup", out var pickup)
@@ -29,10 +59,9 @@ public static class ResourcePickups
             return;
         }
 
-        var start = new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f);
         var target = new Vector3(
             start.X + RandomOffset(),
-            GroundBelow(connection, voxel) + RestHeight,
+            GroundBelow(connection, groundFrom) + RestHeight,
             start.Z + RandomOffset());
 
         component.InventoryItemEntity = item.Id;
@@ -48,7 +77,7 @@ public static class ResourcePickups
         Broadcast(connection, item);
         Broadcast(connection, pickup);
 
-        Console.WriteLine($"[Pickup] {pickup.Id} {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))} item {item.Id} from {voxel} for player {connection.PlayerEntity.Id}");
+        Console.WriteLine($"[Pickup] {pickup.Id} {count} x {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))} item {item.Id} at {start} for player {connection.PlayerEntity.Id}");
     }
 
     public static void Assign(PlayerConnection connection, int pickupId)

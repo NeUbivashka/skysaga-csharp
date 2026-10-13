@@ -67,6 +67,8 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
+
+        ResourcePickups.SpawnCreatureLoot(connection, target);
     }
 
     private static float AttackLevel(IMapEntityManager entityManager, Entity player, uint? usedItemCrc)
