@@ -8,7 +8,6 @@ public class PlayerInitializer(IWorldManager worldManager)
     private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
 
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
-    private readonly Random _random = new();
     private IMapEntityManager _entityManager => _worldManager.EntityManager;
 
     public void InitializePlayer(Entity player)
@@ -102,14 +101,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             }
             else
             {
-                smoothedTransformComponent.Position = _worldManager.PlayerSpawnPosition
-                    ?? SpawnFinder.FindSpawnNearPoint(
-                        _worldManager.ChunkManager,
-                        _worldManager.AirshipPosition,
-                        5,
-                        10,
-                        _worldManager.Definition.MapSizeChunks,
-                        _random);
+                (smoothedTransformComponent.Position, smoothedTransformComponent.YawDegrees) = _worldManager.GetPlayerLandingPoint();
             }
 
             if (float.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_SPAWN_Y"),

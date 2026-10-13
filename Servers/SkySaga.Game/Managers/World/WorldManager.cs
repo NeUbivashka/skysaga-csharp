@@ -14,8 +14,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
     public IMapEntityManager EntityManager { get; }
     public IMapChunkManager ChunkManager => _chunkManager;
     public MapDefinition Definition { get; set; }
-    public Vector3 AirshipPosition { get; private set; }
-    public Vector3? PlayerSpawnPosition { get; private set; }
+    public Entity? Airship { get; private set; }
+
+    private const int LandingSearchRadius = 16;
 
     public WorldManager(PlayerConnectionManager playerConnectionManager)
     {
@@ -93,10 +94,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
         {
             Definition = meandrosDefinition;
 
-            SpawnEntitiesFromMap(meandrosEntities, out var meandrosAirshipPosition, out var meandrosPlayerSpawnPosition);
+            SpawnEntitiesFromMap(meandrosEntities, out var meandrosAirshipPosition);
 
             SpawnAirship(meandrosAirshipPosition);
-            PlayerSpawnPosition = meandrosPlayerSpawnPosition;
             ChunkManager.LoadSavedEdits();
 
             return;
@@ -106,10 +106,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
         {
             Definition = loadedDefinition;
 
-            SpawnEntitiesFromMap(loadedEntities, out var mapAirshipPosition, out var mapPlayerSpawnPosition);
+            SpawnEntitiesFromMap(loadedEntities, out var mapAirshipPosition);
 
             SpawnAirship(mapAirshipPosition);
-            PlayerSpawnPosition = mapPlayerSpawnPosition;
         }
         else
         {
@@ -129,11 +128,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
             };
 
             SpawnAirship(null);
-            PlayerSpawnPosition = null;
         }
 
         ChunkManager.LoadSavedEdits();
-        PlayerSpawnPosition ??= SpawnFinder.FindSpawnNearPoint(ChunkManager, AirshipPosition, 5, 10, Definition.MapSizeChunks, _random);
         SpawnTimeOfDay();
         SpawnWorldComposition();
     }
@@ -144,10 +141,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
             ?? SpawnFinder.FindEdgeSpawnPoint(ChunkManager, Definition.MapSizeChunks, _random)
             ?? SpawnFinder.FindSafeSpawnPoint(ChunkManager, Definition.MapSizeChunks);
 
-        AirshipPosition = position;
-
         if (!EntityManager.TryCreateEntity("Airship", out var airShip))
             return;
+
+        Airship = airShip;
 
         if (airShip.TryGetComponent<TransformComponent>(out var transformComponent))
             transformComponent.Position = position;
@@ -193,10 +190,24 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
     }
 
-    private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition, out Vector3? playerSpawnPosition)
+    public (Vector3 Position, float YawDegrees) GetPlayerLandingPoint()
+    {
+        if (Airship is null || !Airship.TryGetComponent<TransformComponent>(out var transform))
+            return (SpawnFinder.FindSafeSpawnPoint(ChunkManager, Definition.MapSizeChunks), 0f);
+
+        var (point, yaw) = Airship.TryGetComponent<LandingPadComponent>(out var landingPad)
+            ? landingPad.GetLandingPoint(transform.Position, transform.YawDegrees)
+            : (transform.Position, transform.YawDegrees);
+
+        var standing = SpawnFinder.FindStandingPoint(ChunkManager, point, Definition.MapSizeChunks, LandingSearchRadius)
+            ?? SpawnFinder.FindSafeSpawnPoint(ChunkManager, Definition.MapSizeChunks);
+
+        return (standing, yaw);
+    }
+
+    private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition)
     {
         airshipPosition = null;
-        playerSpawnPosition = null;
 
         int spawned = 0;
 
@@ -217,10 +228,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 continue;
 
             if (string.Equals(spec.Name, "Player", StringComparison.OrdinalIgnoreCase))
-            {
-                playerSpawnPosition = position;
                 continue;
-            }
 
             if (SpawnCreature(spec.Name, position).Count == 0)
             {

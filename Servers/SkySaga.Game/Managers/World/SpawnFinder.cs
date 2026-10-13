@@ -185,6 +185,77 @@ public static class SpawnFinder
         return center;
     }
 
+    public static Vector3? FindStandingPoint(IMapChunkManager chunkManager, Vector3 point, Vector3Int mapSizeChunks, int maxRadius)
+    {
+        ArgumentNullException.ThrowIfNull(chunkManager);
+
+        int sizeX = Math.Max(mapSizeChunks.X, 1) * ChunkSize;
+        int sizeY = Math.Max(mapSizeChunks.Y, 1) * ChunkSize;
+        int sizeZ = Math.Max(mapSizeChunks.Z, 1) * ChunkSize;
+
+        int centerX = (int)MathF.Floor(point.X);
+        int centerZ = (int)MathF.Floor(point.Z);
+        int startY = Math.Min((int)MathF.Floor(point.Y) + StandingSearchHeadroom, sizeY - 1);
+
+        for (int radius = 0; radius <= maxRadius; radius++)
+        {
+            Vector3? best = null;
+            float bestDistance = float.MaxValue;
+
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                for (int dz = -radius; dz <= radius; dz++)
+                {
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dz)) != radius)
+                        continue;
+
+                    int x = centerX + dx;
+                    int z = centerZ + dz;
+
+                    if (x < 0 || x >= sizeX || z < 0 || z >= sizeZ)
+                        continue;
+
+                    int groundY = FindStandableGround(chunkManager, x, z, startY);
+
+                    if (groundY < 0)
+                        continue;
+
+                    var candidate = radius == 0
+                        ? new Vector3(point.X, groundY + 1.1f, point.Z)
+                        : new Vector3(x + 0.5f, groundY + 1.1f, z + 0.5f);
+
+                    var distance = Vector3.DistanceSquared(candidate, point);
+
+                    if (distance < bestDistance)
+                    {
+                        best = candidate;
+                        bestDistance = distance;
+                    }
+                }
+            }
+
+            if (best is not null)
+                return best;
+        }
+
+        return null;
+    }
+
+    private const int StandingSearchHeadroom = 4;
+
+    private static int FindStandableGround(IMapChunkManager chunkManager, int x, int z, int startY)
+    {
+        for (int y = startY; y >= 0; y--)
+        {
+            if (IsSolidAt(chunkManager, new Vector3(x, y, z))
+                && !IsSolidAt(chunkManager, new Vector3(x, y + 1, z))
+                && !IsSolidAt(chunkManager, new Vector3(x, y + 2, z)))
+                return y;
+        }
+
+        return -1;
+    }
+
     private static Vector3? FindGroundNearby(IMapChunkManager chunkManager, int centerX, int centerZ, int sizeX, int sizeZ, int sizeY)
     {
         const int maxRadius = 48;

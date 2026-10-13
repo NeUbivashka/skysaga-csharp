@@ -6,9 +6,7 @@ public interface IWorldManager
     IMapChunkManager ChunkManager { get; }
     MapDefinition Definition { get; set; }
 
-    Vector3 AirshipPosition { get; }
-
-    Vector3? PlayerSpawnPosition { get; }
+    (Vector3 Position, float YawDegrees) GetPlayerLandingPoint();
 
     void SendInitialChunks(PlayerConnection connection);
     void SendInitialEntities(PlayerConnection connection, Entity player, PlayerInitializer playerInitializer);

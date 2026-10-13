@@ -175,18 +175,16 @@ public class PlayerConnection
 
     private const double RespawnDelaySeconds = 10;
 
-    public Vector3 SpawnPosition { get; set; }
-
-    public float SpawnYawDegrees { get; set; }
-
     public void Respawn()
     {
         if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
             health.Revive();
 
-        Teleport(SpawnPosition, SpawnYawDegrees);
+        var (position, yawDegrees) = WorldManager.GetPlayerLandingPoint();
 
-        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {SpawnPosition}.");
+        Teleport(position, yawDegrees);
+
+        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at the airship, {position}.");
     }
 
     public void Teleport(Vector3 position, float yawDegrees)

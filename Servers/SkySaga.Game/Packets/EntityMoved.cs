@@ -33,20 +33,11 @@ public static class EntityMoved
 
         connection.LastFallRespawn = now;
 
-        var world = connection.WorldManager;
-        var spawn = world.PlayerSpawnPosition
-            ?? SpawnFinder.FindSpawnNearPoint(world.ChunkManager, world.AirshipPosition, 5, 10, world.Definition.MapSizeChunks, Random.Shared);
-
         var fellFrom = transform.Position;
-        transform.Position = spawn;
+        var (position, yawDegrees) = connection.WorldManager.GetPlayerLandingPoint();
 
-        connection.Send(new PlayerSpawned
-        {
-            EntityId = connection.PlayerEntity.Id,
-            Position = spawn,
-            YawDegrees = transform.YawDegrees
-        });
+        connection.Teleport(position, yawDegrees);
 
-        Console.WriteLine($"[Fall] player fell to {fellFrom}, sent PlayerSpawned at {spawn}");
+        Console.WriteLine($"[Fall] player fell to {fellFrom}, sent PlayerSpawned at the airship, {position}");
     }
 }
