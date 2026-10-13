@@ -107,13 +107,11 @@ public static class RunActionListReceived
             connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
         VoxelDamage.TryRemove(voxel, out _);
         SetWorldVoxel(connection, voxel, Air);
-        CollectBlock(connection, voxelType);
+        ResourcePickups.SpawnFromVoxel(connection, voxel, voxelType);
 
         Console.WriteLine($"[Voxel] removed {voxel}");
         return true;
     }
-
-    private const int StackLimit = 64;
 
     private static int DamageIdOf(Vector3Int voxel) => (voxel.X << 20) | (voxel.Y << 11) | voxel.Z | 1 << 30;
 
@@ -156,32 +154,7 @@ public static class RunActionListReceived
         return crc;
     }
 
-    private static void CollectBlock(PlayerConnection connection, byte blockId)
-    {
-        if (blockId == Air || BlockCrcMapping.GetItemCrc(blockId) is not uint itemCrc)
-            return;
-
-        if (!connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
-            return;
-
-        foreach (var entityId in inventory.InventoryEntityList)
-        {
-            if (entityId == 0
-                || !connection.WorldManager.EntityManager.TryGetEntity(entityId, out var itemEntity)
-                || !itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
-                || item.InventorySlotData.Name != itemCrc
-                || item.InventorySlotData.Count >= StackLimit)
-                continue;
-
-            item.InventorySlotData = item.InventorySlotData.WithCount(item.InventorySlotData.Count + 1);
-            Console.WriteLine($"[Voxel] collected {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))}, now {item.InventorySlotData.Count}");
-            return;
-        }
-
-        Console.WriteLine($"[Voxel] no stack of {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))} to collect into");
-    }
-
-    private static byte GetWorldVoxel(PlayerConnection connection, Vector3Int voxel)
+    internal static byte GetWorldVoxel(PlayerConnection connection, Vector3Int voxel)
     {
         if (voxel.X < 0 || voxel.Y < 0 || voxel.Z < 0)
             return Air;

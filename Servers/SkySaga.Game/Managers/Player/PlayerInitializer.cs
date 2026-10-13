@@ -498,6 +498,16 @@ public class PlayerInitializer(IWorldManager worldManager)
 
     private Entity? CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
     {
+        var item = CreateInventoryItem(nameHash, count, itemUuid);
+
+        if (item is not null)
+            inventory.InventoryEntityList[slot] = item.Id;
+
+        return item;
+    }
+
+    public Entity? CreateInventoryItem(uint nameHash, int count, string? itemUuid = null)
+    {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
         var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1";
         var hasMaterials = MaterialTable.TryGet(nameHash, out var materials) && materialsAllowed;
@@ -530,8 +540,6 @@ public class PlayerInitializer(IWorldManager worldManager)
                 inventoryItemComponent.InventorySlotData.Count = count;
                 inventoryItemComponent.InventorySlotData.ItemUUID = itemUuid ?? Util.NewGuid();
             }
-
-            inventory.InventoryEntityList[slot] = item.Id;
         }
 
         return item;

@@ -14,6 +14,7 @@ public class PlayerConnection
     public Entity PlayerEntity { get; }
     public IWorldManager WorldManager => _worldManager;
     public PlayerConnectionManager PlayerConnectionManager => _playerConnectionManager;
+    public PlayerInitializer PlayerInitializer => _playerInitializer;
 
     public int? LeftHandBlockId { get; set; }
     public int? RightHandBlockId { get; set; }
@@ -123,6 +124,8 @@ public class PlayerConnection
             PacketId.UISettingsSetHotbarSlotItemSpec => UISettingsSetHotbarSlotItemSpec.Handle(this, bitStream),
             PacketId.UISettingsSelectHotbarSlot => UISettingsSelectHotbarSlot.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
+            PacketId.AssignCollectionResourcePickup => AssignCollectionResourcePickup.Handle(this, bitStream),
+            PacketId.FinalizeCollectionResourcePickup => FinalizeCollectionResourcePickup.Handle(this, bitStream),
             PacketId.EntityPerformedAbility => EntityPerformedAbilityReceived.Handle(this, bitStream),
             PacketId.SetCharacterCustomisationData => SetCharacterCustomisationData.Handle(this, bitStream),
             PacketId.SaveCharacterName => SaveCharacterName.Handle(this, bitStream),

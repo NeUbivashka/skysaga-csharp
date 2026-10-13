@@ -1,13 +1,13 @@
 namespace SkySaga.Game.Packets;
 
-public class AssignCollectionResourcePickup : ISerializablePacket
+public static class AssignCollectionResourcePickup
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var pickupId)) return false;
 
-        bitStream.WritePacketId(PacketId.AssignCollectionResourcePickup);
+        ResourcePickups.Assign(connection, (int)pickupId);
 
-        return bitStream;
+        return true;
     }
 }
