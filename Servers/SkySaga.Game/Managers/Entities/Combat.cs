@@ -17,7 +17,7 @@ public static class Combat
 
     public static void ApplyMaxHealth(Entity entity)
     {
-        if (entity.TryGetComponent<HealthComponent>(out var health) && CombatStatTable.TryGet(entity.Name, out var stats) && stats.Health > 0)
+        if (entity.TryGetComponent<ClientHealthComponent>(out var health) && CombatStatTable.TryGet(entity.Name, out var stats) && stats.Health > 0)
             health.MaxHP = (int)stats.Health;
     }
 
@@ -27,7 +27,7 @@ public static class Combat
 
         if (!entityManager.TryGetEntity(targetEntityId, out var target)
             || target.TryGetComponent<ClientPlayerAspectsComponent>(out _)
-            || !target.TryGetComponent<HealthComponent>(out var health)
+            || !target.TryGetComponent<ClientHealthComponent>(out var health)
             || health.IsDead)
             return;
 

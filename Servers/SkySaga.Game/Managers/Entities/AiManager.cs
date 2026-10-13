@@ -49,7 +49,7 @@ public class AiManager
             if (!entity.TryGetComponent<ClientEnemyAiComponent>(out var ai))
                 continue;
 
-            if (entity.TryGetComponent<HealthComponent>(out var health) && health.IsDead)
+            if (entity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead)
                 continue;
 
             if (!entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
@@ -66,7 +66,7 @@ public class AiManager
     {
         var corpses = _worldManager.EntityManager.Entities
             .Where(entity => entity.TryGetComponent<ClientEnemyAiComponent>(out _)
-                && entity.TryGetComponent<HealthComponent>(out var health)
+                && entity.TryGetComponent<ClientHealthComponent>(out var health)
                 && health.IsDead
                 && now - health.DiedUtc >= Combat.CorpseLifetime)
             .ToList();
