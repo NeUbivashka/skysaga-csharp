@@ -1,5 +1,6 @@
 namespace SkySaga.Game.Managers.Entities;
 
+using System.Linq;
 using System.Reflection;
 
 public class EntityManager : IMapEntityManager
@@ -250,6 +251,13 @@ public class EntityManager : IMapEntityManager
 
         if (targetType == typeof(byte))
             return value.TryGetByte(out var byteValue) ? byteValue : null;
+
+        if (targetType == typeof(List<LinkedVoxel>) && value.ValueKind == JsonValueKind.Array)
+            return value.EnumerateArray()
+                .Select(entry => new LinkedVoxel(
+                    new Vector3Int(entry[0][0].GetInt32(), entry[0][1].GetInt32(), entry[0][2].GetInt32()),
+                    entry[1].GetByte()))
+                .ToList();
 
         if (targetType == typeof(Vector3) && value.ValueKind == JsonValueKind.Array && value.GetArrayLength() == 3)
             return new Vector3(value[0].GetSingle(), value[1].GetSingle(), value[2].GetSingle());

@@ -98,6 +98,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             SpawnAirship(meandrosAirshipPosition);
             ChunkManager.LoadSavedEdits();
+            PlaceLinkedVoxels(Airship);
 
             return;
         }
@@ -131,6 +132,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         ChunkManager.LoadSavedEdits();
+        PlaceLinkedVoxels(Airship);
         SpawnTimeOfDay();
         SpawnWorldComposition();
     }
@@ -189,6 +191,28 @@ public sealed class WorldManager : IWorldManager, IDisposable
             clientTimeOfDayComponent.TimeOfDayOffset = 0;
         }
     }
+
+    private void PlaceLinkedVoxels(Entity? entity)
+    {
+        if (entity is null
+            || !entity.TryGetComponent<ClientVoxelLinkComponent>(out var voxelLink)
+            || !entity.TryGetComponent<TransformComponent>(out var transform))
+            return;
+
+        foreach (var (position, voxelType) in voxelLink.GetWorldVoxels(transform.Position, transform.YawDegrees))
+        {
+            var chunkPosition = new Vector3Int(FloorDiv(position.X, ChunkSize), FloorDiv(position.Y, ChunkSize), FloorDiv(position.Z, ChunkSize));
+            var localPosition = new Vector3Int(position.X - chunkPosition.X * ChunkSize, position.Y - chunkPosition.Y * ChunkSize, position.Z - chunkPosition.Z * ChunkSize);
+
+            ChunkManager.GetOrCreateChunk(chunkPosition).SetVoxel(localPosition, voxelType);
+        }
+
+        Console.WriteLine($"[WorldManager] Placed {voxelLink.Voxels.Count} linked voxels of {entity.Name}#{entity.Id}.");
+    }
+
+    private const int ChunkSize = 32;
+
+    private static int FloorDiv(int value, int divisor) => (int)Math.Floor(value / (double)divisor);
 
     public (Vector3 Position, float YawDegrees) GetPlayerLandingPoint()
     {
