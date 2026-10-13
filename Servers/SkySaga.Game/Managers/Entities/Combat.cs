@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SkySaga.Game.Managers.Entities;
 
 public static class Combat
@@ -21,8 +23,13 @@ public static class Combat
             health.MaxHP = (int)stats.Health;
     }
 
-    public static void PlayerAttack(PlayerConnection connection, int targetEntityId, uint? usedItemCrc)
+    public static void PlayerAttack(PlayerConnection connection, uint actionListId, int targetEntityId, uint? usedItemCrc)
     {
+        var attacks = ActionListAttackTable.Get(actionListId);
+
+        if (attacks.Count == 0)
+            return;
+
         var entityManager = connection.WorldManager.EntityManager;
 
         if (!entityManager.TryGetEntity(targetEntityId, out var target)
@@ -36,7 +43,9 @@ public static class Combat
             + (usedItemCrc is uint crc && CombatStatTable.TryGet(crc, out var weapon) ? weapon.WeaponLevel : 0);
         var armourLevel = CharacterStats(target).ArmourLevel + EquipmentStats(entityManager, target).ArmourLevel;
 
-        var damage = (int)MathF.Round(Lookup(PlayerVersusCreatureDamage, weaponLevel - armourLevel));
+        var damage = attacks.Sum(attack => attack.ForceZeroDamage
+            ? 0
+            : (int)MathF.Round(Lookup(attack.DamageLut ?? PlayerVersusCreatureDamage, weaponLevel - armourLevel)));
 
         health.Damage(damage);
 
@@ -47,7 +56,7 @@ public static class Combat
             Amount = (uint)damage
         });
 
-        Console.WriteLine($"[Combat] player {player.Id} hit {target.Name}#{target.Id}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
+        Console.WriteLine($"[Combat] player {player.Id} hit {target.Name}#{target.Id} with {attacks[0].EquippedAction}/{string.Join("+", attacks.Select(a => a.EntityAction))}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
 
         if (!health.IsDead)
             return;

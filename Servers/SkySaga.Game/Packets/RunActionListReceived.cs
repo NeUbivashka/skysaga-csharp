@@ -42,7 +42,7 @@ public static class RunActionListReceived
 
         if (targetEntityId != 0)
         {
-            Combat.PlayerAttack(connection, (int)targetEntityId, usedItemCrc);
+            Combat.PlayerAttack(connection, actionListId, (int)targetEntityId, usedItemCrc);
             return true;
         }
 
