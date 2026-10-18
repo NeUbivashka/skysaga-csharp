@@ -1,0 +1,203 @@
+# GeoData.json (38328) time of day: preset name fixed hours | list name preset | adventure name preset list cycleMinutes | biome name cycleMinutes. '-' is none.
+preset BlueprintDay 1 12.72
+preset Dawn 0 7.0
+preset Dawn_Fixed 1 8.16
+preset EndGame 1 0.5
+preset FTUE_The_Old_City_Fixed 1 9.36
+preset Home_Island 0 13.44
+preset MidAfternoon 0 13.0
+preset MidAfternoon_Fixed 1 14.16
+preset MidDay 0 11.0
+preset MidDay_Fixed 1 11.28
+preset MidMorning 0 9.0
+preset MidMorning_Fixed 1 9.12
+preset Night 0 3.0
+preset Night_Fixed 1 3.84
+preset Subterranean 1 1.2
+preset Sunset 0 17.0
+preset Sunset_Fixed 1 16.08
+list Adventure_Day Dawn_Fixed
+list Adventure_Night Night_Fixed
+list Adventure_Nonfixed Dawn
+list BonusWorld_Day MidDay_Fixed
+list FTUE_The_Old_City FTUE_The_Old_City_Fixed
+list PVP_Day Dawn_Fixed
+adventure AIBreakLOSTest MidDay_Fixed - -
+adventure AICoreCombatTest MidDay_Fixed - -
+adventure AIEndGameLandmarkRoomOneTest EndGame - -
+adventure AIFightingArea MidDay_Fixed - -
+adventure AILocomotionTest MidDay - -
+adventure AIOutOfReachTest MidDay_Fixed - -
+adventure AIPathingTest MidDay_Fixed - -
+adventure AIPopulationTest MidDay - -
+adventure AITerritorialPacks MidDay_Fixed - -
+adventure AIWalkway MidDay_Fixed - -
+adventure AQ_Arctic_Mastery_01 MidMorning_Fixed - -
+adventure AQ_Arctic_Mastery_02 MidDay_Fixed - -
+adventure AQ_Arctic_Mastery_03 MidAfternoon_Fixed - -
+adventure AQ_Arctic_Mastery_04 Dawn_Fixed - -
+adventure AQ_Arctic_Mastery_05 Sunset_Fixed - -
+adventure AQ_Arctic_Mastery_06 Dawn_Fixed - -
+adventure AQ_Arctic_Mastery_07 MidAfternoon_Fixed - -
+adventure AQ_Arctic_Mastery_08 MidDay_Fixed - -
+adventure AQ_Arctic_Mastery_09 Sunset_Fixed - -
+adventure AQ_Arctic_Mastery_10 MidMorning_Fixed - -
+adventure AQ_Desert_Mastery_01 MidDay_Fixed - -
+adventure AQ_Desert_Mastery_02 MidAfternoon_Fixed - -
+adventure AQ_Desert_Mastery_03 MidDay_Fixed - -
+adventure AQ_Desert_Mastery_04 MidMorning_Fixed - -
+adventure AQ_Desert_Mastery_05 MidDay_Fixed - -
+adventure AQ_Desert_Mastery_06 MidAfternoon_Fixed - -
+adventure AQ_Desert_Mastery_07 MidDay_Fixed - -
+adventure AQ_Desert_Mastery_08 MidMorning_Fixed - -
+adventure AQ_Desert_Mastery_09 MidDay_Fixed - -
+adventure AQ_Desert_Mastery_10 MidAfternoon_Fixed - -
+adventure AQ_Forest_Mastery_01 MidMorning_Fixed - -
+adventure AQ_Forest_Mastery_02 MidAfternoon_Fixed - -
+adventure AQ_Forest_Mastery_03 MidDay_Fixed - -
+adventure AQ_Forest_Mastery_04 Sunset_Fixed - -
+adventure AQ_Forest_Mastery_05 Night_Fixed - -
+adventure AQ_Forest_Mastery_06 Dawn_Fixed - -
+adventure AQ_Forest_Mastery_07 MidAfternoon_Fixed - -
+adventure AQ_Forest_Mastery_08 Sunset_Fixed - -
+adventure AQ_Forest_Mastery_09 MidMorning_Fixed - -
+adventure AQ_Forest_Mastery_10 Dawn_Fixed - -
+adventure AQ_Jungle_Mastery_01 MidMorning_Fixed - -
+adventure AQ_Jungle_Mastery_02 MidAfternoon_Fixed - -
+adventure AQ_Jungle_Mastery_03 MidDay_Fixed - -
+adventure AQ_Jungle_Mastery_04 Dawn_Fixed - -
+adventure AQ_Jungle_Mastery_05 Sunset_Fixed - -
+adventure AQ_Jungle_Mastery_06 MidMorning_Fixed - -
+adventure AQ_Jungle_Mastery_07 MidDay_Fixed - -
+adventure AQ_Jungle_Mastery_08 Dawn_Fixed - -
+adventure AQ_Jungle_Mastery_09 MidDay_Fixed - -
+adventure AQ_Jungle_Mastery_10 MidAfternoon_Fixed - -
+adventure ArtTest_Adventure MidDay_Fixed - -
+adventure BlueprintStudio_Adventure BlueprintDay - -
+adventure BuildCompetitionGeneric - Adventure_Day -
+adventure BuildCompetition_Flat Home_Island - 30.0
+adventure BuildCompetition_Flat_Trees Home_Island - 30.0
+adventure BuildEvent_Basic_Adventure Home_Island - 30.0
+adventure BuildEvent_Epic_Adventure Home_Island - 30.0
+adventure BuildEvent_Hills_Trees_Adventure Home_Island - 30.0
+adventure BuildEvent_Natural_Adventure Home_Island - 30.0
+adventure Building_Contest - Adventure_Day -
+adventure ChrisK-Adventure MidDay_Fixed - -
+adventure CoinWorld MidDay_Fixed - -
+adventure Combat_Test MidDay - -
+adventure Combat_Test_Day - Adventure_Day -
+adventure Combat_Test_EndGame MidDay - -
+adventure Combat_Test_Hills - Adventure_Day -
+adventure Combat_Test_Night - Adventure_Night -
+adventure Combat_Test_Water MidDay - -
+adventure Creative_QuickStart_Forest_Adventure MidMorning_Fixed - -
+adventure DestinationSelection MidDay_Fixed - -
+adventure EndGame_Adventure_Desert EndGame - -
+adventure EndGame_Adventure_Desert_Maze EndGame - -
+adventure EndGame_Adventure_Forest EndGame - -
+adventure EndGame_Adventure_Jungle EndGame - -
+adventure EndGame_Adventure_Mountain EndGame - -
+adventure EndGame_Adventure_Old_City EndGame - -
+adventure EntitySpawnerTest MidDay - -
+adventure FantasyVoxels_Test_Adventure - Adventure_Day -
+adventure FeatureGroupTest_DungeonFeature - Adventure_Day -
+adventure FeatureGroupTest_SkyFeature - Adventure_Day -
+adventure FeatureGroupTest_TerrainFeature - Adventure_Day -
+adventure FeatureGroupTest_UndergroundFeature - Adventure_Day -
+adventure FTUE_Adventure MidMorning_Fixed - -
+adventure FTUE_The_Old_City - FTUE_The_Old_City -
+adventure GenericAdventure - Adventure_Nonfixed -
+adventure Glade_Ruins_Adventure - Adventure_Day -
+adventure Guild_Island_Flat_Adventure Home_Island - 30.0
+adventure Home_Island_Adventure Home_Island - 30.0
+adventure Home_Island_Castle_2_Adventure Home_Island - 30.0
+adventure Home_Island_Castle_Adventure Home_Island - 30.0
+adventure Home_Island_Church_Adventure Home_Island - 30.0
+adventure Home_Island_Estate_Adventure Home_Island - 30.0
+adventure Home_Island_FishingHut_Adventure Home_Island - 30.0
+adventure Home_Island_Flat_Adventure Home_Island - 30.0
+adventure Home_Island_Flat_Lumo Home_Island - 30.0
+adventure Home_Island_Fortress_Adventure Home_Island - 30.0
+adventure Home_Island_Minimal_Adventure Home_Island - 30.0
+adventure Home_Island_Palace_Adventure Home_Island - 30.0
+adventure Home_Island_Ruin_Adventure Home_Island - 30.0
+adventure Home_Island_Tavern_Adventure Home_Island - 30.0
+adventure Home_Island_Temple_Adventure Home_Island - 30.0
+adventure Home_Island_TreeHouse_Adventure Home_Island - 30.0
+adventure Home_Island_UGC_Adventure_01 Home_Island - 30.0
+adventure Home_Island_UGC_Adventure_02 Home_Island - 30.0
+adventure InteractableUnlockTestAdventure - Adventure_Day -
+adventure Island_Template_DuelPVP_Adventure_4 Home_Island - 30.0
+adventure Island_Template_Duel_Flat_Adventure_1 Home_Island - 30.0
+adventure Island_Template_Duel_Flat_Adventure_2 Home_Island - 30.0
+adventure Island_Template_Duel_FloatingIslands_Adventure_3 Home_Island - 30.0
+adventure Island_Template_Empty_Adventure Home_Island - 30.0
+adventure Island_Template_Race_Castle_Adventure Home_Island - 30.0
+adventure Island_Template_Race_Circular_Adventure_3 Home_Island - 30.0
+adventure Island_Template_Race_Figure8_Adventure_4 Home_Island - 30.0
+adventure Island_Template_Race_Flat_Adventure_1 Home_Island - 30.0
+adventure Island_Template_Race_Flat_Adventure_2 Home_Island - 30.0
+adventure Island_Template_TeamPVP_Adventure_4 Home_Island - 30.0
+adventure Island_Template_TeamPVP_Flat_Adventure_1 Home_Island - 30.0
+adventure Island_Template_TeamPVP_Flat_Adventure_2 Home_Island - 30.0
+adventure Island_Template_TeamPVP_FloatingIslands_Adventure_3 Home_Island - 30.0
+adventure IvyTest MidDay_Fixed - -
+adventure Jay-Adventure MidDay - -
+adventure Landscape MidDay - -
+adventure Landscape_Template_Desert Home_Island - -
+adventure Landscape_Template_Forest Home_Island - -
+adventure Landscape_Template_Ice Home_Island - -
+adventure Landscape_Template_Jungle Home_Island - -
+adventure LootTest-Adventure MidDay_Fixed - -
+adventure MarkTest Home_Island - -
+adventure Matt-Adventure MidDay_Fixed - -
+adventure Matt-Community-Content MidDay_Fixed - -
+adventure Mysterybox_Test MidDay - -
+adventure No_Adventure MidDay_Fixed - -
+adventure No_Adventure_Flat MidDay_Fixed - -
+adventure No_Adventure_Peak MidDay_Fixed - -
+adventure NpcTest MidDay - -
+adventure NPC_Friend_Adventure MidMorning - -
+adventure NPC_Test_World_Adventure MidDay_Fixed - -
+adventure Picnic_island_Adventure - Adventure_Day -
+adventure Player_Bonus_Christmas_World_Adventure - BonusWorld_Day -
+adventure Player_Bonus_World_Adventure - BonusWorld_Day -
+adventure Profile_Adventure MidDay - -
+adventure PVP_Build_Off_Arena MidDay_Fixed - -
+adventure PVP_CTF_Adventure - PVP_Day -
+adventure PVP_CTF_Adventure_v2 - PVP_Day -
+adventure PVP_CTF_Castle - PVP_Day -
+adventure PVP_CTF_Coloseum - PVP_Day -
+adventure PVP_CTF_JungleCanopy - PVP_Day -
+adventure PVP_CTF_Test_Adventure - PVP_Day -
+adventure PVP_CTF_Town - PVP_Day -
+adventure PVP_Mod_Town - PVP_Day -
+adventure PVP_SoleSurvival_Proto2 - PVP_Day -
+adventure PVP_SoleSurvival_Proto3 - PVP_Day -
+adventure PVP_SoleSurvival_Proto4 - PVP_Day -
+adventure PVP_Survival_Proto1 - PVP_Day -
+adventure PVP_TDM_Adventure - PVP_Day -
+adventure PVP_TDM_Adventure_v2 - PVP_Day -
+adventure PVP_TDM_Castle - PVP_Day -
+adventure PVP_TDM_Coloseum - PVP_Day -
+adventure PVP_TDM_JungleCanopy - PVP_Day -
+adventure PVP_TDM_JungleTreeTop - PVP_Day -
+adventure PVP_TDM_MarketTest - PVP_Day -
+adventure PVP_TDM_Test_Adventure - PVP_Day -
+adventure PVP_TDM_Town - PVP_Day -
+adventure PVP_TDM_Town_v2 - PVP_Day -
+adventure PVP_TDM_Whitebox - PVP_Day -
+adventure QA_Only_Adventure MidMorning_Fixed - -
+adventure Settlement_Adventure Home_Island - 30.0
+adventure SpawnTest MidDay - -
+adventure Template_Island_Race_1 Home_Island - 30.0
+adventure TerrainTest MidDay_Fixed - -
+adventure Underground_Test_Adventure MidDay - -
+adventure VoxelTestWorld MidDay - -
+adventure VoxelTraversal_AssaultCourse MidDay - -
+adventure WaterTest MidDay - -
+biome Desert 10.0
+biome Forest 10.0
+biome Jungle 10.0
+biome Mountain 10.0
+biome NPCfriend 10.0

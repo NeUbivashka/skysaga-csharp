@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace SkySaga.Game.Managers.World;
@@ -183,14 +183,19 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (EntityManager.TryCreateEntity("TimeOfDay", out var timeOfDay) &&
             timeOfDay.TryGetComponent<ClientTimeOfDayComponent>(out var clientTimeOfDayComponent))
         {
-            clientTimeOfDayComponent.StartTimeOfDay =
-                int.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_TIME_OF_DAY"), out var tod) ? tod : 32768;
-            clientTimeOfDayComponent.FixedTimeOfDay = true;
-            clientTimeOfDayComponent.DayNightCycleDuration = 20;
-            clientTimeOfDayComponent.RealWorldStartTime = RakNet.RakNet.GetTime();
-            clientTimeOfDayComponent.TimeStretch = 8;
+            var (isFixed, hours, cycleMinutes) = Definition.Spec.TimeOfDay;
 
-            clientTimeOfDayComponent.TimeOfDayOffset = 0;
+            clientTimeOfDayComponent.StartTimeOfDay = int.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_TIME_OF_DAY"), out var tod)
+                ? tod
+                : (int)Math.Round(hours / 24f * 0x10000) % 0x10000;
+            clientTimeOfDayComponent.FixedTimeOfDay = isFixed;
+            clientTimeOfDayComponent.DayNightCycleDuration = Math.Clamp((int)Math.Round(cycleMinutes * 64), 1, 1920);
+            clientTimeOfDayComponent.RealWorldStartTime = RakNet.RakNet.GetTime();
+            clientTimeOfDayComponent.TimeStretch = 64;
+
+            clientTimeOfDayComponent.TimeOfDayOffset = clientTimeOfDayComponent.StartTimeOfDay;
+
+            Console.WriteLine($"[TimeOfDay] fixed={isFixed} start={hours}h cycle={cycleMinutes} min");
         }
     }
 

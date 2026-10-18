@@ -198,7 +198,11 @@ public static class BitStreamExtensions
 
     public static void WriteUInt64(this BitStream bitStream, ulong value)
     {
-        bitStream.WriteBits(BitConverter.GetBytes(value), sizeof(ulong) * 8, true);
+        var bytes = BitConverter.GetBytes(value);
+
+        Array.Reverse(bytes);
+
+        bitStream.WriteBits(bytes, sizeof(ulong) * 8, true);
     }
 
     public static void WriteString(this BitStream bitStream, string? value)

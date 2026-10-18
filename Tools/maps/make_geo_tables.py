@@ -67,6 +67,20 @@ def main():
         index += [f"{table} {e['Index']} {e['Name']}" for e in sorted(geo[table], key=lambda e: e["Index"])]
     write(out_dir, "GeoIndex.txt", index)
 
+    tod = [f"# GeoData.json ({BUILD}) time of day: preset name fixed hours | list name preset | "
+           "adventure name preset list cycleMinutes | biome name cycleMinutes. '-' is none."]
+    tod += [f"preset {p['Name']} {int(p['TimeOfDay']['IsFixed'])} {p['TimeOfDay']['Time']}" for p in geo["TimeOfDayPresets"]]
+    for lst in geo["TimeOfDayPresetLists"]:
+        entries = sorted(lst.get("Entries", []), key=lambda e: -e.get("Frequency", 0))
+        if entries:
+            tod.append(f"list {lst['Name']} {entries[0]['TimeOfDayPreset']}")
+    for a in geo["Adventures"]:
+        t = a.get("TimeOfDay", {})
+        cycle = a["DayNightCycleDuration"] if a.get("OverrideDayNightCycleDuration") else "-"
+        tod.append(f"adventure {a['Name']} {t.get('TimeOfDayPreset') or '-'} {t.get('TimeOfDayPresetList') or '-'} {cycle}")
+    tod += [f"biome {b['Name']} {b['DayNightCycleDuration']}" for b in geo["Biomes"] if "DayNightCycleDuration" in b]
+    write(out_dir, "TimeOfDay.txt", tod)
+
 
 if __name__ == "__main__":
     main()

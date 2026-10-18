@@ -84,6 +84,13 @@ public class MapSpec
 
     public uint Palette => Searchable[PaletteSlot];
 
+    public (bool Fixed, float Hours, float CycleMinutes) TimeOfDay
+        => TimeOfDayTable.Resolve(
+            GeoIndex.NameOf("Adventures", Searchable[AdventureSlot]),
+            GeoIndex.NameOf("TimeOfDayPresets", Searchable[TimeOfDayPresetSlot]),
+            GeoIndex.NameOf("TimeOfDayPresetLists", Searchable[TimeOfDayPresetListSlot]),
+            GeoIndex.NameOf("Biomes", Searchable[BiomeSlot]));
+
     public void SetBiome(string biome) => Searchable[BiomeSlot] = GeoIndex.WireIndex("Biomes", biome);
 
     public static uint HomeIslandMapSizeIndex => GeoIndex.WireIndex("MapSizes", "HomeIsland_6x4x6");

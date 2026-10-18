@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 namespace SkySaga.Game;
 
@@ -44,6 +44,11 @@ public static class GeoIndex
         Console.WriteLine($"[GeoIndex] {table} has no entry {name}.");
         return 0;
     }
+
+    public static string? NameOf(string table, uint wireIndex)
+        => wireIndex == 0 || !Tables.Value.TryGetValue(table, out var entries)
+            ? null
+            : entries.FirstOrDefault(entry => entry.Value + 1 == wireIndex).Key;
 
     public static IEnumerable<(string Name, uint WireIndex)> Entries(string table)
         => Tables.Value.TryGetValue(table, out var entries)
