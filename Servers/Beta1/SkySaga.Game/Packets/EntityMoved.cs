@@ -7,10 +7,14 @@ public static class EntityMoved
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
+        if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
         if (!bitStream.ReadInt32(0x10000, out var x)) return false;
         if (!bitStream.ReadInt32(0x7F80, out var y)) return false;
         if (!bitStream.ReadInt32(0x10000, out var z)) return false;
         if (!bitStream.ReadInt32(0x6400, out var yaw)) return false;
+
+        if (entityId != (uint)connection.PlayerEntity.Id)
+            return true;
 
         if (connection.PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {

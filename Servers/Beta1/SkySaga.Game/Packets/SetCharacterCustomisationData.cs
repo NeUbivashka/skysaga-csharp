@@ -7,15 +7,10 @@ public static class SetCharacterCustomisationData
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
         var entityIdBytes = new byte[4];
-        var data = new byte[(ClientCharacterCustomisationComponent.CustomisationDataBits + 7) / 8];
 
-        var unread = bitStream.GetNumberOfBitsUsed() - (int)bitStream.GetReadOffset();
-
-        if (unread < 32 + ClientCharacterCustomisationComponent.CustomisationDataBits
-            || !bitStream.ReadBits(entityIdBytes, 32, true)
-            || !bitStream.ReadBits(data, ClientCharacterCustomisationComponent.CustomisationDataBits, true))
+        if (!bitStream.ReadBits(entityIdBytes, 32, true) || !CustomisationBlock.TryRead(bitStream, out var data))
         {
-            Console.WriteLine($"[CharacterCreation] SetCharacterCustomisationData: short payload ({unread} bits), ignored.");
+            Console.WriteLine("[CharacterCreation] SetCharacterCustomisationData: unreadable payload, ignored.");
 
             return true;
         }

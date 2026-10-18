@@ -3,7 +3,7 @@ import zlib
 import json
 import os
 
-from targets import BUNDLE, GAME, GEODATA
+from targets import BUILD, BUNDLE, GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "Customisations.txt")
 
 MATERIAL_SLOTS = ["Skin", "Eye", "Signature"]
@@ -14,6 +14,11 @@ GENDERS = {"Male": 0, "Female": 1}
 TRIBE_CATEGORIES = {"Skin": "CharacterSkin", "Eye": "CharacterEyes"}
 OTHER_GENDER_MARK = {"Male": "_Fem", "Female": "_Mal"}
 TRIBE_CUSTOMISATIONS = {"Eye": "Eye", "Mouth": "Mouth", "DecalA": "Decal", "DecalPalette": "DecalPalette"}
+
+BETA = BUILD != "36731"
+ATTACHMENT_COUNT = (4, 10) if BETA else (3, 5)
+GEAR_COUNT = (4, 11)
+BLOCK_BITS = 237 if BETA else 231
 
 
 class Bits:
@@ -86,7 +91,7 @@ def main():
             b.ranged(index("Materials", name), widths["Materials"])
 
         attachments = e.get("AttachmentEntries", {})
-        b.count(len(ATTACHMENT_SLOTS), 3, 5)
+        b.count(len(ATTACHMENT_SLOTS), *ATTACHMENT_COUNT)
         for slot in ATTACHMENT_SLOTS:
             entry = attachments.get(slot, {})
             attachment = first(entry.get("ValidAttachments", {}), "CharacterAttachment")
@@ -110,8 +115,12 @@ def main():
                                and OTHER_GENDER_MARK[gender] not in m["Name"]], seed + slot)
             b.ranged(index("MaterialCustomisations", name), widths["MaterialCustomisations"])
 
+        if BETA:
+            b.count(0, *GEAR_COUNT)
         b.ranged(0, widths["Backstories"])
-        if len(b.bits) != 231:
+        if BETA:
+            b.bits += [0, 0]
+        if len(b.bits) != BLOCK_BITS:
             raise ValueError(f"{lst['Name']}: {len(b.bits)} bits")
         lines.append(f"{lst['Name'].lower()} {base64.b64encode(b.to_bytes()).decode()}")
 

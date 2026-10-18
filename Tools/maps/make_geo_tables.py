@@ -6,9 +6,9 @@ from targets import BUILD, GAME, GEODATA
 
 SLOTS = ("Primary", "Secondary", "Tertiary", "Quaternary")
 INDEXED_TABLES = (
-    "AdventureCosts", "Adventures", "BiomePalettes", "Biomes", "CreatureSets", "Events", "GameModeProperties", "JobChallenges",
-    "Jobs", "MapSizeCategories", "MapSizes", "PlayerSigils", "Regions", "TerrainGenerators",
-    "TimeOfDayPresetLists", "TimeOfDayPresets", "Videos",
+    "AdventureCosts", "Adventures", "Backstories", "BiomePalettes", "Biomes", "CharacterAttachments", "CreatureSets", "Events",
+    "GameModeProperties", "JobChallenges", "Jobs", "MapSizeCategories", "MaterialCustomisations", "Materials", "MapSizes", "PlayerSigils", "Regions", "TerrainGenerators",
+    "TimeOfDayPresetLists", "TimeOfDayPresets", "Tribes", "Videos",
 )
 
 

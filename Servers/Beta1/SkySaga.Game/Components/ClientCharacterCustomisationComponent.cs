@@ -2,9 +2,7 @@ namespace SkySaga.Game.Components;
 
 public class ClientCharacterCustomisationComponent : Component
 {
-    public const uint CustomisationDataBits = 231;
-
-    public byte[]? CustomisationData { get; set => SetIfChanged(ref field, value); }
+    public byte[]? CustomisationData { get; set => SetIfChanged(ref field, value is null ? null : CustomisationBlock.Upgrade(value)); }
     public bool IsCharacterCustomised { get; set => SetIfChanged(ref field, value); }
 
     public string? CustomisationListCrc
@@ -26,10 +24,10 @@ public class ClientCharacterCustomisationComponent : Component
     {
         if (parameterName.Equals(nameof(CustomisationData), StringComparison.OrdinalIgnoreCase))
         {
-            if (CustomisationData is null)
+            if (CustomisationData is null || CustomisationBlock.BitLength(CustomisationData) is not (> 0 and var bits))
                 return false;
 
-            bitStream.WriteBits(CustomisationData, CustomisationDataBits, true);
+            bitStream.WriteBits(CustomisationData, (uint)bits, true);
 
             return true;
         }
