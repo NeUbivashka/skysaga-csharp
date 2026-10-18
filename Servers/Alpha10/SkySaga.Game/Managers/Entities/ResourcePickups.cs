@@ -42,6 +42,10 @@ public static class ResourcePickups
     {
         ["Sheep"] = "Lamb_Meat",
         ["Boar"] = "Pig_Meat",
+        ["Skitterling"] = "Beetle_Meat",
+        ["Scarab"] = "Beetle_Meat",
+        ["FennecFox"] = "Fox_Meat",
+        ["Penguin"] = "Chicken_Meat",
     };
 
     private static uint?[] ResolveMaterials(LootDrop drop, string entityName)
@@ -165,7 +169,7 @@ public static class ResourcePickups
 
         var slotData = itemComponent.InventorySlotData;
 
-        if (TryFindStack(entityManager, inventory, slotData.Name, slotData.Count, out var stack))
+        if (TryFindStack(entityManager, inventory, slotData.Name, MaterialsOf(item), slotData.Count, out var stack))
         {
             stack.InventorySlotData = stack.InventorySlotData.WithCount(stack.InventorySlotData.Count + slotData.Count);
             Remove(connection, item.Id);
@@ -191,7 +195,10 @@ public static class ResourcePickups
         Remove(connection, pickup.Id);
     }
 
-    private static bool TryFindStack(IMapEntityManager entityManager, ClientInventoryComponent inventory, uint? name, int count, [NotNullWhen(true)] out InventoryItemComponent? stack)
+    private static uint?[] MaterialsOf(Entity item)
+        => item.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
+
+    private static bool TryFindStack(IMapEntityManager entityManager, ClientInventoryComponent inventory, uint? name, uint?[] materials, int count, [NotNullWhen(true)] out InventoryItemComponent? stack)
     {
         foreach (var entityId in inventory.InventoryEntityList)
         {
@@ -199,6 +206,7 @@ public static class ResourcePickups
                 && entityManager.TryGetEntity(entityId, out var entity)
                 && entity.TryGetComponent<InventoryItemComponent>(out var candidate)
                 && candidate.InventorySlotData.Name == name
+                && MaterialsOf(entity).SequenceEqual(materials)
                 && candidate.InventorySlotData.Count + count <= StackLimit)
             {
                 stack = candidate;

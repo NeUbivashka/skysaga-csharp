@@ -178,7 +178,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                     if (entry.Slot < 0 || entry.Slot >= clientInventoryComponent.MaxInventorySlots)
                         continue;
 
-                    CreateAndEquipInventoryItem(clientInventoryComponent, entry.Slot, entry.NameHash, entry.Count, entry.ItemUuid);
+                    CreateAndEquipInventoryItem(clientInventoryComponent, entry.Slot, entry.NameHash, entry.Count, entry.ItemUuid, entry.Materials);
                 }
 
                 EnsureItem(clientInventoryComponent, save.Inventory, "Tool_Explorer_Generic_Pickaxe_1");
@@ -318,7 +318,10 @@ public class PlayerInitializer(IWorldManager worldManager)
                     Slot = slot,
                     NameHash = inventoryItemComponent.InventorySlotData.Name.Value,
                     Count = inventoryItemComponent.InventorySlotData.Count,
-                    ItemUuid = inventoryItemComponent.InventorySlotData.ItemUUID
+                    ItemUuid = inventoryItemComponent.InventorySlotData.ItemUUID,
+                    Materials = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) && composition.MaterialList.Length > 0
+                        ? composition.MaterialList
+                        : null
                 });
             }
         }
@@ -496,9 +499,9 @@ public class PlayerInitializer(IWorldManager worldManager)
         return item;
     }
 
-    private Entity? CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null)
+    private Entity? CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null, uint?[]? materials = null)
     {
-        var item = CreateInventoryItem(nameHash, count, itemUuid);
+        var item = CreateInventoryItem(nameHash, count, itemUuid, materials);
 
         if (item is not null)
             inventory.InventoryEntityList[slot] = item.Id;

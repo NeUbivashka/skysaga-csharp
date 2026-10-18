@@ -419,24 +419,52 @@ def alpha10_binary_storage_cooler():
     return "", 200
 
 
+@app.route("/api/persistent-record/worlds/listforowner/<owner>", methods=["GET"])
+def alpha10_worlds_list_for_owner(owner):
+    print("=== worlds/listforowner", owner, "===")
+    return jsonify({"result": []}), 200
+
+
 @app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
 def binary_storage_photo_likes():
     return jsonify({"result": {"likes": {}}}), 200
 
 
+HOME_ISLAND_MAP_SPEC = [
+    [
+        "Forest",
+        0,
+        "Home_Island_Adventure",
+        "Easy",
+        "",
+        1337,
+        "BiomePalette_Forest_HomeIsland",
+        0, 0, 0,
+        "Home_Island",
+        0,
+        "Special",
+        "HomeIsland_6x4x6",
+        0,
+        "Home_Island_World",
+        "NoEvent",
+    ],
+    ["", 0],
+    [],
+    "",
+]
+
+
 @app.route("/api/persistent-record/worlds/getSpecific", methods=["POST"])
 def alpha10_worlds_get_specific():
-    # The HUD island title reads the world record's owner name. Field names come from the
-    # client's world record type (uuid, owner, ownerName, ownerType, name, homeWorld, ...).
     body = request.get_json(silent=True) or {}
     print("=== worlds/getSpecific", body, "===")
     world = {
         "uuid": body.get("uuid", ""),
+        "mapSpec": HOME_ISLAND_MAP_SPEC,
         "owner": _state["character_uuid"],
         "ownerName": PLAYER_NAME,
         "homeWorld": True,
         "published": False,
-        "deleted": False,
     }
     return jsonify({"result": {"world": dict(world), **world}}), 200
 

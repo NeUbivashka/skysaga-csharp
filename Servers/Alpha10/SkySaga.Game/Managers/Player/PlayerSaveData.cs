@@ -59,5 +59,6 @@ public class PlayerSaveData
         public uint NameHash { get; set; }
         public int Count { get; set; }
         public string? ItemUuid { get; set; }
+        public uint?[]? Materials { get; set; }
     }
 }
