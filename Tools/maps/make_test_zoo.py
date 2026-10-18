@@ -36,6 +36,10 @@ BROKEN_GROUPS = [
     ("Ronin", r"^Jungle_Lizard_"),
     ("Other", r"^(FTUE_CityGuard_|Test_Biped|Jungle_Monkey_Mastery|Desert_Chicken$|Midwinter_Chicken$)"),
 ]
+REFERENCE_CHEST = "Chest_Generic_Major"
+REFERENCE_CHEST_SLOTS = 55
+REFERENCE_CHEST_SPACING = 2
+REFERENCE_CHEST_BUILDS = {"36731"}
 ROW_SPACING = 6
 COLUMN_SPACING = 4
 
@@ -81,6 +85,14 @@ def creature_names(all_types):
     return names
 
 
+def reference_chests(z):
+    with open(os.path.join(GAME, "Data", "Resources.txt"), encoding="utf-8") as f:
+        items = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    batches = [items[i:i + REFERENCE_CHEST_SLOTS] for i in range(0, len(items), REFERENCE_CHEST_SLOTS)]
+    return [{"name": REFERENCE_CHEST, "x": EDGE + i * REFERENCE_CHEST_SPACING, "y": GROUND_Y, "z": z, "items": batch}
+            for i, batch in enumerate(batches)]
+
+
 def main():
     all_types = "--all" in sys.argv
     sx, sz = SIZE_CHUNKS[0] * 32, SIZE_CHUNKS[2] * 32
@@ -116,6 +128,8 @@ def main():
                              "y": GROUND_Y,
                              "z": gallery_end_z + 8 + (i // per_row) * 6})
     creatures = entities[1:]
+    if BUILD in REFERENCE_CHEST_BUILDS:
+        entities += reference_chests(gallery_end_z + 4)
     entities.append({"name": "Airship",
                      "x": (min(e["x"] for e in creatures) + max(e["x"] for e in creatures)) // 2,
                      "y": GROUND_Y,

@@ -261,6 +261,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             var creature = SpawnCreature(spec.Name, position);
 
+            if (spec.Items is { Count: > 0 } && creature.Count > 0)
+                FillInventory(creature[^1], spec.Items);
+
             if (creature.Count == 0)
             {
                 Console.WriteLine($"[WorldManager] Unknown entity name '{spec.Name}' in WorldMap.json, skipping.");
@@ -273,6 +276,20 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
+    }
+
+    private void FillInventory(Entity container, List<string> itemNames)
+    {
+        if (!container.TryGetComponent<ClientInventoryComponent>(out var inventory))
+            return;
+
+        var items = itemNames
+            .Select(name => PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32(name), 1))
+            .Select(item => item?.Id ?? 0)
+            .Take(inventory.MaxInventorySlots)
+            .ToList();
+
+        inventory.InventoryEntityList = [.. items, .. Enumerable.Repeat(0, Math.Max(0, inventory.MaxInventorySlots - items.Count))];
     }
 
     public List<Entity> RespawnMapCreature(Entity creature)

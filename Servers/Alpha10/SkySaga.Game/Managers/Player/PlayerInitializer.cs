@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
@@ -34,7 +34,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             owner.Owner = characterUuid;
 
         if (player.TryGetComponent<ClientShopComponent>(out var shop))
-            shop.ShopList = [0];
+            shop.ShopList = [new ClientShopComponent.Shop { Items = GlobalShopItems() }, new ClientShopComponent.Shop()];
 
         if (player.TryGetComponent<TagsComponent>(out var tags))
             tags.TagList = [Util.ComputeCrc32("Player")];
@@ -158,6 +158,12 @@ public class PlayerInitializer(IWorldManager worldManager)
                     NameHash = Util.ComputeCrc32("Portal_Ticket"),
                     Value = 420
                 });
+            }
+
+            foreach (var (currency, amount) in StartingCurrencies)
+            {
+                if (!clientWalletComponent.Currency.CurrencyList.Any(entry => entry.NameHash == Util.ComputeCrc32(currency)))
+                    clientWalletComponent.Currency.CurrencyList.Add(new WalletData.CurrencyData { NameHash = Util.ComputeCrc32(currency), Value = amount });
             }
         }
 
@@ -458,6 +464,32 @@ public class PlayerInitializer(IWorldManager worldManager)
         };
     }
 
+    private static readonly (string Currency, int Amount)[] StartingCurrencies = [("Coins", 10000), ("SkySagaHardCurrency", 500)];
+
+    private static readonly (string Item, uint Quantity, uint Price)[] GlobalShopStock =
+    [
+        ("Tool_Explorer_Generic_Pickaxe_1", 1, 250),
+        ("Weapon_Forest_Royalist_Sword_0", 1, 400),
+        ("Armour_Forest_Royalist_Heavy_1_Head", 1, 600),
+        ("Camp_Fire", 1, 150),
+        ("Tool_Explorer_Generic_Torch", 10, 50),
+        ("Apple", 5, 20),
+    ];
+
+    private static List<ClientShopComponent.ShopItem> GlobalShopItems()
+        => [.. GlobalShopStock.Select(entry => new ClientShopComponent.ShopItem
+        {
+            Item = new ClientShopComponent.ItemStack(ShopItemRef(entry.Item), entry.Quantity),
+            Costs = [new ClientShopComponent.ItemStack(ShopItemRef("Coins"), entry.Price)],
+        })];
+
+    private static InventoryItemRef ShopItemRef(string name)
+        => new()
+        {
+            Kind = ItemTable.IndexOf(name),
+            Amounts = MaterialTable.TryGet(Util.ComputeCrc32(name), out var materials) ? [.. materials] : [],
+        };
+
     private void EnsureItem(ClientInventoryComponent inventory, List<PlayerSaveData.InventoryEntry> saved, string itemName)
     {
         var crc = Util.ComputeCrc32(itemName);
@@ -510,6 +542,9 @@ public class PlayerInitializer(IWorldManager worldManager)
     }
 
     public Entity? CreateInventoryItem(uint nameHash, int count, string? itemUuid = null, uint?[]? materialOverrides = null)
+        => CreateInventoryItem(_entityManager, nameHash, count, itemUuid, materialOverrides);
+
+    public static Entity? CreateInventoryItem(IMapEntityManager entityManager, uint nameHash, int count, string? itemUuid = null, uint?[]? materialOverrides = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
         var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1";
@@ -528,7 +563,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             _ => "BasicInventoryItem"
         };
 
-        if (_entityManager.TryCreateEntity(entityType, out var item))
+        if (entityManager.TryCreateEntity(entityType, out var item))
         {
             if (hasMaterials && item.TryGetComponent<MaterialCompositionComponent>(out var composition))
                 composition.MaterialList = materials;

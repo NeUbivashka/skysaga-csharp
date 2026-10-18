@@ -1,9 +1,13 @@
-﻿namespace SkySaga.Game.Packets.Common;
+﻿using System.Linq;
+
+namespace SkySaga.Game.Packets.Common;
 
 public class WalletData : ISerializableType
 {
+    private const uint CurrencyListEscape = 8;
+    private const uint SmallValueMax = 0x3FF;
+
     public List<CurrencyData> CurrencyList = [];
-    private const int CurrencyListDefaultCount = 8;
 
     public class CurrencyData : ISerializableType
     {
@@ -12,41 +16,28 @@ public class WalletData : ISerializableType
 
         public void Serialize(BitStream bitStream)
         {
-            bitStream.WriteOptional(NameHash, (value) =>
-            {
-                bitStream.Write((int)value);
-            });
+            bitStream.WriteRangedIndex(NameHash is uint hash ? ItemTable.IndexOf(hash) : 0u, InventoryItemRef.ItemTableCount);
 
-            if (Value <= 1023)
+            if ((uint)Value <= SmallValueMax)
             {
                 bitStream.Write0();
-
-                bitStream.WriteBits(BitConverter.GetBytes(Value), 32 - Util.NumBitsRequiredUInt32(1023), true);
+                bitStream.WriteRanged((uint)Value, SmallValueMax);
             }
             else
             {
                 bitStream.Write1();
-
-                bitStream.WriteBits(BitConverter.GetBytes(Value), 32 - Util.NumBitsRequiredUInt32(0xFFFFFFFF), true);
+                bitStream.WriteBits(BitConverter.GetBytes(Value), 32, true);
             }
         }
     }
 
     public void Serialize(BitStream bitStream)
     {
-        if (CurrencyList.Count < CurrencyListDefaultCount)
-        {
-            bitStream.WriteBits(BitConverter.GetBytes(CurrencyList.Count), 32 - Util.NumBitsRequiredUInt32(CurrencyListDefaultCount), true);
-        }
-        else
-        {
-            bitStream.WriteBits(BitConverter.GetBytes(CurrencyListDefaultCount), 32 - Util.NumBitsRequiredUInt32(CurrencyListDefaultCount), true);
+        var known = CurrencyList.Where(currency => currency.NameHash is uint hash && ItemTable.IndexOf(hash) != 0).ToList();
 
-            bitStream.Write1();
-            bitStream.Write(CurrencyList.Count);
-        }
+        bitStream.WriteEscapedCount((uint)known.Count, CurrencyListEscape);
 
-        foreach (var currency in CurrencyList)
+        foreach (var currency in known)
             currency.Serialize(bitStream);
     }
 }

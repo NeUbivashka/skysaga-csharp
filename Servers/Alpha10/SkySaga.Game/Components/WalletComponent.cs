@@ -6,7 +6,7 @@ public class WalletComponent : Component
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
-        if (parameterName.Equals(nameof(Currency), StringComparison.OrdinalIgnoreCase))
+        if (parameterName.Equals("WalletCurrency", StringComparison.OrdinalIgnoreCase))
         {
             Currency.Serialize(bitStream);
 
