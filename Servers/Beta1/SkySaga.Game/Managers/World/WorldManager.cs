@@ -191,7 +191,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             clientTimeOfDayComponent.FixedTimeOfDay = isFixed;
             clientTimeOfDayComponent.DayNightCycleDuration = Math.Clamp((int)Math.Round(cycleMinutes * 64), 1, 1920);
             clientTimeOfDayComponent.RealWorldStartTime = RakNet.RakNet.GetTime();
-            clientTimeOfDayComponent.TimeStretch = 64;
+            clientTimeOfDayComponent.TimeStretch = Environment.GetEnvironmentVariable("SKYSAGA_TIME_FROZEN") == "1" ? 0 : TimeOfDayComponent.NormalStretch;
 
             clientTimeOfDayComponent.TimeOfDayOffset = clientTimeOfDayComponent.StartTimeOfDay;
 
