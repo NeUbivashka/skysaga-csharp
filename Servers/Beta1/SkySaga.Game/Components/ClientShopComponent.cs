@@ -2,7 +2,7 @@ namespace SkySaga.Game.Components;
 
 public class ClientShopComponent : Component
 {
-    private const uint ShopListEscape = 2;
+    private const uint ShopListEscape = 7;
     private const uint ShopItemListEscape = 0x800;
 
     public List<ulong> ShopList { get; set => SetIfChanged(ref field, value); } = [];
@@ -20,6 +20,10 @@ public class ClientShopComponent : Component
             {
                 bitStream.WriteEscapedCount(0, ShopItemListEscape);
                 bitStream.WriteUInt64(shopId);
+                bitStream.Write0();
+                bitStream.WriteFullWidthUInt32(0);
+                bitStream.WriteFullWidthUInt32(0);
+                bitStream.Write0();
             }
 
             return true;

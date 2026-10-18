@@ -14,6 +14,11 @@ public class Entity
     public bool SyncRequired => _sync.HasAnySet();
 
     private static readonly bool SyncTrace = Environment.GetEnvironmentVariable("SKYSAGA_SYNC_TRACE") == "1";
+    private static readonly string? SyncFilter = Environment.GetEnvironmentVariable("SKYSAGA_SYNC_ONLY");
+    private static readonly bool SyncFilterSkips = SyncFilter?.StartsWith('-') == true;
+    private static readonly HashSet<string>? SyncOnly = SyncFilter is { Length: > 0 }
+        ? new HashSet<string>(SyncFilter.TrimStart('-').Split(','), StringComparer.OrdinalIgnoreCase)
+        : null;
 
     public Entity(int id, EntityData entityData, IReadOnlyCollection<Component> components)
     {
@@ -75,6 +80,9 @@ public class Entity
                 continue;
 
             if (!_components.TryGetValue(componentName, out var component))
+                continue;
+
+            if (SyncOnly is not null && (SyncOnly.Contains(componentName) || SyncOnly.Contains(parameterName)) == SyncFilterSkips)
                 continue;
 
             var bitsBefore = parameterBitStream.GetNumberOfBitsUsed();

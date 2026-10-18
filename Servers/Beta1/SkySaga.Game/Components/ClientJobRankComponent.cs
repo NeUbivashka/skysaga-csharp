@@ -21,7 +21,7 @@ public class ClientJobRankComponent : Component
 
     public List<int> ActiveJobChallengeList { get; set => SetIfChanged(ref field, value); } = [];
 
-    public List<uint> CompletedJobChallengeList { get; set => SetIfChanged(ref field, value); } = CompleteAllChallenges ? AllChallengeCrcs() : [];
+    public List<uint> CompletedJobChallengeList { get; set => SetIfChanged(ref field, value); } = CompleteAllChallenges ? AllChallengeIndices() : [];
 
     public int NumberOfJobChallengeScrollsUsed { get; set => SetIfChanged(ref field, value); }
 
@@ -47,11 +47,10 @@ public class ClientJobRankComponent : Component
         {
             bitStream.WriteEscapedCount((uint)CompletedJobChallengeList.Count, CompletedJobChallengeListEscape);
 
-            foreach (var crc in CompletedJobChallengeList)
-            {
-                bitStream.Write1();
-                bitStream.WriteFullWidthUInt32(crc);
-            }
+            var challengeCount = GeoIndex.Count("JobChallenges");
+
+            foreach (var index in CompletedJobChallengeList)
+                bitStream.WriteRangedIndex(index, challengeCount);
 
             return true;
         }
@@ -69,15 +68,8 @@ public class ClientJobRankComponent : Component
         return false;
     }
 
-    private static List<uint> AllChallengeCrcs()
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "Data", "JobChallenges.txt");
-
-        if (!File.Exists(path))
-            return [];
-
-        return [.. File.ReadLines(path).Where(l => l.Length > 0).Select(l => Util.ComputeCrc32(l.Trim())).Order()];
-    }
+    private static List<uint> AllChallengeIndices()
+        => [.. GeoIndex.Entries("JobChallenges").Select(entry => entry.WireIndex).Order()];
 
     private static bool WriteList(BitStream bitStream, List<int> values, int maxCount)
     {

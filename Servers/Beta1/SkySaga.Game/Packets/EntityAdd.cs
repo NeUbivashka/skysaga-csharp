@@ -2,7 +2,6 @@
 
 public class EntityAdd : ISerializablePacket
 {
-    private const byte Ordinal = 153;
 
     private const uint ShortLengthMax = 0x20000;
 
@@ -18,7 +17,7 @@ public class EntityAdd : ISerializablePacket
     {
         var bitStream = new BitStream();
 
-        bitStream.WritePacketId(Ordinal);
+        bitStream.WritePacketId(PacketId.EntityAdd);
 
         bitStream.WriteOptional(NameHash, (value) =>
         {

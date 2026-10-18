@@ -21,16 +21,33 @@ public static class ClientConnected
             + $"unknownField9bits=0x{unknownFieldBuffer[0]:X2}{unknownFieldBuffer[1]:X2} "
             + $"gameHost={gameHost} trailingBit=0x{trailingBitBuffer[0]:X2}");
 
-        bool attachDebuggerBeforeHandshake = false;
-        if (attachDebuggerBeforeHandshake)
-        {
-            const int debugAttachDelaySeconds = 5;
-            Console.WriteLine($"[ClientConnected] Sleeping {debugAttachDelaySeconds}s "
-                + "before sending ServerInfo/MapDefinition - attach x32dbg now.");
-            Thread.Sleep(debugAttachDelaySeconds * 1000);
-            Console.WriteLine("[ClientConnected] Delay done, continuing.");
-        }
+        var definition = connection.WorldManager.Definition;
 
+        Console.WriteLine($"[ClientConnected] Sending MapDefinition: "
+            + $"Searchable=[{string.Join(",", definition.Spec.Searchable)}] "
+            + $"AdventureType='{definition.AdventureType}' MapFileName='{definition.MapFileName}' "
+            + $"FeatureName='{definition.Spec.FeatureName}' Seed={definition.Spec.Seed} "
+            + $"GameMode={definition.GameMode}");
+
+        var mapDefinitionStream = definition.Serialize();
+        mapDefinitionStream.PrintHex(out var mapDefinitionHex);
+        Console.WriteLine($"[ClientConnected] MapDefinition raw bytes "
+            + $"({mapDefinitionStream.GetNumberOfBytesUsed()} bytes, "
+            + $"{mapDefinitionStream.GetNumberOfBitsUsed()} bits used): {mapDefinitionHex}");
+
+        connection.Send(mapDefinitionStream);
+
+        var setConnectionTimeout = new SetConnectionTimeout { Millis = 30000 };
+
+        connection.Send(setConnectionTimeout);
+
+        Console.WriteLine("[ClientConnected] Sent SetConnectionTimeout: Millis=30000");
+
+        return true;
+    }
+
+    public static void SendServerInfo(PlayerConnection connection)
+    {
         Guid? serverOwnerGuid = Guid.TryParse(Util.CharacterUuid(), out var parsedOwnerGuid)
             ? parsedOwnerGuid
             : null;
@@ -67,29 +84,5 @@ public static class ClientConnected
             + $"{serverInfoStream.GetNumberOfBitsUsed()} bits used)");
 
         connection.Send(serverInfoStream);
-
-        var definition = connection.WorldManager.Definition;
-
-        Console.WriteLine($"[ClientConnected] Sending MapDefinition: "
-            + $"Searchable=[{string.Join(",", definition.Spec.Searchable)}] "
-            + $"AdventureType='{definition.AdventureType}' MapFileName='{definition.MapFileName}' "
-            + $"FeatureName='{definition.Spec.FeatureName}' Seed={definition.Spec.Seed} "
-            + $"GameMode={definition.GameMode}");
-
-        var mapDefinitionStream = definition.Serialize();
-        mapDefinitionStream.PrintHex(out var mapDefinitionHex);
-        Console.WriteLine($"[ClientConnected] MapDefinition raw bytes "
-            + $"({mapDefinitionStream.GetNumberOfBytesUsed()} bytes, "
-            + $"{mapDefinitionStream.GetNumberOfBitsUsed()} bits used): {mapDefinitionHex}");
-
-        connection.Send(mapDefinitionStream);
-
-        var setConnectionTimeout = new SetConnectionTimeout { Millis = 30000 };
-
-        connection.Send(setConnectionTimeout);
-
-        Console.WriteLine("[ClientConnected] Sent SetConnectionTimeout: Millis=30000");
-
-        return true;
     }
 }

@@ -22,7 +22,7 @@ public class FeatureUnlockComponent : Component
 
     public static readonly string[] KeptLocked = [];
 
-    private const uint CountMax = 62;
+    private const uint CountMax = 63;
 
     public List<string> UnlockedFeatures { get; set => SetIfChanged(ref field, value); } = [];
 

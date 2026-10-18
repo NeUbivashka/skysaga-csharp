@@ -2,8 +2,8 @@ namespace SkySaga.Game.Components;
 
 public class InventoryComponent : Component
 {
-    private const uint MaxInventorySlotsMax = 0xF0;
-    private const uint EntityListEscape = 0xF9;
+    private const uint MaxInventorySlotsMax = 0xFFF4;
+    private const uint EntityListEscape = 0xFFFF;
 
     public byte MaxInventorySlots { get; set => SetIfChanged(ref field, value); }
     public uint? InventoryLoadOut { get; set => SetIfChanged(ref field, value); }

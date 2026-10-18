@@ -374,6 +374,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             connection.Send(entityAdd);
         }
 
+        connection.Send(new EntityBatchComplete());
         connection.Send(new ClientEntitiesSyncFinished());
     }
 

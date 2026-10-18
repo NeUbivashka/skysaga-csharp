@@ -6,6 +6,8 @@ public static class ClientReadyToSync
     {
         Debug.WriteLine("", nameof(ClientReadyToSync));
 
+        ClientConnected.SendServerInfo(connection);
+
         connection.InitialChunkSync();
 
         return true;

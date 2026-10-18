@@ -135,7 +135,6 @@ public class PlayerConnection
             PacketId.NarrativeCompleted => NarrativeCompletedReceived.Handle(this, bitStream),
 
             (PacketId)241 => PerformVoxelActions.Handle(this, bitStream),
-            (PacketId)242 => RequestChatChannelData.Handle(this, bitStream),
             _ => false
         };
     }

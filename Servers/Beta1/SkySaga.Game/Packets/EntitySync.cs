@@ -2,7 +2,6 @@
 
 public class EntitySync : ISerializablePacket
 {
-    private const byte Ordinal = 154;
 
     private const uint ShortLengthMax = 0x20000;
 
@@ -14,7 +13,7 @@ public class EntitySync : ISerializablePacket
     {
         var bitStream = new BitStream();
 
-        bitStream.WritePacketId(Ordinal);
+        bitStream.WritePacketId(PacketId.EntitySync);
 
         bitStream.Write(Id);
 
