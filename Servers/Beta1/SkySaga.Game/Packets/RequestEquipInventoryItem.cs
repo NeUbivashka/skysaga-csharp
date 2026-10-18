@@ -2,8 +2,8 @@ namespace SkySaga.Game.Packets;
 
 public static class RequestEquipInventoryItem
 {
-    private const uint LocationMax = 9;
-    private const uint InventorySlotMax = 0xF9;
+    private const uint LocationMax = ClientEquippedItemComponent.SlotCount;
+    private const uint InventorySlotMax = 0xFFFF;
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
@@ -23,12 +23,15 @@ public static class RequestEquipInventoryItem
 
         var nameCrc = inventoryItemComponent.InventorySlotData.Name ?? 0;
 
+        var equippedFrom = slotId;
+
         if (location > (int)ClientEquippedItemComponent.Slot.RightHand
             && location < ClientEquippedItemComponent.SlotCount
             && location < clientInventoryComponent.InventoryEntityList.Count
             && slotId != location)
         {
             clientInventoryComponent.ApplyClientPredictedSwap(location, slotId);
+            equippedFrom = location;
         }
 
         if (location < ClientEquippedItemComponent.SlotCount
@@ -36,7 +39,8 @@ public static class RequestEquipInventoryItem
         {
             equipped.SetSlot((uint)location, ItemTable.IndexOf(nameCrc),
                 Guid.TryParse(inventoryItemComponent.InventorySlotData.ItemUUID, out var uuid) ? uuid : null,
-                itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : null);
+                itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : null,
+                equippedFrom);
         }
 
         var blockID = BlockCrcMapping.GetBlockId(nameCrc);
@@ -46,7 +50,7 @@ public static class RequestEquipInventoryItem
         else if (location == (int)ActionLocation.RightHand)
             connection.RightHandBlockId = blockID;
 
-        Console.WriteLine($"[Equip] {(ClientEquippedItemComponent.Slot)location} = {ItemTable.NameOf(ItemTable.IndexOf(nameCrc))} (inventory slot {slotId})");
+        Console.WriteLine($"[Equip] {(ClientEquippedItemComponent.Slot)location} = {ItemTable.NameOf(ItemTable.IndexOf(nameCrc))} (inventory slot {equippedFrom})");
 
         return true;
     }

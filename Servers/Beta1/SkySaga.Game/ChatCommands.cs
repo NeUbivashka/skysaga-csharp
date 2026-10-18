@@ -27,12 +27,55 @@ public class ChatCommands(IWorldManager worldManager, PlayerInitializer playerIn
             "tp" => Teleport(connection, args),
             "give" => Give(connection, args),
             "spawn" => Spawn(connection, args),
+            "time" => Time(args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count]";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run]";
+
+    private string Time(string[] args)
+    {
+        var timeOfDay = worldManager.EntityManager.Entities
+            .Select(entity => entity.TryGetComponent<ClientTimeOfDayComponent>(out var component) ? component : null)
+            .FirstOrDefault(component => component is not null);
+
+        if (timeOfDay is null)
+            return "The world has no time of day.";
+
+        var now = RakNet.RakNet.GetTime();
+
+        if (args.Length > 1)
+        {
+            switch (args[1].ToLowerInvariant())
+            {
+                case "freeze":
+                    timeOfDay.SetFrozen(true, now);
+                    break;
+                case "run":
+                    timeOfDay.SetFrozen(false, now);
+                    break;
+                default:
+                    var parts = args[1].Split(':');
+
+                    if (!float.TryParse(parts[0], CultureInfo.InvariantCulture, out var hours)
+                        || parts.Length > 1 && !int.TryParse(parts[1], out _)
+                        || hours < 0 || hours >= 24)
+                        return "Usage: !time [hh[:mm] | freeze | run]";
+
+                    var minutes = parts.Length > 1 ? int.Parse(parts[1]) : 0;
+
+                    timeOfDay.SetTime((int)Math.Round((hours + minutes / 60f) / 24f * TimeOfDayComponent.DayLength), now);
+                    break;
+            }
+        }
+
+        var current = timeOfDay.CurrentTime(now) * 24f / TimeOfDayComponent.DayLength;
+        var shown = TimeSpan.FromHours(current);
+
+        return $"Time {shown.Hours:00}:{shown.Minutes:00}, {(timeOfDay.IsFrozen ? "frozen" : "running")}.";
+    }
 
     private static string Heal(PlayerConnection connection)
     {
@@ -93,7 +136,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerInitializer playerIn
     private string Spawn(PlayerConnection connection, string[] args)
     {
         if (args.Length < 2)
-            return "Usage: !spawn <creature> [count]";
+            return "Usage: !spawn <creature> [count], !time [hh[:mm] | freeze | run]";
 
         var count = args.Length > 2 && int.TryParse(args[2], out var parsed) ? Math.Clamp(parsed, 1, MaxSpawnCount) : 1;
         var position = LookTarget(connection);

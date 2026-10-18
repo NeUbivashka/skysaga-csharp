@@ -419,6 +419,11 @@ def alpha10_binary_storage_cooler():
     return "", 200
 
 
+@app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
+def binary_storage_photo_likes():
+    return jsonify({"result": {"likes": {}}}), 200
+
+
 @app.route("/ping", methods=["GET"])
 def ping():
     return "", 200

@@ -397,6 +397,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         var items = new ushort[ClientEquippedItemComponent.SlotCount];
         var uuids = new Guid?[ClientEquippedItemComponent.SlotCount];
         var materialLists = new uint?[ClientEquippedItemComponent.SlotCount][];
+        var inventorySlots = new ushort[ClientEquippedItemComponent.SlotCount];
 
         for (var position = 0; position < Math.Min(inventory.InventoryEntityList.Count, (int)ClientEquippedItemComponent.SlotCount); position++)
         {
@@ -411,8 +412,10 @@ public class PlayerInitializer(IWorldManager worldManager)
             items[position] = ItemTable.IndexOf(crc);
             uuids[position] = Guid.TryParse(item.InventorySlotData.ItemUUID, out var uuid) ? uuid : null;
             materialLists[position] = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
+            inventorySlots[position] = (ushort)position;
         }
 
+        equipped.InventorySlots = inventorySlots;
         equipped.EquippedItemMaterials = materialLists;
         equipped.EquippedItems = items;
         equipped.EquippedItemUuids = uuids;

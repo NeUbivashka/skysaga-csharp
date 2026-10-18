@@ -16,6 +16,7 @@ SMALL_SET = [
     "HUB_NPC_ExplorerShop", "HUB_NPC_FoodShop",
     "Forest_Chicken", "Forest_Sheep",
     "Forest_Skitterling_Fighter_0", "Forest_Skitterling_Spitter_0",
+    "Forest_Wolf_Fighter_0", "Forest_Bear_Fighter_0", "Forest_Boar", "Forest_Human_Fighter_0",
 ]
 
 BROKEN_GROUPS = [

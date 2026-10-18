@@ -80,7 +80,7 @@ public static class CreatureLoadoutTable
                     && Guid.TryParse(itemComponent.InventorySlotData.ItemUUID, out var parsed) ? parsed : null;
             }
 
-            equipped.SetSlot(slot, ItemTable.IndexOf(nameHash), uuid, materials);
+            equipped.SetSlot(slot, ItemTable.IndexOf(nameHash), uuid, materials, (int)slot);
         }
 
         if (inventory is not null)

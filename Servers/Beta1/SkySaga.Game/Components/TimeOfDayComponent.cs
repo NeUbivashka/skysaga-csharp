@@ -9,6 +9,40 @@ public class TimeOfDayComponent : Component
     public int TimeStretch { get; set => SetIfChanged(ref field, value); }
     public int TimeOfDayOffset { get; set => SetIfChanged(ref field, value); }
 
+    public const int DayLength = 0x10000;
+    public const int NormalStretch = 64;
+
+    public bool IsFrozen => TimeStretch == 0;
+
+    public int CurrentTime(ulong now)
+    {
+        if (IsFrozen || DayNightCycleDuration <= 0)
+            return TimeOfDayOffset;
+
+        var cycleMs = DayNightCycleDuration / 64.0 * 60000.0 * NormalStretch / TimeStretch;
+        var elapsed = now > RealWorldStartTime ? now - RealWorldStartTime : 0;
+
+        return (int)((TimeOfDayOffset + elapsed / cycleMs * DayLength) % DayLength);
+    }
+
+    public void SetTime(int time, ulong now)
+    {
+        time = ((time % DayLength) + DayLength) % DayLength;
+
+        StartTimeOfDay = time;
+        TimeOfDayOffset = time;
+        RealWorldStartTime = now;
+    }
+
+    public void SetFrozen(bool frozen, ulong now)
+    {
+        if (frozen == IsFrozen)
+            return;
+
+        SetTime(CurrentTime(now), now);
+        TimeStretch = frozen ? 0 : NormalStretch;
+    }
+
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
         if (parameterName.Equals(nameof(StartTimeOfDay), StringComparison.OrdinalIgnoreCase))

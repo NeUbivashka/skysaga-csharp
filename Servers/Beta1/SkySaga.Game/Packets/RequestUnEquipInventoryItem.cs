@@ -2,7 +2,7 @@ namespace SkySaga.Game.Packets;
 
 public static class RequestUnEquipInventoryItem
 {
-    private const uint LocationMax = 9;
+    private const uint LocationMax = ClientEquippedItemComponent.SlotCount;
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {

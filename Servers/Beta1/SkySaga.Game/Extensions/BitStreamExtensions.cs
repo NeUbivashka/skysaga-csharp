@@ -169,6 +169,15 @@ public static class BitStreamExtensions
         bitStream.WriteBits(BitConverter.GetBytes(value), bitsToWrite, true);
     }
 
+    public static void WriteFullWidthUInt16(this BitStream bitStream, ushort value)
+    {
+        var bytes = BitConverter.GetBytes(value);
+
+        Array.Reverse(bytes);
+
+        bitStream.WriteBits(bytes, 16, true);
+    }
+
     public static void WriteFullWidthUInt32(this BitStream bitStream, uint value)
     {
         var bytes = BitConverter.GetBytes(value);

@@ -1,10 +1,13 @@
 import json
 import os
 
-from targets import BUNDLE, GAME, GEODATA
+from targets import BUILD, BUNDLE, GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "CreatureLoadouts.txt")
 
-SLOTS = ["LeftHand", "RightHand", "Head", "Torso", "Legs", "Arms", "Device", "Backpack", "AdditionalHeadFeature"]
+SLOTS = (["LeftHand", "RightHand", "Head", "Torso", "Legs", "Arms", "Device", "Backpack", "AdditionalHeadFeature"]
+         if BUILD == "36731" else
+         ["LeftHand", "RightHand", "Head", "Torso", "Legs", "Arms", "Backpack", "Special", "AdditionalHeadFeature",
+          "InfiniteLeftHand", "InfiniteRightHand"])
 MATERIAL_ORDER = ["Primary", "Secondary", "Tertiary", "Quaternary"]
 
 
