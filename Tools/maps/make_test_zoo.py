@@ -3,7 +3,7 @@ import os
 import re
 import sys
 
-from targets import BUNDLE, GAME, GEODATA
+from targets import BUILD, BUNDLE, GAME, GEODATA
 
 SIZE_CHUNKS = (6, 4, 6)
 FLOOR_Y = 31
@@ -12,12 +12,19 @@ FLOOR_BLOCK = 1
 FLOOR_DEPTH = 4
 EDGE = 8
 
-SMALL_SET = [
-    "HUB_NPC_ExplorerShop", "HUB_NPC_FoodShop",
-    "Forest_Chicken", "Forest_Sheep",
-    "Forest_Skitterling_Fighter_0", "Forest_Skitterling_Spitter_0",
-    "Forest_Wolf_Fighter_0", "Forest_Bear_Fighter_0", "Forest_Boar", "Forest_Human_Fighter_0",
-]
+SMALL_SETS = {
+    "36731": [
+        "HUB_NPC_Trader", "HUB_NPC_Gladiator",
+        "Forest_Chicken", "Forest_Skitterling_Fighter_0", "FTUE_CityGuard_Fighter",
+    ],
+    "38328": [
+        "HUB_NPC_ExplorerShop", "HUB_NPC_FoodShop",
+        "Forest_Chicken", "Forest_Sheep",
+        "Forest_Skitterling_Fighter_0", "Forest_Skitterling_Spitter_0",
+        "Forest_Wolf_Fighter_0", "Forest_Bear_Fighter_0", "Forest_Boar", "Forest_Human_Fighter_0",
+    ],
+}
+SMALL_SET = SMALL_SETS[BUILD]
 
 BROKEN_GROUPS = [
     ("NPCs", r"^HUB_NPC_"),

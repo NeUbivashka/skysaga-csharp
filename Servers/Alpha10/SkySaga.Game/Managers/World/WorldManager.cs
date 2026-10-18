@@ -178,19 +178,22 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
     }
 
+    private const int StartTimeOfDay = 10 * TimeOfDayComponent.DayLength / 24;
+    private const int DayNightCycleDuration = 30 * 64;
+
     private void SpawnTimeOfDay()
     {
         if (EntityManager.TryCreateEntity("TimeOfDay", out var timeOfDay) &&
             timeOfDay.TryGetComponent<ClientTimeOfDayComponent>(out var clientTimeOfDayComponent))
         {
             clientTimeOfDayComponent.StartTimeOfDay =
-                int.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_TIME_OF_DAY"), out var tod) ? tod : 32768;
-            clientTimeOfDayComponent.FixedTimeOfDay = true;
-            clientTimeOfDayComponent.DayNightCycleDuration = 20;
+                int.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_TIME_OF_DAY"), out var tod) ? tod : StartTimeOfDay;
+            clientTimeOfDayComponent.FixedTimeOfDay = false;
+            clientTimeOfDayComponent.DayNightCycleDuration = DayNightCycleDuration;
             clientTimeOfDayComponent.RealWorldStartTime = RakNet.RakNet.GetTime();
-            clientTimeOfDayComponent.TimeStretch = 8;
+            clientTimeOfDayComponent.TimeStretch = Environment.GetEnvironmentVariable("SKYSAGA_TIME_FROZEN") == "1" ? 0 : TimeOfDayComponent.NormalStretch;
 
-            clientTimeOfDayComponent.TimeOfDayOffset = 0;
+            clientTimeOfDayComponent.TimeOfDayOffset = clientTimeOfDayComponent.StartTimeOfDay;
         }
     }
 
