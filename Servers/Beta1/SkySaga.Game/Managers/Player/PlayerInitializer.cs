@@ -65,6 +65,8 @@ public class PlayerInitializer(IWorldManager worldManager)
                     new InventoryItemRef { Kind = ItemTable.IndexOf(entry.Item), ItemUuid = entry.ItemUuid });
         }
 
+        Combat.ApplyMaxHealth(player);
+
         if (player.TryGetComponent<ClientHealthComponent>(out var clientHealthComponent))
         {
             clientHealthComponent.InitialHP = save is { InitialHP: > 0 } ? save.InitialHP : 10;
