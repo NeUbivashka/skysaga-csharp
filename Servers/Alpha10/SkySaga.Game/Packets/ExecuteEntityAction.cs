@@ -27,21 +27,23 @@ public static class ExecuteEntityAction
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        if (!bitStream.Read(out int srcEntityID))
+        if (!bitStream.ReadFullWidthUInt32(out var srcEntityId))
             return false;
 
-        if (!bitStream.Read(out int targetEntityID))
+        if (!bitStream.ReadFullWidthUInt32(out var targetEntityId))
             return false;
 
-        var actionCrc = 0;
-        var hasActionCrc = bitStream.ReadBit();
+        uint actionCrc = 0;
 
-        if (hasActionCrc && !bitStream.Read(out actionCrc))
+        if (bitStream.ReadBit() && !bitStream.ReadFullWidthUInt32(out actionCrc))
             return false;
 
-        _actions.TryGetValue((uint)actionCrc, out var actionName);
+        _actions.TryGetValue(actionCrc, out var actionName);
 
-        Debug.WriteLine($"srcEntityID: {srcEntityID}, targetEntityID: {targetEntityID}, actionCrc: {actionCrc}, actionName: {actionName}", nameof(ExecuteEntityAction));
+        Console.WriteLine($"[ExecuteEntityAction] entity {srcEntityId} target {targetEntityId} action {actionName ?? $"0x{actionCrc:X8}"}");
+
+        if (actionName == "ResourcePickupAction" && srcEntityId == connection.PlayerEntity.Id)
+            ResourcePickups.Assign(connection, (int)targetEntityId);
 
         return true;
     }

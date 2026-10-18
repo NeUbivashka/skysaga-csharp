@@ -506,11 +506,16 @@ public class PlayerInitializer(IWorldManager worldManager)
         return item;
     }
 
-    public Entity? CreateInventoryItem(uint nameHash, int count, string? itemUuid = null)
+    public Entity? CreateInventoryItem(uint nameHash, int count, string? itemUuid = null, uint?[]? materialOverrides = null)
     {
         var durable = DurabilityTable.TryGetMax(nameHash, out var durabilityMax);
         var materialsAllowed = Environment.GetEnvironmentVariable("SKYSAGA_NO_MATERIALS") != "1";
-        var hasMaterials = MaterialTable.TryGet(nameHash, out var materials) && materialsAllowed;
+        var materials = MaterialTable.TryGet(nameHash, out var defaults) ? defaults : [];
+
+        if (materialOverrides is not null)
+            materials = WithOverrides(materials, materialOverrides);
+
+        var hasMaterials = materials.Length > 0 && materialsAllowed;
 
         var entityType = (durable, hasMaterials) switch
         {
@@ -543,5 +548,16 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
 
         return item;
+    }
+
+    private static uint?[] WithOverrides(uint?[] materials, uint?[] overrides)
+    {
+        var length = Math.Max(materials.Length, Array.FindLastIndex(overrides, material => material is not null) + 1);
+        var result = new uint?[length];
+
+        for (var i = 0; i < length; i++)
+            result[i] = i < overrides.Length && overrides[i] is { } material ? material : i < materials.Length ? materials[i] : null;
+
+        return result;
     }
 }

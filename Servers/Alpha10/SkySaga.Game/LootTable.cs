@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace SkySaga.Game;
 
-public readonly record struct LootDrop(uint ItemCrc, int Count);
+public readonly record struct LootDrop(uint ItemCrc, int Count, string?[] Materials);
 
 public static class LootTable
 {
@@ -20,20 +20,23 @@ public static class LootTable
 
     private readonly record struct TableEntry(bool IsList, string Name, int Quantity, float Percentage, Biomes Biomes);
 
-    private readonly record struct ListEntry(string Resource, int Quantity, float Frequency, Biomes Biomes);
+    private readonly record struct ListEntry(string Resource, int Quantity, float Frequency, Biomes Biomes, string?[] Materials);
+
+    public const string EntityMaterial = "@entity";
 
     private sealed record LootList(bool AddAll, List<ListEntry> Entries);
 
-    private static readonly Lazy<(Dictionary<string, List<TableEntry>> Tables, Dictionary<string, LootList> Lists)> Data = new(Load);
+    private static readonly Lazy<(Dictionary<string, List<TableEntry>> Tables, Dictionary<string, LootList> Lists, HashSet<string> Meats)> Data = new(Load);
 
-    private static (Dictionary<string, List<TableEntry>>, Dictionary<string, LootList>) Load()
+    private static (Dictionary<string, List<TableEntry>>, Dictionary<string, LootList>, HashSet<string>) Load()
     {
         var tables = new Dictionary<string, List<TableEntry>>(StringComparer.OrdinalIgnoreCase);
         var lists = new Dictionary<string, LootList>(StringComparer.OrdinalIgnoreCase);
+        var meats = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "LootTables.txt");
 
         if (!File.Exists(path))
-            return (tables, lists);
+            return (tables, lists, meats);
 
         List<TableEntry>? table = null;
         LootList? list = null;
@@ -55,18 +58,26 @@ public static class LootTable
                 case [var kind and ("list" or "table"), var name, var quantity, var percentage, var biomes] when table is not null:
                     table.Add(new TableEntry(kind == "list", name, int.Parse(quantity), Parse(percentage), Biomes.Parse(biomes)));
                     break;
-                case ["item", var resource, var quantity, var frequency, var biomes] when list is not null:
-                    list.Entries.Add(new ListEntry(resource, int.Parse(quantity), Parse(frequency), Biomes.Parse(biomes)));
+                case ["item", var resource, var quantity, var frequency, var biomes, .. var materials] when list is not null:
+                    list.Entries.Add(new ListEntry(resource, int.Parse(quantity), Parse(frequency), Biomes.Parse(biomes),
+                        [.. materials.Select(material => material == "-" ? null : material)]));
+                    break;
+                case ["meat", var material]:
+                    meats.Add(material);
                     break;
             }
         }
 
-        return (tables, lists);
+        return (tables, lists, meats);
     }
 
     private static float Parse(string text) => float.Parse(text, CultureInfo.InvariantCulture);
 
     public static bool Exists(string tableName) => Data.Value.Tables.ContainsKey(tableName);
+
+    public static bool IsMeat(string material) => Data.Value.Meats.Contains(material);
+
+    public static bool IsMeat(uint materialCrc) => Data.Value.Meats.Any(material => Util.ComputeCrc32(material) == materialCrc);
 
     public static List<LootDrop> Roll(string tableName, string biome)
     {
@@ -106,7 +117,7 @@ public static class LootTable
 
         if (list.AddAll)
         {
-            drops.AddRange(valid.Select(entry => new LootDrop(Util.ComputeCrc32(entry.Resource), entry.Quantity)));
+            drops.AddRange(valid.Select(entry => new LootDrop(Util.ComputeCrc32(entry.Resource), entry.Quantity, entry.Materials)));
             return;
         }
 
@@ -119,7 +130,7 @@ public static class LootTable
 
             if (roll < 0)
             {
-                drops.Add(new LootDrop(Util.ComputeCrc32(entry.Resource), entry.Quantity));
+                drops.Add(new LootDrop(Util.ComputeCrc32(entry.Resource), entry.Quantity, entry.Materials));
                 return;
             }
         }

@@ -13,6 +13,23 @@ def biomes(entry):
     return ("!" if values["Invert"] else "") + ",".join(names)
 
 
+SLOTS = ("Primary", "Secondary", "Tertiary", "Quaternary")
+
+
+def materials(entry):
+    specs = entry["ItemSpec"].get("Materials", {})
+    fields = []
+    for slot in SLOTS:
+        spec = specs.get(slot, {}).get("MaterialOrDefault", {})
+        if spec.get("Type") == "Specific" and spec.get("Material"):
+            fields.append(spec["Material"])
+        elif spec.get("Type") == "Entity":
+            fields.append("@entity")
+        else:
+            fields.append("-")
+    return " ".join(fields)
+
+
 def main():
     with open(GEODATA, encoding="utf-8") as f:
         geo = json.load(f)
@@ -31,7 +48,10 @@ def main():
             resource = entry["ItemSpec"].get("Resource")
             if not resource:
                 continue
-            lines.append(f"  item {resource} {entry['Quantity']} {entry.get('Frequency', 1):g} {biomes(entry)}")
+            lines.append(f"  item {resource} {entry['Quantity']} {entry.get('Frequency', 1):g} {biomes(entry)} {materials(entry)}")
+    for material in geo["Materials"]:
+        if material.get("Category") == "Meat":
+            lines.append(f"meat {material['Name']}")
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
     print(f"{len(geo['LootTables'])} tables, {len(geo['LootLists'])} lists -> {OUT}")

@@ -38,12 +38,6 @@ public static class RunActionListReceived
 
         Console.WriteLine($"[RunActionList] list {actionListId} entity {entityId} voxel {(hasVoxel == 1 ? voxel.ToString() : "-")} target {targetEntityId} normal {hitNormal}");
 
-        if (targetEntityId != 0 && ResourcePickups.IsPickup(connection, (int)targetEntityId))
-        {
-            ResourcePickups.Assign(connection, (int)targetEntityId);
-            return true;
-        }
-
         var usedItemCrc = UsedItemCrc(connection);
 
         if (targetEntityId != 0)

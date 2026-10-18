@@ -34,7 +34,58 @@ public static class ResourcePickups
         Console.WriteLine($"[Loot] {creature.Name}#{creature.Id} rolled {tableName}: {(drops.Count == 0 ? "nothing" : string.Join(", ", drops.Select(drop => $"{drop.Count} x {ItemTable.NameOf(ItemTable.IndexOf(drop.ItemCrc))}")))}");
 
         foreach (var drop in drops)
-            Spawn(connection, drop.ItemCrc, drop.Count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0);
+            Spawn(connection, drop.ItemCrc, drop.Count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0,
+                ResolveMaterials(drop, creature.Name));
+    }
+
+    private static readonly Dictionary<string, string> SpeciesMeats = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Sheep"] = "Lamb_Meat",
+        ["Boar"] = "Pig_Meat",
+    };
+
+    private static uint?[] ResolveMaterials(LootDrop drop, string entityName)
+    {
+        var defaults = MaterialTable.TryGet(drop.ItemCrc, out var materials) ? materials : [];
+        var result = new uint?[drop.Materials.Length];
+
+        for (var i = 0; i < drop.Materials.Length; i++)
+        {
+            result[i] = drop.Materials[i] switch
+            {
+                null => null,
+                LootTable.EntityMaterial => i < defaults.Length && defaults[i] is { } material && LootTable.IsMeat(material) && MeatMaterialOf(entityName) is { } meat
+                    ? Util.ComputeCrc32(meat)
+                    : null,
+                var specific => Util.ComputeCrc32(specific),
+            };
+        }
+
+        return result;
+    }
+
+    private static string? MeatMaterialOf(string entityName)
+    {
+        var tokens = entityName.Split('_');
+
+        foreach (var token in tokens)
+        {
+            if (SpeciesMeats.TryGetValue(token, out var meat))
+                return meat;
+        }
+
+        for (var length = tokens.Length; length > 0; length--)
+        {
+            for (var start = 0; start + length <= tokens.Length; start++)
+            {
+                var candidate = string.Join('_', tokens[start..(start + length)]) + "_Meat";
+
+                if (LootTable.IsMeat(candidate))
+                    return candidate;
+            }
+        }
+
+        return null;
     }
 
     private static string? LootTableName(string entityName)
@@ -42,14 +93,14 @@ public static class ResourcePickups
             .Select(token => $"Base_{token}_LootTable")
             .FirstOrDefault(LootTable.Exists);
 
-    private static void Spawn(PlayerConnection connection, uint itemCrc, int count, Vector3 start, Vector3Int groundFrom, int owner)
+    private static void Spawn(PlayerConnection connection, uint itemCrc, int count, Vector3 start, Vector3Int groundFrom, int owner, uint?[]? materials = null)
     {
         if (ItemTable.IndexOf(itemCrc) == 0)
             return;
 
         var entityManager = connection.WorldManager.EntityManager;
 
-        if (connection.PlayerInitializer.CreateInventoryItem(itemCrc, count) is not { } item)
+        if (connection.PlayerInitializer.CreateInventoryItem(itemCrc, count, materialOverrides: materials) is not { } item)
             return;
 
         if (!entityManager.TryCreateEntity("Pickup", out var pickup)
@@ -79,10 +130,6 @@ public static class ResourcePickups
 
         Console.WriteLine($"[Pickup] {pickup.Id} {count} x {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))} item {item.Id} at {start} owner {owner}");
     }
-
-    public static bool IsPickup(PlayerConnection connection, int entityId)
-        => connection.WorldManager.EntityManager.TryGetEntity(entityId, out var entity)
-            && entity.TryGetComponent<ClientResourcePickupComponent>(out _);
 
     public static void Assign(PlayerConnection connection, int pickupId)
     {
