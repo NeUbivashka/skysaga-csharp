@@ -422,13 +422,15 @@ def alpha10_binary_storage_cooler():
 @app.route("/api/persistent-record/worlds/listforowner/<owner>", methods=["GET"])
 def alpha10_worlds_list_for_owner(owner):
     print("=== worlds/listforowner", owner, "===")
-    return jsonify({"result": []}), 200
+    return jsonify([_home_world(HOME_WORLD_UUID)]), 200
 
 
 @app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
 def binary_storage_photo_likes():
     return jsonify({"result": {"likes": {}}}), 200
 
+
+HOME_WORLD_UUID = "6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25"
 
 HOME_ISLAND_MAP_SPEC = [
     [
@@ -458,15 +460,21 @@ HOME_ISLAND_MAP_SPEC = [
 def alpha10_worlds_get_specific():
     body = request.get_json(silent=True) or {}
     print("=== worlds/getSpecific", body, "===")
-    world = {
-        "uuid": body.get("uuid", ""),
+    world = _home_world(body.get("uuid", HOME_WORLD_UUID))
+    return jsonify({"result": dict(world), **world}), 200
+
+
+def _home_world(world_uuid):
+    return {
+        "uuid": world_uuid,
         "mapSpec": HOME_ISLAND_MAP_SPEC,
         "owner": _state["character_uuid"],
         "ownerName": PLAYER_NAME,
+        "ownerType": "C",
+        "name": f"{PLAYER_NAME}'s Ruins",
         "homeWorld": True,
         "published": False,
     }
-    return jsonify({"result": {"world": dict(world), **world}}), 200
 
 
 @app.route("/ping", methods=["GET"])

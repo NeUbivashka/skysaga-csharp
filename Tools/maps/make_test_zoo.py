@@ -15,7 +15,7 @@ EDGE = 8
 SMALL_SETS = {
     "36731": [
         "HUB_NPC_Trader", "HUB_NPC_Gladiator",
-        "Forest_Chicken", "Forest_Skitterling_Fighter_0", "FTUE_CityGuard_Fighter",
+        "Forest_Chicken", "Forest_Skitterling_Fighter_0", "Forest_Human_Fighter_0",
     ],
     "38328": [
         "HUB_NPC_ExplorerShop", "HUB_NPC_FoodShop",
