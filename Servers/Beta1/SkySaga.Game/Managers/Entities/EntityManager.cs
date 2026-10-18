@@ -255,8 +255,8 @@ public class EntityManager : IMapEntityManager
         if (targetType == typeof(List<LinkedVoxel>) && value.ValueKind == JsonValueKind.Array)
             return value.EnumerateArray()
                 .Select(entry => new LinkedVoxel(
-                    new Vector3Int(entry[0][0].GetInt32(), entry[0][1].GetInt32(), entry[0][2].GetInt32()),
-                    entry[1].GetByte()))
+                    new Vector3Int(entry.GetProperty("coord")[0].GetInt32(), entry.GetProperty("coord")[1].GetInt32(), entry.GetProperty("coord")[2].GetInt32()),
+                    entry.GetProperty("voxel").GetByte()))
                 .ToList();
 
         if (targetType == typeof(Vector3) && value.ValueKind == JsonValueKind.Array && value.GetArrayLength() == 3)

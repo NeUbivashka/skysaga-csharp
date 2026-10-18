@@ -14,11 +14,11 @@ public class MapDefinition : ISerializablePacket
 
     public uint? GameQueueCRC;
 
+    public uint UnpublishedGameMode;
+
     public uint GameMode;
 
-    private const uint GameModeMax = 0x10;
-
-    public uint Unnamed;
+    public uint Seed;
 
     public BitStream Serialize()
     {
@@ -38,9 +38,10 @@ public class MapDefinition : ISerializablePacket
             WriteUInt32(bitStream, value);
         });
 
-        bitStream.WriteRanged(GameMode, GameModeMax);
+        bitStream.WriteRangedIndex(UnpublishedGameMode, GeoIndex.Count("GameModeProperties"));
+        bitStream.WriteRangedIndex(GameMode, GeoIndex.Count("GameModeProperties"));
 
-        WriteUInt32(bitStream, Unnamed);
+        WriteUInt32(bitStream, Seed);
 
         return bitStream;
     }

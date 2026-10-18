@@ -163,17 +163,7 @@ public static class WorldMapLoader
     {
         var spec = MapSpec.HomeIsland(seed: 1337);
 
-        var biomeIndex = biomeName?.Trim().ToLowerInvariant() switch
-        {
-            "desert" => 1u,
-            "forest" => 2u,
-            "jungle" => 3u,
-            "mountain" => 4u,
-            "npcfriend" => 5u,
-            _ => 1u
-        };
-
-        spec.Searchable[0] = biomeIndex;
+        spec.SetBiome(string.IsNullOrWhiteSpace(biomeName) ? "Desert" : biomeName.Trim());
 
         return spec;
     }

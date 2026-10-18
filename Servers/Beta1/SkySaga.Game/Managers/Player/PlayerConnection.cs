@@ -107,7 +107,6 @@ public class PlayerConnection
             PacketId.ClientReadyToPlay => ClientReadyToPlay.Handle(this, bitStream),
             PacketId.ClientInitialSyncFinished => ClientInitialSyncFinished.Handle(this, bitStream),
             PacketId.InventoryItemSwap => InventoryItemSwap.Handle(this, bitStream),
-            PacketId.ExecuteEntityAction => ExecuteEntityAction.Handle(this, bitStream),
 
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
             PacketId.SetInputMovement => SetInputMovement.Handle(this, bitStream),
@@ -121,8 +120,6 @@ public class PlayerConnection
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
             PacketId.UISettingsSetGameplayCameraState => UISettingsSetGameplayCameraState.Handle(this, bitStream),
-            PacketId.UISettingsSetHotbarSlotItemSpec => UISettingsSetHotbarSlotItemSpec.Handle(this, bitStream),
-            PacketId.UISettingsSelectHotbarSlot => UISettingsSelectHotbarSlot.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
             PacketId.AssignCollectionResourcePickup => AssignCollectionResourcePickup.Handle(this, bitStream),
             PacketId.FinalizeCollectionResourcePickup => FinalizeCollectionResourcePickup.Handle(this, bitStream),

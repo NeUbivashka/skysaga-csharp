@@ -2,9 +2,7 @@ namespace SkySaga.Game.Components;
 
 public class ClientWorldCompositionComponent : Component
 {
-    public const uint PaletteCount = 46;
-
-    public const uint FtuePalette = 29;
+    public static uint PaletteCount => GeoIndex.Count("BiomePalettes");
 
     public uint PaletteCrc { get; set => SetIfChanged(ref field, value); }
     public TerrainType TerrainType { get; set => SetIfChanged(ref field, value); }

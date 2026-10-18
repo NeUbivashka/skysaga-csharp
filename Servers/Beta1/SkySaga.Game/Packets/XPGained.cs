@@ -2,9 +2,9 @@ namespace SkySaga.Game.Packets;
 
 public class XPGained : ISerializablePacket
 {
-    private const uint JobChallengeCount = 2011;
+    private static uint JobChallengeCount => GeoIndex.Count("JobChallenges");
 
-    private const uint JobCount = 6;
+    private static uint JobCount => GeoIndex.Count("Jobs");
 
     public int EntityId;
 

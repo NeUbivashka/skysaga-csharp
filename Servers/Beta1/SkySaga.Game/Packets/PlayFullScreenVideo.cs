@@ -2,11 +2,11 @@ namespace SkySaga.Game.Packets;
 
 public class PlayFullScreenVideo : ISerializablePacket
 {
-    private const uint VideoCount = 4;
+    private static uint VideoCount => GeoIndex.Count("Videos");
 
-    public const uint CGIntroVideo1 = 1;
-    public const uint CGIntroVideo2 = 2;
-    public const uint GCIntroStoryTextVideo = 3;
+    public static uint CGIntroVideo1 => GeoIndex.WireIndex("Videos", "CGIntro_Video1");
+    public static uint CGIntroVideo2 => GeoIndex.WireIndex("Videos", "CGIntro_Video2");
+    public static uint GCIntroStoryTextVideo => GeoIndex.WireIndex("Videos", "GCIntro_StoryTextVideo");
 
     public uint VideoIndex;
 

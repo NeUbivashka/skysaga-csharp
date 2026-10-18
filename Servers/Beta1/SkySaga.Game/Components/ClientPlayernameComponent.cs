@@ -2,7 +2,7 @@
 
 public class ClientPlayernameComponent : Component
 {
-    public const uint SigilTableCount = 27;
+    public static uint SigilTableCount => GeoIndex.Count("PlayerSigils");
     private const uint SigilListEscape = 0x100;
 
     public uint CurrentSigil { get; set => SetIfChanged(ref field, value); }

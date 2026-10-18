@@ -4,7 +4,7 @@ public class InventoryItemRef
 {
     private const uint AmountCountMax = 4;
 
-    public const uint ItemTableCount = 1810;
+    public static uint ItemTableCount => ItemTable.Count;
     private const uint DetailKindMax = 2;
 
     public ushort Kind;

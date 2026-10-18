@@ -3,9 +3,10 @@ namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
 {
-    private const uint ForestMasterSigil = 10;
+    private static readonly uint ForestMasterSigil = GeoIndex.WireIndex("PlayerSigils", "ForestMaster");
     private const byte VaultSlots = 200;
-    private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
+    private static readonly uint[] StarterSigils =
+        [.. new[] { "ArcticMaster", "DesertMaster", "ForestMaster", "JungleMaster" }.Select(name => GeoIndex.WireIndex("PlayerSigils", name))];
 
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
     private IMapEntityManager _entityManager => _worldManager.EntityManager;

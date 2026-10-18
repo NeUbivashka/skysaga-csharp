@@ -4,7 +4,7 @@ namespace SkySaga.Game.Extensions;
 
 public static class BitStreamExtensions
 {
-    private const int EscapeBias = byte.MaxValue + 1 - (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
+    private const int UserPacketBase = (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
 
     #region Read
 
@@ -12,21 +12,19 @@ public static class BitStreamExtensions
 
     public static int ReadMessageId(this BitStream bitStream, out bool wasExtended)
     {
-        bitStream.Read(out byte messageIdPart);
+        bitStream.Read(out byte highPart);
 
-        if (messageIdPart != byte.MaxValue)
+        if (highPart < UserPacketBase)
         {
             wasExtended = false;
-            return messageIdPart;
+            return highPart;
         }
 
         wasExtended = true;
 
-        bitStream.Read(out byte escapedPart);
+        bitStream.Read(out byte lowPart);
 
-        var ordinal = escapedPart + (EscapeBias - 1);
-
-        return ordinal + (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
+        return UserPacketBase + ((highPart - UserPacketBase) << 8 | lowPart);
     }
 
     public static string ReadString(this BitStream bitStream)
@@ -157,22 +155,11 @@ public static class BitStreamExtensions
 
     public static void WritePacketId(this BitStream bitStream, ushort ordinal)
     {
-        var direct = ordinal + (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
+        if ((ordinal >> 8) > byte.MaxValue - UserPacketBase)
+            throw new ArgumentOutOfRangeException(nameof(ordinal), ordinal, "Packet ordinal does not fit after ID_USER_PACKET_ENUM.");
 
-        if (direct < byte.MaxValue)
-        {
-            bitStream.Write((byte)direct);
-            return;
-        }
-
-        var escapedPart = ordinal - (EscapeBias - 1);
-
-        if (escapedPart is < 0 or > byte.MaxValue)
-            throw new ArgumentOutOfRangeException(nameof(ordinal), ordinal,
-                "Packet ordinal does not fit the 0xFF + one-byte escape form.");
-
-        bitStream.Write(byte.MaxValue);
-        bitStream.Write((byte)escapedPart);
+        bitStream.Write((byte)(UserPacketBase + (ordinal >> 8)));
+        bitStream.Write((byte)ordinal);
     }
 
     public static void WriteRangedIndex(this BitStream bitStream, uint value, uint tableCount)

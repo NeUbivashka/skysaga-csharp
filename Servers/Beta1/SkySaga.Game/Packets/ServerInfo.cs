@@ -9,6 +9,7 @@ public class ServerInfo : ISerializablePacket
     public Guid? ServerUuid;
 
     public string? ServerOwnerName;
+    public string ServerOwnerType = string.Empty;
     public string? ChatHost;
 
     public uint MaxUsers;
@@ -31,6 +32,7 @@ public class ServerInfo : ISerializablePacket
         WriteUuid(bitStream, ServerUuid);
 
         bitStream.WriteString(ServerOwnerName);
+        bitStream.WriteString(ServerOwnerType);
         bitStream.WriteString(ChatHost);
 
         bitStream.WriteRanged(Math.Min(MaxUsers, UserCountMax), UserCountMax);

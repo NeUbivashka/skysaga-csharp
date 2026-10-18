@@ -2,7 +2,14 @@ namespace SkySaga.Game;
 
 public static class ItemTable
 {
-    public const uint Count = 1810;
+    public static uint Count
+    {
+        get
+        {
+            _ = ByCrc.Value;
+            return (uint)Names.Count;
+        }
+    }
 
     private static readonly Lazy<Dictionary<uint, ushort>> ByCrc = new(Load);
     private static readonly List<string> Names = [""];
