@@ -21,7 +21,6 @@ public class PlayerConnection
 
     public DateTime LastFallRespawn { get; set; }
 
-    public int? LastUsedItemId { get; set; }
 
     public string? CurrentVideoFileName { get; set; }
 

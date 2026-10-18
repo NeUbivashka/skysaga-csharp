@@ -1,9 +1,9 @@
 import json
 import os
 
-from targets import BUNDLE, GAME, GEODATA
+from action_lists import ALPHA, equipped_action_lists, list_entries
+from targets import GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "ActionListAttacks.txt")
-FIRST_EQUIPPED_ACTION_LIST_ID = 1262
 
 
 def lut(attack):
@@ -13,27 +13,21 @@ def lut(attack):
     return ",".join(f"{p['Input']:g}:{p['Output']:g}" for p in points) or "global"
 
 
-def action_lists(action):
-    area = action.get("AreaOfEffect", {}).get("ContextCollectionParams", {}).get("Actions", {})
-    return [area, action.get("OnActiveWindowEntered", {}), action.get("OnActiveWindowExited", {})]
-
-
 def main():
     with open(GEODATA, encoding="utf-8") as f:
         geo = json.load(f)
-    attacks = {a["Name"]: a["AttackAction"] for a in geo["EntityActions"] if a.get("AttackAction")}
+    table = geo["EntityActions"] if ALPHA else geo["Actions"]
+    attacks = {a["Name"]: a["AttackAction"] for a in table if a.get("AttackAction")}
     rows = []
-    for action in geo["EquippedActions"]:
-        for slot, actions in enumerate(action_lists(action)):
-            list_id = FIRST_EQUIPPED_ACTION_LIST_ID + 3 * action["Index"] + slot
-            for entry in actions.get("EntityActions", []):
-                attack = attacks.get(entry.get("ActionEntity"))
-                if attack is None:
-                    continue
-                zero = 1 if attack.get("ForceZeroDamage") else 0
-                rows.append(f"{list_id} {action['Name']} {entry['ActionEntity']} {zero} {lut(attack)}")
+    for list_id, _, action, actions in equipped_action_lists(geo):
+        for name in list_entries(actions, ("EntityActions", "ActionEntity")):
+            attack = attacks.get(name)
+            if attack is None:
+                continue
+            zero = 1 if attack.get("ForceZeroDamage") else 0
+            rows.append((list_id, f"{list_id} {action['Name']} {name} {zero} {lut(attack)}"))
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(rows) + "\n")
+        f.write("\n".join(row for _, row in sorted(rows, key=lambda r: r[0])) + "\n")
     print(f"{len(rows)} rows -> {OUT}")
 
 

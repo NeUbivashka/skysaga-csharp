@@ -5,9 +5,7 @@ public static class EntityPerformedAbilityReceived
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
         if (!bitStream.ReadFullWidthUInt32(out _)) return false;
-        if (!bitStream.ReadFullWidthUInt32(out var itemId)) return false;
-
-        connection.LastUsedItemId = (int)itemId;
+        if (!bitStream.ReadFullWidthUInt32(out _)) return false;
 
         return true;
     }

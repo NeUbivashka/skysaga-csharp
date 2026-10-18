@@ -20,8 +20,7 @@ public static class RunActionListReceived
     {
         if (!bitStream.ReadFullWidthUInt32(out var actionListId)) return false;
         if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
-        if (!ReadOptionalUInt32(bitStream, out _)) return false;
-        if (!ReadOptionalUInt32(bitStream, out _)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var usedItemId)) return false;
         if (!ReadPosition(bitStream, out _)) return false;
         if (!ReadDirection(bitStream, out _)) return false;
         if (!bitStream.ReadInt32(SwingPowerMax, out var swingPower)) return false;
@@ -33,25 +32,30 @@ public static class RunActionListReceived
         if (!bitStream.ReadFullWidthUInt32(out var targetEntityId)) return false;
         if (!ReadPosition(bitStream, out _)) return false;
         if (!ReadDirection(bitStream, out var hitNormal)) return false;
+        if (!ReadDirection(bitStream, out _)) return false;
 
         var voxel = new Vector3Int(voxelX, voxelY, voxelZ);
 
-        Console.WriteLine($"[RunActionList] list {actionListId} entity {entityId} voxel {(hasVoxel == 1 ? voxel.ToString() : "-")} target {targetEntityId} normal {hitNormal}");
+        Console.WriteLine($"[RunActionList] list {actionListId} entity {entityId} item {usedItemId} voxel {(hasVoxel == 1 ? voxel.ToString() : "-")} target {targetEntityId} normal {hitNormal}");
 
-        var usedItemCrc = UsedItemCrc(connection);
-
-        if (targetEntityId != 0)
-        {
-            Combat.PlayerAttack(connection, actionListId, (int)targetEntityId, usedItemCrc);
+        if (entityId != connection.PlayerEntity.Id)
             return true;
-        }
+
+        var usedItemCrc = UsedItemCrc(connection, (int)usedItemId);
+
+        if (targetEntityId != 0 && EquippedActionListTable.AreaOfEffectListOf(actionListId) is uint areaOfEffectList)
+            Combat.PlayerAttack(connection, areaOfEffectList, (int)targetEntityId, usedItemCrc);
 
         if (hasVoxel != 1)
             return true;
-        var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
 
-        if (blockId is int placedBlock)
+        if (ActionListVoxelActionTable.Has(actionListId, ActionListVoxelActionTable.PlaceVoxel))
         {
+            var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
+
+            if (blockId is not int placedBlock)
+                return true;
+
             var placeAt = new Vector3Int(
                 voxel.X + (int)MathF.Round(hitNormal.X),
                 voxel.Y + (int)MathF.Round(hitNormal.Y),
@@ -63,6 +67,9 @@ public static class RunActionListReceived
             Console.WriteLine($"[Voxel] placed {placedBlock} at {placeAt}");
             return true;
         }
+
+        if (!ActionListVoxelActionTable.Has(actionListId, ActionListVoxelActionTable.Dig))
+            return true;
 
         var voxelType = GetWorldVoxel(connection, voxel);
 
@@ -134,9 +141,9 @@ public static class RunActionListReceived
         return DigDamageLut[^1].Output;
     }
 
-    private static uint? UsedItemCrc(PlayerConnection connection)
+    private static uint? UsedItemCrc(PlayerConnection connection, int usedId)
     {
-        if (connection.LastUsedItemId is not int usedId
+        if (usedId == 0
             || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
             return null;
 
@@ -174,18 +181,6 @@ public static class RunActionListReceived
         var local = new Vector3Int(voxel.X % ChunkSize, voxel.Y % ChunkSize, voxel.Z % ChunkSize);
 
         connection.WorldManager.ChunkManager.SetVoxel(chunk, local, blockType);
-    }
-
-    private static bool ReadOptionalUInt32(BitStream bitStream, out uint? value)
-    {
-        value = null;
-
-        if (!bitStream.ReadInt32(1, out var present)) return false;
-        if (present == 0) return true;
-        if (!bitStream.ReadFullWidthUInt32(out var raw)) return false;
-
-        value = raw;
-        return true;
     }
 
     private static bool ReadPosition(BitStream bitStream, out Vector3 position)
