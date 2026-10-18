@@ -419,6 +419,28 @@ def alpha10_binary_storage_cooler():
     return "", 200
 
 
+@app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
+def binary_storage_photo_likes():
+    return jsonify({"result": {"likes": {}}}), 200
+
+
+@app.route("/api/persistent-record/worlds/getSpecific", methods=["POST"])
+def alpha10_worlds_get_specific():
+    # The HUD island title reads the world record's owner name. Field names come from the
+    # client's world record type (uuid, owner, ownerName, ownerType, name, homeWorld, ...).
+    body = request.get_json(silent=True) or {}
+    print("=== worlds/getSpecific", body, "===")
+    world = {
+        "uuid": body.get("uuid", ""),
+        "owner": _state["character_uuid"],
+        "ownerName": PLAYER_NAME,
+        "homeWorld": True,
+        "published": False,
+        "deleted": False,
+    }
+    return jsonify({"result": {"world": dict(world), **world}}), 200
+
+
 @app.route("/ping", methods=["GET"])
 def ping():
     return "", 200
