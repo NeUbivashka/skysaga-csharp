@@ -41,6 +41,12 @@ public static class RunActionListReceived
         if (entityId != connection.PlayerEntity.Id)
             return true;
 
+        if (targetEntityId != 0 && InteractionActionListTable.Has(actionListId, InteractionActionListTable.ResourcePickup))
+        {
+            ResourcePickups.Assign(connection, (int)targetEntityId);
+            return true;
+        }
+
         var usedItemCrc = UsedItemCrc(connection, (int)usedItemId);
 
         if (targetEntityId != 0 && EquippedActionListTable.AreaOfEffectListOf(actionListId) is uint areaOfEffectList)

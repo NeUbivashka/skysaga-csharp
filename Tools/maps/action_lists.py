@@ -41,3 +41,8 @@ def list_entries(actions_list, key):
     if ALPHA:
         return [entry[key[1]] for entry in actions_list.get(key[0], [])]
     return [entry["Action"] for entry in actions_list.get("ActionArray", [])]
+
+
+INTERACTION_ACTION_LIST_IDS = {
+    "38328": {"OnResourcePickup": 27499, "OnEntityPickup": 27500, "OnInteract": 27501},
+}.get(BUILD, {})

@@ -18,7 +18,7 @@ public static class ResourcePickups
         if (voxelType == WorldChunk.Air || BlockCrcMapping.GetItemCrc(voxelType) is not uint itemCrc)
             return;
 
-        Spawn(connection, itemCrc, 1, new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f), voxel);
+        Spawn(connection, itemCrc, 1, new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f), voxel, connection.PlayerEntity.Id);
     }
 
     public static void SpawnCreatureLoot(PlayerConnection connection, Entity creature)
@@ -34,15 +34,22 @@ public static class ResourcePickups
         Console.WriteLine($"[Loot] {creature.Name}#{creature.Id} rolled {tableName}: {(drops.Count == 0 ? "nothing" : string.Join(", ", drops.Select(drop => $"{drop.Count} x {ItemTable.NameOf(ItemTable.IndexOf(drop.ItemCrc))}")))}");
 
         foreach (var drop in drops)
-            Spawn(connection, drop.ItemCrc, drop.Count, position + new Vector3(0, CreatureDropHeight, 0), voxel);
+            Spawn(connection, drop.ItemCrc, drop.Count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0);
     }
+
+    private static readonly Dictionary<string, string> SpeciesLootTables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Chicken"] = "Bird",
+        ["Penguin"] = "Bird",
+        ["FennecFox"] = "Fennec",
+    };
 
     private static string? LootTableName(string entityName)
         => entityName.Split('_')
-            .Select(token => $"Base_{token}_LootTable")
+            .Select(token => $"Base_{SpeciesLootTables.GetValueOrDefault(token, token)}_LootTable")
             .FirstOrDefault(LootTable.Exists);
 
-    private static void Spawn(PlayerConnection connection, uint itemCrc, int count, Vector3 start, Vector3Int groundFrom)
+    private static void Spawn(PlayerConnection connection, uint itemCrc, int count, Vector3 start, Vector3Int groundFrom, int owner)
     {
         if (ItemTable.IndexOf(itemCrc) == 0)
             return;
@@ -65,7 +72,7 @@ public static class ResourcePickups
             start.Z + RandomOffset());
 
         component.InventoryItemEntity = item.Id;
-        component.OwningEntity = connection.PlayerEntity.Id;
+        component.OwningEntity = owner;
         component.StartPosition = start;
         component.StartVelocity = new Vector3(RandomOffset(), PopSpeed, RandomOffset());
         component.TargetPosition = target;
@@ -77,7 +84,7 @@ public static class ResourcePickups
         Broadcast(connection, item);
         Broadcast(connection, pickup);
 
-        Console.WriteLine($"[Pickup] {pickup.Id} {count} x {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))} item {item.Id} at {start} for player {connection.PlayerEntity.Id}");
+        Console.WriteLine($"[Pickup] {pickup.Id} {count} x {ItemTable.NameOf(ItemTable.IndexOf(itemCrc))} item {item.Id} at {start} owner {owner}");
     }
 
     public static void Assign(PlayerConnection connection, int pickupId)

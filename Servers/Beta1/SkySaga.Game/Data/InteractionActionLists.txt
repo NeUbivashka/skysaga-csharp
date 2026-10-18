@@ -1,0 +1,3 @@
+27499 OnResourcePickup ResourcePickup ResourcePickupAction
+27500 OnEntityPickup Pickup PickupAction
+27501 OnInteract Interact InteractAction
