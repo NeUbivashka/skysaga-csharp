@@ -3,9 +3,9 @@
 # reads Data\... backslash paths, so it only runs on Windows for now.
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
 WORKDIR /src
-COPY Servers/ ./Servers/
-RUN dotnet publish Servers/SkySaga.Web/SkySaga.Web.csproj -c Release -o /out/web \
- && dotnet publish Servers/SmilegateAuth/SmilegateAuth.csproj -c Release -o /out/auth
+COPY Servers/Beta1/ ./Servers/Beta1/
+RUN dotnet publish Servers/Beta1/SkySaga.Web/SkySaga.Web.csproj -c Release -o /out/web \
+ && dotnet publish Servers/Beta1/SmilegateAuth/SmilegateAuth.csproj -c Release -o /out/auth
 
 # Runtime: aspnet image carries the ASP.NET Core framework the web project needs.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

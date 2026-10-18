@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Servers",
+    "Projects": [
+      {
+        "Path": "SkySaga.Web\\SkySaga.Web.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SkySaga.Game\\SkySaga.Game.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

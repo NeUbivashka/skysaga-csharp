@@ -1,9 +1,8 @@
 import json
 import os
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-GEODATA = os.path.join(ROOT, "Bundled", "36731", "GeoData.json")
-OUT = os.path.join(ROOT, "Servers", "SkySaga.Game", "Data", "ActionListAttacks.txt")
+from targets import BUNDLE, GAME, GEODATA
+OUT = os.path.join(GAME, "Data", "ActionListAttacks.txt")
 FIRST_EQUIPPED_ACTION_LIST_ID = 1262
 
 

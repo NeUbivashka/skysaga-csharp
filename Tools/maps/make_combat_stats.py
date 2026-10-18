@@ -1,9 +1,8 @@
 import json
 import os
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-BUNDLE = os.path.join(ROOT, "Bundled", "36731")
-OUT = os.path.join(ROOT, "Servers", "SkySaga.Game", "Data", "CombatStats.txt")
+from targets import BUNDLE, GAME, GEODATA
+OUT = os.path.join(GAME, "Data", "CombatStats.txt")
 
 
 def stat(properties, name):

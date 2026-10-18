@@ -12,6 +12,8 @@ This server is the **wire oracle** — it speaks the protocol the real client ex
 
 ```
 Servers/
+  Alpha10/                    Emulator for Alpha 10 build 36731 (frozen)
+  Beta1/                      Emulator for Beta 1 build 38328 (active), same layout as Alpha10:
   Servers.sln                 Solution file
   SkySaga.Game/               Game server logic (packets, entities, components, managers)
   SkySaga.Web/                HTTP API (login, auth endpoints)
@@ -21,27 +23,27 @@ Servers/
 Tools/
   PatchedLaunch/              Client launcher patcher
   AudioExtractor/             Game audio extraction tool
-Bundled/                      Game data bundles (builds 10414, 20015, 25516, 27094, 30968, 36546, 36731)
+Bundled/                      Game data bundles (builds 10414, 20015, 25516, 27094, 30968, 36546, 36731, 38328)
 ```
 
 ## Build
 
 ```bash
-cd Servers
+cd Servers/Beta1
 dotnet build Servers.sln
 ```
 
 Individual projects:
 
 ```bash
-dotnet build Servers/SkySaga.Game/SkySaga.Game.csproj
-dotnet build Servers/SkySaga.Web/SkySaga.Web.csproj
+dotnet build Servers/Beta1/SkySaga.Game/SkySaga.Game.csproj
+dotnet build Servers/Beta1/SkySaga.Web/SkySaga.Web.csproj
 ```
 
 ## Run
 
 ```bash
-cd Servers/SkySaga.Web
+cd Servers/Beta1/SkySaga.Web
 dotnet run
 ```
 
@@ -63,10 +65,10 @@ dotnet run
 
 ## Key files
 
-- `Servers/SkySaga.Game/PacketId.cs` — packet ordinal definitions
-- `Servers/SkySaga.Game/Packets/` — packet handlers (encoders/decoders)
-- `Servers/SkySaga.RakNet/BitStream.cs` — RakNet bitstream (wire primitives)
-- `Servers/SkySaga.Game/Server.cs` — main game server loop
+- `Servers/Beta1/SkySaga.Game/PacketId.cs` — packet ordinal definitions
+- `Servers/Beta1/SkySaga.Game/Packets/` — packet handlers (encoders/decoders)
+- `Servers/Beta1/SkySaga.RakNet/BitStream.cs` — RakNet bitstream (wire primitives)
+- `Servers/Beta1/SkySaga.Game/Server.cs` — main game server loop
 - `Bundled/36731/` — game data for the target client build
 
 ## Relationship to other repos

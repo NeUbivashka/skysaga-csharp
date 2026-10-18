@@ -396,10 +396,11 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-Servers/SkySaga.Game/server.crt
-Servers/SkySaga.Game/server.key
+Servers/*/SkySaga.Game/server.crt
+Servers/*/SkySaga.Game/server.key
 
 # Front-door cert (generate with scripts/gen-cert.sh)
 server.crt
 server.key
-Servers/SkySaga.Game/Data/account.json
+Servers/*/SkySaga.Game/Data/account.json
+Servers/*.rar

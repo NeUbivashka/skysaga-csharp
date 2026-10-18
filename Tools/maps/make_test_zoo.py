@@ -3,8 +3,7 @@ import os
 import re
 import sys
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-GAME = os.path.join(ROOT, "Servers", "SkySaga.Game")
+from targets import BUNDLE, GAME, GEODATA
 
 SIZE_CHUNKS = (6, 4, 6)
 FLOOR_Y = 31

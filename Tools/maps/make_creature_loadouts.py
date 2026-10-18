@@ -1,9 +1,7 @@
 import json
 import os
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-GEODATA = os.path.join(ROOT, "Bundled", "36731", "GeoData.json")
-GAME = os.path.join(ROOT, "Servers", "SkySaga.Game")
+from targets import BUNDLE, GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "CreatureLoadouts.txt")
 
 SLOTS = ["LeftHand", "RightHand", "Head", "Torso", "Legs", "Arms", "Device", "Backpack", "AdditionalHeadFeature"]
