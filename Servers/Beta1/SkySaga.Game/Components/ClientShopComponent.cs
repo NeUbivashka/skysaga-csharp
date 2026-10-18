@@ -21,8 +21,8 @@ public class ClientShopComponent : Component
                 bitStream.WriteEscapedCount(0, ShopItemListEscape);
                 bitStream.WriteUInt64(shopId);
                 bitStream.Write0();
-                bitStream.WriteFullWidthUInt32(0);
-                bitStream.WriteFullWidthUInt32(0);
+                bitStream.Write0();
+                bitStream.Write0();
                 bitStream.Write0();
             }
 

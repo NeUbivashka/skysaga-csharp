@@ -1,4 +1,4 @@
-namespace SkySaga.Game.Components;
+﻿namespace SkySaga.Game.Components;
 
 public class ClientSettingsComponent : Component
 {
@@ -27,6 +27,8 @@ public class ClientSettingsComponent : Component
     public bool DisableMysteryBoxNotifications { get; set => SetIfChanged(ref field, value, "UISettings"); }
     public uint DisplayTimeMode { get; set => SetIfChanged(ref field, Math.Min(value, DisplayTimeModeMax), "UISettings"); }
     public uint QuestTrackerSort { get; set => SetIfChanged(ref field, Math.Min(value, QuestTrackerSortMax), "UISettings"); }
+    public bool DisableRequestCursorToggle { get; set => SetIfChanged(ref field, value, "UISettings"); }
+    public bool AutoEquipOnHotbarAssignment { get; set => SetIfChanged(ref field, value, "UISettings"); }
 
     public bool ThirdPersonCamera { get; set => SetIfChanged(ref field, value, "CurrentGameplayCameraState"); } = true;
     public uint CameraState { get; set => SetIfChanged(ref field, Math.Min(value, CameraStateMax), "CurrentGameplayCameraState"); }
@@ -71,6 +73,8 @@ public class ClientSettingsComponent : Component
             bitStream.Write(DisableMysteryBoxNotifications);
             bitStream.WriteRanged(DisplayTimeMode, DisplayTimeModeMax);
             bitStream.WriteRanged(QuestTrackerSort, QuestTrackerSortMax);
+            bitStream.Write(DisableRequestCursorToggle);
+            bitStream.Write(AutoEquipOnHotbarAssignment);
 
             return true;
         }
