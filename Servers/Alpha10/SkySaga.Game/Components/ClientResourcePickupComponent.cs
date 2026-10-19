@@ -68,7 +68,7 @@ public class ClientResourcePickupComponent : Component
         return true;
     }
 
-    private static void WritePosition(BitStream bitStream, Vector3 position)
+    internal static void WritePosition(BitStream bitStream, Vector3 position)
     {
         bitStream.WriteRanged(ToFixed(position.X * 64f, 0, 0x10000), 0x10000);
         bitStream.WriteRanged(ToFixed(position.Y * 64f, 0x3FC0, 0x7F80), 0x7F80);

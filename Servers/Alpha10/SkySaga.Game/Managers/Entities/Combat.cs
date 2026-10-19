@@ -55,6 +55,14 @@ public static class Combat
             Amount = (uint)damage
         });
 
+        connection.PlayerConnectionManager.BroadcastToAll(new CombatResult
+        {
+            AttackerEntityId = player.Id,
+            VictimEntityId = target.Id,
+            Position = PositionOf(target) ?? Vector3.Zero,
+            Damage = (uint)damage
+        });
+
         Console.WriteLine($"[Combat] player {player.Id} hit {target.Name}#{target.Id} with {attacks[0].EquippedAction}/{string.Join("+", attacks.Select(a => a.EntityAction))}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
 
         if (!health.IsDead)
@@ -75,6 +83,14 @@ public static class Combat
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
 
         ResourcePickups.SpawnCreatureLoot(connection, target);
+    }
+
+    private static Vector3? PositionOf(Entity entity)
+    {
+        if (entity.TryGetComponent<SmoothedTransformComponent>(out var smoothed))
+            return smoothed.Position;
+
+        return entity.TryGetComponent<TransformComponent>(out var transform) ? transform.Position : null;
     }
 
     private static float AttackLevel(IMapEntityManager entityManager, Entity player, uint? usedItemCrc)
