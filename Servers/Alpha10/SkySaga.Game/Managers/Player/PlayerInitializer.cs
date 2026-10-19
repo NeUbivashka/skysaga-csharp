@@ -138,7 +138,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             {
                 foreach (var currency in save.Currencies)
                 {
-                    clientWalletComponent.Currency.CurrencyList.Add(new WalletData.CurrencyData
+                    clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData
                     {
                         NameHash = currency.NameHash,
                         Value = currency.Value
@@ -147,13 +147,13 @@ public class PlayerInitializer(IWorldManager worldManager)
             }
             else
             {
-                clientWalletComponent.Currency.CurrencyList.Add(new WalletData.CurrencyData
+                clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData
                 {
                     NameHash = Util.ComputeCrc32("Life_Ticket"),
                     Value = 69
                 });
 
-                clientWalletComponent.Currency.CurrencyList.Add(new WalletData.CurrencyData
+                clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData
                 {
                     NameHash = Util.ComputeCrc32("Portal_Ticket"),
                     Value = 420
@@ -162,8 +162,8 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             foreach (var (currency, amount) in StartingCurrencies)
             {
-                if (!clientWalletComponent.Currency.CurrencyList.Any(entry => entry.NameHash == Util.ComputeCrc32(currency)))
-                    clientWalletComponent.Currency.CurrencyList.Add(new WalletData.CurrencyData { NameHash = Util.ComputeCrc32(currency), Value = amount });
+                if (!clientWalletComponent.WalletCurrency.CurrencyList.Any(entry => entry.NameHash == Util.ComputeCrc32(currency)))
+                    clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData { NameHash = Util.ComputeCrc32(currency), Value = amount });
             }
         }
 
@@ -288,7 +288,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
         {
-            foreach (var currency in clientWalletComponent.Currency.CurrencyList)
+            foreach (var currency in clientWalletComponent.WalletCurrency.CurrencyList)
             {
                 if (!currency.NameHash.HasValue)
                     continue;
@@ -464,7 +464,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         };
     }
 
-    private static readonly (string Currency, int Amount)[] StartingCurrencies = [("Coins", 10000), ("SkySagaHardCurrency", 500)];
+    private static readonly (string Currency, int Amount)[] StartingCurrencies = [("Coins", 10000), ("SkySagaHardCurrency", 500), ("CrafterCurrency", 1000), ("ExplorerCurrency", 1000), ("GladiatorCurrency", 1000)];
 
     private static readonly (string Item, uint Quantity, uint Price)[] GlobalShopStock =
     [

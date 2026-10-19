@@ -42,6 +42,14 @@ public class HealthComponent : Component
         IsDead = false;
     }
 
+    public void Heal(int amount)
+    {
+        if (IsDead)
+            return;
+
+        SyncedFullHPValues = Math.Min((SyncedFullHPValues ?? MaxHP) + amount, MaxHP);
+    }
+
     public void Regenerate(DateTime now)
     {
         if (IsDead || SyncedFullHPValues is not { } hp || hp >= MaxHP)

@@ -1,0 +1,6 @@
+1557 Eat_Cactus Eat_Cactus 50
+1560 Eat_Default Eat_Default 50
+1563 Eat_Fruit Eat_Fruit 75
+1566 Eat_Juice Eat_Juice 333
+1569 Eat_RawMeat Eat_RawMeat 25
+1572 Eat_Warming Eat_Warming 120

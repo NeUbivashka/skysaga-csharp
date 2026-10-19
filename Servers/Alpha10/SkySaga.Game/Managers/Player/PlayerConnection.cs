@@ -1,4 +1,4 @@
-using SkySaga.Game.Packets;
+﻿using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
 
@@ -108,6 +108,7 @@ public class PlayerConnection
             PacketId.ClientInitialSyncFinished => ClientInitialSyncFinished.Handle(this, bitStream),
             PacketId.InventoryItemSwap => InventoryItemSwap.Handle(this, bitStream),
             PacketId.ExecuteEntityAction => ExecuteEntityAction.Handle(this, bitStream),
+            PacketId.ShopPurchaseWithCurrency => ShopPurchaseWithCurrency.Handle(this, bitStream),
 
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
             PacketId.SetInputMovement => SetInputMovement.Handle(this, bitStream),

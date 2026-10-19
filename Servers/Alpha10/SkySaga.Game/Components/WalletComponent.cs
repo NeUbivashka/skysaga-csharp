@@ -2,13 +2,13 @@
 
 public class WalletComponent : Component
 {
-    public WalletData Currency { get; set => SetIfChanged(ref field, value); } = new();
+    public WalletData WalletCurrency { get; set => SetIfChanged(ref field, value); } = new();
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
-        if (parameterName.Equals("WalletCurrency", StringComparison.OrdinalIgnoreCase))
+        if (parameterName.Equals(nameof(WalletCurrency), StringComparison.OrdinalIgnoreCase))
         {
-            Currency.Serialize(bitStream);
+            WalletCurrency.Serialize(bitStream);
 
             return true;
         }

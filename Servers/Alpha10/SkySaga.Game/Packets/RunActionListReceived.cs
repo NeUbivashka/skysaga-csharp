@@ -38,7 +38,14 @@ public static class RunActionListReceived
 
         Console.WriteLine($"[RunActionList] list {actionListId} entity {entityId} voxel {(hasVoxel == 1 ? voxel.ToString() : "-")} target {targetEntityId} normal {hitNormal}");
 
-        var usedItemCrc = UsedItemCrc(connection);
+        var usedItem = UsedItem(connection);
+        var usedItemCrc = usedItem?.Crc;
+
+        if (ActionListEatTable.TryGet(actionListId, out var eat))
+        {
+            Eat(connection, eat, usedItem);
+            return true;
+        }
 
         if (targetEntityId != 0)
         {
@@ -59,6 +66,9 @@ public static class RunActionListReceived
 
             SetWorldVoxel(connection, placeAt, (byte)placedBlock);
             VoxelDamage.TryRemove(placeAt, out _);
+
+            if (usedItem is { } placedItem)
+                ConsumeOne(connection, placedItem.Entity);
 
             Console.WriteLine($"[Voxel] placed {placedBlock} at {placeAt}");
             return true;
@@ -134,7 +144,46 @@ public static class RunActionListReceived
         return DigDamageLut[^1].Output;
     }
 
-    private static uint? UsedItemCrc(PlayerConnection connection)
+    private static void Eat(PlayerConnection connection, ListEat eat, (Entity Entity, uint Crc)? usedItem)
+    {
+        if (usedItem is not { } food
+            || !connection.PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health)
+            || health.IsDead)
+            return;
+
+        health.Heal((int)eat.HealthBoost);
+        ConsumeOne(connection, food.Entity);
+
+        Console.WriteLine($"[Eat] {eat.EatAction} +{eat.HealthBoost} HP, now {health.SyncedFullHPValues}/{health.MaxHP}");
+    }
+
+    private static void ConsumeOne(PlayerConnection connection, Entity itemEntity)
+    {
+        if (!itemEntity.TryGetComponent<InventoryItemComponent>(out var item)
+            || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+            return;
+
+        if (item.InventorySlotData.Count > 1)
+        {
+            item.InventorySlotData = item.InventorySlotData.WithCount(item.InventorySlotData.Count - 1);
+            return;
+        }
+
+        var slot = inventory.InventoryEntityList.IndexOf(itemEntity.Id);
+
+        if (slot >= 0)
+        {
+            List<int> list = [.. inventory.InventoryEntityList];
+            list[slot] = 0;
+            inventory.InventoryEntityList = list;
+        }
+
+        connection.WorldManager.EntityManager.RemoveEntity(itemEntity.Id);
+        connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = itemEntity.Id });
+        connection.LastUsedItemId = null;
+    }
+
+    private static (Entity Entity, uint Crc)? UsedItem(PlayerConnection connection)
     {
         if (connection.LastUsedItemId is not int usedId
             || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
@@ -151,7 +200,7 @@ public static class RunActionListReceived
             return null;
 
         Console.WriteLine($"[RunActionList] used item {usedId} = {ItemTable.NameOf(ItemTable.IndexOf(crc))}");
-        return crc;
+        return (itemEntity, crc);
     }
 
     internal static byte GetWorldVoxel(PlayerConnection connection, Vector3Int voxel)
