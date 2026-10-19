@@ -65,6 +65,9 @@ public static class Combat
 
         Console.WriteLine($"[Combat] player {player.Id} hit {target.Name}#{target.Id} with {attacks[0].EquippedAction}/{string.Join("+", attacks.Select(a => a.EntityAction))}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
 
+        if (!health.IsDead && target.TryGetComponent<ClientEnemyAiComponent>(out _))
+            KnockBack(connection, player, target, attacks, usedItemCrc);
+
         if (!health.IsDead)
             return;
 
@@ -83,6 +86,28 @@ public static class Combat
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
 
         ResourcePickups.SpawnCreatureLoot(connection, target);
+    }
+
+    private static void KnockBack(PlayerConnection connection, Entity player, Entity target, IReadOnlyList<ListAttack> attacks, uint? usedItemCrc)
+    {
+        var entityManager = connection.WorldManager.EntityManager;
+        var attack = attacks.MaxBy(entry => entry.KnockbackDistance * entry.KnockbackStrength);
+
+        if (attack.KnockbackDistance <= 0 || PositionOf(player) is not Vector3 attackerPosition)
+            return;
+
+        var tool = usedItemCrc is uint crc && CombatStatTable.TryGetItem(crc, out var toolStats) ? toolStats : default;
+        var attacker = CharacterStats(player);
+        var attackerEquipment = EquipmentStats(entityManager, player);
+        var distance = (attacker.KnockbackDistance + attackerEquipment.KnockbackDistance + tool.KnockbackDistance) * attack.KnockbackDistance;
+        var strength = (attacker.KnockbackStrength + attackerEquipment.KnockbackStrength + tool.KnockbackStrength) * attack.KnockbackStrength;
+        var resistance = CharacterStats(target).KnockbackResistance + EquipmentStats(entityManager, target).KnockbackResistance;
+        var travel = Knockback.Distance(distance, strength, resistance);
+
+        if (!Knockback.Apply(target, attackerPosition, connection.LookYaw, travel, attack.KnockbackPitch, attack.KnockbackYaw))
+            return;
+
+        Console.WriteLine($"[Combat] {target.Name}#{target.Id} knocked back {travel:0.##} m (distance {distance:0.##}, strength {strength:0.##}, resistance {resistance:0.##}, pitch {attack.KnockbackPitch:0.##})");
     }
 
     private static Vector3? PositionOf(Entity entity)
@@ -115,7 +140,7 @@ public static class Combat
         if (!entity.TryGetComponent<ClientInventoryComponent>(out var inventory))
             return default;
 
-        float weaponLevel = 0, armourLevel = 0;
+        float weaponLevel = 0, armourLevel = 0, knockbackDistance = 0, knockbackStrength = 0, knockbackResistance = 0;
 
         foreach (var slot in ArmourSlots)
         {
@@ -128,9 +153,12 @@ public static class Combat
 
             weaponLevel += stats.WeaponLevel;
             armourLevel += stats.ArmourLevel;
+            knockbackDistance += stats.KnockbackDistance;
+            knockbackStrength += stats.KnockbackStrength;
+            knockbackResistance += stats.KnockbackResistance;
         }
 
-        return new CombatStats(0, weaponLevel, armourLevel);
+        return new CombatStats(0, weaponLevel, armourLevel, knockbackDistance, knockbackStrength, knockbackResistance);
     }
 
     private static float Lookup((float Input, float Output)[] table, float input)

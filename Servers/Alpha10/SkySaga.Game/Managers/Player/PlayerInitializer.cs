@@ -138,11 +138,32 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
 
         if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
+        {
+            var completed = save?.CompletedChallenges ?? JobChallenges.TutorialCompleted();
+            List<ActiveJobChallenge> active = [.. (save?.ActiveChallenges ?? [])
+                .Where(entry => JobChallengeTable.TryGet(entry.Name, out _))
+                .Select(entry => new ActiveJobChallenge(entry.Name, entry.Progress))];
+
+            clientJobRankComponent.CompletedJobChallengeList = completed;
+            clientJobRankComponent.ActiveJobChallengeList = active;
             clientJobRankComponent.JobList = [.. JobTable.All
                 .Where(job => !job.Hidden)
-                .Select(job => save?.Jobs.FirstOrDefault(entry => entry.Name.Equals(job.Name, StringComparison.OrdinalIgnoreCase)) is { } saved
-                    ? new JobProgress(job.Name, saved.Rank, saved.Experience, saved.PrestigeRank)
-                    : new JobProgress(job.Name, 0, 0, 0))];
+                .Select(job =>
+                {
+                    var saved = save?.Jobs.FirstOrDefault(entry => entry.Name.Equals(job.Name, StringComparison.OrdinalIgnoreCase));
+
+                    return new JobProgress(job.Name, saved?.Rank ?? 0, saved?.Experience ?? 0, saved?.PrestigeRank ?? 0)
+                    {
+                        NormalAvailable = saved?.Available ?? JobChallenges.RollDailies(job, completed, active)
+                    };
+                })];
+            clientJobRankComponent.QuestsForEntityList = JobChallenges.OffersFor(_entityManager, clientJobRankComponent.JobList);
+
+            if (player.TryGetComponent<ClientTodoListComponent>(out var todoList))
+                todoList.TodoTaskList = JobChallenges.TodoTasksFor(active, (save?.ActiveChallenges ?? [])
+                    .GroupBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => group.First().TodoTimestamp, StringComparer.OrdinalIgnoreCase));
+        }
 
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
         {
@@ -299,13 +320,25 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
 
         if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
+        {
             data.Jobs = [.. clientJobRankComponent.JobList.Select(job => new PlayerSaveData.JobEntry
             {
                 Name = job.Job,
                 Rank = job.Rank,
                 Experience = job.Experience,
-                PrestigeRank = job.PrestigeRank
+                PrestigeRank = job.PrestigeRank,
+                Available = job.NormalAvailable
             })];
+            data.CompletedChallenges = clientJobRankComponent.CompletedJobChallengeList;
+            var todoTasks = player.TryGetComponent<ClientTodoListComponent>(out var todoList) ? todoList.TodoTaskList : [];
+
+            data.ActiveChallenges = [.. clientJobRankComponent.ActiveJobChallengeList.Select(challenge => new PlayerSaveData.ActiveChallengeEntry
+            {
+                Name = challenge.Name,
+                Progress = challenge.Progress,
+                TodoTimestamp = todoTasks.FirstOrDefault(task => task.JobChallenge.Equals(challenge.Name, StringComparison.OrdinalIgnoreCase))?.Timestamp ?? 0
+            })];
+        }
 
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
         {

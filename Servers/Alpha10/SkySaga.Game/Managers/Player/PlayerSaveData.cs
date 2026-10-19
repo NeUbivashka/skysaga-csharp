@@ -26,12 +26,24 @@ public class PlayerSaveData
 
     public List<JobEntry> Jobs { get; set; } = [];
 
+    public List<string>? CompletedChallenges { get; set; }
+
+    public List<ActiveChallengeEntry> ActiveChallenges { get; set; } = [];
+
+    public class ActiveChallengeEntry
+    {
+        public string Name { get; set; } = "";
+        public uint Progress { get; set; }
+        public ulong TodoTimestamp { get; set; }
+    }
+
     public class JobEntry
     {
         public string Name { get; set; } = "";
         public byte Rank { get; set; }
         public uint Experience { get; set; }
         public uint PrestigeRank { get; set; }
+        public List<string>? Available { get; set; }
     }
 
     public class SettingsEntry

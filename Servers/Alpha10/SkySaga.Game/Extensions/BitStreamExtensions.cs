@@ -209,6 +209,21 @@ public static class BitStreamExtensions
         bitStream.WriteBits(BitConverter.GetBytes(value), bitsToWrite, true);
     }
 
+    public static bool ReadUInt64(this BitStream bitStream, out ulong result)
+    {
+        var buffer = new byte[sizeof(ulong)];
+
+        if (!bitStream.ReadBits(buffer, sizeof(ulong) * 8, alignBitsToRight: true))
+        {
+            result = 0;
+            return false;
+        }
+
+        Array.Reverse(buffer);
+        result = BitConverter.ToUInt64(buffer, 0);
+        return true;
+    }
+
     public static void WriteUInt64(this BitStream bitStream, ulong value)
     {
         var bytes = BitConverter.GetBytes(value);

@@ -2,7 +2,7 @@ using System.Linq;
 
 namespace SkySaga.Game;
 
-public readonly record struct JobInfo(int Index, string Name, bool Hidden, int[] RankExperience);
+public readonly record struct JobInfo(int Index, string Name, bool Hidden, string Faction, int ActiveChallenges, int[] RankExperience);
 
 public static class JobTable
 {
@@ -19,8 +19,8 @@ public static class JobTable
 
         return [.. File.ReadLines(path)
             .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-            .Where(parts => parts.Length >= 2)
-            .Select((parts, index) => new JobInfo(index, parts[0], parts[1] == "1", [.. parts.Skip(2).Select(int.Parse)]))];
+            .Where(parts => parts.Length >= 4)
+            .Select((parts, index) => new JobInfo(index, parts[0], parts[1] == "1", parts[2], int.Parse(parts[3]), [.. parts.Skip(4).Select(int.Parse)]))];
     }
 
     public static IReadOnlyList<JobInfo> All => Jobs.Value;

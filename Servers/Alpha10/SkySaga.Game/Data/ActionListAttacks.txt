@@ -1,91 +1,91 @@
-1262 Ai_Bear_Claw HeavyAttack 0 global
-1265 Ai_Bear_Swipe BasicAttack 0 global
-1268 Ai_BeastExplode HeavyAttack_BombExplode 0 global
-1271 Ai_BigCat_Swipe BasicAttack 0 global
-1277 Ai_Colossaur_Headbutt HeavyAttack 0 global
-1280 Ai_Colossaur_Stampede HeavyAttack_SmallLungeReduction 0 global
-1283 Ai_ExplodingFrog_Pop HeavyAttack_BombExplode 0 global
-1286 Ai_Fennec_Bite Attack_NoCancel 0 global
-1289 Ai_FiringCactus_Blast HeavyAttack 0 global
-1292 Ai_Goat_Ram QuickAttack 0 global
-1331 Ai_MineCritter_Bite QuickAttack 0 global
-1343 Ai_Raptor_Bite BasicAttack 0 global
-1346 Ai_Raptor_Kick Attack_NoCancel 0 global
-1352 Ai_RawboneExplode HeavyAttack_BombExplode 0 global
-1355 Ai_Scarab_Swipe BasicAttack 0 global
-1355 Ai_Scarab_Swipe BasicAttack 0 global
-1355 Ai_Scarab_Swipe BasicAttack 0 global
-1361 Ai_SoldierBug_Flyer_Ram QuickAttack 0 global
-1367 Ai_SoldierBug_Queen_Rodeo HeavyAttack 0 global
-1373 Ai_SoldierBug_Queen_Stomp HeavyAttack 0 global
-1376 Ai_SoldierBug_Queen_Swipe HeavyAttack 0 global
-1379 Ai_SoldierBug_Queen_SwipeRight HeavyAttack 0 global
-1385 Ai_SoldierBug_Stampede BasicAttack_SmallLungeReduction 0 global
-1439 Ai_Spider_Bite Attack_NoCancel 0 global
-1448 Ai_SpittingPlant_Swipe SuperAttack_Dagger_AND_Sword3 0 global
-1454 Ai_Wolf_Bite BasicAttack 0 global
-1466 Ai_Yeti_Slam SuperAttack_Generic 0 global
-1469 Ai_Yeti_Swing HeavyAttack 0 global
-1472 Axe_Basic_1 BasicAttack 0 global
-1475 BombExplode HeavyAttack_BombExplode 0 global
-1478 BombExplode_4 HeavyAttack_BombExplode 0 global
-1523 Dagger_Basic_1 BasicAttack_NoCancel 0 global
-1526 Dagger_Basic_1_Hunter BasicAttack_NoCancel 0 global
-1529 Dagger_Basic_1_Rogue BasicAttack_NoCancel 0 global
-1532 Dagger_Basic_2 BasicAttack_NoCancel 0 global
-1535 Dagger_Basic_2_Hunter BasicAttack_NoCancel 0 global
-1538 Dagger_Basic_2_Rogue BasicAttack_NoCancel 0 global
-1541 Dagger_Quick_Lunge QuickAttack 0 global
-1544 Dagger_Quick_Lunge_Rogue QuickAttack 0 global
-1547 Dagger_Super SuperAttack_Dagger_AND_Sword3 0 global
-1550 Dagger_Super_Beastmaster SuperAttack_Dagger_AND_Sword3 0 global
-1580 Kick Kick 1 global
-1673 Mace_Basic_1 BasicAttack 0 global
-1676 Mace_Basic_1_Defender BasicAttack 0 global
-1679 Mace_Basic_1_Guardian BasicAttack 0 global
-1682 Mace_Basic_2 BasicAttack 0 global
-1685 Mace_Basic_2_Defender BasicAttack 0 global
-1688 Mace_Basic_2_Guardian BasicAttack 0 global
-1691 Mace_Heavy_Defender HeavyAttack 0 global
-1694 Mace_Heavy_Guardian HeavyAttack 0 global
-1697 Mace_Quick_Lunge QuickAttack 0 global
-1700 Mace_Super SuperAttack_MaceUppercut 0 global
-1703 Mace_Super_Guardian SuperAttack_MaceUppercut 0 global
-1709 Pick_Basic_1 Dig_NoCancel 0 -20:0,0:10,40:50
-1725 ProjectileAttack_Medium ProjectileAttack 0 global
-1730 SharpRock_Basic Dig_NoCancel 0 -20:0,0:10,40:50
-1739 Shield_Heavy_Guardian HeavyAttack 0 global
-1745 Spear_Basic_1 BasicAttack 0 global
-1748 Spear_Basic_2 BasicAttack 0 global
-1751 Spear_Quick_Lunge QuickAttack 0 global
-1754 Spear_Stampede_Pikeman Ai_SpearSuper_Pikeman 0 global
-1757 Spear_Super SuperAttack_Spear 0 global
-1760 Spring_Trap PropAttack_SpringTrap_NoDamage 1 global
-1763 Sword_Basic_1 BasicAttack 0 global
-1766 Sword_Basic_1_Blademaster BasicAttack 0 global
-1769 Sword_Basic_1_Fighter Attack_NoCancel 0 global
-1772 Sword_Basic_2 BasicAttack 0 global
-1775 Sword_Basic_2_Blademaster BasicAttack 0 global
-1778 Sword_Basic_2_Fighter Attack_NoCancel 0 global
-1781 Sword_Heavy_Dual_Blademaster HeavyAttack 0 global
-1784 Sword_Quick_Lunge QuickAttack 0 global
-1787 Sword_Quick_Lunge_Blademaster QuickAttack 0 global
-1790 Sword_Super_1 SuperAttack_Generic 0 global
-1793 Sword_Super_1_Blademaster SuperAttack_Generic 0 global
-1796 Sword_Super_2 SuperAttack_Generic 0 global
-1799 Sword_Super_2_Blademaster SuperAttack_Generic 0 global
-1802 Sword_Super_3 SuperAttack_Dagger_AND_Sword3 0 global
-1805 Sword_Super_3_Blademaster SuperAttack_Dagger_AND_Sword3 0 global
-1811 Torch_Basic_1 Attack_NoCancel 0 global
-1814 TwoHanded_Basic_1 BasicAttack 0 global
-1817 TwoHanded_Basic_1_Brute BasicAttack 0 global
-1820 TwoHanded_Basic_1_Champion BasicAttack 0 global
-1823 TwoHanded_Basic_1_Mage BasicAttack 0 global
-1826 TwoHanded_Basic_2 BasicAttack 0 global
-1829 TwoHanded_Basic_2_Brute BasicAttack 0 global
-1832 TwoHanded_Basic_2_Champion BasicAttack 0 global
-1835 TwoHanded_Heavy_Champion HeavyAttack 0 global
-1838 TwoHanded_Heavy_Mage HeavyAttack 0 global
-1841 TwoHanded_Quick_Lunge QuickAttack 0 global
-1844 TwoHanded_Super SuperAttack_Generic 0 global
-1847 TwoHanded_Super_Brute SuperAttack_Generic 0 global
+1262 Ai_Bear_Claw HeavyAttack 0 global 1 1 0 0
+1265 Ai_Bear_Swipe BasicAttack 0 global 0.125 0.8 0 0
+1268 Ai_BeastExplode HeavyAttack_BombExplode 0 global 1 2.5 15 0
+1271 Ai_BigCat_Swipe BasicAttack 0 global 0 0 0 0
+1277 Ai_Colossaur_Headbutt HeavyAttack 0 global 1 1 0 0
+1280 Ai_Colossaur_Stampede HeavyAttack_SmallLungeReduction 0 global 1 1 7 0
+1283 Ai_ExplodingFrog_Pop HeavyAttack_BombExplode 0 global 1 2.5 15 0
+1286 Ai_Fennec_Bite Attack_NoCancel 0 global 0 0 0 0
+1289 Ai_FiringCactus_Blast HeavyAttack 0 global 1 1 0 0
+1292 Ai_Goat_Ram QuickAttack 0 global 1 1 0 0
+1331 Ai_MineCritter_Bite QuickAttack 0 global 1 1 0 0
+1343 Ai_Raptor_Bite BasicAttack 0 global 1 1 0 0
+1346 Ai_Raptor_Kick Attack_NoCancel 0 global 0 0 0 0
+1352 Ai_RawboneExplode HeavyAttack_BombExplode 0 global 1.2 3 15 0
+1355 Ai_Scarab_Swipe BasicAttack 0 global 1 1 0 0
+1355 Ai_Scarab_Swipe BasicAttack 0 global 1 1 0 0
+1355 Ai_Scarab_Swipe BasicAttack 0 global 1 1 0 0
+1361 Ai_SoldierBug_Flyer_Ram QuickAttack 0 global 1 1 0 0
+1367 Ai_SoldierBug_Queen_Rodeo HeavyAttack 0 global 1 1 0 0
+1373 Ai_SoldierBug_Queen_Stomp HeavyAttack 0 global 1 1 0 0
+1376 Ai_SoldierBug_Queen_Swipe HeavyAttack 0 global 1 1 0 0
+1379 Ai_SoldierBug_Queen_SwipeRight HeavyAttack 0 global 1 1 0 0
+1385 Ai_SoldierBug_Stampede BasicAttack_SmallLungeReduction 0 global 1 1 7 0
+1439 Ai_Spider_Bite Attack_NoCancel 0 global 1 1 0 0
+1448 Ai_SpittingPlant_Swipe SuperAttack_Dagger_AND_Sword3 0 global 1 2 10 0
+1454 Ai_Wolf_Bite BasicAttack 0 global 0.5 2 0 0
+1466 Ai_Yeti_Slam SuperAttack_Generic 0 global 1 1 0 0
+1469 Ai_Yeti_Swing HeavyAttack 0 global 1 1 0 0
+1472 Axe_Basic_1 BasicAttack 0 global 0 0 0 0
+1475 BombExplode HeavyAttack_BombExplode 0 global 1 1 15 0
+1478 BombExplode_4 HeavyAttack_BombExplode 0 global 2 60 15 0
+1523 Dagger_Basic_1 BasicAttack_NoCancel 0 global 0 0 0 0
+1526 Dagger_Basic_1_Hunter BasicAttack_NoCancel 0 global 0 0 0 0
+1529 Dagger_Basic_1_Rogue BasicAttack_NoCancel 0 global 0 0 0 0
+1532 Dagger_Basic_2 BasicAttack_NoCancel 0 global 0 0 0 0
+1535 Dagger_Basic_2_Hunter BasicAttack_NoCancel 0 global 1 1 0 0
+1538 Dagger_Basic_2_Rogue BasicAttack_NoCancel 0 global 1 1 0 0
+1541 Dagger_Quick_Lunge QuickAttack 0 global 0 0 0 0
+1544 Dagger_Quick_Lunge_Rogue QuickAttack 0 global 0 0 0 0
+1547 Dagger_Super SuperAttack_Dagger_AND_Sword3 0 global 4 3.5 10 0
+1550 Dagger_Super_Beastmaster SuperAttack_Dagger_AND_Sword3 0 global 2 2 10 0
+1580 Kick Kick 1 global 1.5 2 20 0
+1673 Mace_Basic_1 BasicAttack 0 global 0 0 0 0
+1676 Mace_Basic_1_Defender BasicAttack 0 global 0 0 0 0
+1679 Mace_Basic_1_Guardian BasicAttack 0 global 0 0 0 0
+1682 Mace_Basic_2 BasicAttack 0 global 0 0 0 0
+1685 Mace_Basic_2_Defender BasicAttack 0 global 0 0 0 0
+1688 Mace_Basic_2_Guardian BasicAttack 0 global 0 0 0 0
+1691 Mace_Heavy_Defender HeavyAttack 0 global 1 1.5 0 0
+1694 Mace_Heavy_Guardian HeavyAttack 0 global 1 1.5 0 0
+1697 Mace_Quick_Lunge QuickAttack 0 global 0 0 0 0
+1700 Mace_Super SuperAttack_MaceUppercut 0 global 2 2.5 85 0
+1703 Mace_Super_Guardian SuperAttack_MaceUppercut 0 global 2 2.5 85 0
+1709 Pick_Basic_1 Dig_NoCancel 0 -20:0,0:10,40:50 0 0 0 0
+1725 ProjectileAttack_Medium ProjectileAttack 0 global 0 0 0 0
+1730 SharpRock_Basic Dig_NoCancel 0 -20:0,0:10,40:50 0 0 0 0
+1739 Shield_Heavy_Guardian HeavyAttack 0 global 0 0 0 0
+1745 Spear_Basic_1 BasicAttack 0 global 0 0 0 0
+1748 Spear_Basic_2 BasicAttack 0 global 0.5 1 0 0
+1751 Spear_Quick_Lunge QuickAttack 0 global 1 1 0 0
+1754 Spear_Stampede_Pikeman Ai_SpearSuper_Pikeman 0 global 1 1 30 5
+1757 Spear_Super SuperAttack_Spear 0 global 1.8 2.2 30 5
+1760 Spring_Trap PropAttack_SpringTrap_NoDamage 1 global 20 100 0 0
+1763 Sword_Basic_1 BasicAttack 0 global 0 0 0 0
+1766 Sword_Basic_1_Blademaster BasicAttack 0 global 0 0 0 0
+1769 Sword_Basic_1_Fighter Attack_NoCancel 0 global 0 0 0 0
+1772 Sword_Basic_2 BasicAttack 0 global 0 0 0 0
+1775 Sword_Basic_2_Blademaster BasicAttack 0 global 0 0 0 0
+1778 Sword_Basic_2_Fighter Attack_NoCancel 0 global 0 0 0 0
+1781 Sword_Heavy_Dual_Blademaster HeavyAttack 0 global 1 1 0 0
+1784 Sword_Quick_Lunge QuickAttack 0 global 0 0 0 0
+1787 Sword_Quick_Lunge_Blademaster QuickAttack 0 global 0 0 0 0
+1790 Sword_Super_1 SuperAttack_Generic 0 global 0 0 0 0
+1793 Sword_Super_1_Blademaster SuperAttack_Generic 0 global 0 0 0 0
+1796 Sword_Super_2 SuperAttack_Generic 0 global 0 0 0 0
+1799 Sword_Super_2_Blademaster SuperAttack_Generic 0 global 0 0 0 0
+1802 Sword_Super_3 SuperAttack_Dagger_AND_Sword3 0 global 3 2.5 10 0
+1805 Sword_Super_3_Blademaster SuperAttack_Dagger_AND_Sword3 0 global 2 2 10 0
+1811 Torch_Basic_1 Attack_NoCancel 0 global 0 0 0 0
+1814 TwoHanded_Basic_1 BasicAttack 0 global 0.25 0.5 0 0
+1817 TwoHanded_Basic_1_Brute BasicAttack 0 global 0.1 1 0 0
+1820 TwoHanded_Basic_1_Champion BasicAttack 0 global 0 0 0 0
+1823 TwoHanded_Basic_1_Mage BasicAttack 0 global 0 0 0 0
+1826 TwoHanded_Basic_2 BasicAttack 0 global 1.2 1.2 0 0
+1829 TwoHanded_Basic_2_Brute BasicAttack 0 global 0.2 1 0 0
+1832 TwoHanded_Basic_2_Champion BasicAttack 0 global 0 0 0 0
+1835 TwoHanded_Heavy_Champion HeavyAttack 0 global 1 1.5 0 0
+1838 TwoHanded_Heavy_Mage HeavyAttack 0 global 1 1 0 0
+1841 TwoHanded_Quick_Lunge QuickAttack 0 global 0.5 1 0 0
+1844 TwoHanded_Super SuperAttack_Generic 0 global 0 0 0 0
+1847 TwoHanded_Super_Brute SuperAttack_Generic 0 global 0 0 0 0

@@ -3,7 +3,8 @@ using System.Linq;
 
 namespace SkySaga.Game;
 
-public readonly record struct ListAttack(string EquippedAction, string EntityAction, bool ForceZeroDamage, (float Input, float Output)[]? DamageLut);
+public readonly record struct ListAttack(string EquippedAction, string EntityAction, bool ForceZeroDamage, (float Input, float Output)[]? DamageLut,
+    float KnockbackDistance, float KnockbackStrength, float KnockbackPitch, float KnockbackYaw);
 
 public static class ActionListAttackTable
 {
@@ -21,8 +22,10 @@ public static class ActionListAttackTable
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (parts.Length != 5 || !uint.TryParse(parts[0], out var listId))
+            if (parts.Length != 9 || !uint.TryParse(parts[0], out var listId))
                 continue;
+
+            var knockback = parts[5..].Select(value => float.Parse(value, CultureInfo.InvariantCulture)).ToArray();
 
             var lut = parts[4] == "global"
                 ? null
@@ -32,7 +35,7 @@ public static class ActionListAttackTable
             if (!map.TryGetValue(listId, out var attacks))
                 map[listId] = attacks = [];
 
-            attacks.Add(new ListAttack(parts[1], parts[2], parts[3] == "1", lut));
+            attacks.Add(new ListAttack(parts[1], parts[2], parts[3] == "1", lut, knockback[0], knockback[1], knockback[2], knockback[3]));
         }
 
         return map;

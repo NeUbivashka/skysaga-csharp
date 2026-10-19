@@ -1,13 +1,21 @@
 namespace SkySaga.Game.Packets;
 
-public class ActivateJobChallenge : ISerializablePacket
+public static class ActivateJobChallenge
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!ReadCrc(bitStream, out var challengeCrc) || !ReadCrc(bitStream, out var fromCrc))
+            return false;
 
-        bitStream.WritePacketId(PacketId.ActivateJobChallenge);
+        Console.WriteLine($"[Challenge] activate 0x{challengeCrc:X8} from 0x{fromCrc:X8}");
 
-        return bitStream;
+        JobChallenges.Activate(connection, challengeCrc);
+        return true;
+    }
+
+    private static bool ReadCrc(BitStream bitStream, out uint crc)
+    {
+        crc = 0;
+        return !bitStream.ReadBit() || bitStream.ReadFullWidthUInt32(out crc);
     }
 }

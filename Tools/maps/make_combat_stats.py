@@ -33,6 +33,16 @@ def levels(properties):
     return weapon, armour
 
 
+def knockback(properties):
+    return tuple(stat(properties, name) for name in ("KnockbackDistance", "KnockbackStrength", "KnockbackResistance"))
+
+
+def row(kind, name, health, properties):
+    weapon, armour = levels(properties)
+    distance, strength, resistance = knockback(properties)
+    return f"{kind} {name} {health:g} {weapon:g} {armour:g} {distance:g} {strength:g} {resistance:g}"
+
+
 def main():
     with open(os.path.join(BUNDLE, "GeoData.json"), encoding="utf-8") as f:
         geo = json.load(f)
@@ -51,13 +61,11 @@ def main():
             continue
         inherent = entity["parameters"].get("inherentperklist", {}).get("value") or []
         entity_properties = with_perks(entity_properties, inherent, perks, effects)
-        weapon, armour = levels(entity_properties)
-        rows.append(f"Entity {entity['Name']} {stat(entity_properties, 'Health'):g} {weapon:g} {armour:g}")
+        rows.append(row("Entity", entity["Name"], stat(entity_properties, "Health"), entity_properties))
     for resource in geo["Resources"]:
         resource_properties = properties.get(resource.get("PhysicalProperties", "").lower())
-        weapon, armour = levels(resource_properties)
-        if weapon or armour:
-            rows.append(f"Item {resource['Name']} 0 {weapon:g} {armour:g}")
+        if any(levels(resource_properties)) or any(knockback(resource_properties)):
+            rows.append(row("Item", resource["Name"], 0, resource_properties))
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(sorted(rows)) + "\n")
     print(f"{len(rows)} rows -> {OUT}")

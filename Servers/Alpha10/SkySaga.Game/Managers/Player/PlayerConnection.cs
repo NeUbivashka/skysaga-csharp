@@ -109,6 +109,8 @@ public class PlayerConnection
             PacketId.InventoryItemSwap => InventoryItemSwap.Handle(this, bitStream),
             PacketId.ExecuteEntityAction => ExecuteEntityAction.Handle(this, bitStream),
             PacketId.EndInteractionWithEntity => EndInteractionWithEntity.Handle(this, bitStream),
+            PacketId.ActivateJobChallenge => ActivateJobChallenge.Handle(this, bitStream),
+            PacketId.TodoListSetTaskTimestamp => TodoListSetTaskTimestamp.Handle(this, bitStream),
             PacketId.InventoryItemTransfer => InventoryItemTransfer.Handle(this, bitStream),
             PacketId.InventoryItemTransferToSlot => InventoryItemTransfer.HandleToSlot(this, bitStream),
             PacketId.ShopPurchaseWithCurrency => ShopPurchaseWithCurrency.Handle(this, bitStream),

@@ -1,13 +1,20 @@
 namespace SkySaga.Game.Packets;
 
-public class TodoListSetTaskTimestamp : ISerializablePacket
+public static class TodoListSetTaskTimestamp
 {
-    public BitStream Serialize()
+    private const byte TaskIdMax = 255;
+
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadByte(TaskIdMax, out var taskId))
+            return false;
 
-        bitStream.WritePacketId(PacketId.TodoListSetTaskTimestamp);
+        ulong timestamp = 0;
 
-        return bitStream;
+        if (bitStream.ReadBit() && !bitStream.ReadUInt64(out timestamp))
+            return false;
+
+        JobChallenges.SetTodoTimestamp(connection, taskId, timestamp);
+        return true;
     }
 }

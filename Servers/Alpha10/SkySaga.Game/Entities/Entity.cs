@@ -13,6 +13,12 @@ public class Entity
 
     public bool SyncRequired => _sync.HasAnySet();
 
+    public string? TextParameter(string name)
+        => _entityData.Parameters.Find(parameter => parameter.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } parameter
+           && parameter.Value.ValueKind == System.Text.Json.JsonValueKind.String
+            ? parameter.Value.GetString()
+            : null;
+
     private static readonly bool SyncTrace = Environment.GetEnvironmentVariable("SKYSAGA_SYNC_TRACE") == "1";
 
     public Entity(int id, EntityData entityData, IReadOnlyCollection<Component> components)

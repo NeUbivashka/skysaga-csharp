@@ -1,6 +1,8 @@
+using System.Linq;
+
 namespace SkySaga.Game;
 
-public readonly record struct CombatStats(float Health, float WeaponLevel, float ArmourLevel);
+public readonly record struct CombatStats(float Health, float WeaponLevel, float ArmourLevel, float KnockbackDistance, float KnockbackStrength, float KnockbackResistance);
 
 public static class CombatStatTable
 {
@@ -18,11 +20,13 @@ public static class CombatStatTable
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (parts.Length == 5
-                && float.TryParse(parts[2], System.Globalization.CultureInfo.InvariantCulture, out var health)
-                && float.TryParse(parts[3], System.Globalization.CultureInfo.InvariantCulture, out var weaponLevel)
-                && float.TryParse(parts[4], System.Globalization.CultureInfo.InvariantCulture, out var armourLevel))
-                map.TryAdd((parts[0], Util.ComputeCrc32(parts[1])), new CombatStats(health, weaponLevel, armourLevel));
+            if (parts.Length != 8)
+                continue;
+
+            var values = new float[6];
+
+            if (Enumerable.Range(0, 6).All(i => float.TryParse(parts[i + 2], System.Globalization.CultureInfo.InvariantCulture, out values[i])))
+                map.TryAdd((parts[0], Util.ComputeCrc32(parts[1])), new CombatStats(values[0], values[1], values[2], values[3], values[4], values[5]));
         }
 
         return map;

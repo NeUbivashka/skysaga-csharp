@@ -36,6 +36,8 @@ public class AiManager
     {
         var now = DateTime.UtcNow;
 
+        Knockback.Update(_worldManager, now);
+
         if (now - _lastUpdate < UpdateInterval)
             return;
 
@@ -52,7 +54,7 @@ public class AiManager
             if (entity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead)
                 continue;
 
-            if (!entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
+            if (!entity.TryGetComponent<SmoothedTransformComponent>(out var transform) || Knockback.IsActive(entity.Id))
                 continue;
 
             if (!string.Equals(ai.AiCapabilities, "chicken", StringComparison.OrdinalIgnoreCase))
@@ -84,6 +86,7 @@ public class AiManager
             }
 
             _wanderStates.Remove(corpse.Id);
+            Knockback.Cancel(corpse.Id);
 
             Console.WriteLine($"[AiManager] Removed the corpse of {corpse.Name}#{corpse.Id}.");
 

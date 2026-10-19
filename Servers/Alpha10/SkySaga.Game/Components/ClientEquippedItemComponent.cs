@@ -25,6 +25,8 @@ public class ClientEquippedItemComponent : Component
 
     public bool AutoEquip { get; set => SetIfChanged(ref field, value); } = true;
 
+    public string? LegActions { get; set => SetIfChanged(ref field, value); } = "Kick";
+
     public void SetSlot(uint slot, ushort itemIndex, Guid? itemUuid, uint?[]? materials = null)
     {
         if (slot >= SlotCount)
@@ -69,9 +71,16 @@ public class ClientEquippedItemComponent : Component
             return true;
         }
 
-        if (parameterName.Equals("LegActions", StringComparison.OrdinalIgnoreCase))
+        if (parameterName.Equals(nameof(LegActions), StringComparison.OrdinalIgnoreCase))
         {
-            bitStream.Write0();
+            if (LegActions is null)
+            {
+                bitStream.Write0();
+                return true;
+            }
+
+            bitStream.Write1();
+            bitStream.WriteFullWidthUInt32(Util.ComputeCrc32(LegActions));
 
             return true;
         }
