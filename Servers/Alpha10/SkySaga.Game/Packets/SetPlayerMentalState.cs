@@ -1,13 +1,22 @@
 namespace SkySaga.Game.Packets;
 
-public class SetPlayerMentalState : ISerializablePacket
+public static class SetPlayerMentalState
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadInt32(ClientCharacterStateComponent.MentalStateMax, out var state))
+            return false;
 
-        bitStream.WritePacketId(PacketId.SetPlayerMentalState);
+        if (state >= ClientCharacterStateComponent.MentalStates.Length
+            || !connection.PlayerEntity.TryGetComponent<ClientCharacterStateComponent>(out var characterState))
+        {
+            Console.WriteLine($"[CharacterState] mental state {state} rejected");
+            return true;
+        }
 
-        return bitStream;
+        characterState.CharacterMentalStateId = (byte)state;
+
+        Console.WriteLine($"[CharacterState] mental state {ClientCharacterStateComponent.MentalStates[state]}");
+        return true;
     }
 }

@@ -118,6 +118,7 @@ public class PlayerConnection
             PacketId.UISettingsSetMiniMapSettings => UISettingsSetMiniMapSettings.Handle(this, bitStream),
             PacketId.SetEmoteBinding => SetEmoteBinding.Handle(this, bitStream),
             PacketId.SetCurrentEmote => SetCurrentEmote.Handle(this, bitStream),
+            PacketId.SetPlayerMentalState => SetPlayerMentalState.Handle(this, bitStream),
             PacketId.InventoryItemDrop => InventoryItemDrop.Handle(this, bitStream),
             PacketId.InventoryItemDestroy => InventoryItemDestroy.Handle(this, bitStream),
             PacketId.InventoryItemTransfer => InventoryItemTransfer.Handle(this, bitStream),
@@ -161,8 +162,6 @@ public class PlayerConnection
     public Queue<DateTime> IsLocalDueUtc { get; } = new();
 
     public byte[]? CustomisationPayload { get; set; }
-
-    public int PlayerState { get; set; }
 
     public float LookPitch { get; set; }
     public float LookYaw { get; set; }

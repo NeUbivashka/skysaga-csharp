@@ -10,11 +10,7 @@ public class StopCharge : ISerializablePacket
 
         bitStream.WritePacketId(PacketId.StopCharge);
 
-        var bytes = BitConverter.GetBytes(EntityId);
-
-        Array.Reverse(bytes);
-
-        bitStream.WriteBits(bytes, 32, true);
+        InventoryItemRef.WriteUInt32(bitStream, (uint)EntityId);
 
         return bitStream;
     }

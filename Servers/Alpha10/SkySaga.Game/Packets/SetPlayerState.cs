@@ -2,13 +2,12 @@ namespace SkySaga.Game.Packets;
 
 public static class SetPlayerState
 {
-    public const uint StateMax = 10;
-
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        if (!bitStream.ReadInt32(StateMax, out var state)) return false;
+        if (!bitStream.ReadInt32(ClientCharacterStateComponent.CharacterStateMax, out var state)) return false;
 
-        connection.PlayerState = state;
+        if (connection.PlayerEntity.TryGetComponent<ClientCharacterStateComponent>(out var characterState))
+            characterState.CharacterStateId = (byte)state;
 
         return true;
     }
