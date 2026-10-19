@@ -195,6 +195,13 @@ public static class RunActionListReceived
         health.Heal((int)eat.HealthBoost);
         ConsumeOne(connection, food.Entity);
 
+        connection.PlayerConnectionManager.BroadcastToAll(new HealOccurred
+        {
+            SourceEntityId = connection.PlayerEntity.Id,
+            TargetEntityId = connection.PlayerEntity.Id,
+            Amount = (uint)eat.HealthBoost
+        });
+
         Console.WriteLine($"[Eat] {eat.EatAction} +{eat.HealthBoost} HP, now {health.SyncedFullHPValues}/{health.MaxHP}");
     }
 

@@ -1,0 +1,31 @@
+# GeoData.json (36731) Emotes in Index order: name, MakeAvailableToNewPlayers.
+# Line n (1-based, comments excluded) is wire index n; 0 is no emote.
+Emote_Attack 1
+Emote_Beckon 1
+Emote_Cheer 1
+Emote_Clap 0
+Emote_Cry 0
+Emote_Dance 1
+Emote_Dance2 0
+Emote_Dance3 0
+Emote_Dance_Premium 1
+Emote_Dig 1
+Emote_Fail 1
+Emote_Handshake_Premium 1
+Emote_Happy 0
+Emote_Kiss 0
+Emote_Laugh 0
+Emote_No 1
+Emote_Shrug 1
+Emote_Taunt 1
+Emote_Thanks 1
+Emote_Wave 0
+Emote_Wave_Cat_Desert 0
+Emote_Wave_Cat_Jungle 0
+Emote_Wave_Human_Arctic 0
+Emote_Wave_Human_Forest 0
+Emote_Wave_Lizard_Desert 0
+Emote_Wave_Lizard_Jungle 0
+Emote_Wave_Monkey_Jungle 0
+Emote_Wolf_Howl 0
+Emote_Yes 1

@@ -21,8 +21,8 @@ public class HealOccurred : ISerializablePacket
 
         bitStream.WritePacketId(PacketId.HealOccurred);
 
-        WriteInt32(bitStream, TargetEntityId);
         WriteInt32(bitStream, SourceEntityId);
+        WriteInt32(bitStream, TargetEntityId);
 
         bitStream.WriteRanged(Math.Min(Amount, AmountMax), AmountMax);
         bitStream.WriteRanged(Math.Min(Kind, KindMax), KindMax);

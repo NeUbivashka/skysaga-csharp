@@ -30,6 +30,10 @@ public class PlayerSaveData
 
     public uint? ChallengeRefreshIndex { get; set; }
 
+    public List<string>? AvailableEmotes { get; set; }
+
+    public List<string>? KeyboundEmotes { get; set; }
+
     public List<ActiveChallengeEntry> ActiveChallenges { get; set; } = [];
 
     public class ActiveChallengeEntry
@@ -59,6 +63,7 @@ public class PlayerSaveData
         public uint CameraState { get; set; }
         public bool ControlFlag { get; set; }
         public uint LastActivatedSlot { get; set; }
+        public MiniMapSettings? MiniMap { get; set; }
 
         public List<HotbarEntry>? Hotbar { get; set; }
     }

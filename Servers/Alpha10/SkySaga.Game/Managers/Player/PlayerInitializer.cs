@@ -64,6 +64,9 @@ public class PlayerInitializer(IWorldManager worldManager)
             settings.ControlFlag = saved.ControlFlag;
             settings.LastActivatedSlot = saved.LastActivatedSlot;
 
+            if (saved.MiniMap is { } miniMap)
+                settings.MiniMap = miniMap;
+
             foreach (var entry in saved.Hotbar ?? [])
                 settings.SetHotbarItem(entry.Slot, entry.Hand,
                     new InventoryItemRef { Kind = ItemTable.IndexOf(entry.Item), ItemUuid = entry.ItemUuid });
@@ -135,6 +138,18 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayerAspectsComponent.IsDebugPlayer = true;
             clientPlayerAspectsComponent.AccountLevel = 2;
             clientPlayerAspectsComponent.Permissions = [.. PlayerAspectsComponent.DefaultPermissions];
+        }
+
+        if (player.TryGetComponent<ClientEmoteComponent>(out var emotes))
+        {
+            emotes.AvailableEmotes = [.. (save?.AvailableEmotes ?? [.. EmoteTable.ForNewPlayers])
+                .Select(EmoteTable.IndexOf)
+                .Where(index => index != 0)
+                .Distinct()];
+            emotes.KeyboundEmotes = [.. (save?.KeyboundEmotes ?? [.. player.TextListParameter("keyboundemotes")])
+                .Select(name => name.Length == 0 ? (ushort)0 : EmoteTable.IndexOf(name))
+                .Concat(Enumerable.Repeat((ushort)0, ClientEmoteComponent.KeyboundSlots))
+                .Take(ClientEmoteComponent.KeyboundSlots)];
         }
 
         if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
@@ -292,6 +307,12 @@ public class PlayerInitializer(IWorldManager worldManager)
             data.CustomisationData = customisation.CustomisationData is { } bytes ? Convert.ToBase64String(bytes) : null;
         }
 
+        if (player.TryGetComponent<ClientEmoteComponent>(out var emotes))
+        {
+            data.AvailableEmotes = [.. emotes.AvailableEmotes.Select(EmoteTable.NameOf)];
+            data.KeyboundEmotes = [.. emotes.KeyboundEmotes.Select(EmoteTable.NameOf)];
+        }
+
         if (player.TryGetComponent<ClientSettingsComponent>(out var settings))
         {
             data.Settings = new PlayerSaveData.SettingsEntry
@@ -305,6 +326,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 CameraState = settings.CameraState,
                 ControlFlag = settings.ControlFlag,
                 LastActivatedSlot = settings.LastActivatedSlot,
+                MiniMap = settings.MiniMap,
                 Hotbar = [.. settings.HotbarItems
                     .Select((item, i) => (item, i))
                     .Where(x => x.item is not null)

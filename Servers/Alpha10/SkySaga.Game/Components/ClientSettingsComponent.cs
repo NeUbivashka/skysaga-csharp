@@ -1,5 +1,7 @@
 namespace SkySaga.Game.Components;
 
+public record MiniMapSettings(bool First, bool Second, List<bool> Toggles, uint Value);
+
 public class ClientSettingsComponent : Component
 {
     public const uint DisplayTimeModeMax = 2;
@@ -32,6 +34,11 @@ public class ClientSettingsComponent : Component
     public uint CameraState { get; set => SetIfChanged(ref field, Math.Min(value, CameraStateMax), "CurrentGameplayCameraState"); }
 
     public bool ControlFlag { get; set => SetIfChanged(ref field, value, "ControlSettings"); }
+
+    public const uint MiniMapTogglesMax = 25;
+    public const uint MiniMapValueMax = 32;
+
+    public MiniMapSettings MiniMap { get; set => SetIfChanged(ref field, value, "MiniMapSettings"); } = new(false, false, [], 0);
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
@@ -71,6 +78,20 @@ public class ClientSettingsComponent : Component
             bitStream.Write(DisableMysteryBoxNotifications);
             bitStream.WriteRanged(DisplayTimeMode, DisplayTimeModeMax);
             bitStream.WriteRanged(QuestTrackerSort, QuestTrackerSortMax);
+
+            return true;
+        }
+
+        if (parameterName.Equals("MiniMapSettings", StringComparison.OrdinalIgnoreCase))
+        {
+            bitStream.Write(MiniMap.First);
+            bitStream.Write(MiniMap.Second);
+            bitStream.WriteEscapedCount((uint)MiniMap.Toggles.Count, MiniMapTogglesMax);
+
+            foreach (var toggle in MiniMap.Toggles)
+                bitStream.Write(toggle);
+
+            bitStream.WriteRanged(Math.Min(MiniMap.Value, MiniMapValueMax), MiniMapValueMax);
 
             return true;
         }
