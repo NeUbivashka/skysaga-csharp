@@ -2,6 +2,40 @@ namespace SkySaga.Game.Managers.Player;
 
 public static class InventoryItems
 {
+    public readonly record struct Taken(uint NameCrc, int Count, uint?[] Materials);
+
+    public static Taken? Take(PlayerConnection connection, int ownerId, int slot, int quantity)
+    {
+        var entityManager = connection.WorldManager.EntityManager;
+
+        if (ownerId != connection.PlayerEntity.Id
+            || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory)
+            || slot < 0 || slot >= inventory.InventoryEntityList.Count
+            || !entityManager.TryGetEntity(inventory.InventoryEntityList[slot], out var item)
+            || !item.TryGetComponent<InventoryItemComponent>(out var component)
+            || component.InventorySlotData.Name is not uint nameCrc
+            || quantity <= 0)
+            return null;
+
+        var count = Math.Min(quantity, component.InventorySlotData.Count);
+        var materials = ResourcePickups.MaterialsOf(item);
+
+        if (component.InventorySlotData.Count > count)
+        {
+            component.InventorySlotData = component.InventorySlotData.WithCount(component.InventorySlotData.Count - count);
+            return new Taken(nameCrc, count, materials);
+        }
+
+        List<int> list = [.. inventory.InventoryEntityList];
+        list[slot] = 0;
+        inventory.InventoryEntityList = list;
+
+        entityManager.RemoveEntity(item.Id);
+        connection.PlayerConnectionManager.BroadcastRemovedAfterSync(item.Id);
+
+        return new Taken(nameCrc, count, materials);
+    }
+
     public static bool Give(PlayerConnection connection, uint nameCrc, int count, uint?[]? materials = null)
     {
         if (!connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))

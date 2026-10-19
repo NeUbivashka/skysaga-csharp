@@ -37,19 +37,16 @@ public static class InventoryArrange
 
         var first = (int)ClientEquippedItemComponent.SlotCount;
         var list = inventory.InventoryEntityList;
+        var occupied = Enumerable.Range(first, Math.Max(0, list.Count - first)).Where(slot => list[slot] != 0).ToHashSet();
 
-        if (first + count > list.Count
-            || order.Distinct().Count() != order.Length
-            || order.Any(slot => slot < first || slot >= first + count))
+        if (order.Length != occupied.Count || !occupied.SetEquals(order))
         {
-            Console.WriteLine($"[Inventory] arrange rejected: [{string.Join(",", order)}] is not a permutation of slots {first}..{first + count - 1}");
+            Console.WriteLine($"[Inventory] arrange rejected: [{string.Join(",", order)}] is not the occupied backpack slots [{string.Join(",", occupied.Order())}]");
             return true;
         }
 
-        List<int> arranged = [.. list];
-
-        for (var i = 0; i < count; i++)
-            arranged[first + i] = list[order[i]];
+        List<int> arranged = [.. list.Take(first), .. order.Select(slot => list[slot])];
+        arranged.AddRange(Enumerable.Repeat(0, list.Count - arranged.Count));
 
         inventory.InventoryEntityList = arranged;
 

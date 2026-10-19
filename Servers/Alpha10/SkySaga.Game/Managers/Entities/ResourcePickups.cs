@@ -47,6 +47,17 @@ public static class ResourcePickups
                 Spawn(connection, stored.ItemCrc, stored.Count, start, voxel, owner, stored.Materials);
     }
 
+    public static void SpawnDropped(PlayerConnection connection, uint itemCrc, int count, uint?[] materials)
+    {
+        if (!connection.PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform))
+            return;
+
+        var position = transform.Position;
+        var voxel = new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y) + 1, (int)MathF.Floor(position.Z));
+
+        Spawn(connection, itemCrc, count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0, materials);
+    }
+
     public static void SpawnCreatureLoot(PlayerConnection connection, Entity creature)
     {
         if (LootTableName(creature.Name) is not { } tableName
