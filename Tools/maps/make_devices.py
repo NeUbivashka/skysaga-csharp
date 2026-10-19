@@ -22,7 +22,8 @@ def main():
         mesh = entity_infos.get(entity, {}).get("Mesh")
         occupancy = mesh_infos.get(mesh, {}).get("VoxelOccupancy") or [{"X": 0, "Y": 0, "Z": 0}]
         xs, ys, zs = ([o[axis] for o in occupancy] for axis in "XYZ")
-        rows.append(f"{resource['Name']} {entity} {min(xs)} {max(xs)} {min(ys)} {min(zs)} {max(zs)}")
+        cells = ";".join(f"{o['X']},{o['Y']},{o['Z']}" for o in occupancy)
+        rows.append(f"{resource['Name']} {entity} {min(xs)} {max(xs)} {min(ys)} {min(zs)} {max(zs)} {cells}")
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(sorted(rows)) + "\n")
     print(f"{len(rows)} devices -> {OUT}")

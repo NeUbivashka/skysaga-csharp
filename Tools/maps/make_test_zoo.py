@@ -37,7 +37,7 @@ BROKEN_GROUPS = [
     ("Other", r"^(FTUE_CityGuard_|Test_Biped|Jungle_Monkey_Mastery|Desert_Chicken$|Midwinter_Chicken$)"),
 ]
 REFERENCE_CHEST = "Chest_Generic_Major"
-REFERENCE_CHEST_SLOTS = 55
+REFERENCE_CHEST_SLOTS = 55 - 9
 REFERENCE_CHEST_SPACING = 2
 REFERENCE_CHEST_BUILDS = {"36731"}
 ROW_SPACING = 6

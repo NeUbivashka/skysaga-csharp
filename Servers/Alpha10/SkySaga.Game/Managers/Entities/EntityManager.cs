@@ -249,7 +249,7 @@ public class EntityManager : IMapEntityManager
             };
         }
 
-        if (targetType == typeof(byte))
+        if (targetType == typeof(byte) || targetType == typeof(byte?))
             return value.TryGetByte(out var byteValue) ? byteValue : null;
 
         if (targetType == typeof(List<LinkedVoxel>) && value.ValueKind == JsonValueKind.Array)

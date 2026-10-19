@@ -6,6 +6,8 @@ public class ClientVoxelLinkComponent : Component
 {
     public List<LinkedVoxel> Voxels { get; set => SetIfChanged(ref field, value); } = [];
 
+    public byte? VoxelType { get; set; }
+
     public IEnumerable<(Vector3Int Position, byte VoxelType)> GetWorldVoxels(Vector3 origin, float yawDegrees)
     {
         var originVoxel = new Vector3Int((int)MathF.Floor(origin.X), (int)MathF.Floor(origin.Y), (int)MathF.Floor(origin.Z));

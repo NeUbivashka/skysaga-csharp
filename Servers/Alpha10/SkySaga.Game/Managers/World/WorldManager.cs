@@ -242,8 +242,29 @@ public sealed class WorldManager : IWorldManager, IDisposable
         Console.WriteLine($"[WorldManager] Placed {voxelLink.Voxels.Count} linked voxels of {entity.Name}#{entity.Id}.");
     }
 
+    public bool CanPlaceDevice(DeviceInfo device, Vector3Int voxel)
+    {
+        var origin = DeviceTable.Origin(device, voxel);
+        var originVoxel = new Vector3Int((int)MathF.Floor(origin.X), (int)MathF.Floor(origin.Y), (int)MathF.Floor(origin.Z));
+
+        foreach (var cell in device.Cells)
+        {
+            var position = originVoxel + cell;
+            var chunk = new Vector3Int(FloorDiv(position.X, ChunkSize), FloorDiv(position.Y, ChunkSize), FloorDiv(position.Z, ChunkSize));
+            var local = new Vector3Int(position.X - chunk.X * ChunkSize, position.Y - chunk.Y * ChunkSize, position.Z - chunk.Z * ChunkSize);
+
+            if (ChunkManager.GetVoxel(chunk, local) != WorldChunk.Air)
+                return false;
+        }
+
+        return true;
+    }
+
     public List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Guid? owner, uint?[] materials)
     {
+        if (!CanPlaceDevice(device, voxel))
+            return [];
+
         var placed = new PlacedDevice(itemCrc, voxel.X, voxel.Y, voxel.Z, owner, materials);
         var entities = SpawnDevice(placed, device);
 
@@ -300,6 +321,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             owner.Owner = placed.Owner;
 
         SetDeviceItemSpec(entities[^1], placed.ItemCrc, placed.Materials);
+        FillLinkedVoxels(entities[^1], device);
         _deviceEntities[entities[^1].Id] = placed;
 
         if (placed.Items.Count > 0 && entities[^1].TryGetComponent<ClientInventoryComponent>(out var inventory))
@@ -314,6 +336,14 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         return entities;
+    }
+
+    private static void FillLinkedVoxels(Entity entity, DeviceInfo device)
+    {
+        if (entity.TryGetComponent<ClientVoxelLinkComponent>(out var voxelLink)
+            && voxelLink.Voxels.Count == 0
+            && voxelLink.VoxelType is byte voxelType)
+            voxelLink.Voxels = [.. device.Cells.Select(cell => new LinkedVoxel(cell, voxelType))];
     }
 
     private static void SetDeviceItemSpec(Entity entity, uint itemCrc, uint?[] materials)
@@ -475,8 +505,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (spec.Items is { Count: > 0 } && creature.Count > 0)
                 FillInventory(creature[^1], spec.Items);
 
-            if (creature.Count > 0 && DeviceTable.TryGetByEntity(spec.Name, out _))
+            if (creature.Count > 0 && DeviceTable.TryGetByEntity(spec.Name, out var linkedDevice))
             {
+                FillLinkedVoxels(creature[^1], linkedDevice);
+
                 var nameHash = Util.ComputeCrc32(spec.Name);
                 SetDeviceItemSpec(creature[^1], nameHash, MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
 
@@ -503,11 +535,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (!container.TryGetComponent<ClientInventoryComponent>(out var inventory))
             return;
 
-        var items = itemNames
-            .Select(name => PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32(name), 1))
-            .Select(item => item?.Id ?? 0)
-            .Take(inventory.MaxInventorySlots)
-            .ToList();
+        var firstSlot = (int)ClientEquippedItemComponent.SlotCount;
+        List<int> items = [.. Enumerable.Repeat(0, firstSlot), .. itemNames
+            .Take(Math.Max(0, inventory.MaxInventorySlots - firstSlot))
+            .Select(name => PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32(name), 1)?.Id ?? 0)];
 
         inventory.InventoryEntityList = [.. items, .. Enumerable.Repeat(0, Math.Max(0, inventory.MaxInventorySlots - items.Count))];
     }

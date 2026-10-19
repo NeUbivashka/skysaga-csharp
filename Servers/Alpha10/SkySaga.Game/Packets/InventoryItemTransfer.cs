@@ -66,7 +66,7 @@ public static class InventoryItemTransfer
 
         var free = targetSlot >= 0
             ? targetSlot < to.InventoryEntityList.Count && to.InventoryEntityList[targetSlot] == 0 ? targetSlot : -1
-            : to.InventoryEntityList.IndexOf(0, target.Id == connection.PlayerEntity.Id ? (int)ClientEquippedItemComponent.SlotCount : 0);
+            : to.InventoryEntityList.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
 
         if (free < 0)
         {

@@ -11,7 +11,20 @@ public static class RequestUnEquipInventoryItem
 
         if (location < ClientEquippedItemComponent.SlotCount
             && connection.PlayerEntity.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
+        {
+            if (location is (int)ClientEquippedItemComponent.Slot.LeftHand or (int)ClientEquippedItemComponent.Slot.RightHand
+                && TwoHandedTable.Contains(equipped.EquippedItems[location]))
+            {
+                equipped.SetSlot((uint)(1 - location), 0, null);
+
+                if (location == (int)ActionLocation.LeftHand)
+                    connection.RightHandBlockId = null;
+                else
+                    connection.LeftHandBlockId = null;
+            }
+
             equipped.SetSlot((uint)location, 0, null);
+        }
 
         if (location > (int)ClientEquippedItemComponent.Slot.RightHand
             && location < ClientEquippedItemComponent.SlotCount

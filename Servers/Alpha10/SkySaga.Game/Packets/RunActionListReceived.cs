@@ -165,7 +165,7 @@ public static class RunActionListReceived
 
         if (entities.Count == 0)
         {
-            Console.WriteLine($"[Device] {device.Entity} could not be created");
+            Console.WriteLine($"[Device] {device.Entity} not placed at {placeAt}: the space is taken or the entity is unknown");
             return;
         }
 

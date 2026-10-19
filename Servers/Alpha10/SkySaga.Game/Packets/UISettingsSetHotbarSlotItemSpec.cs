@@ -8,8 +8,18 @@ public static class UISettingsSetHotbarSlotItemSpec
         if (!bitStream.ReadInt32(2, out var hand)) return false;
         if (!InventoryItemRef.TryDecode(bitStream, out var item)) return false;
 
-        if (connection.PlayerEntity.TryGetComponent<ClientSettingsComponent>(out var settings))
+        if (connection.PlayerEntity.TryGetComponent<ClientSettingsComponent>(out var settings) && hand <= 1)
+        {
+            var otherHand = (uint)(1 - hand);
+            var other = settings.HotbarItems[slot * 2 + otherHand];
+
             settings.SetHotbarItem((uint)slot, (uint)hand, item);
+
+            if (TwoHandedTable.Contains(item.Kind))
+                settings.SetHotbarItem((uint)slot, otherHand, item);
+            else if (other is not null && TwoHandedTable.Contains(other.Kind))
+                settings.SetHotbarItem((uint)slot, otherHand, null);
+        }
 
         Console.WriteLine($"[Hotbar] slot {slot} hand {hand} = {ItemTable.NameOf(item.Kind)} ({item.Kind})");
 

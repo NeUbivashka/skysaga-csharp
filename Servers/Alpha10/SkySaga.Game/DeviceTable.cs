@@ -2,7 +2,7 @@ using System.Linq;
 
 namespace SkySaga.Game;
 
-public readonly record struct DeviceInfo(string Entity, int MinX, int MaxX, int MinY, int MinZ, int MaxZ);
+public readonly record struct DeviceInfo(string Entity, int MinX, int MaxX, int MinY, int MinZ, int MaxZ, Vector3Int[] Cells);
 
 public static class DeviceTable
 {
@@ -23,11 +23,14 @@ public static class DeviceTable
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (parts.Length != 7)
+            if (parts.Length != 8)
                 continue;
 
+            var cells = parts[7].Split(';').Select(cell => cell.Split(',').Select(int.Parse).ToArray())
+                .Select(cell => new Vector3Int(cell[0], cell[1], cell[2])).ToArray();
+
             map[Util.ComputeCrc32(parts[0])] = new DeviceInfo(parts[1],
-                int.Parse(parts[2]), int.Parse(parts[3]), int.Parse(parts[4]), int.Parse(parts[5]), int.Parse(parts[6]));
+                int.Parse(parts[2]), int.Parse(parts[3]), int.Parse(parts[4]), int.Parse(parts[5]), int.Parse(parts[6]), cells);
         }
 
         return map;

@@ -1,639 +1,639 @@
-Airship Airship 0 0 0 0 0
-Airship_Wreckage_A Airship_Wreckage_A 0 0 0 0 0
-Airship_Wreckage_B Airship_Wreckage_B 0 0 0 0 0
-Airship_Wreckage_C Airship_Wreckage_C 0 0 0 0 0
-Altar_A Altar_A -1 1 -1 -1 0
-Anvil_2x1x1 Anvil_2x1x1 -1 0 0 0 0
-Armour_Secondary Armour_Secondary -1 0 0 -1 0
-ArtTestPropEntity ArtTestPropEntity 0 0 0 0 0
-Barrel_A Barrel_A 0 0 0 0 0
-Barrel_B Barrel_B 0 0 0 0 0
-Barrel_Large_A Barrel_Large_A 0 0 0 0 0
-Barrel_With_Tap Barrel_With_Tap 0 0 0 0 0
-Basket_A Basket_A 0 0 0 0 0
-Basket_Big_A Basket_Big_A 0 0 0 0 0
-Bear_Skin_Rug_A Bear_Skin_Rug_A -1 0 0 -1 0
-Bed_Fancy_A Bed_Fancy_A -1 1 0 -1 1
-Bed_Hammock_A Bed_Hammock_A -1 1 0 0 0
-Bed_Iron_A Bed_Iron_A -1 1 0 -1 1
-Bed_Jungle_Lizard_3x1x3 Bed_Jungle_Lizard_3x1x3 0 0 0 0 0
-Bed_Rustic_A Bed_Rustic_A -1 1 0 -1 1
-Bed_Tudor Bed_Tudor -1 1 0 -1 1
-Bedroll_3x1x1 Bedroll_3x1x1 0 0 0 0 0
-Beehive_A Beehive_A 0 0 0 0 0
-Bench_A Bench_A -1 1 0 0 0
-Bench_B Bench_B -1 1 0 0 0
-Bench_Bamboo_A Bench_Bamboo_A -1 1 0 0 0
-Bench_Stone_A Bench_Stone_A -1 1 0 0 0
-Bench_Tudor Bench_Tudor -1 1 0 0 0
-Billboard_3x2x1 PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Billboard_6x4x1 PhotoMaterialBasedInventoryItem 0 0 0 0 0
-BlueprintConstructor BlueprintConstructorInventoryItem 0 0 0 0 0
-BlueprintConstructor_ftue BlueprintConstructorInventoryItem_ftue 0 0 0 0 0
-Boat_Upsidedown Boat_Upsidedown -2 2 0 -1 0
-Boat_Vertical Boat_Vertical -1 0 0 0 0
-Bone_GiantRib_A Bone_GiantRib_A 0 0 0 0 0
-Bone_GiantRib_B Bone_GiantRib_B 0 0 0 0 0
-Bone_GiantRib_C Bone_GiantRib_C 0 0 0 0 0
-Bone_GiantSkull_A Bone_GiantSkull_A -1 0 0 -1 0
-Bone_GiantSkull_B Bone_GiantSkull_B -1 0 0 -1 1
-Bone_GiantSkull_C Bone_GiantSkull_C -1 0 0 -1 0
-Bone_Pile_A Bone_Pile_A 0 0 0 0 0
-Bone_Pile_B Bone_Pile_B 0 0 0 0 0
-Bone_Ribs_A Bone_Ribs_A -1 0 0 0 0
-Bone_Skull_A Bone_Skull_A 0 0 0 0 0
-BookShelf_Tudor BookShelf_Tudor -1 0 0 0 0
-Books_Shelf_A Books_Shelf_A 0 0 0 0 0
-Books_Stack_A Books_Stack_A 0 0 0 0 0
-Bookshelf_Desert Bookshelf_Desert -1 0 0 0 0
-Bridge_Slats_A Bridge_Slats_A 0 0 0 0 0
-Bucket_A Bucket_A 0 0 0 0 0
-Bucket_Metal Bucket_Metal 0 0 0 0 0
-Bucket_Of_Ore Bucket_Of_Ore 0 0 0 0 0
-Bug_Egg_A Bug_Egg_A 0 0 0 0 0
-Bug_Egg_Large_A Bug_Egg_Large_A -1 0 0 -1 0
-Bug_Plant_A Bug_Plant_A 0 0 0 0 0
-Bug_Vent_A Bug_Vent_A 0 0 0 0 0
-Bureau_Jungle_Lizard_2x2x1 Bureau_Jungle_Lizard_2x2x1 0 0 0 0 0
-Bush Bush 0 0 0 -1 0
-Camp_Fire Camp_Fire -1 0 0 -1 0
-Cart_A Cart_A -1 0 0 -1 0
-Cart_B Cart_B -1 0 0 0 0
-Cart_Wood Cart_Wood -1 0 0 -1 0
-Cart_Wood_With_Sacks_3x2x2 Cart_Wood_With_Sacks_3x2x2 -1 0 0 -1 0
-Cave_Crystal_Clump_A Cave_Crystal_Clump_A 0 0 0 0 0
-Cave_Crystal_Clump_A_Lit Cave_Crystal_Clump_A_Lit 0 0 0 0 0
-Cave_Crystal_Clump_Large Cave_Crystal_Clump_Large -1 0 0 -1 0
-Cave_Crystal_Hanging_A Cave_Crystal_Hanging_A 0 0 -1 0 0
-Cellar_Grate_A Cellar_Grate_A 0 0 0 0 0
-Chair_A Chair_A 0 0 0 0 0
-Chair_B Chair_B 0 0 0 0 0
-Chair_Bamboo_A Chair_Bamboo_A 0 0 0 0 0
-Chair_Fancy_A Chair_Fancy_A 0 0 0 0 0
-Chair_Jungle_Lizard_1x1x1 Chair_Jungle_Lizard_1x1x1 0 0 0 0 0
-Chair_Tudor Chair_Tudor 0 0 0 0 0
-Chair_Tudor_Tall Chair_Tudor_Tall 0 0 0 0 0
-Chest_Blacksmith_Major Chest_Blacksmith_Major -1 0 0 0 0
-Chest_Blacksmith_Minor Chest_Blacksmith_Minor 0 0 0 0 0
-Chest_Christmas_Minor Chest_Christmas_Minor 0 0 0 0 0
-Chest_Generic_Major Chest_Generic_Major -1 0 0 0 0
-Chest_Generic_Minor Chest_Generic_Minor 0 0 0 0 0
-Chest_Golden Chest_Golden -1 0 0 0 0
-Chest_Lizardmen_Major Chest_Lizardmen_Major -1 0 0 0 0
-Chest_Lizardmen_Minor Chest_Lizardmen_Minor 0 0 0 0 0
-Chest_Major_Arrow_Titan Chest_Major_Arrow_Titan -1 0 0 0 0
-Chest_Major_Bomb_Titan Chest_Major_Bomb_Titan -1 0 0 0 0
-Chest_Major_Catalysts_Titan Chest_Major_Catalysts_Titan -1 0 0 0 0
-Chest_Major_Components_Titan Chest_Major_Components_Titan -1 0 0 0 0
-Chest_Major_Cotton Chest_Major_Cotton -1 0 0 0 0
-Chest_Major_Food_Titan Chest_Major_Food_Titan -1 0 0 0 0
-Chest_Major_Gunpowder Chest_Major_Gunpowder -1 0 0 0 0
-Chest_Major_Knots Chest_Major_Knots -1 0 0 0 0
-Chest_Major_Knots_Titan Chest_Major_Knots_Titan -1 0 0 0 0
-Chest_Major_Metal Chest_Major_Metal -1 0 0 0 0
-Chest_Major_Pelt Chest_Major_Pelt -1 0 0 0 0
-Chest_Major_Sand Chest_Major_Sand -1 0 0 0 0
-Chest_Major_Stone Chest_Major_Stone -1 0 0 0 0
-Chest_Major_Wax Chest_Major_Wax -1 0 0 0 0
-Chest_Major_Wood Chest_Major_Wood -1 0 0 0 0
-Chest_Minor_Arrow_Titan Chest_Minor_Arrow_Titan 0 0 0 0 0
-Chest_Minor_Bomb_Titan Chest_Minor_Bomb_Titan 0 0 0 0 0
-Chest_Minor_Catalysts_Titan Chest_Minor_Catalysts_Titan 0 0 0 0 0
-Chest_Minor_Components_Titan Chest_Minor_Components_Titan 0 0 0 0 0
-Chest_Minor_Cotton Chest_Minor_Cotton 0 0 0 0 0
-Chest_Minor_Food_Titan Chest_Minor_Food_Titan 0 0 0 0 0
-Chest_Minor_Gunpowder Chest_Minor_Gunpowder 0 0 0 0 0
-Chest_Minor_Knots Chest_Minor_Knots 0 0 0 0 0
-Chest_Minor_Knots_Titan Chest_Minor_Knots_Titan 0 0 0 0 0
-Chest_Minor_Metal Chest_Minor_Metal 0 0 0 0 0
-Chest_Minor_Pelt Chest_Minor_Pelt 0 0 0 0 0
-Chest_Minor_Sand Chest_Minor_Sand 0 0 0 0 0
-Chest_Minor_Stone Chest_Minor_Stone 0 0 0 0 0
-Chest_Minor_Wax Chest_Minor_Wax 0 0 0 0 0
-Chest_Minor_Wood Chest_Minor_Wood 0 0 0 0 0
-Chest_Monkey_Major Chest_Monkey_Major -1 0 0 0 0
-Chest_Monkey_Minor Chest_Monkey_Minor 0 0 0 0 0
-Chest_Survivalist_Major Chest_Survivalist_Major -1 0 0 0 0
-Chest_Survivalist_Minor Chest_Survivalist_Minor 0 0 0 0 0
-Chest_Trader_Major Chest_Trader_Major -1 0 0 0 0
-Chest_Trader_Minor Chest_Trader_Minor 0 0 0 0 0
-Chest_Yeti_Major Chest_Yeti_Major -1 0 0 0 0
-Chest_Yeti_Minor Chest_Yeti_Minor 0 0 0 0 0
-Chimney_Tudor_A Chimney_Tudor_A 0 0 0 0 0
-Chimney_Tudor_B Chimney_Tudor_B 0 0 0 0 0
-Chimney_Tudor_C Chimney_Tudor_C 0 0 0 0 0
-Christmas_Snowman Christmas_Snowman -1 0 0 0 0
-Christmas_Tree Christmas_Tree -1 0 0 -1 0
-Clock_Longcase Clock_Longcase 0 0 0 0 0
-Coffer_A Coffer_A -1 0 0 0 0
-Coffer_Desert_2x1 Coffer_Desert_2x1 0 0 0 0 0
-Coffer_Tudor Coffer_Tudor -1 0 0 0 0
-Collapsed_Doorway Collapsed_Doorway -1 1 0 -1 0
-Cornice_Metal_A Cornice_Metal_A 0 0 0 0 0
-Cornice_Metal_B Cornice_Metal_B 0 0 0 0 0
-Cornice_Metal_C Cornice_Metal_C 0 0 0 0 0
-Cornice_Stone_A Cornice_Stone_A 0 0 0 0 0
-Cornice_Stone_B Cornice_Stone_B 0 0 0 0 0
-Cornice_Stone_C Cornice_Stone_C 0 0 0 0 0
-Cornice_Wood_A Cornice_Wood_A 0 0 0 0 0
-Cornice_Wood_B Cornice_Wood_B 0 0 0 0 0
-Cornice_Wood_C Cornice_Wood_C 0 0 0 0 0
-Counter_Tudor_5x1x1 Counter_Tudor_5x1x1 -2 2 0 0 0
-Cracked_Cover_Stone_3x1x3 Cracked_Cover_Stone_3x1x3 -2 1 -1 -2 1
-Cracked_Cover_Stone_3x3x1 Cracked_Cover_Stone_3x3x1 -2 1 -3 0 0
-Crafting_Device Crafting_Device -1 0 0 -1 0
-Crate_A Crate_A 0 0 0 0 0
-Crate_B Crate_B 0 0 -1 0 0
-Crate_Keystone Crate_Keystone 0 0 0 0 0
-Crate_Keystone_Open Crate_Keystone_Open 0 0 0 0 0
-CustomSpawner_Cage_Wolf CustomSpawner_Cage_Wolf -1 0 0 0 0
-Door_Double_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Jail_Double_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Jail_Single_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Jungle_Double_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Jungle_Single_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Metal_Gate_Double LogicNetworkInventoryItem 0 0 0 0 0
-Door_Metal_Gate_Single LogicNetworkInventoryItem 0 0 0 0 0
-Door_Single_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Stone_Double_5x8 LogicNetworkInventoryItem 0 0 0 0 0
-Door_Stone_Double_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Stone_Single_A LogicNetworkInventoryItem 0 0 0 0 0
-Door_Tudor_Double LogicNetworkInventoryItem 0 0 0 0 0
-Door_Tudor_Single LogicNetworkInventoryItem 0 0 0 0 0
-Drying_Rack_A Drying_Rack_A -1 0 0 0 0
-Fence_Jungle_Lizard_Stone Fence_Jungle_Lizard_Stone 0 0 0 0 0
-Fence_Metal_A Fence_Metal_A 0 0 0 0 0
-Fence_Panel_A Fence_Panel_A 0 0 0 0 0
-Fence_Rope_A Fence_Rope_A 0 0 0 0 0
-Fence_Stone_A Fence_Stone_A 0 0 0 0 0
-Fence_Wood_A Fence_Wood_A 0 0 0 0 0
-Fire_Pit_A Fire_Pit_A -1 0 0 -1 0
-Fireworks_Device Fireworks_Device -1 0 0 -1 0
-Fishing_Net_A Fishing_Net_A -1 1 0 0 0
-Flag_A Flag_A -2 0 2 0 0
-Food_Primary Food_Primary -1 0 0 0 0
-Fountain_Tudor_5x5x5 Fountain_Tudor_5x5x5 0 0 0 0 0
-Freestanding_Banner_Explorer_1x3x1 Freestanding_Banner_Explorer_1x3x1 0 0 0 0 0
-Freestanding_Banner_Settler_1x3x1 Freestanding_Banner_Settler_1x3x1 0 0 0 0 0
-Furniture_Device Furniture_Device -1 0 0 -1 0
-Gear_Device Gear_Device -1 0 0 -1 0
-Glowing_WallDec_Stone_Large_A Glowing_WallDec_Stone_Large_A -1 1 -2 0 0
-Glowing_WallDec_Stone_Small_A Glowing_WallDec_Stone_Small_A 0 0 -2 0 0
-Gramophone_1x2x1 Gramophone_1x2x1 0 0 0 0 0
-Grate Grate 0 0 0 0 0
-Grindstone_A Grindstone_A 0 0 0 0 0
-Halloween_Skull_1x1x1 Halloween_Skull_1x1x1 0 0 0 0 0
-Hanging_Awning_Tudor_1x1x1 Hanging_Awning_Tudor_1x1x1 0 0 0 0 0
-Hanging_Awning_Tudor_1x2x2 Hanging_Awning_Tudor_1x2x2 0 0 0 0 0
-Hanging_Banner_A Hanging_Banner_A -1 0 -1 0 0
-Hanging_Banner_Desert_1x3x1 Hanging_Banner_Desert_1x3x1 0 0 0 0 0
-Hanging_Banner_Desert_3x3x1 Hanging_Banner_Desert_3x3x1 0 0 0 0 0
-Hanging_Banner_Jungle_Lizard_1x3x1 Hanging_Banner_Jungle_Lizard_1x3x1 0 0 -2 -1 -1
-Hanging_Banner_Jungle_Lizard_3x3x1 Hanging_Banner_Jungle_Lizard_3x3x1 -1 1 -2 0 0
-Hanging_Banner_Jungle_Lizard_B_3x3x1 Hanging_Banner_Jungle_Lizard_B_3x3x1 0 0 0 0 0
-Hanging_Banner_Monkey_Large Hanging_Banner_Monkey_Large -2 1 -2 0 0
-Hanging_Banner_Monkey_Small Hanging_Banner_Monkey_Small 0 0 -2 0 0
-Hanging_Banner_Mountain_1x3x1 Hanging_Banner_Mountain_1x3x1 0 0 -2 -1 -1
-Hanging_Banner_Mountain_3x3x1 Hanging_Banner_Mountain_3x3x1 -1 1 -2 0 0
-Hanging_Bunting_Tudor Hanging_Bunting_Tudor 0 0 0 0 0
-Hanging_Bunting_Tudor_Flag Hanging_Bunting_Tudor_Flag 0 0 0 0 0
-Hanging_Canopy_A Hanging_Canopy_A -1 1 0 -1 1
-Hanging_Canopy_B Hanging_Canopy_B -1 1 0 -1 1
-Hanging_Canopy_C Hanging_Canopy_C -1 1 0 0 0
-Hanging_Christmas_Lights Hanging_Christmas_Lights 0 0 0 0 0
-Hanging_Christmas_Stocking Hanging_Christmas_Stocking 0 0 0 0 0
-Hanging_Christmas_Wreath Hanging_Christmas_Wreath 0 0 0 0 0
-Hanging_Herbs_A Hanging_Herbs_A 0 0 0 0 0
-Hanging_Jewel_Lamp_A Hanging_Jewel_Lamp_A 0 0 -1 0 0
-Hanging_Jewel_Lamp_Large_A Hanging_Jewel_Lamp_Large_A -1 1 -2 -1 1
-Hanging_Light_Buoy_Ball Hanging_Light_Buoy_Ball 0 0 0 0 0
-Hanging_Meat_A Hanging_Meat_A 0 0 0 0 0
-Hanging_Mounted_Head_1x1x1 Hanging_Mounted_Head_1x1x1 0 0 0 0 0
-Hanging_Painting_A PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Hanging_Painting_B PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Hanging_Painting_C PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Hanging_Rough_Banner_A Hanging_Rough_Banner_A 0 0 1 -1 -1
-Hanging_Tapestry_A Hanging_Tapestry_A -1 1 0 -1 -1
-Hanging_Tapestry_B Hanging_Tapestry_B -1 1 -2 0 0
-Hanging_Tapestry_C Hanging_Tapestry_C 0 0 0 -1 -1
-Hanging_WallDec_Bamboo_Large_A Hanging_WallDec_Bamboo_Large_A -1 1 -2 0 0
-Hanging_WallDec_Bamboo_Small_A Hanging_WallDec_Bamboo_Small_A 0 0 0 -1 -1
-Hanging_WallDec_Stone_C Hanging_WallDec_Stone_C -1 1 -2 -1 -1
-Hanging_WallDecoration_Stone_A Hanging_WallDecoration_Stone_A -1 1 -2 0 0
-Hanging_WallDecoration_Stone_B Hanging_WallDecoration_Stone_B -1 0 -2 0 0
-Hanging_WallShield_A Hanging_WallShield_A 0 0 0 -1 -1
-Hanging_Wall_Pot Hanging_Wall_Pot 0 0 0 0 0
-Hanging_Yeti_Bunting_A Hanging_Yeti_Bunting_A 0 0 0 0 0
-Hanging_Yeti_Bunting_B Hanging_Yeti_Bunting_B 0 0 0 0 0
-Hay_Bale_A Hay_Bale_A 0 0 0 0 0
-Hay_Bale_B Hay_Bale_B 0 0 0 0 0
-HomeTeleporter HomeTeleporter -3 2 0 -2 1
-Instrument_Drum_A Instrument_Drum_A 0 0 0 0 0
-Instrument_Gong_A Instrument_Gong_A -1 0 0 0 0
-Jail_Bench_A Jail_Bench_A -1 0 0 0 0
-Jail_Bench_B Jail_Bench_B -1 0 0 0 0
-Keystone_Oven Keystone_Oven -1 0 0 -1 0
-Ladder_Metal Ladder_Metal 0 0 0 0 0
-Ladder_Wood Ladder_Wood 0 0 0 0 0
-Ladder_Wood_Jungle Ladder_Wood_Jungle 0 0 0 -1 0
-Leaderboard Leaderboard -1 1 0 -1 0
-Leaderboard_CQ Leaderboard_CQ -1 1 0 -1 0
-Leaderboard_EndGame Leaderboard_EndGame -1 1 0 -1 0
-Leaderboard_IslandCreator Leaderboard_IslandCreator -1 1 0 -1 0
-Leaderboard_PVP Leaderboard_PVP -1 1 0 -1 0
-Leaderboard_Survival Leaderboard_Survival -1 1 0 -1 0
-Leather_Press Leather_Press 0 0 0 0 0
-Light_BoneLamp_A Light_BoneLamp_A 0 0 0 0 0
-Light_BrazierPost_A Light_BrazierPost_A 0 0 1 0 0
-Light_BrazierPost_B Light_BrazierPost_B 0 0 1 0 0
-Light_Brazier_A Light_Brazier_A 0 0 0 0 0
-Light_Brazier_WallPost_A Light_Brazier_WallPost_A 0 0 0 0 0
-Light_Brazier_Wall_A Light_Brazier_Wall_A 0 0 0 0 0
-Light_CandleStick_Small Light_CandleStick_Small 0 0 0 0 0
-Light_CandleStick_Tall Light_CandleStick_Tall 0 0 0 0 0
-Light_Candle_Cluster_A Light_Candle_Cluster_A 0 0 0 0 0
-Light_Floor_Jungle_Lizard Light_Floor_Jungle_Lizard 0 0 0 0 0
-Light_GasLamp_A Light_GasLamp_A 0 0 0 0 0
-Light_GasLamp_B Light_GasLamp_B 0 0 0 0 0
-Light_Hanging_Bone_Lamp Light_Hanging_Bone_Lamp 0 0 -1 0 0
-Light_Hanging_Bone_Lamp_3X3X3 Light_Hanging_Bone_Lamp_3X3X3 -1 1 -2 -1 1
-Light_Hanging_Chandelier_3x3x3 Light_Hanging_Chandelier_3x3x3 -1 1 -2 -1 1
-Light_Hanging_Chandelier_A Light_Hanging_Chandelier_A 0 0 -1 0 0
-Light_Hanging_Jungle_Lizard_1x2x1 Light_Hanging_Jungle_Lizard_1x2x1 0 0 0 0 0
-Light_Hanging_Jungle_Lizard_3x3x3 Light_Hanging_Jungle_Lizard_3x3x3 0 0 0 0 0
-Light_Hanging_Lantern Light_Hanging_Lantern 0 0 -1 0 0
-Light_LampPost_A Light_LampPost_A 0 0 0 0 0
-Light_Lantern_A Light_Lantern_A 0 0 0 0 0
-Light_Lantern_Jungle_Lizard_A Light_Lantern_Jungle_Lizard_A 0 0 0 -1 0
-Light_Lantern_Jungle_Lizard_B Light_Lantern_Jungle_Lizard_B 0 0 0 0 0
-Light_Lantern_Stone_A Light_Lantern_Stone_A 0 0 0 0 0
-Light_Lantern_Wall Light_Lantern_Wall 0 0 0 0 0
-Light_Oil_Lamp_A Light_Oil_Lamp_A 0 0 0 0 0
-Light_Oil_Lamp_Tall_A Light_Oil_Lamp_Tall_A 0 0 0 0 0
-Light_Stone_3x3x3 Light_Stone_3x3x3 -1 1 -2 -1 1
-Light_Stone_Ceiling_3x1x3 Light_Stone_Ceiling_3x1x3 -1 1 0 -1 1
-Light_Stone_Floor_1x1x1 Light_Stone_Floor_1x1x1 0 0 0 0 0
-Light_Stone_Floor_3x1x3 Light_Stone_Floor_3x1x3 -1 1 0 -1 1
-Light_Stone_Wall_3x3x1 Light_Stone_Wall_3x3x1 -1 1 -2 0 0
-Light_Table_Jungle_Lizard Light_Table_Jungle_Lizard 0 0 0 0 0
-Light_Wall_BoneLamp Light_Wall_BoneLamp 0 0 0 0 0
-Light_Wall_Candle Light_Wall_Candle 0 0 0 0 0
-Light_Wall_Jewel Light_Wall_Jewel 0 0 0 0 0
-Light_Wall_Oil_Lamp Light_Wall_Oil_Lamp 0 0 0 0 0
-Link_Chain Link_Chain 0 0 0 0 0
-Link_Chain_Diagonal Link_Chain_Diagonal 0 0 0 -1 1
-Link_Rope Link_Rope 0 0 0 0 0
-Link_Rope_Diagonal Link_Rope_Diagonal 0 0 0 -1 1
-Lobster_Pot_Large_A Lobster_Pot_Large_A -1 0 0 0 0
-Lobster_Pot_Small_A Lobster_Pot_Small_A 0 0 0 0 0
-Log_Pile_A Log_Pile_A 0 0 0 0 0
-LogicNetwork_CraftingDevice LogicNetwork_CraftingDevice -1 0 0 -1 0
-LogicNetwork_Creature_Spawn_Crate_A LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Creature_Spawn_Crate_B LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Exploding_Barrel LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Exploding_Barrel_Titan LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_Manual_Switch LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_PressurePad LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_PressurePad_A LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_PressurePad_Large LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_PressurePad_Large_A LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_Target_Des LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_Target_Des_Tudor LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_Target_Indes_Tudor LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_Target_Indestructible LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Input_WallSwitch_Tudor LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Logic_And LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Logic_Latch LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Logic_Not LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Bear_ArmouredIce LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Bear_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Bear_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_BigCat_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_BigCat_Sabretooth LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_BigCat_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_FennecFox LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Goat LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Minecritter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Penguin LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Rabbit LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Wolf_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Wolf_IceFang LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Wolf_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Wolf_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Yeti_Brute LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Yeti_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Arctic_Yeti_Runt LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_BigCat_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_BigCat_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_BigCat_Veteran LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_BigCat_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Boar LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Chicken LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_FennecFox LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_FiringCactus LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Minecritter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Rabbit LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Scarab_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Scarab_Flyer LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Scarab_Rhino LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Scarab_Soldier LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Desert_Scarab_Spitter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Firey_Chicken LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Bear_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Bear_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Bear_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Boar LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Chicken LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Minecritter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Pig LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Rabbit LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Sheep LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Skitterling_Bomber LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Skitterling_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Skitterling_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Skitterling_Spitter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Wolf_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Wolf_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Wolf_Thornfang LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Forest_Wolf_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Bear_Poison LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_BigCat_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_BigCat_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Boar LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Chicken LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Colossaur_Brute LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Colossaur_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Colossaur_Whelp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_ExplodingFrog LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Frog LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Minecritter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Pig LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Raptor_Fighter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Raptor_Hunter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Raptor_Leader LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Jungle_Raptor_Spitter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Midwinter_Chicken LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Midwinter_FennecFox LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_Midwinter_Pig LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Mob_Spawner_SpittingPlant LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Network_Delay LogicNetworkDelayInventoryItem 0 0 0 0 0
-LogicNetwork_Network_Delay_1sec LogicNetworkDelayInventoryItem 0 0 0 0 0
-LogicNetwork_Network_Delay_5sec LogicNetworkDelayInventoryItem 0 0 0 0 0
-LogicNetwork_Network_Delay_HalfSec LogicNetworkDelayInventoryItem 0 0 0 0 0
-LogicNetwork_Network_Relay LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_3DLetters_A LogicNetwork3DLetterInventoryItem 0 0 0 0 0
-LogicNetwork_Output_DartTrap LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_DartTrap_02 LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_Door LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_Lamp LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_Lamp_Tudor LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_Platform_A LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_Platform_B LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_Platform_Tudor LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter_Alarm LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter_Synth LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter_Timer LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter_Tudor_Alarm LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter_Tudor_Synth LogicNetworkInventoryItem 0 0 0 0 0
-LogicNetwork_Output_SoundEmitter_Tudor_Timer LogicNetworkInventoryItem 0 0 0 0 0
-Loom Loom 0 0 0 0 0
-Lumo_Out_Door_Forest LogicNetworkInventoryItem 0 0 0 0 0
-Lumo_Out_FireworkLauncher_Xu FireworkLauncherInventoryItem 0 0 0 0 0
-Lumo_Toggle_Titan LogicNetworkInventoryItem 0 0 0 0 0
-Lumo_Viewpoint_Titan LogicNetworkInventoryItem 0 0 0 0 0
-Mailbox Mailbox 0 0 0 0 0
-Manhole_Cover_A Manhole_Cover_A 0 0 0 0 0
-Metal_Primary Metal_Primary -1 0 0 -1 0
-Mine_Cart_A Mine_Cart_A 0 0 0 0 0
-Miscellaneous_Primary Miscellaneous_Primary -1 0 0 -1 0
-Miscellaneous_Secondary Miscellaneous_Secondary -1 0 0 0 0
-PVP_Banner_Blue PVP_Banner_Blue -1 0 -1 -1 -1
-PVP_Banner_Red PVP_Banner_Red -1 0 -1 -1 -1
-PVP_Post PVP_Post -5 4 0 -2 1
-PVP_Post_Builder PVP_Post_Builder -5 4 0 -2 1
-PVP_Survival_ArenaCentre PVP_Survival_ArenaCentre 0 0 0 0 0
-PVP_Survival_SpawnLandingPad PVP_Survival_SpawnLandingPad 0 0 0 0 0
-Pack_Starter_Shield_Bronze Pack_Starter_Shield_Bronze -1 0 -2 0 0
-Pack_Starter_Statue_Gold Pack_Starter_Statue_Gold -1 1 0 -1 1
-Pack_Starter_Statue_Silver Pack_Starter_Statue_Silver -1 1 0 -1 1
-Paperscreen_1x1x1 Paperscreen_1x1x1 0 0 0 -1 0
-Paperscreen_1x2x1 Paperscreen_1x2x1 0 0 0 -1 0
-Paperscreen_2x3x1 Paperscreen_2x3x1 -1 0 0 -1 0
-Parcel_A Parcel_A -1 0 0 0 0
-Pillar_Jungle_Lizard_Wood Pillar_Jungle_Lizard_Wood 0 0 0 0 0
-Pillar_Stone_Basic Pillar_Stone_Basic 0 0 0 0 0
-Pillar_Stone_Desert Pillar_Stone_Desert 0 0 0 0 0
-Pillar_Stone_Titan Pillar_Stone_Titan 0 0 0 0 0
-Plate_Gold_Pan_A Plate_Gold_Pan_A 0 0 0 0 0
-Plate_Offering_A Plate_Offering_A 0 0 0 0 0
-Plate_Offering_B Plate_Offering_B 0 0 0 0 0
-Plate_PestleAndMortar_A Plate_PestleAndMortar_A 0 0 0 0 0
-Plate_WoodenBowl_A Plate_WoodenBowl_A 0 0 0 0 0
-Plinth_Stone_Basic_Down Plinth_Stone_Basic_Down 0 0 0 0 0
-Plinth_Stone_Basic_Up Plinth_Stone_Basic_Up 0 0 0 0 0
-Plinth_Stone_Desert_Down Plinth_Stone_Desert_Down 0 0 0 0 0
-Plinth_Stone_Desert_Up Plinth_Stone_Desert_Up 0 0 0 0 0
-Post_Bamboo_A Post_Bamboo_A 0 0 0 0 0
-Post_Metal_A Post_Metal_A 0 0 0 0 0
-Post_Rough_Banner_A Post_Rough_Banner_A 0 0 0 0 0
-Post_SignPost_A Post_SignPost_A 0 0 2 0 0
-Post_Skull_A Post_Skull_A 0 0 1 0 0
-Post_SpikePost_A Post_SpikePost_A 0 0 0 0 0
-Pot_Cauldron_A Pot_Cauldron_A 0 0 0 0 0
-Pot_Cauldron_B Pot_Cauldron_B 0 0 0 0 0
-Pot_Cauldron_C Pot_Cauldron_C 0 0 0 0 0
-Pot_Cauldron_D Pot_Cauldron_D 0 0 0 0 0
-Pot_Desert_A Pot_Desert_A 0 0 0 0 0
-Pot_Desert_B Pot_Desert_B 0 0 0 0 0
-Pot_Desert_C Pot_Desert_C 0 0 0 0 0
-Pot_Desert_D Pot_Desert_D 0 0 0 0 0
-Pot_Ornate_A Pot_Ornate_A 0 0 0 0 0
-Pot_Ornate_B Pot_Ornate_B 0 0 0 0 0
-Pot_Ornate_C Pot_Ornate_C 0 0 0 0 0
-Pot_Ornate_Tall_A Pot_Ornate_Tall_A 0 0 0 0 0
-Pot_Ornate_Tall_B Pot_Ornate_Tall_B 0 0 0 0 0
-Pot_Ornate_Tall_C Pot_Ornate_Tall_C 0 0 0 0 0
-Pot_Yeti_A Pot_Yeti_A 0 0 0 0 0
-Pot_Yeti_B Pot_Yeti_B 0 0 0 0 0
-Pot_Yeti_C Pot_Yeti_C 0 0 0 0 0
-Pumpkin_Lantern_A Pumpkin_Lantern_A 0 0 0 0 0
-PvP_Barricade_Metal_A PvP_Barricade_Metal_A 0 0 0 0 0
-PvP_Barricade_Metal_B PvP_Barricade_Metal_B -1 0 0 0 0
-PvP_Barricade_Metal_C PvP_Barricade_Metal_C -1 1 0 0 0
-PvP_Barricade_Wood_A PvP_Barricade_Wood_A 0 0 0 0 0
-PvP_Barricade_Wood_B_01 PvP_Barricade_Wood_B_01 -1 0 0 0 0
-PvP_Barricade_Wood_B_02 PvP_Barricade_Wood_B_02 -1 0 0 0 0
-PvP_Barricade_Wood_C_01 PvP_Barricade_Wood_C_01 -1 1 0 0 0
-PvP_Barricade_Wood_C_02 PvP_Barricade_Wood_C_02 -1 1 0 0 0
-PvP_Barricade_Wood_C_03 PvP_Barricade_Wood_C_03 -1 1 0 0 0
-RaceTimerCheckpoint LogicNetworkInventoryItem 0 0 0 0 0
-RaceTimerEnd LogicNetworkInventoryItem 0 0 0 0 0
-RaceTimerStart LogicNetworkInventoryItem 0 0 0 0 0
-Rail Rail 0 0 0 0 0
-Reward_Banner_A PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Reward_Banner_B PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Reward_Banner_BuildCake Reward_Banner_BuildCake -1 0 0 -1 -1
-Reward_Banner_BuildComp_Runner_1 Reward_Banner_BuildComp_Runner_1 -1 0 0 -1 -1
-Reward_Banner_BuildComp_Runner_2 Reward_Banner_BuildComp_Runner_2 -1 0 0 -1 -1
-Reward_Banner_BuildComp_Winner Reward_Banner_BuildComp_Winner -1 0 0 -1 -1
-Reward_Banner_CommunityReward Reward_Banner_CommunityReward -1 0 0 -1 -1
-Reward_Banner_KillDev_PvP Reward_Banner_KillDev_PvP -1 0 0 -1 -1
-Reward_Banner_MostDeaths Reward_Banner_MostDeaths -1 0 0 -1 -1
-River_Lily_Flower_A River_Lily_Flower_A 0 0 0 0 0
-River_Lily_Pad_A River_Lily_Pad_A 0 0 0 0 0
-River_Lily_Pad_Large_A River_Lily_Pad_Large_A -1 0 0 -1 1
-River_Reeds_A River_Reeds_A 0 0 0 0 0
-Rock_A Rock_A 0 0 0 0 0
-Rock_B Rock_B 0 0 0 0 0
-Rock_Pile_A Rock_Pile_A 0 0 0 0 0
-Roof_Tile_Clay Roof_Tile_Clay 0 0 0 -1 0
-Roof_Tile_Thatch Roof_Tile_Thatch 0 0 0 0 0
-Roof_Tile_Wood Roof_Tile_Wood 0 0 0 0 0
-Rope_Bucket_A Rope_Bucket_A 0 0 -1 0 0
-Rope_Hook_A Rope_Hook_A 0 0 -1 0 0
-Rope_Piece_A Rope_Piece_A 0 0 0 0 0
-Rope_Sandbags_A Rope_Sandbags_A 0 0 -1 0 0
-Rubble_1x1x1_A Rubble_1x1x1_A 0 0 0 0 0
-Rubble_1x1x1_B Rubble_1x1x1_B 0 0 0 0 0
-Rubble_1x1x1_C Rubble_1x1x1_C 0 0 0 0 0
-Rubble_1x1x1_D Rubble_1x1x1_D 0 0 0 0 0
-Rug_3x1x3_Rough Rug_3x1x3_Rough 0 0 0 0 0
-Rug_A Rug_A -1 0 -1 -1 0
-Rug_Large_A Rug_Large_A -1 1 -1 -1 1
-Rug_Rabbit Rug_Rabbit 0 0 0 0 0
-Rug_Roll_A Rug_Roll_A -1 0 0 0 0
-Rug_Roll_Long_A Rug_Roll_Long_A -1 1 0 0 0
-Rug_Runner_A Rug_Runner_A -1 1 -1 0 0
-Rug_Rustic_A Rug_Rustic_A -1 1 0 -1 1
-Sack_A Sack_A 0 0 0 0 0
-Sarcophagus_A Sarcophagus_A -1 0 0 0 0
-Sarcophagus_B Sarcophagus_B -1 0 0 0 0
-Sarcophagus_C Sarcophagus_C -1 0 0 0 0
-Sarcophagus_D Sarcophagus_D -1 1 0 0 0
-Sarcophagus_E Sarcophagus_E -1 1 0 0 0
-Scaffold_Bamboo Scaffold_Bamboo 0 0 0 0 0
-Scarecrow_A Scarecrow_A -1 0 1 0 0
-Scroll_Holder_A Scroll_Holder_A -1 0 0 0 0
-Scroll_Stand_1x2x1 Scroll_Stand_1x2x1 0 0 0 0 0
-Sewer_Grate_A Sewer_Grate_A 0 0 0 0 0
-Shelf_A Shelf_A -1 1 0 0 0
-Shelter_Small_A Shelter_Small_A -1 0 0 0 0
-Shrine_Rustic_A Shrine_Rustic_A 0 0 -1 0 0
-Shrine_Stone_A Shrine_Stone_A 0 0 0 0 0
-Sign_Arrow_Metal Sign_Arrow_Metal 0 0 0 0 0
-Sign_Arrow_Metal_Glowing Sign_Arrow_Metal_Glowing 0 0 0 0 0
-Sign_Arrow_Stone Sign_Arrow_Stone 0 0 0 0 0
-Sign_Arrow_Wood Sign_Arrow_Wood 0 0 0 0 0
-Sloped_Stone_Dec_End Sloped_Stone_Dec_End 0 0 0 0 0
-Sloped_Stone_Dec_Mid Sloped_Stone_Dec_Mid 0 0 0 0 0
-Social_FreeStanding_Banner_Explorer Social_FreeStanding_Banner_Explorer -2 0 0 0 0
-Social_FreeStanding_Banner_Fighter Social_FreeStanding_Banner_Fighter -2 0 0 0 0
-Social_FreeStanding_Banner_Settler Social_FreeStanding_Banner_Settler -2 0 0 0 0
-Social_Freestanding_Banner_BuildOff_3x9x1 Social_Freestanding_Banner_BuildOff_3x9x1 0 0 0 0 0
-Social_Ship_Wheel Social_Ship_Wheel 0 0 0 0 0
-Social_Sign_A Social_Sign_A -1 0 0 0 0
-Social_Sign_B Social_Sign_B 0 0 0 -1 0
-Social_Sign_C Social_Sign_C -1 0 0 0 0
-Social_Sign_D Social_Sign_D -1 0 0 -1 0
-Social_Sign_Large PhotoMaterialBasedInventoryItem 0 0 0 0 0
-Social_Sign_Large_A Social_Sign_Large_A 0 0 -1 -1 0
-Social_Sign_Large_B Social_Sign_Large_B 0 0 -1 -1 0
-Social_Sign_Large_C Social_Sign_Large_C 0 0 -2 -1 0
-Social_Sign_Large_D Social_Sign_Large_D 0 0 -2 -1 0
-Social_Square_Banner_BuildOff_6x6x1 Social_Square_Banner_BuildOff_6x6x1 0 0 0 0 0
-Social_Square_Banner_Explorer Social_Square_Banner_Explorer -2 2 0 0 0
-Social_Square_Banner_Fighter Social_Square_Banner_Fighter -3 2 0 0 0
-Social_Square_Banner_Settler Social_Square_Banner_Settler -3 2 0 0 0
-Social_Wall_Banner_BuildOff_3x6x1 Social_Wall_Banner_BuildOff_3x6x1 0 0 0 0 0
-Social_Wall_Banner_Explorer Social_Wall_Banner_Explorer -1 0 -5 0 0
-Social_Wall_Banner_Fighter Social_Wall_Banner_Fighter -1 0 -5 0 0
-Social_Wall_Banner_Settler Social_Wall_Banner_Settler -1 0 -5 0 0
-Social_Ware_Apples Social_Ware_Apples 0 0 0 0 0
-Social_Ware_Meat Social_Ware_Meat 0 0 0 0 0
-Social_Ware_Mushrooms Social_Ware_Mushrooms 0 0 0 0 0
-Social_Ware_Pumpkins Social_Ware_Pumpkins 0 0 0 0 0
-Social_Weapon_Daggers Social_Weapon_Daggers 0 0 0 0 0
-Social_Weapon_Halberds Social_Weapon_Halberds -1 0 0 0 0
-Social_Weapon_Sheilds Social_Weapon_Sheilds -1 1 0 0 0
-Social_Weapon_Swords Social_Weapon_Swords 0 0 0 0 0
-SpiderWeb_A SpiderWeb_A 0 0 0 0 0
-SpiderWeb_B SpiderWeb_B -1 0 0 -1 0
-SpiderWeb_C SpiderWeb_C 0 0 0 0 0
-Spike_Trap Spike_Trap 0 0 0 0 0
-Spike_Trap_Large Spike_Trap_Large -1 1 0 -1 1
-Spike_Trap_Large_Titan Spike_Trap_Large_Titan -1 1 0 -1 1
-Spike_Trap_Titan Spike_Trap_Titan 0 0 0 0 0
-Spring_Trap Spring_Trap 0 0 0 0 0
-Spring_Trap_Large Spring_Trap_Large -1 1 0 -1 1
-Stalacmite_Ice_Large Stalacmite_Ice_Large 0 0 0 0 0
-Stalacmite_Ice_Medium Stalacmite_Ice_Medium 0 0 0 0 0
-Stalacmite_Ice_Small Stalacmite_Ice_Small 0 0 0 0 0
-Stalacmite_Large Stalacmite_Large 0 0 0 0 0
-Stalacmite_Medium Stalacmite_Medium 0 0 0 0 0
-Stalacmite_Small Stalacmite_Small 0 0 0 0 0
-Stalactite_Ice_Large Stalactite_Ice_Large 0 0 -2 0 0
-Stalactite_Ice_Medium Stalactite_Ice_Medium 0 0 -1 0 0
-Stalactite_Ice_Small Stalactite_Ice_Small 0 0 -1 0 0
-Stalactite_Large Stalactite_Large 0 0 -2 0 0
-Stalactite_Medium Stalactite_Medium 0 0 -1 0 0
-Stalactite_Small Stalactite_Small 0 0 0 0 0
-Statue_Stone_A Statue_Stone_A 0 0 0 0 0
-Statue_Stone_B Statue_Stone_B 0 0 0 0 0
-Statue_Yeti_A Statue_Yeti_A 0 0 0 0 0
-Statue_Yeti_B Statue_Yeti_B 0 0 0 0 0
-Steps_Metal_A Steps_Metal_A 0 0 0 0 0
-Steps_Stone_A Steps_Stone_A 0 0 0 0 0
-Steps_Wood_A Steps_Wood_A 0 0 0 0 0
-Stone_Primary Stone_Primary -1 0 0 -1 0
-Table_1x1_A Table_1x1_A 0 0 0 0 0
-Table_1x1_Bamboo_A Table_1x1_Bamboo_A 0 0 0 0 0
-Table_1x2_A Table_1x2_A -1 0 0 0 0
-Table_1x2_Bamboo_A Table_1x2_Bamboo_A -1 0 0 0 0
-Table_2x2_A Table_2x2_A -1 0 0 -1 0
-Table_Desert_1x1 Table_Desert_1x1 0 0 0 0 0
-Table_Desert_2x1 Table_Desert_2x1 -1 0 0 0 0
-Table_Tudor_1x2 Table_Tudor_1x2 -1 0 0 0 0
-Table_Tudor_2x2 Table_Tudor_2x2 -1 0 0 -1 0
-Tableware_Bakers_Set Tableware_Bakers_Set 0 0 0 0 0
-Tableware_Clay Tableware_Clay 0 0 0 0 0
-Tableware_Inkwell Tableware_Inkwell 0 0 0 0 0
-Tableware_Metal Tableware_Metal 0 0 0 0 0
-Tableware_Wood Tableware_Wood 0 0 0 0 0
-Tent Tent -1 1 0 -1 1
-Totem_Large_A Totem_Large_A 0 0 0 0 0
-Totem_Small_A Totem_Small_A 0 0 0 0 0
-Totem_Wood_A Totem_Wood_A 0 0 0 0 0
-Totem_Wood_B Totem_Wood_B 0 0 0 0 0
-Totem_Wood_C Totem_Wood_C 0 0 0 0 0
-Tree_Log_A Tree_Log_A 0 0 0 0 0
-Tree_MossyLog_A Tree_MossyLog_A 0 0 0 0 0
-Tree_Stump_A Tree_Stump_A -1 0 0 -1 0
-Trough_A Trough_A -1 0 0 0 0
-Vine_Jungle_A Vine_Jungle_A -1 1 0 0 0
-Vine_Jungle_B Vine_Jungle_B -1 1 0 0 0
-Wagon_Wheel_A Wagon_Wheel_A -1 0 0 0 0
-Wardrobe_Jungle_Lizard_2x3x1 Wardrobe_Jungle_Lizard_2x3x1 -1 0 0 0 0
-Wardrobe_Tudor Wardrobe_Tudor -1 0 0 0 0
-Weapon_Secondary Weapon_Secondary -1 0 0 -1 0
-Window_Boarded_1x1x1 Window_Boarded_1x1x1 0 0 0 -1 0
-Window_Boarded_Large Window_Boarded_Large -1 0 0 0 0
-Window_Boarded_Small Window_Boarded_Small 0 0 0 -1 0
-Window_Jail_1x1x1 Window_Jail_1x1x1 0 0 0 -1 0
-Window_Jail_1x2x1 Window_Jail_1x2x1 0 0 0 -1 0
-Window_Jail_2x3x1 Window_Jail_2x3x1 -1 0 0 -1 0
-Window_Metal_2x3x1 Window_Metal_2x3x1 -1 0 0 -1 0
-Window_Metal_A Window_Metal_A 0 0 0 -1 0
-Window_Metal_Tall_A Window_Metal_Tall_A 0 0 0 -1 0
-Window_Shutter_1x1x1 Window_Shutter_1x1x1 0 0 0 -1 0
-Window_Shutter_A Window_Shutter_A 0 0 0 -1 0
-Window_Shutter_B Window_Shutter_B -1 0 0 0 0
-Window_Stone_2x3x1 Window_Stone_2x3x1 -1 0 0 -1 0
-Window_Stone_A Window_Stone_A 0 0 0 -1 0
-Window_Stone_Tall_A Window_Stone_Tall_A 0 0 0 -1 0
-Window_Wood_2x3x1 Window_Wood_2x3x1 -1 0 0 -1 0
-Window_Wood_A Window_Wood_A 0 0 0 -1 0
-Window_Wood_Tall_A Window_Wood_Tall_A 0 0 0 0 0
-Wood_Primary Wood_Primary -1 0 0 -1 0
-Wood_Stove_A Wood_Stove_A 0 0 0 0 0
-Wood_Stove_Small Wood_Stove_Small 0 0 0 0 0
+Airship Airship 0 0 0 0 0 0,0,0
+Airship_Wreckage_A Airship_Wreckage_A 0 0 0 0 0 0,0,0;0,1,0
+Airship_Wreckage_B Airship_Wreckage_B 0 0 0 0 0 0,0,0
+Airship_Wreckage_C Airship_Wreckage_C 0 0 0 0 0 0,0,0
+Altar_A Altar_A -1 1 -1 -1 0 -1,-1,-1;-1,-1,0;-1,0,-1;-1,0,0;0,-1,-1;0,-1,0;0,0,-1;0,0,0;1,-1,-1;1,-1,0;1,0,-1;1,0,0
+Anvil_2x1x1 Anvil_2x1x1 -1 0 0 0 0 -1,0,0;0,0,0
+Armour_Secondary Armour_Secondary -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,0;-1,2,0;0,0,-1;0,0,0;0,1,0;0,2,0
+ArtTestPropEntity ArtTestPropEntity 0 0 0 0 0 0,0,0
+Barrel_A Barrel_A 0 0 0 0 0 0,0,0
+Barrel_B Barrel_B 0 0 0 0 0 0,0,0
+Barrel_Large_A Barrel_Large_A 0 0 0 0 0 0,0,0;0,1,0
+Barrel_With_Tap Barrel_With_Tap 0 0 0 0 0 0,0,0
+Basket_A Basket_A 0 0 0 0 0 0,0,0
+Basket_Big_A Basket_Big_A 0 0 0 0 0 0,0,0;0,1,0
+Bear_Skin_Rug_A Bear_Skin_Rug_A -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Bed_Fancy_A Bed_Fancy_A -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Bed_Hammock_A Bed_Hammock_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Bed_Iron_A Bed_Iron_A -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Bed_Jungle_Lizard_3x1x3 Bed_Jungle_Lizard_3x1x3 0 0 0 0 0 0,0,0
+Bed_Rustic_A Bed_Rustic_A -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Bed_Tudor Bed_Tudor -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;-1,1,-1;-1,1,1;-1,2,-1;-1,2,0;-1,2,1;0,0,-1;0,0,0;0,0,1;0,1,-1;0,2,-1;0,2,0;0,2,1;1,0,-1;1,0,0;1,0,1;1,1,-1;1,1,1;1,2,-1;1,2,0;1,2,1
+Bedroll_3x1x1 Bedroll_3x1x1 0 0 0 0 0 0,0,0
+Beehive_A Beehive_A 0 0 0 0 0 0,0,0
+Bench_A Bench_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Bench_B Bench_B -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Bench_Bamboo_A Bench_Bamboo_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Bench_Stone_A Bench_Stone_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Bench_Tudor Bench_Tudor -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Billboard_3x2x1 PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Billboard_6x4x1 PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+BlueprintConstructor BlueprintConstructorInventoryItem 0 0 0 0 0 0,0,0
+BlueprintConstructor_ftue BlueprintConstructorInventoryItem_ftue 0 0 0 0 0 0,0,0
+Boat_Upsidedown Boat_Upsidedown -2 2 0 -1 0 -2,0,-1;-2,0,0;-1,0,-1;-1,0,0;0,0,-1;0,0,0;1,0,-1;1,0,0;2,0,-1;2,0,0
+Boat_Vertical Boat_Vertical -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;-1,3,0;-1,4,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0
+Bone_GiantRib_A Bone_GiantRib_A 0 0 0 0 0 0,0,0;0,1,0
+Bone_GiantRib_B Bone_GiantRib_B 0 0 0 0 0 0,0,0;0,1,0
+Bone_GiantRib_C Bone_GiantRib_C 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Bone_GiantSkull_A Bone_GiantSkull_A -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;0,0,-1;0,0,0;0,1,-1
+Bone_GiantSkull_B Bone_GiantSkull_B -1 0 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,0,1;0,1,-1;0,1,0
+Bone_GiantSkull_C Bone_GiantSkull_C -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;0,0,-1;0,0,0;0,1,-1
+Bone_Pile_A Bone_Pile_A 0 0 0 0 0 0,0,0
+Bone_Pile_B Bone_Pile_B 0 0 0 0 0 0,0,0
+Bone_Ribs_A Bone_Ribs_A -1 0 0 0 0 -1,0,0;0,0,0
+Bone_Skull_A Bone_Skull_A 0 0 0 0 0 0,0,0
+BookShelf_Tudor BookShelf_Tudor -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0
+Books_Shelf_A Books_Shelf_A 0 0 0 0 0 0,0,0
+Books_Stack_A Books_Stack_A 0 0 0 0 0 0,0,0
+Bookshelf_Desert Bookshelf_Desert -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0
+Bridge_Slats_A Bridge_Slats_A 0 0 0 0 0 0,0,0
+Bucket_A Bucket_A 0 0 0 0 0 0,0,0
+Bucket_Metal Bucket_Metal 0 0 0 0 0 0,0,0
+Bucket_Of_Ore Bucket_Of_Ore 0 0 0 0 0 0,0,0
+Bug_Egg_A Bug_Egg_A 0 0 0 0 0 0,0,0
+Bug_Egg_Large_A Bug_Egg_Large_A -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Bug_Plant_A Bug_Plant_A 0 0 0 0 0 0,0,0
+Bug_Vent_A Bug_Vent_A 0 0 0 0 0 0,0,0;0,1,0
+Bureau_Jungle_Lizard_2x2x1 Bureau_Jungle_Lizard_2x2x1 0 0 0 0 0 0,0,0
+Bush Bush 0 0 0 -1 0 0,0,-1;0,0,0;0,1,0
+Camp_Fire Camp_Fire -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Cart_A Cart_A -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Cart_B Cart_B -1 0 0 0 0 -1,0,0;0,0,0
+Cart_Wood Cart_Wood -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Cart_Wood_With_Sacks_3x2x2 Cart_Wood_With_Sacks_3x2x2 -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Cave_Crystal_Clump_A Cave_Crystal_Clump_A 0 0 0 0 0 0,0,0
+Cave_Crystal_Clump_A_Lit Cave_Crystal_Clump_A_Lit 0 0 0 0 0 0,0,0
+Cave_Crystal_Clump_Large Cave_Crystal_Clump_Large -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Cave_Crystal_Hanging_A Cave_Crystal_Hanging_A 0 0 -1 0 0 0,-1,0;0,0,0
+Cellar_Grate_A Cellar_Grate_A 0 0 0 0 0 0,0,0
+Chair_A Chair_A 0 0 0 0 0 0,0,0
+Chair_B Chair_B 0 0 0 0 0 0,0,0
+Chair_Bamboo_A Chair_Bamboo_A 0 0 0 0 0 0,0,0
+Chair_Fancy_A Chair_Fancy_A 0 0 0 0 0 0,0,0;0,1,0
+Chair_Jungle_Lizard_1x1x1 Chair_Jungle_Lizard_1x1x1 0 0 0 0 0 0,0,0
+Chair_Tudor Chair_Tudor 0 0 0 0 0 0,0,0
+Chair_Tudor_Tall Chair_Tudor_Tall 0 0 0 0 0 0,0,0;0,1,0
+Chest_Blacksmith_Major Chest_Blacksmith_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Blacksmith_Minor Chest_Blacksmith_Minor 0 0 0 0 0 0,0,0
+Chest_Christmas_Minor Chest_Christmas_Minor 0 0 0 0 0 0,0,0
+Chest_Generic_Major Chest_Generic_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Generic_Minor Chest_Generic_Minor 0 0 0 0 0 0,0,0
+Chest_Golden Chest_Golden -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Lizardmen_Major Chest_Lizardmen_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Lizardmen_Minor Chest_Lizardmen_Minor 0 0 0 0 0 0,0,0
+Chest_Major_Arrow_Titan Chest_Major_Arrow_Titan -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Bomb_Titan Chest_Major_Bomb_Titan -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Catalysts_Titan Chest_Major_Catalysts_Titan -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Components_Titan Chest_Major_Components_Titan -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Cotton Chest_Major_Cotton -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Food_Titan Chest_Major_Food_Titan -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Gunpowder Chest_Major_Gunpowder -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Knots Chest_Major_Knots -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Knots_Titan Chest_Major_Knots_Titan -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Metal Chest_Major_Metal -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Pelt Chest_Major_Pelt -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Sand Chest_Major_Sand -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Stone Chest_Major_Stone -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Wax Chest_Major_Wax -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Major_Wood Chest_Major_Wood -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Minor_Arrow_Titan Chest_Minor_Arrow_Titan 0 0 0 0 0 0,0,0
+Chest_Minor_Bomb_Titan Chest_Minor_Bomb_Titan 0 0 0 0 0 0,0,0
+Chest_Minor_Catalysts_Titan Chest_Minor_Catalysts_Titan 0 0 0 0 0 0,0,0
+Chest_Minor_Components_Titan Chest_Minor_Components_Titan 0 0 0 0 0 0,0,0
+Chest_Minor_Cotton Chest_Minor_Cotton 0 0 0 0 0 0,0,0
+Chest_Minor_Food_Titan Chest_Minor_Food_Titan 0 0 0 0 0 0,0,0
+Chest_Minor_Gunpowder Chest_Minor_Gunpowder 0 0 0 0 0 0,0,0
+Chest_Minor_Knots Chest_Minor_Knots 0 0 0 0 0 0,0,0
+Chest_Minor_Knots_Titan Chest_Minor_Knots_Titan 0 0 0 0 0 0,0,0
+Chest_Minor_Metal Chest_Minor_Metal 0 0 0 0 0 0,0,0
+Chest_Minor_Pelt Chest_Minor_Pelt 0 0 0 0 0 0,0,0
+Chest_Minor_Sand Chest_Minor_Sand 0 0 0 0 0 0,0,0
+Chest_Minor_Stone Chest_Minor_Stone 0 0 0 0 0 0,0,0
+Chest_Minor_Wax Chest_Minor_Wax 0 0 0 0 0 0,0,0
+Chest_Minor_Wood Chest_Minor_Wood 0 0 0 0 0 0,0,0
+Chest_Monkey_Major Chest_Monkey_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Monkey_Minor Chest_Monkey_Minor 0 0 0 0 0 0,0,0
+Chest_Survivalist_Major Chest_Survivalist_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Survivalist_Minor Chest_Survivalist_Minor 0 0 0 0 0 0,0,0
+Chest_Trader_Major Chest_Trader_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Trader_Minor Chest_Trader_Minor 0 0 0 0 0 0,0,0
+Chest_Yeti_Major Chest_Yeti_Major -1 0 0 0 0 -1,0,0;0,0,0
+Chest_Yeti_Minor Chest_Yeti_Minor 0 0 0 0 0 0,0,0
+Chimney_Tudor_A Chimney_Tudor_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Chimney_Tudor_B Chimney_Tudor_B 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Chimney_Tudor_C Chimney_Tudor_C 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Christmas_Snowman Christmas_Snowman -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Christmas_Tree Christmas_Tree -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Clock_Longcase Clock_Longcase 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Coffer_A Coffer_A -1 0 0 0 0 -1,0,0;0,0,0
+Coffer_Desert_2x1 Coffer_Desert_2x1 0 0 0 0 0 0,0,0
+Coffer_Tudor Coffer_Tudor -1 0 0 0 0 -1,0,0;0,0,0
+Collapsed_Doorway Collapsed_Doorway -1 1 0 -1 0 -1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1
+Cornice_Metal_A Cornice_Metal_A 0 0 0 0 0 0,0,0
+Cornice_Metal_B Cornice_Metal_B 0 0 0 0 0 0,0,0
+Cornice_Metal_C Cornice_Metal_C 0 0 0 0 0 0,0,0
+Cornice_Stone_A Cornice_Stone_A 0 0 0 0 0 0,0,0
+Cornice_Stone_B Cornice_Stone_B 0 0 0 0 0 0,0,0
+Cornice_Stone_C Cornice_Stone_C 0 0 0 0 0 0,0,0
+Cornice_Wood_A Cornice_Wood_A 0 0 0 0 0 0,0,0
+Cornice_Wood_B Cornice_Wood_B 0 0 0 0 0 0,0,0
+Cornice_Wood_C Cornice_Wood_C 0 0 0 0 0 0,0,0
+Counter_Tudor_5x1x1 Counter_Tudor_5x1x1 -2 2 0 0 0 -2,0,0;-1,0,0;0,0,0;1,0,0;2,0,0
+Cracked_Cover_Stone_3x1x3 Cracked_Cover_Stone_3x1x3 -2 1 -1 -2 1 -2,0,-1;-2,0,0;-1,-1,0;-1,0,-1;-1,0,0;-1,0,1;0,0,-2;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Cracked_Cover_Stone_3x3x1 Cracked_Cover_Stone_3x3x1 -2 1 -3 0 0 -2,-1,0;-2,0,0;-1,-3,0;-1,-2,0;-1,-1,0;-1,0,0;0,-3,0;0,-2,0;0,-1,0;0,0,0;1,-3,0;1,-2,0;1,-1,0;1,0,0
+Crafting_Device Crafting_Device -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Crate_A Crate_A 0 0 0 0 0 0,0,0
+Crate_B Crate_B 0 0 -1 0 0 0,-1,0;0,0,0
+Crate_Keystone Crate_Keystone 0 0 0 0 0 0,0,0
+Crate_Keystone_Open Crate_Keystone_Open 0 0 0 0 0 0,0,0
+CustomSpawner_Cage_Wolf CustomSpawner_Cage_Wolf -1 0 0 0 0 -1,0,0;0,0,0
+Door_Double_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Jail_Double_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Jail_Single_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Jungle_Double_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Jungle_Single_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Metal_Gate_Double LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Metal_Gate_Single LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Single_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Stone_Double_5x8 LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Stone_Double_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Stone_Single_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Tudor_Double LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Door_Tudor_Single LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Drying_Rack_A Drying_Rack_A -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Fence_Jungle_Lizard_Stone Fence_Jungle_Lizard_Stone 0 0 0 0 0 0,0,0
+Fence_Metal_A Fence_Metal_A 0 0 0 0 0 0,0,0
+Fence_Panel_A Fence_Panel_A 0 0 0 0 0 0,0,0
+Fence_Rope_A Fence_Rope_A 0 0 0 0 0 0,0,0
+Fence_Stone_A Fence_Stone_A 0 0 0 0 0 0,0,0
+Fence_Wood_A Fence_Wood_A 0 0 0 0 0 0,0,0
+Fire_Pit_A Fire_Pit_A -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Fireworks_Device Fireworks_Device -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Fishing_Net_A Fishing_Net_A -1 1 0 0 0 -1,0,0;-1,1,0;-1,2,0;1,0,0;1,1,0;1,2,0
+Flag_A Flag_A -2 0 2 0 0 -2,2,0;-1,2,0;0,2,0
+Food_Primary Food_Primary -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Fountain_Tudor_5x5x5 Fountain_Tudor_5x5x5 0 0 0 0 0 0,0,0
+Freestanding_Banner_Explorer_1x3x1 Freestanding_Banner_Explorer_1x3x1 0 0 0 0 0 0,0,0
+Freestanding_Banner_Settler_1x3x1 Freestanding_Banner_Settler_1x3x1 0 0 0 0 0 0,0,0
+Furniture_Device Furniture_Device -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Gear_Device Gear_Device -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Glowing_WallDec_Stone_Large_A Glowing_WallDec_Stone_Large_A -1 1 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;0,1,0;1,-2,0;1,-1,0;1,0,0
+Glowing_WallDec_Stone_Small_A Glowing_WallDec_Stone_Small_A 0 0 -2 0 0 0,-2,0;0,-1,0;0,0,0
+Gramophone_1x2x1 Gramophone_1x2x1 0 0 0 0 0 0,0,0
+Grate Grate 0 0 0 0 0 0,0,0
+Grindstone_A Grindstone_A 0 0 0 0 0 0,0,0
+Halloween_Skull_1x1x1 Halloween_Skull_1x1x1 0 0 0 0 0 0,0,0
+Hanging_Awning_Tudor_1x1x1 Hanging_Awning_Tudor_1x1x1 0 0 0 0 0 0,0,0
+Hanging_Awning_Tudor_1x2x2 Hanging_Awning_Tudor_1x2x2 0 0 0 0 0 0,0,0
+Hanging_Banner_A Hanging_Banner_A -1 0 -1 0 0 -1,-1,0;-1,0,0;0,-1,0;0,0,0
+Hanging_Banner_Desert_1x3x1 Hanging_Banner_Desert_1x3x1 0 0 0 0 0 0,0,0
+Hanging_Banner_Desert_3x3x1 Hanging_Banner_Desert_3x3x1 0 0 0 0 0 0,0,0
+Hanging_Banner_Jungle_Lizard_1x3x1 Hanging_Banner_Jungle_Lizard_1x3x1 0 0 -2 -1 -1 0,-2,-1;0,-1,-1;0,0,-1
+Hanging_Banner_Jungle_Lizard_3x3x1 Hanging_Banner_Jungle_Lizard_3x3x1 -1 1 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;1,-2,0;1,-1,0;1,0,0
+Hanging_Banner_Jungle_Lizard_B_3x3x1 Hanging_Banner_Jungle_Lizard_B_3x3x1 0 0 0 0 0 0,0,0
+Hanging_Banner_Monkey_Large Hanging_Banner_Monkey_Large -2 1 -2 0 0 -2,0,0;-1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;1,0,0
+Hanging_Banner_Monkey_Small Hanging_Banner_Monkey_Small 0 0 -2 0 0 0,-2,0;0,-1,0;0,0,0
+Hanging_Banner_Mountain_1x3x1 Hanging_Banner_Mountain_1x3x1 0 0 -2 -1 -1 0,-2,-1;0,-1,-1;0,0,-1
+Hanging_Banner_Mountain_3x3x1 Hanging_Banner_Mountain_3x3x1 -1 1 -2 0 0 -1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;1,-2,0;1,-1,0;1,0,0
+Hanging_Bunting_Tudor Hanging_Bunting_Tudor 0 0 0 0 0 0,0,0
+Hanging_Bunting_Tudor_Flag Hanging_Bunting_Tudor_Flag 0 0 0 0 0 0,0,0
+Hanging_Canopy_A Hanging_Canopy_A -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Hanging_Canopy_B Hanging_Canopy_B -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Hanging_Canopy_C Hanging_Canopy_C -1 1 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0;1,0,0;1,1,0;1,2,0
+Hanging_Christmas_Lights Hanging_Christmas_Lights 0 0 0 0 0 0,0,0
+Hanging_Christmas_Stocking Hanging_Christmas_Stocking 0 0 0 0 0 0,0,0
+Hanging_Christmas_Wreath Hanging_Christmas_Wreath 0 0 0 0 0 0,0,0
+Hanging_Herbs_A Hanging_Herbs_A 0 0 0 0 0 0,0,0
+Hanging_Jewel_Lamp_A Hanging_Jewel_Lamp_A 0 0 -1 0 0 0,-1,0;0,0,0
+Hanging_Jewel_Lamp_Large_A Hanging_Jewel_Lamp_Large_A -1 1 -2 -1 1 -1,-2,0;-1,-1,-1;-1,-1,0;-1,-1,1;-1,0,0;0,-2,-1;0,-2,0;0,-2,1;0,-1,-1;0,-1,1;0,0,-1;0,0,0;0,0,1;1,-2,0;1,-1,-1;1,-1,0;1,-1,1;1,0,0
+Hanging_Light_Buoy_Ball Hanging_Light_Buoy_Ball 0 0 0 0 0 0,0,0
+Hanging_Meat_A Hanging_Meat_A 0 0 0 0 0 0,0,0
+Hanging_Mounted_Head_1x1x1 Hanging_Mounted_Head_1x1x1 0 0 0 0 0 0,0,0
+Hanging_Painting_A PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Hanging_Painting_B PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Hanging_Painting_C PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Hanging_Rough_Banner_A Hanging_Rough_Banner_A 0 0 1 -1 -1 0,1,-1
+Hanging_Tapestry_A Hanging_Tapestry_A -1 1 0 -1 -1 -1,0,-1;0,0,-1;1,0,-1
+Hanging_Tapestry_B Hanging_Tapestry_B -1 1 -2 0 0 -1,0,0;0,-2,0;0,-1,0;0,0,0;1,0,0
+Hanging_Tapestry_C Hanging_Tapestry_C 0 0 0 -1 -1 0,0,-1
+Hanging_WallDec_Bamboo_Large_A Hanging_WallDec_Bamboo_Large_A -1 1 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;1,-2,0;1,-1,0;1,0,0
+Hanging_WallDec_Bamboo_Small_A Hanging_WallDec_Bamboo_Small_A 0 0 0 -1 -1 0,0,-1
+Hanging_WallDec_Stone_C Hanging_WallDec_Stone_C -1 1 -2 -1 -1 -1,-2,-1;-1,-1,-1;-1,0,-1;0,-2,-1;0,-1,-1;0,0,-1;1,-2,-1;1,-1,-1;1,0,-1
+Hanging_WallDecoration_Stone_A Hanging_WallDecoration_Stone_A -1 1 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;1,-2,0;1,-1,0;1,0,0
+Hanging_WallDecoration_Stone_B Hanging_WallDecoration_Stone_B -1 0 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0
+Hanging_WallShield_A Hanging_WallShield_A 0 0 0 -1 -1 0,0,-1
+Hanging_Wall_Pot Hanging_Wall_Pot 0 0 0 0 0 0,0,0
+Hanging_Yeti_Bunting_A Hanging_Yeti_Bunting_A 0 0 0 0 0 0,0,0
+Hanging_Yeti_Bunting_B Hanging_Yeti_Bunting_B 0 0 0 0 0 0,0,0
+Hay_Bale_A Hay_Bale_A 0 0 0 0 0 0,0,0
+Hay_Bale_B Hay_Bale_B 0 0 0 0 0 0,0,0
+HomeTeleporter HomeTeleporter -3 2 0 -2 1 -3,3,0;-3,4,0;-3,5,0;-2,0,-2;-2,0,-1;-2,0,0;-2,1,-1;-2,1,0;-2,2,-1;-2,2,0;-2,3,-1;-2,3,0;-2,4,-1;-2,4,0;-2,5,-1;-2,5,0;-2,6,-1;-2,6,0;-2,7,-1;-2,7,0;-1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;-1,4,-1;-1,4,0;-1,5,-1;-1,5,0;-1,6,-1;-1,6,0;-1,7,-1;-1,7,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;0,4,-1;0,4,0;0,5,-1;0,5,0;0,6,-1;0,6,0;0,7,-1;0,7,0;1,0,-1;1,0,0;1,0,1;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0;1,4,-1;1,4,0;1,5,-1;1,5,0;1,6,-1;1,6,0;1,7,-1;1,7,0;2,3,-1;2,4,-1;2,5,-1
+Instrument_Drum_A Instrument_Drum_A 0 0 0 0 0 0,0,0
+Instrument_Gong_A Instrument_Gong_A -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Jail_Bench_A Jail_Bench_A -1 0 0 0 0 -1,0,0;0,0,0
+Jail_Bench_B Jail_Bench_B -1 0 0 0 0 -1,0,0;0,0,0
+Keystone_Oven Keystone_Oven -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Ladder_Metal Ladder_Metal 0 0 0 0 0 0,0,0
+Ladder_Wood Ladder_Wood 0 0 0 0 0 0,0,0
+Ladder_Wood_Jungle Ladder_Wood_Jungle 0 0 0 -1 0 0,0,-1;0,0,0
+Leaderboard Leaderboard -1 1 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0
+Leaderboard_CQ Leaderboard_CQ -1 1 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0
+Leaderboard_EndGame Leaderboard_EndGame -1 1 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0
+Leaderboard_IslandCreator Leaderboard_IslandCreator -1 1 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0
+Leaderboard_PVP Leaderboard_PVP -1 1 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0
+Leaderboard_Survival Leaderboard_Survival -1 1 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0
+Leather_Press Leather_Press 0 0 0 0 0 0,0,0
+Light_BoneLamp_A Light_BoneLamp_A 0 0 0 0 0 0,0,0;0,1,0
+Light_BrazierPost_A Light_BrazierPost_A 0 0 1 0 0 0,1,0;0,2,0
+Light_BrazierPost_B Light_BrazierPost_B 0 0 1 0 0 0,1,0;0,2,0
+Light_Brazier_A Light_Brazier_A 0 0 0 0 0 0,0,0
+Light_Brazier_WallPost_A Light_Brazier_WallPost_A 0 0 0 0 0 0,0,0;0,1,0
+Light_Brazier_Wall_A Light_Brazier_Wall_A 0 0 0 0 0 0,0,0
+Light_CandleStick_Small Light_CandleStick_Small 0 0 0 0 0 0,0,0
+Light_CandleStick_Tall Light_CandleStick_Tall 0 0 0 0 0 0,0,0
+Light_Candle_Cluster_A Light_Candle_Cluster_A 0 0 0 0 0 0,0,0
+Light_Floor_Jungle_Lizard Light_Floor_Jungle_Lizard 0 0 0 0 0 0,0,0
+Light_GasLamp_A Light_GasLamp_A 0 0 0 0 0 0,0,0
+Light_GasLamp_B Light_GasLamp_B 0 0 0 0 0 0,0,0
+Light_Hanging_Bone_Lamp Light_Hanging_Bone_Lamp 0 0 -1 0 0 0,-1,0
+Light_Hanging_Bone_Lamp_3X3X3 Light_Hanging_Bone_Lamp_3X3X3 -1 1 -2 -1 1 -1,-1,0;-1,-1,1;-1,0,1;0,-2,0;0,-2,1;0,-1,-1;0,-1,0;0,-1,1;0,0,-1;0,0,0;0,1,0;1,-1,0;1,-1,1;1,0,1
+Light_Hanging_Chandelier_3x3x3 Light_Hanging_Chandelier_3x3x3 -1 1 -2 -1 1 -1,-2,0;-1,-1,-1;-1,-1,0;-1,-1,1;0,-2,-1;0,-2,0;0,-2,1;0,-1,-1;0,-1,0;0,-1,1;0,0,0;1,-2,0;1,-1,-1;1,-1,0;1,-1,1
+Light_Hanging_Chandelier_A Light_Hanging_Chandelier_A 0 0 -1 0 0 0,-1,0
+Light_Hanging_Jungle_Lizard_1x2x1 Light_Hanging_Jungle_Lizard_1x2x1 0 0 0 0 0 0,0,0
+Light_Hanging_Jungle_Lizard_3x3x3 Light_Hanging_Jungle_Lizard_3x3x3 0 0 0 0 0 0,0,0
+Light_Hanging_Lantern Light_Hanging_Lantern 0 0 -1 0 0 0,-1,0;0,0,0
+Light_LampPost_A Light_LampPost_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Light_Lantern_A Light_Lantern_A 0 0 0 0 0 0,0,0
+Light_Lantern_Jungle_Lizard_A Light_Lantern_Jungle_Lizard_A 0 0 0 -1 0 0,0,-1;0,2,0;0,3,0
+Light_Lantern_Jungle_Lizard_B Light_Lantern_Jungle_Lizard_B 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Light_Lantern_Stone_A Light_Lantern_Stone_A 0 0 0 0 0 0,0,0
+Light_Lantern_Wall Light_Lantern_Wall 0 0 0 0 0 0,0,0
+Light_Oil_Lamp_A Light_Oil_Lamp_A 0 0 0 0 0 0,0,0
+Light_Oil_Lamp_Tall_A Light_Oil_Lamp_Tall_A 0 0 0 0 0 0,0,0;0,1,0
+Light_Stone_3x3x3 Light_Stone_3x3x3 -1 1 -2 -1 1 -1,-2,-1;-1,-2,0;-1,-2,1;-1,-1,-1;-1,-1,0;-1,-1,1;-1,0,-1;-1,0,0;-1,0,1;0,-2,-1;0,-2,0;0,-2,1;0,-1,-1;0,-1,1;0,0,-1;0,0,0;0,0,1;1,-2,-1;1,-2,0;1,-2,1;1,-1,-1;1,-1,0;1,-1,1;1,0,-1;1,0,0;1,0,1
+Light_Stone_Ceiling_3x1x3 Light_Stone_Ceiling_3x1x3 -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Light_Stone_Floor_1x1x1 Light_Stone_Floor_1x1x1 0 0 0 0 0 0,0,0
+Light_Stone_Floor_3x1x3 Light_Stone_Floor_3x1x3 -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Light_Stone_Wall_3x3x1 Light_Stone_Wall_3x3x1 -1 1 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0;1,-2,0;1,-1,0;1,0,0
+Light_Table_Jungle_Lizard Light_Table_Jungle_Lizard 0 0 0 0 0 0,0,0
+Light_Wall_BoneLamp Light_Wall_BoneLamp 0 0 0 0 0 0,0,0
+Light_Wall_Candle Light_Wall_Candle 0 0 0 0 0 0,0,0
+Light_Wall_Jewel Light_Wall_Jewel 0 0 0 0 0 0,0,0
+Light_Wall_Oil_Lamp Light_Wall_Oil_Lamp 0 0 0 0 0 0,0,0
+Link_Chain Link_Chain 0 0 0 0 0 0,0,0
+Link_Chain_Diagonal Link_Chain_Diagonal 0 0 0 -1 1 0,0,1;0,1,0;0,2,-1
+Link_Rope Link_Rope 0 0 0 0 0 0,0,0
+Link_Rope_Diagonal Link_Rope_Diagonal 0 0 0 -1 1 0,0,1;0,1,0;0,2,-1
+Lobster_Pot_Large_A Lobster_Pot_Large_A -1 0 0 0 0 -1,0,0;0,0,0
+Lobster_Pot_Small_A Lobster_Pot_Small_A 0 0 0 0 0 0,0,0
+Log_Pile_A Log_Pile_A 0 0 0 0 0 0,0,0
+LogicNetwork_CraftingDevice LogicNetwork_CraftingDevice -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+LogicNetwork_Creature_Spawn_Crate_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Creature_Spawn_Crate_B LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Exploding_Barrel LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Exploding_Barrel_Titan LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_Manual_Switch LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_PressurePad LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_PressurePad_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_PressurePad_Large LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_PressurePad_Large_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_Target_Des LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_Target_Des_Tudor LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_Target_Indes_Tudor LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_Target_Indestructible LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Input_WallSwitch_Tudor LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Logic_And LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Logic_Latch LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Logic_Not LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Bear_ArmouredIce LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Bear_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Bear_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_BigCat_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_BigCat_Sabretooth LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_BigCat_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_FennecFox LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Goat LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Minecritter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Penguin LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Rabbit LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Wolf_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Wolf_IceFang LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Wolf_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Wolf_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Yeti_Brute LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Yeti_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Arctic_Yeti_Runt LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_BigCat_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_BigCat_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_BigCat_Veteran LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_BigCat_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Boar LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Chicken LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_FennecFox LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_FiringCactus LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Minecritter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Rabbit LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Scarab_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Scarab_Flyer LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Scarab_Rhino LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Scarab_Soldier LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Desert_Scarab_Spitter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Firey_Chicken LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Bear_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Bear_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Bear_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Boar LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Chicken LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Minecritter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Pig LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Rabbit LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Sheep LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Skitterling_Bomber LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Skitterling_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Skitterling_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Skitterling_Spitter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Wolf_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Wolf_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Wolf_Thornfang LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Forest_Wolf_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Bear_Poison LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_BigCat_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_BigCat_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Boar LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Chicken LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Colossaur_Brute LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Colossaur_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Colossaur_Whelp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_ExplodingFrog LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Frog LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Minecritter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Pig LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Raptor_Fighter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Raptor_Hunter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Raptor_Leader LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Jungle_Raptor_Spitter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Midwinter_Chicken LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Midwinter_FennecFox LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_Midwinter_Pig LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Mob_Spawner_SpittingPlant LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Network_Delay LogicNetworkDelayInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Network_Delay_1sec LogicNetworkDelayInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Network_Delay_5sec LogicNetworkDelayInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Network_Delay_HalfSec LogicNetworkDelayInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Network_Relay LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_3DLetters_A LogicNetwork3DLetterInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_DartTrap LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_DartTrap_02 LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_Door LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_Lamp LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_Lamp_Tudor LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_Platform_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_Platform_B LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_Platform_Tudor LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter_Alarm LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter_Synth LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter_Timer LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter_Tudor_Alarm LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter_Tudor_Synth LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+LogicNetwork_Output_SoundEmitter_Tudor_Timer LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Loom Loom 0 0 0 0 0 0,0,0
+Lumo_Out_Door_Forest LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Lumo_Out_FireworkLauncher_Xu FireworkLauncherInventoryItem 0 0 0 0 0 0,0,0
+Lumo_Toggle_Titan LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Lumo_Viewpoint_Titan LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Mailbox Mailbox 0 0 0 0 0 0,0,0;0,1,0
+Manhole_Cover_A Manhole_Cover_A 0 0 0 0 0 0,0,0
+Metal_Primary Metal_Primary -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Mine_Cart_A Mine_Cart_A 0 0 0 0 0 0,0,0
+Miscellaneous_Primary Miscellaneous_Primary -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;0,0,-1;0,0,0;0,1,-1
+Miscellaneous_Secondary Miscellaneous_Secondary -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+PVP_Banner_Blue PVP_Banner_Blue -1 0 -1 -1 -1 -1,-1,-1;-1,0,-1;0,0,-1
+PVP_Banner_Red PVP_Banner_Red -1 0 -1 -1 -1 -1,-1,-1;-1,0,-1;0,0,-1
+PVP_Post PVP_Post -5 4 0 -2 1 -5,0,-1;-5,0,0;-5,1,-1;-5,1,0;-5,2,-1;-5,2,0;-5,3,-1;-5,3,0;-5,4,-1;-5,4,0;-5,5,-1;-5,5,0;-5,6,-1;-5,6,0;-4,0,-2;-4,0,-1;-4,0,0;-4,0,1;-4,1,-2;-4,1,-1;-4,1,0;-4,1,1;-4,2,-2;-4,2,-1;-4,2,0;-4,2,1;-4,3,-2;-4,3,-1;-4,3,0;-4,3,1;-4,4,-2;-4,4,-1;-4,4,0;-4,4,1;-4,5,-2;-4,5,1;-4,6,-2;-4,6,1;-4,7,-1;-4,7,0;-3,0,-1;-3,0,0;-3,1,-1;-3,1,0;-3,2,-1;-3,2,0;-3,3,-2;-3,3,-1;-3,3,0;-3,3,1;-3,4,-1;-3,4,0;-3,5,-2;-3,5,-1;-3,5,0;-3,5,1;-3,6,-2;-3,6,-1;-3,6,0;-3,6,1;-3,7,-1;-3,7,0;-3,8,-1;-2,0,-1;-2,0,0;-2,1,-1;-2,1,0;-2,2,-1;-2,2,0;-2,3,-1;-2,3,0;-2,4,-1;-2,4,0;-2,5,-2;-2,5,-1;-2,5,0;-2,5,1;-2,6,-1;-2,6,0;-2,8,-1;-1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;-1,4,-1;-1,4,0;-1,5,-2;-1,5,-1;-1,5,0;-1,5,1;-1,6,-1;-1,6,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;0,4,-1;0,4,0;0,5,-2;0,5,-1;0,5,0;0,5,1;0,6,-1;0,6,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0;1,4,-1;1,4,0;1,5,-2;1,5,-1;1,5,0;1,5,1;1,6,-1;1,6,0;2,0,-1;2,0,0;2,1,-1;2,1,0;2,2,-1;2,2,0;2,3,-2;2,3,-1;2,3,0;2,3,1;2,4,-1;2,4,0;2,5,-2;2,5,-1;2,5,0;2,5,1;2,6,-2;2,6,-1;2,6,0;2,6,1;2,7,-1;2,7,0;3,0,-2;3,0,-1;3,0,0;3,0,1;3,1,-2;3,1,-1;3,1,0;3,1,1;3,2,-2;3,2,-1;3,2,0;3,2,1;3,3,-2;3,3,-1;3,3,0;3,3,1;3,4,-2;3,4,-1;3,4,0;3,4,1;3,5,-2;3,5,1;3,6,-2;3,6,1;3,7,-1;3,7,0;3,8,-1;3,8,0;4,0,-1;4,0,0;4,1,-1;4,1,0;4,2,-1;4,2,0;4,3,-1;4,3,0;4,4,-1;4,4,0;4,5,-1;4,5,0;4,6,-1;4,6,0;4,8,-1;4,9,-1
+PVP_Post_Builder PVP_Post_Builder -5 4 0 -2 1 -5,0,-1;-5,0,0;-5,1,-1;-5,1,0;-5,2,-1;-5,2,0;-5,3,-1;-5,3,0;-5,4,-1;-5,4,0;-5,5,-1;-5,5,0;-5,6,-1;-5,6,0;-4,0,-2;-4,0,-1;-4,0,0;-4,0,1;-4,1,-2;-4,1,-1;-4,1,0;-4,1,1;-4,2,-2;-4,2,-1;-4,2,0;-4,2,1;-4,3,-2;-4,3,-1;-4,3,0;-4,3,1;-4,4,-2;-4,4,-1;-4,4,0;-4,4,1;-4,5,-2;-4,5,1;-4,6,-2;-4,6,1;-4,7,-1;-4,7,0;-3,0,-1;-3,0,0;-3,1,-1;-3,1,0;-3,2,-1;-3,2,0;-3,3,-2;-3,3,-1;-3,3,0;-3,3,1;-3,4,-1;-3,4,0;-3,5,-2;-3,5,-1;-3,5,0;-3,5,1;-3,6,-2;-3,6,-1;-3,6,0;-3,6,1;-3,7,-1;-3,7,0;-3,8,-1;-2,0,-1;-2,0,0;-2,1,-1;-2,1,0;-2,2,-1;-2,2,0;-2,3,-1;-2,3,0;-2,4,-1;-2,4,0;-2,5,-2;-2,5,-1;-2,5,0;-2,5,1;-2,6,-1;-2,6,0;-2,8,-1;-1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;-1,3,-1;-1,3,0;-1,4,-1;-1,4,0;-1,5,-2;-1,5,-1;-1,5,0;-1,5,1;-1,6,-1;-1,6,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0;0,3,-1;0,3,0;0,4,-1;0,4,0;0,5,-2;0,5,-1;0,5,0;0,5,1;0,6,-1;0,6,0;1,0,-1;1,0,0;1,1,-1;1,1,0;1,2,-1;1,2,0;1,3,-1;1,3,0;1,4,-1;1,4,0;1,5,-2;1,5,-1;1,5,0;1,5,1;1,6,-1;1,6,0;2,0,-1;2,0,0;2,1,-1;2,1,0;2,2,-1;2,2,0;2,3,-2;2,3,-1;2,3,0;2,3,1;2,4,-1;2,4,0;2,5,-2;2,5,-1;2,5,0;2,5,1;2,6,-2;2,6,-1;2,6,0;2,6,1;2,7,-1;2,7,0;3,0,-2;3,0,-1;3,0,0;3,0,1;3,1,-2;3,1,-1;3,1,0;3,1,1;3,2,-2;3,2,-1;3,2,0;3,2,1;3,3,-2;3,3,-1;3,3,0;3,3,1;3,4,-2;3,4,-1;3,4,0;3,4,1;3,5,-2;3,5,1;3,6,-2;3,6,1;3,7,-1;3,7,0;3,8,-1;3,8,0;4,0,-1;4,0,0;4,1,-1;4,1,0;4,2,-1;4,2,0;4,3,-1;4,3,0;4,4,-1;4,4,0;4,5,-1;4,5,0;4,6,-1;4,6,0;4,8,-1;4,9,-1
+PVP_Survival_ArenaCentre PVP_Survival_ArenaCentre 0 0 0 0 0 0,0,0
+PVP_Survival_SpawnLandingPad PVP_Survival_SpawnLandingPad 0 0 0 0 0 0,0,0
+Pack_Starter_Shield_Bronze Pack_Starter_Shield_Bronze -1 0 -2 0 0 -1,-2,0;-1,-1,0;-1,0,0;0,-2,0;0,-1,0;0,0,0
+Pack_Starter_Statue_Gold Pack_Starter_Statue_Gold -1 1 0 -1 1 -1,0,0;-1,0,1;-1,1,0;-1,1,1;-1,2,-1;-1,2,0;-1,2,1;-1,3,-1;0,0,-1;0,0,0;0,0,1;0,1,0;0,1,1;0,2,-1;0,2,0;0,2,1;0,3,0;0,3,1;1,0,0;1,0,1;1,1,0;1,1,1;1,2,-1;1,2,0;1,2,1;1,3,-1
+Pack_Starter_Statue_Silver Pack_Starter_Statue_Silver -1 1 0 -1 1 -1,0,0;-1,0,1;-1,1,1;-1,2,-1;-1,2,0;-1,2,1;0,0,-1;0,0,0;0,0,1;0,1,0;0,1,1;0,2,0;0,2,1;0,3,0;1,0,0;1,0,1;1,1,-1;1,1,0;1,1,1;1,2,-1
+Paperscreen_1x1x1 Paperscreen_1x1x1 0 0 0 -1 0 0,0,-1;0,0,0
+Paperscreen_1x2x1 Paperscreen_1x2x1 0 0 0 -1 0 0,0,-1;0,0,0;0,1,-1;0,1,0
+Paperscreen_2x3x1 Paperscreen_2x3x1 -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Parcel_A Parcel_A -1 0 0 0 0 -1,0,0;0,0,0
+Pillar_Jungle_Lizard_Wood Pillar_Jungle_Lizard_Wood 0 0 0 0 0 0,0,0
+Pillar_Stone_Basic Pillar_Stone_Basic 0 0 0 0 0 0,0,0
+Pillar_Stone_Desert Pillar_Stone_Desert 0 0 0 0 0 0,0,0
+Pillar_Stone_Titan Pillar_Stone_Titan 0 0 0 0 0 0,0,0
+Plate_Gold_Pan_A Plate_Gold_Pan_A 0 0 0 0 0 0,0,0
+Plate_Offering_A Plate_Offering_A 0 0 0 0 0 0,0,0
+Plate_Offering_B Plate_Offering_B 0 0 0 0 0 0,0,0
+Plate_PestleAndMortar_A Plate_PestleAndMortar_A 0 0 0 0 0 0,0,0
+Plate_WoodenBowl_A Plate_WoodenBowl_A 0 0 0 0 0 0,0,0
+Plinth_Stone_Basic_Down Plinth_Stone_Basic_Down 0 0 0 0 0 0,0,0;0,1,0
+Plinth_Stone_Basic_Up Plinth_Stone_Basic_Up 0 0 0 0 0 0,0,0;0,1,0
+Plinth_Stone_Desert_Down Plinth_Stone_Desert_Down 0 0 0 0 0 0,0,0;0,1,0
+Plinth_Stone_Desert_Up Plinth_Stone_Desert_Up 0 0 0 0 0 0,0,0;0,1,0
+Post_Bamboo_A Post_Bamboo_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Post_Metal_A Post_Metal_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Post_Rough_Banner_A Post_Rough_Banner_A 0 0 0 0 0 0,0,0;0,1,0
+Post_SignPost_A Post_SignPost_A 0 0 2 0 0 0,2,0
+Post_Skull_A Post_Skull_A 0 0 1 0 0 0,1,0
+Post_SpikePost_A Post_SpikePost_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Pot_Cauldron_A Pot_Cauldron_A 0 0 0 0 0 0,0,0
+Pot_Cauldron_B Pot_Cauldron_B 0 0 0 0 0 0,0,0
+Pot_Cauldron_C Pot_Cauldron_C 0 0 0 0 0 0,0,0
+Pot_Cauldron_D Pot_Cauldron_D 0 0 0 0 0 0,0,0
+Pot_Desert_A Pot_Desert_A 0 0 0 0 0 0,0,0
+Pot_Desert_B Pot_Desert_B 0 0 0 0 0 0,0,0
+Pot_Desert_C Pot_Desert_C 0 0 0 0 0 0,0,0
+Pot_Desert_D Pot_Desert_D 0 0 0 0 0 0,0,0
+Pot_Ornate_A Pot_Ornate_A 0 0 0 0 0 0,0,0
+Pot_Ornate_B Pot_Ornate_B 0 0 0 0 0 0,0,0
+Pot_Ornate_C Pot_Ornate_C 0 0 0 0 0 0,0,0
+Pot_Ornate_Tall_A Pot_Ornate_Tall_A 0 0 0 0 0 0,0,0;0,1,0
+Pot_Ornate_Tall_B Pot_Ornate_Tall_B 0 0 0 0 0 0,0,0;0,1,0
+Pot_Ornate_Tall_C Pot_Ornate_Tall_C 0 0 0 0 0 0,0,0;0,1,0
+Pot_Yeti_A Pot_Yeti_A 0 0 0 0 0 0,0,0
+Pot_Yeti_B Pot_Yeti_B 0 0 0 0 0 0,0,0
+Pot_Yeti_C Pot_Yeti_C 0 0 0 0 0 0,0,0
+Pumpkin_Lantern_A Pumpkin_Lantern_A 0 0 0 0 0 0,0,0
+PvP_Barricade_Metal_A PvP_Barricade_Metal_A 0 0 0 0 0 0,0,0;0,1,0
+PvP_Barricade_Metal_B PvP_Barricade_Metal_B -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+PvP_Barricade_Metal_C PvP_Barricade_Metal_C -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+PvP_Barricade_Wood_A PvP_Barricade_Wood_A 0 0 0 0 0 0,0,0;0,1,0
+PvP_Barricade_Wood_B_01 PvP_Barricade_Wood_B_01 -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+PvP_Barricade_Wood_B_02 PvP_Barricade_Wood_B_02 -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+PvP_Barricade_Wood_C_01 PvP_Barricade_Wood_C_01 -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+PvP_Barricade_Wood_C_02 PvP_Barricade_Wood_C_02 -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+PvP_Barricade_Wood_C_03 PvP_Barricade_Wood_C_03 -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+RaceTimerCheckpoint LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+RaceTimerEnd LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+RaceTimerStart LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
+Rail Rail 0 0 0 0 0 0,0,0
+Reward_Banner_A PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Reward_Banner_B PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Reward_Banner_BuildCake Reward_Banner_BuildCake -1 0 0 -1 -1 -1,0,-1;0,0,-1
+Reward_Banner_BuildComp_Runner_1 Reward_Banner_BuildComp_Runner_1 -1 0 0 -1 -1 -1,0,-1;0,0,-1
+Reward_Banner_BuildComp_Runner_2 Reward_Banner_BuildComp_Runner_2 -1 0 0 -1 -1 -1,0,-1;0,0,-1
+Reward_Banner_BuildComp_Winner Reward_Banner_BuildComp_Winner -1 0 0 -1 -1 -1,0,-1;0,0,-1
+Reward_Banner_CommunityReward Reward_Banner_CommunityReward -1 0 0 -1 -1 -1,0,-1;0,0,-1
+Reward_Banner_KillDev_PvP Reward_Banner_KillDev_PvP -1 0 0 -1 -1 -1,0,-1;0,0,-1
+Reward_Banner_MostDeaths Reward_Banner_MostDeaths -1 0 0 -1 -1 -1,0,-1;0,0,-1
+River_Lily_Flower_A River_Lily_Flower_A 0 0 0 0 0 0,0,0;0,1,0
+River_Lily_Pad_A River_Lily_Pad_A 0 0 0 0 0 0,0,0
+River_Lily_Pad_Large_A River_Lily_Pad_Large_A -1 0 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1
+River_Reeds_A River_Reeds_A 0 0 0 0 0 0,0,0;0,1,0
+Rock_A Rock_A 0 0 0 0 0 0,0,0
+Rock_B Rock_B 0 0 0 0 0 0,0,0
+Rock_Pile_A Rock_Pile_A 0 0 0 0 0 0,0,0
+Roof_Tile_Clay Roof_Tile_Clay 0 0 0 -1 0 0,0,-1;0,0,0
+Roof_Tile_Thatch Roof_Tile_Thatch 0 0 0 0 0 0,0,0
+Roof_Tile_Wood Roof_Tile_Wood 0 0 0 0 0 0,0,0
+Rope_Bucket_A Rope_Bucket_A 0 0 -1 0 0 0,-1,0;0,0,0
+Rope_Hook_A Rope_Hook_A 0 0 -1 0 0 0,-1,0;0,0,0
+Rope_Piece_A Rope_Piece_A 0 0 0 0 0 0,0,0
+Rope_Sandbags_A Rope_Sandbags_A 0 0 -1 0 0 0,-1,0;0,0,0
+Rubble_1x1x1_A Rubble_1x1x1_A 0 0 0 0 0 0,0,0
+Rubble_1x1x1_B Rubble_1x1x1_B 0 0 0 0 0 0,0,0
+Rubble_1x1x1_C Rubble_1x1x1_C 0 0 0 0 0 0,0,0
+Rubble_1x1x1_D Rubble_1x1x1_D 0 0 0 0 0 0,0,0
+Rug_3x1x3_Rough Rug_3x1x3_Rough 0 0 0 0 0 0,0,0
+Rug_A Rug_A -1 0 -1 -1 0 -1,-1,-1;-1,-1,0;-1,0,-1;-1,0,0;0,-1,-1;0,-1,0;0,0,-1;0,0,0
+Rug_Large_A Rug_Large_A -1 1 -1 -1 1 -1,-1,-1;-1,-1,0;-1,-1,1;-1,0,-1;-1,0,0;-1,0,1;0,-1,-1;0,-1,0;0,-1,1;0,0,-1;0,0,0;0,0,1;1,-1,-1;1,-1,0;1,-1,1;1,0,-1;1,0,0;1,0,1
+Rug_Rabbit Rug_Rabbit 0 0 0 0 0 0,0,0
+Rug_Roll_A Rug_Roll_A -1 0 0 0 0 -1,0,0;0,0,0
+Rug_Roll_Long_A Rug_Roll_Long_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Rug_Runner_A Rug_Runner_A -1 1 -1 0 0 -1,-1,0;-1,0,0;0,-1,0;0,0,0;1,-1,0;1,0,0
+Rug_Rustic_A Rug_Rustic_A -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Sack_A Sack_A 0 0 0 0 0 0,0,0
+Sarcophagus_A Sarcophagus_A -1 0 0 0 0 -1,0,0;0,0,0
+Sarcophagus_B Sarcophagus_B -1 0 0 0 0 -1,0,0;0,0,0
+Sarcophagus_C Sarcophagus_C -1 0 0 0 0 -1,0,0;0,0,0
+Sarcophagus_D Sarcophagus_D -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Sarcophagus_E Sarcophagus_E -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Scaffold_Bamboo Scaffold_Bamboo 0 0 0 0 0 0,0,0
+Scarecrow_A Scarecrow_A -1 0 1 0 0 -1,1,0;0,1,0
+Scroll_Holder_A Scroll_Holder_A -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Scroll_Stand_1x2x1 Scroll_Stand_1x2x1 0 0 0 0 0 0,0,0
+Sewer_Grate_A Sewer_Grate_A 0 0 0 0 0 0,0,0
+Shelf_A Shelf_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Shelter_Small_A Shelter_Small_A -1 0 0 0 0 -1,0,0;0,0,0
+Shrine_Rustic_A Shrine_Rustic_A 0 0 -1 0 0 0,-1,0;0,0,0;0,1,0
+Shrine_Stone_A Shrine_Stone_A 0 0 0 0 0 0,0,0;0,1,0
+Sign_Arrow_Metal Sign_Arrow_Metal 0 0 0 0 0 0,0,0
+Sign_Arrow_Metal_Glowing Sign_Arrow_Metal_Glowing 0 0 0 0 0 0,0,0
+Sign_Arrow_Stone Sign_Arrow_Stone 0 0 0 0 0 0,0,0
+Sign_Arrow_Wood Sign_Arrow_Wood 0 0 0 0 0 0,0,0
+Sloped_Stone_Dec_End Sloped_Stone_Dec_End 0 0 0 0 0 0,0,0
+Sloped_Stone_Dec_Mid Sloped_Stone_Dec_Mid 0 0 0 0 0 0,0,0
+Social_FreeStanding_Banner_Explorer Social_FreeStanding_Banner_Explorer -2 0 0 0 0 -2,3,0;-2,4,0;-2,5,0;-2,6,0;-2,7,0;-2,8,0;-1,3,0;-1,4,0;-1,5,0;-1,6,0;-1,7,0;-1,8,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0;0,5,0;0,6,0;0,7,0;0,8,0
+Social_FreeStanding_Banner_Fighter Social_FreeStanding_Banner_Fighter -2 0 0 0 0 -2,3,0;-2,4,0;-2,5,0;-2,6,0;-2,7,0;-2,8,0;-1,3,0;-1,4,0;-1,5,0;-1,6,0;-1,7,0;-1,8,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0;0,5,0;0,6,0;0,7,0;0,8,0
+Social_FreeStanding_Banner_Settler Social_FreeStanding_Banner_Settler -2 0 0 0 0 -2,3,0;-2,4,0;-2,5,0;-2,6,0;-2,7,0;-2,8,0;-1,3,0;-1,4,0;-1,5,0;-1,6,0;-1,7,0;-1,8,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0;0,5,0;0,6,0;0,7,0;0,8,0
+Social_Freestanding_Banner_BuildOff_3x9x1 Social_Freestanding_Banner_BuildOff_3x9x1 0 0 0 0 0 0,0,0
+Social_Ship_Wheel Social_Ship_Wheel 0 0 0 0 0 0,0,0;0,1,0
+Social_Sign_A Social_Sign_A -1 0 0 0 0 -1,0,0;0,0,0
+Social_Sign_B Social_Sign_B 0 0 0 -1 0 0,0,-1;0,0,0
+Social_Sign_C Social_Sign_C -1 0 0 0 0 -1,0,0;0,0,0
+Social_Sign_D Social_Sign_D -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Social_Sign_Large PhotoMaterialBasedInventoryItem 0 0 0 0 0 0,0,0
+Social_Sign_Large_A Social_Sign_Large_A 0 0 -1 -1 0 0,-1,-1;0,-1,0;0,0,-1;0,0,0
+Social_Sign_Large_B Social_Sign_Large_B 0 0 -1 -1 0 0,-1,-1;0,-1,0;0,0,-1;0,0,0
+Social_Sign_Large_C Social_Sign_Large_C 0 0 -2 -1 0 0,-2,-1;0,-2,0;0,-1,-1;0,-1,0;0,0,-1;0,0,0
+Social_Sign_Large_D Social_Sign_Large_D 0 0 -2 -1 0 0,-2,-1;0,-2,0;0,-1,-1;0,-1,0;0,0,-1;0,0,0
+Social_Square_Banner_BuildOff_6x6x1 Social_Square_Banner_BuildOff_6x6x1 0 0 0 0 0 0,0,0
+Social_Square_Banner_Explorer Social_Square_Banner_Explorer -2 2 0 0 0 -2,0,0;-2,1,0;-2,2,0;-2,3,0;-2,4,0;-1,0,0;-1,1,0;-1,2,0;-1,3,0;-1,4,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0;1,0,0;1,1,0;1,2,0;1,3,0;1,4,0;2,0,0;2,1,0;2,2,0;2,3,0;2,4,0
+Social_Square_Banner_Fighter Social_Square_Banner_Fighter -3 2 0 0 0 -3,0,0;-3,1,0;-3,2,0;-3,3,0;-3,4,0;-3,5,0;-2,0,0;-2,1,0;-2,2,0;-2,3,0;-2,4,0;-2,5,0;-1,0,0;-1,1,0;-1,2,0;-1,3,0;-1,4,0;-1,5,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0;0,5,0;1,0,0;1,1,0;1,2,0;1,3,0;1,4,0;1,5,0;2,0,0;2,1,0;2,2,0;2,3,0;2,4,0;2,5,0
+Social_Square_Banner_Settler Social_Square_Banner_Settler -3 2 0 0 0 -3,0,0;-3,1,0;-3,2,0;-3,3,0;-3,4,0;-3,5,0;-2,0,0;-2,1,0;-2,2,0;-2,3,0;-2,4,0;-2,5,0;-1,0,0;-1,1,0;-1,2,0;-1,3,0;-1,4,0;-1,5,0;0,0,0;0,1,0;0,2,0;0,3,0;0,4,0;0,5,0;1,0,0;1,1,0;1,2,0;1,3,0;1,4,0;1,5,0;2,0,0;2,1,0;2,2,0;2,3,0;2,4,0;2,5,0
+Social_Wall_Banner_BuildOff_3x6x1 Social_Wall_Banner_BuildOff_3x6x1 0 0 0 0 0 0,0,0
+Social_Wall_Banner_Explorer Social_Wall_Banner_Explorer -1 0 -5 0 0 -1,-5,0;-1,-4,0;-1,-3,0;-1,-2,0;-1,-1,0;-1,0,0;0,-5,0;0,-4,0;0,-3,0;0,-2,0;0,-1,0;0,0,0
+Social_Wall_Banner_Fighter Social_Wall_Banner_Fighter -1 0 -5 0 0 -1,-5,0;-1,-4,0;-1,-3,0;-1,-2,0;-1,-1,0;-1,0,0;0,-5,0;0,-4,0;0,-3,0;0,-2,0;0,-1,0;0,0,0
+Social_Wall_Banner_Settler Social_Wall_Banner_Settler -1 0 -5 0 0 -1,-5,0;-1,-4,0;-1,-3,0;-1,-2,0;-1,-1,0;-1,0,0;0,-5,0;0,-4,0;0,-3,0;0,-2,0;0,-1,0;0,0,0
+Social_Ware_Apples Social_Ware_Apples 0 0 0 0 0 0,0,0
+Social_Ware_Meat Social_Ware_Meat 0 0 0 0 0 0,0,0
+Social_Ware_Mushrooms Social_Ware_Mushrooms 0 0 0 0 0 0,0,0
+Social_Ware_Pumpkins Social_Ware_Pumpkins 0 0 0 0 0 0,0,0
+Social_Weapon_Daggers Social_Weapon_Daggers 0 0 0 0 0 0,0,0
+Social_Weapon_Halberds Social_Weapon_Halberds -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Social_Weapon_Sheilds Social_Weapon_Sheilds -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Social_Weapon_Swords Social_Weapon_Swords 0 0 0 0 0 0,0,0;0,1,0
+SpiderWeb_A SpiderWeb_A 0 0 0 0 0 0,0,0
+SpiderWeb_B SpiderWeb_B -1 0 0 -1 0 -1,0,-1;-1,1,0;0,1,-1
+SpiderWeb_C SpiderWeb_C 0 0 0 0 0 0,0,0
+Spike_Trap Spike_Trap 0 0 0 0 0 0,0,0
+Spike_Trap_Large Spike_Trap_Large -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Spike_Trap_Large_Titan Spike_Trap_Large_Titan -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Spike_Trap_Titan Spike_Trap_Titan 0 0 0 0 0 0,0,0
+Spring_Trap Spring_Trap 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Spring_Trap_Large Spring_Trap_Large -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;0,0,-1;0,0,0;0,0,1;1,0,-1;1,0,0;1,0,1
+Stalacmite_Ice_Large Stalacmite_Ice_Large 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Stalacmite_Ice_Medium Stalacmite_Ice_Medium 0 0 0 0 0 0,0,0;0,1,0
+Stalacmite_Ice_Small Stalacmite_Ice_Small 0 0 0 0 0 0,0,0
+Stalacmite_Large Stalacmite_Large 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Stalacmite_Medium Stalacmite_Medium 0 0 0 0 0 0,0,0;0,1,0
+Stalacmite_Small Stalacmite_Small 0 0 0 0 0 0,0,0
+Stalactite_Ice_Large Stalactite_Ice_Large 0 0 -2 0 0 0,-2,0;0,-1,0;0,0,0
+Stalactite_Ice_Medium Stalactite_Ice_Medium 0 0 -1 0 0 0,-1,0;0,0,0
+Stalactite_Ice_Small Stalactite_Ice_Small 0 0 -1 0 0 0,-1,0
+Stalactite_Large Stalactite_Large 0 0 -2 0 0 0,-2,0;0,-1,0;0,0,0
+Stalactite_Medium Stalactite_Medium 0 0 -1 0 0 0,-1,0;0,0,0
+Stalactite_Small Stalactite_Small 0 0 0 0 0 0,0,0
+Statue_Stone_A Statue_Stone_A 0 0 0 0 0 0,0,0
+Statue_Stone_B Statue_Stone_B 0 0 0 0 0 0,0,0;0,1,0
+Statue_Yeti_A Statue_Yeti_A 0 0 0 0 0 0,0,0
+Statue_Yeti_B Statue_Yeti_B 0 0 0 0 0 0,0,0;0,1,0
+Steps_Metal_A Steps_Metal_A 0 0 0 0 0 0,0,0
+Steps_Stone_A Steps_Stone_A 0 0 0 0 0 0,0,0
+Steps_Wood_A Steps_Wood_A 0 0 0 0 0 0,0,0
+Stone_Primary Stone_Primary -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;0,0,-1;0,0,0;0,1,-1;0,1,0
+Table_1x1_A Table_1x1_A 0 0 0 0 0 0,0,0
+Table_1x1_Bamboo_A Table_1x1_Bamboo_A 0 0 0 0 0 0,0,0
+Table_1x2_A Table_1x2_A -1 0 0 0 0 -1,0,0;0,0,0
+Table_1x2_Bamboo_A Table_1x2_Bamboo_A -1 0 0 0 0 -1,0,0;0,0,0
+Table_2x2_A Table_2x2_A -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Table_Desert_1x1 Table_Desert_1x1 0 0 0 0 0 0,0,0
+Table_Desert_2x1 Table_Desert_2x1 -1 0 0 0 0 -1,0,0;0,0,0
+Table_Tudor_1x2 Table_Tudor_1x2 -1 0 0 0 0 -1,0,0;0,0,0
+Table_Tudor_2x2 Table_Tudor_2x2 -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Tableware_Bakers_Set Tableware_Bakers_Set 0 0 0 0 0 0,0,0
+Tableware_Clay Tableware_Clay 0 0 0 0 0 0,0,0
+Tableware_Inkwell Tableware_Inkwell 0 0 0 0 0 0,0,0
+Tableware_Metal Tableware_Metal 0 0 0 0 0 0,0,0
+Tableware_Wood Tableware_Wood 0 0 0 0 0 0,0,0
+Tent Tent -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;-1,1,-1;-1,1,0;-1,1,1;-1,2,-1;-1,2,0;-1,2,1;0,0,-1;0,0,0;0,0,1;0,1,-1;0,1,1;0,2,-1;0,2,0;0,2,1;0,3,0;1,0,-1;1,0,0;1,0,1;1,1,-1;1,1,0;1,1,1;1,2,-1;1,2,0;1,2,1
+Totem_Large_A Totem_Large_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
+Totem_Small_A Totem_Small_A 0 0 0 0 0 0,0,0
+Totem_Wood_A Totem_Wood_A 0 0 0 0 0 0,0,0
+Totem_Wood_B Totem_Wood_B 0 0 0 0 0 0,0,0
+Totem_Wood_C Totem_Wood_C 0 0 0 0 0 0,0,0
+Tree_Log_A Tree_Log_A 0 0 0 0 0 0,0,0
+Tree_MossyLog_A Tree_MossyLog_A 0 0 0 0 0 0,0,0
+Tree_Stump_A Tree_Stump_A -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Trough_A Trough_A -1 0 0 0 0 -1,0,0;0,0,0
+Vine_Jungle_A Vine_Jungle_A -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Vine_Jungle_B Vine_Jungle_B -1 1 0 0 0 -1,0,0;0,0,0;1,0,0
+Wagon_Wheel_A Wagon_Wheel_A -1 0 0 0 0 -1,0,0;-1,1,0;0,0,0;0,1,0
+Wardrobe_Jungle_Lizard_2x3x1 Wardrobe_Jungle_Lizard_2x3x1 -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0
+Wardrobe_Tudor Wardrobe_Tudor -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0
+Weapon_Secondary Weapon_Secondary -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Window_Boarded_1x1x1 Window_Boarded_1x1x1 0 0 0 -1 0 0,0,-1;0,0,0
+Window_Boarded_Large Window_Boarded_Large -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0
+Window_Boarded_Small Window_Boarded_Small 0 0 0 -1 0 0,0,-1;0,0,0;0,1,-1;0,1,0
+Window_Jail_1x1x1 Window_Jail_1x1x1 0 0 0 -1 0 0,0,-1;0,0,0
+Window_Jail_1x2x1 Window_Jail_1x2x1 0 0 0 -1 0 0,0,-1;0,0,0;0,1,-1;0,1,0
+Window_Jail_2x3x1 Window_Jail_2x3x1 -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Window_Metal_2x3x1 Window_Metal_2x3x1 -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,1,-1;-1,1,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,1,-1;0,1,0;0,2,-1;0,2,0
+Window_Metal_A Window_Metal_A 0 0 0 -1 0 0,0,-1;0,0,0
+Window_Metal_Tall_A Window_Metal_Tall_A 0 0 0 -1 0 0,0,-1;0,0,0;0,1,-1;0,1,0
+Window_Shutter_1x1x1 Window_Shutter_1x1x1 0 0 0 -1 0 0,0,-1;0,0,0
+Window_Shutter_A Window_Shutter_A 0 0 0 -1 0 0,0,-1;0,0,0;0,1,-1;0,1,0
+Window_Shutter_B Window_Shutter_B -1 0 0 0 0 -1,0,0;-1,1,0;-1,2,0;0,0,0;0,1,0;0,2,0
+Window_Stone_2x3x1 Window_Stone_2x3x1 -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,2,-1;0,2,0
+Window_Stone_A Window_Stone_A 0 0 0 -1 0 0,0,-1;0,0,0
+Window_Stone_Tall_A Window_Stone_Tall_A 0 0 0 -1 0 0,0,-1;0,0,0;0,1,-1;0,1,0
+Window_Wood_2x3x1 Window_Wood_2x3x1 -1 0 0 -1 0 -1,0,-1;-1,0,0;-1,2,-1;-1,2,0;0,0,-1;0,0,0;0,2,-1;0,2,0
+Window_Wood_A Window_Wood_A 0 0 0 -1 0 0,0,-1;0,0,0
+Window_Wood_Tall_A Window_Wood_Tall_A 0 0 0 0 0 0,0,0
+Wood_Primary Wood_Primary -1 0 0 -1 0 -1,0,-1;-1,0,0;0,0,-1;0,0,0
+Wood_Stove_A Wood_Stove_A 0 0 0 0 0 0,0,0;0,1,0
+Wood_Stove_Small Wood_Stove_Small 0 0 0 0 0 0,0,0

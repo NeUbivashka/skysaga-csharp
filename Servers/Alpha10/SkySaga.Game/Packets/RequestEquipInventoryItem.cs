@@ -31,23 +31,50 @@ public static class RequestEquipInventoryItem
             clientInventoryComponent.ApplyClientPredictedSwap(location, slotId);
         }
 
+        var itemIndex = ItemTable.IndexOf(nameCrc);
+        var isHand = location is (int)ClientEquippedItemComponent.Slot.LeftHand or (int)ClientEquippedItemComponent.Slot.RightHand;
+        var twoHanded = isHand && TwoHandedTable.Contains(itemIndex);
+        var blockID = BlockCrcMapping.GetBlockId(nameCrc);
+
         if (location < ClientEquippedItemComponent.SlotCount
             && connection.PlayerEntity.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
         {
-            equipped.SetSlot((uint)location, ItemTable.IndexOf(nameCrc),
-                Guid.TryParse(inventoryItemComponent.InventorySlotData.ItemUUID, out var uuid) ? uuid : null,
-                itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : null);
+            var uuid = Guid.TryParse(inventoryItemComponent.InventorySlotData.ItemUUID, out var parsed) ? parsed : (Guid?)null;
+            var materials = itemEntity.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : null;
+            var otherHand = 1 - location;
+
+            if (twoHanded)
+            {
+                equipped.SetSlot((uint)ClientEquippedItemComponent.Slot.LeftHand, itemIndex, uuid, materials);
+                equipped.SetSlot((uint)ClientEquippedItemComponent.Slot.RightHand, itemIndex, uuid, materials);
+                connection.LeftHandBlockId = blockID;
+                connection.RightHandBlockId = blockID;
+            }
+            else
+            {
+                equipped.SetSlot((uint)location, itemIndex, uuid, materials);
+
+                if (isHand && TwoHandedTable.Contains(equipped.EquippedItems[otherHand]))
+                {
+                    equipped.SetSlot((uint)otherHand, 0, null);
+                    SetHandBlock(connection, otherHand, null);
+                }
+            }
         }
 
-        var blockID = BlockCrcMapping.GetBlockId(nameCrc);
-
-        if (location == (int)ActionLocation.LeftHand)
-            connection.LeftHandBlockId = blockID;
-        else if (location == (int)ActionLocation.RightHand)
-            connection.RightHandBlockId = blockID;
+        if (!twoHanded)
+            SetHandBlock(connection, location, blockID);
 
         Console.WriteLine($"[Equip] {(ClientEquippedItemComponent.Slot)location} = {ItemTable.NameOf(ItemTable.IndexOf(nameCrc))} (inventory slot {slotId})");
 
         return true;
+    }
+
+    private static void SetHandBlock(PlayerConnection connection, int location, int? blockId)
+    {
+        if (location == (int)ActionLocation.LeftHand)
+            connection.LeftHandBlockId = blockId;
+        else if (location == (int)ActionLocation.RightHand)
+            connection.RightHandBlockId = blockId;
     }
 }
