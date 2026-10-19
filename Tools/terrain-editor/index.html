@@ -3081,7 +3081,7 @@ function TerrainEditor() {
     )
       return;
     setVoxel(cx, cy, cz, AIR, 0, true);
-    syncVoxel3D(cx, cy, cz, blockId, 0);
+    syncVoxel3D(cx, cy, cz, blockId, AIR);
     setCurrentLayer(cy);
   }
 
