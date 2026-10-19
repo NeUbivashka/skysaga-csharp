@@ -9,6 +9,7 @@ public class PlayerSaveData
     public string? CustomisationData { get; set; }
 
     public bool HasPosition { get; set; }
+    public string? PositionMap { get; set; }
     public float PositionX { get; set; }
     public float PositionY { get; set; }
     public float PositionZ { get; set; }

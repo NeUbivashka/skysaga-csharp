@@ -83,7 +83,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {
-            var savedPosition = save is { HasPosition: true }
+            var savedPosition = save is { HasPosition: true } && save.PositionMap == WorldMapLoader.MapFileName
                 ? new Vector3(save.PositionX, save.PositionY, save.PositionZ)
                 : (Vector3?)null;
 
@@ -343,6 +343,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {
             data.HasPosition = true;
+            data.PositionMap = WorldMapLoader.MapFileName;
             data.PositionX = smoothedTransformComponent.Position.X;
             data.PositionY = smoothedTransformComponent.Position.Y;
             data.PositionZ = smoothedTransformComponent.Position.Z;
