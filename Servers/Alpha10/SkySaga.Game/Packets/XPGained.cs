@@ -2,27 +2,12 @@ namespace SkySaga.Game.Packets;
 
 public class XPGained : ISerializablePacket
 {
-    private const uint JobChallengeCount = 2011;
-
-    private const uint JobCount = 6;
-
     public int EntityId;
-
-    public uint JobChallenge;
-
-    public uint Job;
-
-    public uint? Amount;
-
-    public InventoryItemRef? Item;
-
-    public uint ItemCount;
-
-    public string? Reason;
-
-    public uint? Bonus;
-
-    public int Total;
+    public uint Experience;
+    public int? JobChallengeIndex;
+    public int JobIndex;
+    public uint? TargetCrc;
+    public uint BonusExperience;
 
     public BitStream Serialize()
     {
@@ -30,36 +15,22 @@ public class XPGained : ISerializablePacket
         bitStream.WritePacketId(PacketId.XPGained);
 
         InventoryItemRef.WriteUInt32(bitStream, (uint)EntityId);
+        InventoryItemRef.WriteUInt32(bitStream, Experience);
+        bitStream.WriteRangedIndex(JobChallengeIndex is int challenge ? (uint)challenge + 1 : 0, (uint)JobChallengeTable.Count + 1);
+        bitStream.WriteRangedIndex((uint)JobIndex + 1, (uint)JobTable.Count + 1);
 
-        bitStream.WriteRangedIndex(JobChallenge, JobChallengeCount);
-        bitStream.WriteRangedIndex(Job, JobCount);
-
-        InventoryItemRef.WriteOptionalUInt32(bitStream, Amount);
-
-        if (Item is null)
-        {
-            bitStream.Write0();
-        }
-        else
+        if (TargetCrc is uint crc)
         {
             bitStream.Write1();
-            Item.Encode(bitStream);
-            InventoryItemRef.WriteUInt32(bitStream, ItemCount);
-        }
-
-        if (Reason is null)
-        {
-            bitStream.Write0();
+            InventoryItemRef.WriteUInt32(bitStream, crc);
         }
         else
-        {
-            bitStream.Write1();
-            bitStream.WriteString(Reason);
-        }
+            bitStream.Write0();
 
-        InventoryItemRef.WriteOptionalUInt32(bitStream, Bonus);
-
-        InventoryItemRef.WriteUInt32(bitStream, (uint)Total);
+        bitStream.Write0();
+        bitStream.Write0();
+        bitStream.Write0();
+        InventoryItemRef.WriteUInt32(bitStream, BonusExperience);
 
         return bitStream;
     }

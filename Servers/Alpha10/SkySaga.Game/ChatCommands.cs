@@ -28,12 +28,21 @@ public class ChatCommands(IWorldManager worldManager, PlayerInitializer playerIn
             "give" => Give(connection, args),
             "spawn" => Spawn(connection, args),
             "time" => Time(args),
+            "xp" => Experience(connection, args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run]";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>";
+
+    private static string Experience(PlayerConnection connection, string[] args)
+    {
+        if (args.Length < 2 || !uint.TryParse(args[1], out var amount) || amount == 0)
+            return "Usage: !xp <amount>";
+
+        return JobExperience.Award(connection, amount) ? $"Gained {amount} XP." : "No XP was gained.";
+    }
 
     private string Time(string[] args)
     {

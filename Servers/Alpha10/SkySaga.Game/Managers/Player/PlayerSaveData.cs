@@ -24,6 +24,16 @@ public class PlayerSaveData
 
     public List<InventoryEntry> Inventory { get; set; } = [];
 
+    public List<JobEntry> Jobs { get; set; } = [];
+
+    public class JobEntry
+    {
+        public string Name { get; set; } = "";
+        public byte Rank { get; set; }
+        public uint Experience { get; set; }
+        public uint PrestigeRank { get; set; }
+    }
+
     public class SettingsEntry
     {
         public bool DisableAutoQuestTracking { get; set; }

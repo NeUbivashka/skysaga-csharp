@@ -137,6 +137,13 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayerAspectsComponent.Permissions = [.. PlayerAspectsComponent.DefaultPermissions];
         }
 
+        if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
+            clientJobRankComponent.JobList = [.. JobTable.All
+                .Where(job => !job.Hidden)
+                .Select(job => save?.Jobs.FirstOrDefault(entry => entry.Name.Equals(job.Name, StringComparison.OrdinalIgnoreCase)) is { } saved
+                    ? new JobProgress(job.Name, saved.Rank, saved.Experience, saved.PrestigeRank)
+                    : new JobProgress(job.Name, 0, 0, 0))];
+
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
         {
             if (save is { Currencies.Count: > 0 })
@@ -290,6 +297,15 @@ public class PlayerInitializer(IWorldManager worldManager)
             data.WholeHearts = clientHealthComponent.WholeHearts;
             data.HalfHearts = clientHealthComponent.HalfHearts;
         }
+
+        if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
+            data.Jobs = [.. clientJobRankComponent.JobList.Select(job => new PlayerSaveData.JobEntry
+            {
+                Name = job.Job,
+                Rank = job.Rank,
+                Experience = job.Experience,
+                PrestigeRank = job.PrestigeRank
+            })];
 
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
         {
