@@ -19,7 +19,7 @@ public static class Combat
 
     public static void ApplyMaxHealth(Entity entity)
     {
-        if (entity.TryGetComponent<ClientHealthComponent>(out var health) && CombatStatTable.TryGet(entity.Name, out var stats) && stats.Health > 0)
+        if (entity.TryGetComponent<ClientHealthComponent>(out var health) && CombatStatTable.TryGetEntity(entity.Name, out var stats) && stats.Health > 0)
             health.MaxHP = (int)stats.Health;
     }
 
@@ -60,6 +60,19 @@ public static class Combat
         if (!health.IsDead)
             return;
 
+        if (connection.WorldManager.RemoveDevice(target, out var placed) is { Count: > 0 } removed)
+        {
+            foreach (var id in removed)
+                connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = id });
+
+            Console.WriteLine($"[Combat] {target.Name}#{target.Id} destroyed by player {player.Id}");
+
+            if (placed is not null)
+                ResourcePickups.SpawnDeviceDrops(connection, placed);
+
+            return;
+        }
+
         connection.PlayerConnectionManager.BroadcastToAll(new KillOccurred
         {
             SourceEntityId = player.Id,
@@ -77,7 +90,7 @@ public static class Combat
             return tool.DigLevel;
 
         return CharacterStats(player).WeaponLevel + EquipmentStats(entityManager, player).WeaponLevel
-            + (usedItemCrc is uint crc && CombatStatTable.TryGet(crc, out var weapon) ? weapon.WeaponLevel : 0);
+            + (usedItemCrc is uint crc && CombatStatTable.TryGetItem(crc, out var weapon) ? weapon.WeaponLevel : 0);
     }
 
     private static readonly uint DiggingToolTag = Util.ComputeCrc32("DiggingTool");
@@ -86,7 +99,7 @@ public static class Combat
         => ItemTagTable.TryGet(itemCrc, out var tags) && tags.Contains(DiggingToolTag);
 
     private static CombatStats CharacterStats(Entity entity)
-        => CombatStatTable.TryGet(entity.Name, out var stats) ? stats : default;
+        => CombatStatTable.TryGetEntity(entity.Name, out var stats) ? stats : default;
 
     private static CombatStats EquipmentStats(IMapEntityManager entityManager, Entity entity)
     {
@@ -101,7 +114,7 @@ public static class Combat
                 || !entityManager.TryGetEntity(inventory.InventoryEntityList[slot], out var item)
                 || !item.TryGetComponent<InventoryItemComponent>(out var itemComponent)
                 || itemComponent.InventorySlotData.Name is not uint crc
-                || !CombatStatTable.TryGet(crc, out var stats))
+                || !CombatStatTable.TryGetItem(crc, out var stats))
                 continue;
 
             weaponLevel += stats.WeaponLevel;

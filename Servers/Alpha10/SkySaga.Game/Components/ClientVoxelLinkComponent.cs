@@ -24,5 +24,25 @@ public class ClientVoxelLinkComponent : Component
         }
     }
 
-    public override bool TrySync(string parameterName, BitStream bitStream) => false;
+    private const uint VoxelCountEscape = 200;
+    private const int OffsetMin = -15;
+    private const uint OffsetRange = 30;
+
+    public override bool TrySync(string parameterName, BitStream bitStream)
+    {
+        if (!parameterName.Equals("voxels", StringComparison.OrdinalIgnoreCase) || Voxels.Count == 0)
+            return false;
+
+        bitStream.WriteEscapedCount((uint)Voxels.Count, VoxelCountEscape);
+
+        foreach (var voxel in Voxels)
+        {
+            bitStream.WriteRanged((uint)(voxel.Offset.X - OffsetMin), OffsetRange);
+            bitStream.WriteRanged((uint)(voxel.Offset.Y - OffsetMin), OffsetRange);
+            bitStream.WriteRanged((uint)(voxel.Offset.Z - OffsetMin), OffsetRange);
+            bitStream.Write(voxel.VoxelType);
+        }
+
+        return true;
+    }
 }

@@ -20,6 +20,19 @@ public static class ResourcePickups
         Spawn(connection, itemCrc, 1, new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f), voxel, connection.PlayerEntity.Id);
     }
 
+    public static void SpawnDeviceDrops(PlayerConnection connection, WorldManager.PlacedDevice device)
+    {
+        var voxel = new Vector3Int(device.X, device.Y, device.Z);
+        var start = new Vector3(device.X + 0.5f, device.Y + 0.5f, device.Z + 0.5f);
+        var owner = connection.PlayerEntity.Id;
+
+        Spawn(connection, device.ItemCrc, 1, start, voxel, owner, device.Materials);
+
+        foreach (var stored in device.Items)
+            if (stored is not null)
+                Spawn(connection, stored.ItemCrc, stored.Count, start, voxel, owner, stored.Materials);
+    }
+
     public static void SpawnCreatureLoot(PlayerConnection connection, Entity creature)
     {
         if (LootTableName(creature.Name) is not { } tableName

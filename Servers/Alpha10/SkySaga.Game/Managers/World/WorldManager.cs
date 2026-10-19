@@ -291,6 +291,46 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return entities;
     }
 
+    public List<int> RemoveDevice(Entity entity, out PlacedDevice? placed)
+    {
+        placed = null;
+
+        if (!DeviceTable.TryGetByEntity(entity.Name, out _))
+            return [];
+
+        if (entity.TryGetComponent<ClientVoxelLinkComponent>(out var voxelLink)
+            && entity.TryGetComponent<TransformComponent>(out var transform))
+        {
+            foreach (var (position, _) in voxelLink.GetWorldVoxels(transform.Position, transform.YawDegrees))
+            {
+                var chunk = new Vector3Int(FloorDiv(position.X, ChunkSize), FloorDiv(position.Y, ChunkSize), FloorDiv(position.Z, ChunkSize));
+                var local = new Vector3Int(position.X - chunk.X * ChunkSize, position.Y - chunk.Y * ChunkSize, position.Z - chunk.Z * ChunkSize);
+                ChunkManager.SetVoxel(chunk, local, WorldChunk.Air);
+            }
+        }
+
+        List<int> removed = entity.TryGetComponent<ClientInventoryComponent>(out var inventory)
+            ? [.. inventory.InventoryEntityList.Where(id => id != 0)]
+            : [];
+
+        foreach (var id in removed)
+            EntityManager.RemoveEntity(id);
+
+        lock (_devicesLock)
+        {
+            if (_deviceEntities.Remove(entity.Id, out var found))
+            {
+                placed = found;
+                _devices.RemoveAll(device => ReferenceEquals(device, found));
+                SaveDevices();
+            }
+        }
+
+        EntityManager.RemoveEntity(entity.Id);
+        removed.Add(entity.Id);
+        return removed;
+    }
+
     public void DeviceInventoryChanged(Entity entity)
     {
         lock (_devicesLock)

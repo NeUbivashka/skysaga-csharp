@@ -4,11 +4,11 @@ public readonly record struct CombatStats(float Health, float WeaponLevel, float
 
 public static class CombatStatTable
 {
-    private static readonly Lazy<Dictionary<uint, CombatStats>> StatsByCrc = new(Load);
+    private static readonly Lazy<Dictionary<(string Kind, uint Crc), CombatStats>> StatsByCrc = new(Load);
 
-    private static Dictionary<uint, CombatStats> Load()
+    private static Dictionary<(string Kind, uint Crc), CombatStats> Load()
     {
-        var map = new Dictionary<uint, CombatStats>();
+        var map = new Dictionary<(string Kind, uint Crc), CombatStats>();
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CombatStats.txt");
 
         if (!File.Exists(path))
@@ -18,17 +18,17 @@ public static class CombatStatTable
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (parts.Length == 4
-                && float.TryParse(parts[1], System.Globalization.CultureInfo.InvariantCulture, out var health)
-                && float.TryParse(parts[2], System.Globalization.CultureInfo.InvariantCulture, out var weaponLevel)
-                && float.TryParse(parts[3], System.Globalization.CultureInfo.InvariantCulture, out var armourLevel))
-                map.TryAdd(Util.ComputeCrc32(parts[0]), new CombatStats(health, weaponLevel, armourLevel));
+            if (parts.Length == 5
+                && float.TryParse(parts[2], System.Globalization.CultureInfo.InvariantCulture, out var health)
+                && float.TryParse(parts[3], System.Globalization.CultureInfo.InvariantCulture, out var weaponLevel)
+                && float.TryParse(parts[4], System.Globalization.CultureInfo.InvariantCulture, out var armourLevel))
+                map.TryAdd((parts[0], Util.ComputeCrc32(parts[1])), new CombatStats(health, weaponLevel, armourLevel));
         }
 
         return map;
     }
 
-    public static bool TryGet(uint nameCrc, out CombatStats stats) => StatsByCrc.Value.TryGetValue(nameCrc, out stats);
+    public static bool TryGetEntity(string name, out CombatStats stats) => StatsByCrc.Value.TryGetValue(("Entity", Util.ComputeCrc32(name)), out stats);
 
-    public static bool TryGet(string name, out CombatStats stats) => TryGet(Util.ComputeCrc32(name), out stats);
+    public static bool TryGetItem(uint itemCrc, out CombatStats stats) => StatsByCrc.Value.TryGetValue(("Item", itemCrc), out stats);
 }

@@ -52,12 +52,12 @@ def main():
         inherent = entity["parameters"].get("inherentperklist", {}).get("value") or []
         entity_properties = with_perks(entity_properties, inherent, perks, effects)
         weapon, armour = levels(entity_properties)
-        rows.append(f"{entity['Name']} {stat(entity_properties, 'Health'):g} {weapon:g} {armour:g}")
+        rows.append(f"Entity {entity['Name']} {stat(entity_properties, 'Health'):g} {weapon:g} {armour:g}")
     for resource in geo["Resources"]:
         resource_properties = properties.get(resource.get("PhysicalProperties", "").lower())
         weapon, armour = levels(resource_properties)
         if weapon or armour:
-            rows.append(f"{resource['Name']} 0 {weapon:g} {armour:g}")
+            rows.append(f"Item {resource['Name']} 0 {weapon:g} {armour:g}")
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(sorted(rows)) + "\n")
     print(f"{len(rows)} rows -> {OUT}")
