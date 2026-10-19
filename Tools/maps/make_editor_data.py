@@ -5,6 +5,7 @@ import re
 from targets import BUILD, GAME, GEODATA, ROOT
 
 SERVICE_ENTITIES = {"Player", "TimeOfDay"}
+DATA_TAG = '<script id="skysaga-data">'
 
 
 def category(entity):
@@ -63,9 +64,18 @@ def main():
         "deviceCells": dict(sorted(cells.items())),
         "mapSizes": map_sizes,
     }
-    path = os.path.join(ROOT, "Tools", "terrain-editor", "data.js")
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write("window.SKYSAGA_DATA = " + json.dumps(out, separators=(",", ":")) + ";\n")
+
+    path = os.path.join(ROOT, "Tools", "terrain-editor", "index.html")
+    with open(path, encoding="utf-8", newline="") as f:
+        html = f.read()
+    start = html.index(DATA_TAG) + len(DATA_TAG)
+    end = html.index("</script>", start)
+    nl = "\r\n" if "\r\n" in html else "\n"
+    payload = json.dumps(out, separators=(",", ":")).replace("</", "<\\/")
+    html = html[:start] + nl + "window.SKYSAGA_DATA = " + payload + ";" + nl + html[end:]
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(html)
+
     counts = {}
     for e in out["entities"]:
         counts[e["category"]] = counts.get(e["category"], 0) + 1
