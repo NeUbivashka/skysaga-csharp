@@ -595,7 +595,7 @@ function TerrainEditor() {
   const [randErosion, setRandErosion] = useState(false);
   const [randErosionStrength, setRandErosionStrength] = useState(40);
   const [randErosionIterations, setRandErosionIterations] = useState(2);
-  const [randBaseBlock, setRandBaseBlock] = useState(24);
+  const [randBaseBlock, setRandBaseBlock] = useState(0);
   const [randSurfaceBlock, setRandSurfaceBlock] = useState(1);
   const [randDecoBlocks, setRandDecoBlocks] = useState("");
   const [randDecoChance, setRandDecoChance] = useState(0);
@@ -1087,7 +1087,7 @@ function TerrainEditor() {
 
   function updateBulkRowId(index, id) {
     setBulkTextureRows((prev) =>
-      prev.map((r, i) => (i === index ? { ...r, id: id === "" ? null : clamp(id, 1, 255) } : r))
+      prev.map((r, i) => (i === index ? { ...r, id: id === "" ? null : clamp(id, 0, AIR - 1) } : r))
     );
   }
 
@@ -1769,17 +1769,17 @@ function TerrainEditor() {
     const groundDepth = clamp(randGroundDepth, 0, totalHeight);
     const bottomRoughness = clamp(randBottomRoughness, 0, totalHeight);
     const maxThickness = clamp(randMaxThickness, 1, totalHeight);
-    const baseBlock = clamp(randBaseBlock, 1, 255);
-    const surfaceBlock = clamp(randSurfaceBlock, 1, 255);
+    const baseBlock = clamp(randBaseBlock, 0, AIR - 1);
+    const surfaceBlock = clamp(randSurfaceBlock, 0, AIR - 1);
     const decoWeightedList = parseWeightedIdList(randDecoBlocks);
     const decoChance = clamp(randDecoChance, 0, 100) / 100;
     const hillStrength = clamp(randHillStrength, 0, 100) / 100;
     const mountainBoost = clamp(randMountainHeight, 0, totalHeight);
     const plateauHeight = clamp(randPlateauHeight, 1, totalHeight);
     const valleyDepth = clamp(randValleyDepth, 1, totalHeight);
-    const riverBlock = clamp(randRiverBlock, 1, 255);
+    const riverBlock = clamp(randRiverBlock, 0, AIR - 1);
     const riverThreshold = clamp(randRiverWidth, 1, 40) / 100;
-    const lakeBlock = clamp(randLakeBlock, 1, 255);
+    const lakeBlock = clamp(randLakeBlock, 0, AIR - 1);
     const lakeThreshold = 1 - clamp(randLakeSize, 1, 10) / 12;
     const caveThreshold = 1 - clamp(randCaveDensity, 0, 100) / 100;
     const forestDensity = clamp(randForestDensity, 0, 100) / 100;
@@ -1788,7 +1788,7 @@ function TerrainEditor() {
       { small: 0.42, medium: 0.7, large: 0.96 }[randIslandSize] || 0.96;
     const isFloatingIsland = randIslandMode !== "island";
     const seaLevel = clamp(randSeaLevel, 0, totalHeight);
-    const seaBlock = clamp(randSeaBlock, 1, 255);
+    const seaBlock = clamp(randSeaBlock, 0, AIR - 1);
     const riverLakeSurfaceH = isFloatingIsland
       ? groundDepth + Math.max(1, Math.round(minH * 0.6))
       : seaLevel;
@@ -1816,9 +1816,9 @@ function TerrainEditor() {
 
     const altitudeOn = randAltitudeBlocks;
     const beachLevel = clamp(randBeachLevel, 0, totalHeight);
-    const beachBlock = clamp(randBeachBlock, 1, 255);
+    const beachBlock = clamp(randBeachBlock, 0, AIR - 1);
     const snowLevel = clamp(randSnowLevel, 0, totalHeight);
-    const snowBlock = clamp(randSnowBlock, 1, 255);
+    const snowBlock = clamp(randSnowBlock, 0, AIR - 1);
 
     const oresOn = randOres;
     const oreBlockList = parseIdList(randOreBlocks);
@@ -1829,16 +1829,16 @@ function TerrainEditor() {
 
     const caveGlowOn = randCaveGlow && randCaves;
     const caveGlowChance = clamp(randCaveGlowChance, 0, 100) / 100;
-    const caveGlowBlock = clamp(randCaveGlowBlock, 1, 255);
+    const caveGlowBlock = clamp(randCaveGlowBlock, 0, AIR - 1);
 
-    const shoreBlock = clamp(randShoreBlock, 1, 255);
+    const shoreBlock = clamp(randShoreBlock, 0, AIR - 1);
     const shoreRadius = clamp(randShoreRadius, 1, 5);
 
     const treeChance = clamp(randTreeDensity, 0, 100) / 100;
     const treeMinH = clamp(randTreeMinHeight, 1, 20);
     const treeMaxH = clamp(randTreeMaxHeight, treeMinH, 20);
-    const treeWood = clamp(randTreeWoodBlock, 1, 255);
-    const treeLeaves = clamp(randTreeLeavesBlock, 1, 255);
+    const treeWood = clamp(randTreeWoodBlock, 0, AIR - 1);
+    const treeLeaves = clamp(randTreeLeavesBlock, 0, AIR - 1);
     const treeSpacing = clamp(randTreeSpacing, 0, 20);
     const plantedTrees = [];
 
@@ -1888,7 +1888,7 @@ function TerrainEditor() {
     }
 
     const bushChance = clamp(randBushDensity, 0, 100) / 100;
-    const bushBlock = clamp(randBushBlock, 1, 255);
+    const bushBlock = clamp(randBushBlock, 0, AIR - 1);
     const bushSpacing = clamp(randBushSpacing, 0, 10);
     const plantedBushes = [];
 
@@ -2478,13 +2478,13 @@ function TerrainEditor() {
     const treeChance = clamp(randTreeDensity, 0, 100) / 100;
     const treeMinH = clamp(randTreeMinHeight, 1, 20);
     const treeMaxH = clamp(randTreeMaxHeight, treeMinH, 20);
-    const treeWood = clamp(randTreeWoodBlock, 1, 255);
-    const treeLeaves = clamp(randTreeLeavesBlock, 1, 255);
+    const treeWood = clamp(randTreeWoodBlock, 0, AIR - 1);
+    const treeLeaves = clamp(randTreeLeavesBlock, 0, AIR - 1);
     const treeSpacing = clamp(randTreeSpacing, 0, 20);
     const forestDensity = clamp(randForestDensity, 0, 100) / 100;
     const forestMask = randForests ? makeValueNoise(rand, width, depth, 20) : null;
     const bushChance = clamp(randBushDensity, 0, 100) / 100;
-    const bushBlock = clamp(randBushBlock, 1, 255);
+    const bushBlock = clamp(randBushBlock, 0, AIR - 1);
     const bushSpacing = clamp(randBushSpacing, 0, 10);
     const idSet = new Set([treeWood, treeLeaves, bushBlock]);
     const plantedT = [];
@@ -4323,8 +4323,8 @@ function TerrainEditor() {
   }
 
   function addCustomBlock() {
-    const id = clamp(customIdInput, 1, 255);
-    if (!id) return;
+    if (String(customIdInput).trim() === "") return;
+    const id = clamp(customIdInput, 0, AIR - 1);
     if (!palette.find((p) => p.id === id)) {
       setPalette([...palette, { id, label: BLOCK_NAMES[id] || "Block " + id }]);
     }
@@ -4810,8 +4810,8 @@ function TerrainEditor() {
           <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
             <input
               type="number"
-              min={1}
-              max={255}
+              min={0}
+              max={AIR - 1}
               placeholder={t.idPlaceholder}
               value={customIdInput}
               onChange={(e) => setCustomIdInput(e.target.value)}
@@ -4931,10 +4931,10 @@ function TerrainEditor() {
                       {t.roadBlock}
                       <input
                         type="number"
-                        min={1}
-                        max={255}
+                        min={0}
+                        max={AIR - 1}
                         value={roadBlock}
-                        onChange={(e) => setRoadBlock(clamp(e.target.value, 1, 255))}
+                        onChange={(e) => setRoadBlock(clamp(e.target.value, 0, AIR - 1))}
                         style={{ ...inputStyle, width: 46 }}
                       />
                       <span
@@ -4942,7 +4942,7 @@ function TerrainEditor() {
                           width: 12,
                           height: 12,
                           borderRadius: 3,
-                          background: colorForId(clamp(roadBlock, 1, 255)),
+                          background: colorForId(clamp(roadBlock, 0, AIR - 1)),
                         }}
                       />
                     </label>
@@ -5213,8 +5213,8 @@ function TerrainEditor() {
                 {t.groundId}
                 <input
                   type="number"
-                  min={1}
-                  max={255}
+                  min={0}
+                  max={AIR - 1}
                   value={randBaseBlock}
                   onChange={(e) => setRandBaseBlock(e.target.value)}
                   style={{ ...inputStyle, width: 46 }}
@@ -5224,7 +5224,7 @@ function TerrainEditor() {
                     width: 12,
                     height: 12,
                     borderRadius: 3,
-                    background: colorForId(clamp(randBaseBlock, 1, 255)),
+                    background: colorForId(clamp(randBaseBlock, 0, AIR - 1)),
                   }}
                 />
               </label>
@@ -5232,8 +5232,8 @@ function TerrainEditor() {
                 {t.surfaceId}
                 <input
                   type="number"
-                  min={1}
-                  max={255}
+                  min={0}
+                  max={AIR - 1}
                   value={randSurfaceBlock}
                   onChange={(e) => setRandSurfaceBlock(e.target.value)}
                   style={{ ...inputStyle, width: 46 }}
@@ -5243,7 +5243,7 @@ function TerrainEditor() {
                     width: 12,
                     height: 12,
                     borderRadius: 3,
-                    background: colorForId(clamp(randSurfaceBlock, 1, 255)),
+                    background: colorForId(clamp(randSurfaceBlock, 0, AIR - 1)),
                   }}
                 />
               </label>
@@ -5334,8 +5334,8 @@ function TerrainEditor() {
                         {t.seaBlock}
                         <input
                           type="number"
-                          min={1}
-                          max={255}
+                          min={0}
+                          max={AIR - 1}
                           value={randSeaBlock}
                           onChange={(e) => setRandSeaBlock(e.target.value)}
                           style={{ ...inputStyle, width: 46 }}
@@ -5345,7 +5345,7 @@ function TerrainEditor() {
                             width: 12,
                             height: 12,
                             borderRadius: 3,
-                            background: colorForId(clamp(randSeaBlock, 1, 255)),
+                            background: colorForId(clamp(randSeaBlock, 0, AIR - 1)),
                           }}
                         />
                       </label>
@@ -5526,8 +5526,8 @@ function TerrainEditor() {
                     {t.riverBlock}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randRiverBlock}
                       onChange={(e) => setRandRiverBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5537,7 +5537,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randRiverBlock, 1, 255)),
+                        background: colorForId(clamp(randRiverBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5588,8 +5588,8 @@ function TerrainEditor() {
                     {t.lakeBlock}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randLakeBlock}
                       onChange={(e) => setRandLakeBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5599,7 +5599,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randLakeBlock, 1, 255)),
+                        background: colorForId(clamp(randLakeBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5663,8 +5663,8 @@ function TerrainEditor() {
                         {t.caveGlowBlock}
                         <input
                           type="number"
-                          min={1}
-                          max={255}
+                          min={0}
+                          max={AIR - 1}
                           value={randCaveGlowBlock}
                           onChange={(e) => setRandCaveGlowBlock(e.target.value)}
                           style={{ ...inputStyle, width: 46 }}
@@ -5674,7 +5674,7 @@ function TerrainEditor() {
                             width: 12,
                             height: 12,
                             borderRadius: 3,
-                            background: colorForId(clamp(randCaveGlowBlock, 1, 255)),
+                            background: colorForId(clamp(randCaveGlowBlock, 0, AIR - 1)),
                           }}
                         />
                       </label>
@@ -5749,8 +5749,8 @@ function TerrainEditor() {
                     {t.treeWoodId}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randTreeWoodBlock}
                       onChange={(e) => setRandTreeWoodBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5760,7 +5760,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randTreeWoodBlock, 1, 255)),
+                        background: colorForId(clamp(randTreeWoodBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5768,8 +5768,8 @@ function TerrainEditor() {
                     {t.treeLeavesId}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randTreeLeavesBlock}
                       onChange={(e) => setRandTreeLeavesBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5779,7 +5779,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randTreeLeavesBlock, 1, 255)),
+                        background: colorForId(clamp(randTreeLeavesBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5818,8 +5818,8 @@ function TerrainEditor() {
                     {t.bushBlock}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randBushBlock}
                       onChange={(e) => setRandBushBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5829,7 +5829,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randBushBlock, 1, 255)),
+                        background: colorForId(clamp(randBushBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5868,8 +5868,8 @@ function TerrainEditor() {
                     {t.beachBlock}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randBeachBlock}
                       onChange={(e) => setRandBeachBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5879,7 +5879,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randBeachBlock, 1, 255)),
+                        background: colorForId(clamp(randBeachBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5898,8 +5898,8 @@ function TerrainEditor() {
                     {t.snowBlock}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randSnowBlock}
                       onChange={(e) => setRandSnowBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5909,7 +5909,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randSnowBlock, 1, 255)),
+                        background: colorForId(clamp(randSnowBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -5937,8 +5937,8 @@ function TerrainEditor() {
                     {t.shoreBlock}
                     <input
                       type="number"
-                      min={1}
-                      max={255}
+                      min={0}
+                      max={AIR - 1}
                       value={randShoreBlock}
                       onChange={(e) => setRandShoreBlock(e.target.value)}
                       style={{ ...inputStyle, width: 46 }}
@@ -5948,7 +5948,7 @@ function TerrainEditor() {
                         width: 12,
                         height: 12,
                         borderRadius: 3,
-                        background: colorForId(clamp(randShoreBlock, 1, 255)),
+                        background: colorForId(clamp(randShoreBlock, 0, AIR - 1)),
                       }}
                     />
                   </label>
@@ -6486,8 +6486,8 @@ function TerrainEditor() {
                   <span style={{ fontSize: 11 }}>→</span>
                   <input
                     type="number"
-                    min={1}
-                    max={255}
+                    min={0}
+                    max={AIR - 1}
                     value={r.id ?? ""}
                     placeholder={t.bulkIdUnrecognized}
                     onChange={(e) => updateBulkRowId(i, e.target.value)}
