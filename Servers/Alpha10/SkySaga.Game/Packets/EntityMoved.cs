@@ -34,10 +34,10 @@ public static class EntityMoved
         connection.LastFallRespawn = now;
 
         var fellFrom = transform.Position;
-        var (position, yawDegrees) = connection.WorldManager.GetPlayerLandingPoint();
+        var (position, yawDegrees) = connection.WorldManager.GetRespawnPoint(connection.CharacterId);
 
         connection.Teleport(position, yawDegrees);
 
-        Console.WriteLine($"[Fall] player fell to {fellFrom}, sent PlayerSpawned at the airship, {position}");
+        Console.WriteLine($"[Fall] player fell to {fellFrom}, respawned at {position}");
     }
 }

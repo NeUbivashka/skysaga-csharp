@@ -1,13 +1,19 @@
 namespace SkySaga.Game.Packets;
 
-public class EndInteractionWithEntity : ISerializablePacket
+public static class EndInteractionWithEntity
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var targetEntityId)) return false;
 
-        bitStream.WritePacketId(PacketId.EndInteractionWithEntity);
+        Console.WriteLine($"[Interaction] entity {entityId} ended interaction with {targetEntityId}");
 
-        return bitStream;
+        if (entityId == connection.PlayerEntity.Id
+            && connection.PlayerEntity.TryGetComponent<ClientUseEntityComponent>(out var useEntity)
+            && useEntity.UsingEntityId == (int)targetEntityId)
+            useEntity.UsingEntityId = 0;
+
+        return true;
     }
 }

@@ -55,6 +55,14 @@ public static class RunActionListReceived
 
         if (hasVoxel != 1)
             return true;
+
+        if (usedItem is { } deviceItem
+            && DeviceTable.TryGet(deviceItem.Crc, out var device)
+            && (ActionListVoxelActionTable.Has(actionListId, "CreateDeviceAction") || ActionListVoxelActionTable.Has(actionListId, "CreateEntityAction")))
+        {
+            PlaceDevice(connection, deviceItem.Entity, device, voxel, hitNormal);
+            return true;
+        }
         var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
 
         if (blockId is int placedBlock)
@@ -143,6 +151,39 @@ public static class RunActionListReceived
 
         return DigDamageLut[^1].Output;
     }
+
+    private static void PlaceDevice(PlayerConnection connection, Entity item, DeviceInfo device, Vector3Int voxel, Vector3 hitNormal)
+    {
+        var placeAt = new Vector3Int(
+            voxel.X + (int)MathF.Round(hitNormal.X),
+            voxel.Y + (int)MathF.Round(hitNormal.Y),
+            voxel.Z + (int)MathF.Round(hitNormal.Z));
+
+        var owner = connection.PlayerEntity.TryGetComponent<ClientOwnerComponent>(out var playerOwner) ? playerOwner.Owner : null;
+        var materials = item.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
+        var entities = connection.WorldManager.PlaceDevice(UsedCrc(item), device, placeAt, owner, materials);
+
+        if (entities.Count == 0)
+        {
+            Console.WriteLine($"[Device] {device.Entity} could not be created");
+            return;
+        }
+
+        foreach (var entity in entities)
+            connection.PlayerConnectionManager.BroadcastToAll(new EntityAdd
+            {
+                Id = entity.Id,
+                NameHash = Util.ComputeCrc32(entity.Name),
+                SyncData = entity.GetSyncData(newEntity: true)
+            });
+
+        ConsumeOne(connection, item);
+
+        Console.WriteLine($"[Device] placed {device.Entity} ({entities[^1].Id}) at {placeAt}");
+    }
+
+    private static uint UsedCrc(Entity item)
+        => item.TryGetComponent<InventoryItemComponent>(out var component) && component.InventorySlotData.Name is uint crc ? crc : 0;
 
     private static void Eat(PlayerConnection connection, ListEat eat, (Entity Entity, uint Crc)? usedItem)
     {

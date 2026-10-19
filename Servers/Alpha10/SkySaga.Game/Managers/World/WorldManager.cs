@@ -16,6 +16,29 @@ public sealed class WorldManager : IWorldManager, IDisposable
     public MapDefinition Definition { get; set; }
     public Entity? Airship { get; private set; }
 
+    private static readonly string DevicesPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves",
+        $"devices_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}.json");
+
+    public record StoredItem(uint ItemCrc, int Count, uint?[] Materials);
+
+    public record PlacedDevice(uint ItemCrc, int X, int Y, int Z, Guid? Owner, uint?[] Materials)
+    {
+        public List<StoredItem?> Items { get; set; } = [];
+    }
+
+    private readonly Dictionary<int, PlacedDevice> _deviceEntities = [];
+
+    private readonly List<PlacedDevice> _devices = [];
+
+    private static readonly string CheckpointsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves",
+        $"checkpoints_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}.json");
+
+    private const int CheckpointSearchRadius = 4;
+    private const int CheckpointClearance = 2;
+
+    private Dictionary<Guid, float[]> _checkpoints = LoadCheckpoints();
+    private readonly object _devicesLock = new();
+
     private readonly Dictionary<int, Vector3> _mapCreatureSpawns = [];
 
     private const int LandingSearchRadius = 16;
@@ -134,7 +157,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         ChunkManager.LoadSavedEdits();
-        PlaceLinkedVoxels(Airship);
+        LoadDevices();
+
+        foreach (var entity in EntityManager.Entities.ToList())
+            PlaceLinkedVoxels(entity);
+
         SpawnTimeOfDay();
         SpawnWorldComposition();
     }
@@ -215,6 +242,134 @@ public sealed class WorldManager : IWorldManager, IDisposable
         Console.WriteLine($"[WorldManager] Placed {voxelLink.Voxels.Count} linked voxels of {entity.Name}#{entity.Id}.");
     }
 
+    public List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Guid? owner, uint?[] materials)
+    {
+        var placed = new PlacedDevice(itemCrc, voxel.X, voxel.Y, voxel.Z, owner, materials);
+        var entities = SpawnDevice(placed, device);
+
+        if (entities.Count == 0)
+            return entities;
+
+        if (entities[^1].TryGetComponent<ClientVoxelLinkComponent>(out var voxelLink)
+            && entities[^1].TryGetComponent<TransformComponent>(out var transform))
+        {
+            foreach (var (position, voxelType) in voxelLink.GetWorldVoxels(transform.Position, transform.YawDegrees))
+            {
+                var chunk = new Vector3Int(FloorDiv(position.X, ChunkSize), FloorDiv(position.Y, ChunkSize), FloorDiv(position.Z, ChunkSize));
+                var local = new Vector3Int(position.X - chunk.X * ChunkSize, position.Y - chunk.Y * ChunkSize, position.Z - chunk.Z * ChunkSize);
+                ChunkManager.SetVoxel(chunk, local, voxelType);
+            }
+        }
+
+        lock (_devicesLock)
+        {
+            _devices.Add(placed);
+            SaveDevices();
+        }
+
+        return entities;
+    }
+
+    public void DeviceInventoryChanged(Entity entity)
+    {
+        lock (_devicesLock)
+        {
+            if (!_deviceEntities.TryGetValue(entity.Id, out var placed)
+                || !entity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+                return;
+
+            placed.Items = [.. inventory.InventoryEntityList.Select(id =>
+                id != 0 && EntityManager.TryGetEntity(id, out var item)
+                    && item.TryGetComponent<InventoryItemComponent>(out var component)
+                    && component.InventorySlotData.Name is uint crc
+                    ? new StoredItem(crc, component.InventorySlotData.Count, ResourcePickups.MaterialsOf(item))
+                    : null)];
+
+            SaveDevices();
+        }
+    }
+
+    private List<Entity> SpawnDevice(PlacedDevice placed, DeviceInfo device)
+    {
+        var entities = SpawnCreature(device.Entity, DeviceTable.Origin(device, new Vector3Int(placed.X, placed.Y, placed.Z)));
+
+        if (entities.Count == 0)
+            return entities;
+
+        if (entities[^1].TryGetComponent<ClientOwnerComponent>(out var owner))
+            owner.Owner = placed.Owner;
+
+        SetDeviceItemSpec(entities[^1], placed.ItemCrc, placed.Materials);
+        _deviceEntities[entities[^1].Id] = placed;
+
+        if (placed.Items.Count > 0 && entities[^1].TryGetComponent<ClientInventoryComponent>(out var inventory))
+        {
+            var items = placed.Items
+                .Select(stored => stored is null ? 0
+                    : PlayerInitializer.CreateInventoryItem(EntityManager, stored.ItemCrc, stored.Count, materialOverrides: stored.Materials)?.Id ?? 0)
+                .Take(inventory.MaxInventorySlots)
+                .ToList();
+
+            inventory.InventoryEntityList = [.. items, .. Enumerable.Repeat(0, Math.Max(0, inventory.MaxInventorySlots - items.Count))];
+        }
+
+        return entities;
+    }
+
+    private static void SetDeviceItemSpec(Entity entity, uint itemCrc, uint?[] materials)
+    {
+        if (entity.TryGetComponent<ClientPerUserInventoryStoreComponent>(out var store))
+            store.IsLootFountain = false;
+
+        if (entity.TryGetComponent<ClientPickupComponent>(out var pickup))
+            pickup.InventoryItemSpec = new InventoryItemRef
+            {
+                Kind = (ushort)ItemTable.IndexOf(itemCrc),
+                Amounts = [.. materials]
+            };
+    }
+
+    private void LoadDevices()
+    {
+        lock (_devicesLock)
+        {
+            _devices.Clear();
+            _deviceEntities.Clear();
+
+            if (!File.Exists(DevicesPath))
+                return;
+
+            try
+            {
+                _devices.AddRange(System.Text.Json.JsonSerializer.Deserialize<List<PlacedDevice>>(File.ReadAllText(DevicesPath)) ?? []);
+            }
+            catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
+            {
+                Console.WriteLine($"[WorldManager] Failed to read '{DevicesPath}': {ex.Message}");
+                return;
+            }
+
+            foreach (var placed in _devices)
+                if (DeviceTable.TryGet(placed.ItemCrc, out var device))
+                    SpawnDevice(placed, device);
+
+            Console.WriteLine($"[WorldManager] Loaded {_devices.Count} placed devices.");
+        }
+    }
+
+    private void SaveDevices()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(DevicesPath)!);
+            File.WriteAllText(DevicesPath, System.Text.Json.JsonSerializer.Serialize(_devices));
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"[WorldManager] Failed to save '{DevicesPath}': {ex.Message}");
+        }
+    }
+
     private const int ChunkSize = 32;
 
     private static int FloorDiv(int value, int divisor) => (int)Math.Floor(value / (double)divisor);
@@ -234,6 +389,60 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return (standing, yaw);
     }
 
+    public (Vector3 Position, float YawDegrees) GetRespawnPoint(Guid? character)
+    {
+        float[]? checkpoint;
+
+        lock (_checkpoints)
+            checkpoint = character is Guid id && _checkpoints.TryGetValue(id, out var saved) ? saved : null;
+
+        if (checkpoint is not { Length: 3 })
+            return GetPlayerLandingPoint();
+
+        var point = new Vector3(checkpoint[0], checkpoint[1], checkpoint[2]);
+        var standing = SpawnFinder.FindStandingPoint(ChunkManager, point, Definition.MapSizeChunks, CheckpointSearchRadius, CheckpointClearance);
+
+        return standing is Vector3 found ? (found, 0f) : GetPlayerLandingPoint();
+    }
+
+    public void SetCheckpoint(Guid character, Entity checkpoint)
+    {
+        if (!checkpoint.TryGetComponent<TransformComponent>(out var transform))
+            return;
+
+        lock (_checkpoints)
+        {
+            _checkpoints[character] = [transform.Position.X, transform.Position.Y, transform.Position.Z];
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(CheckpointsPath)!);
+                File.WriteAllText(CheckpointsPath, System.Text.Json.JsonSerializer.Serialize(_checkpoints));
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"[WorldManager] Failed to save '{CheckpointsPath}': {ex.Message}");
+            }
+        }
+
+        Console.WriteLine($"[Checkpoint] {character} -> {checkpoint.Name}#{checkpoint.Id} at {transform.Position}");
+    }
+
+    private static Dictionary<Guid, float[]> LoadCheckpoints()
+    {
+        try
+        {
+            if (File.Exists(CheckpointsPath))
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<Guid, float[]>>(File.ReadAllText(CheckpointsPath)) ?? [];
+        }
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
+        {
+            Console.WriteLine($"[WorldManager] Failed to read '{CheckpointsPath}': {ex.Message}");
+        }
+
+        return [];
+    }
+
     private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition)
     {
         airshipPosition = null;
@@ -245,7 +454,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (string.IsNullOrWhiteSpace(spec.Name))
                 continue;
 
-            var position = new Vector3(spec.X + 0.5f, spec.Y, spec.Z + 0.5f);
+            var position = DeviceTable.TryGetByEntity(spec.Name, out var mapDevice)
+                ? DeviceTable.Origin(mapDevice, new Vector3Int(spec.X, spec.Y, spec.Z))
+                : new Vector3(spec.X + 0.5f, spec.Y, spec.Z + 0.5f);
 
             if (string.Equals(spec.Name, "Airship", StringComparison.OrdinalIgnoreCase))
             {
@@ -263,6 +474,15 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             if (spec.Items is { Count: > 0 } && creature.Count > 0)
                 FillInventory(creature[^1], spec.Items);
+
+            if (creature.Count > 0 && DeviceTable.TryGetByEntity(spec.Name, out _))
+            {
+                var nameHash = Util.ComputeCrc32(spec.Name);
+                SetDeviceItemSpec(creature[^1], nameHash, MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
+
+                if (creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Guid.TryParse(Util.CharacterUuid(), out var islandOwner))
+                    mapOwner.Owner = islandOwner;
+            }
 
             if (creature.Count == 0)
             {

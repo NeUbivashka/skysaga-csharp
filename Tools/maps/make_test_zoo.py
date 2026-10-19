@@ -86,8 +86,11 @@ def creature_names(all_types):
 
 
 def reference_chests(z):
+    with open(GEODATA, encoding="utf-8") as f:
+        inventory_items = {r["Name"] for r in json.load(f)["Resources"] if r.get("IsInventoryItem")}
     with open(os.path.join(GAME, "Data", "Resources.txt"), encoding="utf-8") as f:
         items = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    items = [item for item in items if item in inventory_items]
     batches = [items[i:i + REFERENCE_CHEST_SLOTS] for i in range(0, len(items), REFERENCE_CHEST_SLOTS)]
     return [{"name": REFERENCE_CHEST, "x": EDGE + i * REFERENCE_CHEST_SPACING, "y": GROUND_Y, "z": z, "items": batch}
             for i, batch in enumerate(batches)]

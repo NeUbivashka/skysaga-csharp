@@ -108,6 +108,9 @@ public class PlayerConnection
             PacketId.ClientInitialSyncFinished => ClientInitialSyncFinished.Handle(this, bitStream),
             PacketId.InventoryItemSwap => InventoryItemSwap.Handle(this, bitStream),
             PacketId.ExecuteEntityAction => ExecuteEntityAction.Handle(this, bitStream),
+            PacketId.EndInteractionWithEntity => EndInteractionWithEntity.Handle(this, bitStream),
+            PacketId.InventoryItemTransfer => InventoryItemTransfer.Handle(this, bitStream),
+            PacketId.InventoryItemTransferToSlot => InventoryItemTransfer.HandleToSlot(this, bitStream),
             PacketId.ShopPurchaseWithCurrency => ShopPurchaseWithCurrency.Handle(this, bitStream),
 
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
@@ -184,12 +187,14 @@ public class PlayerConnection
         if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
             health.Revive();
 
-        var (position, yawDegrees) = WorldManager.GetPlayerLandingPoint();
+        var (position, yawDegrees) = WorldManager.GetRespawnPoint(CharacterId);
 
         Teleport(position, yawDegrees);
 
-        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at the airship, {position}.");
+        Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {position}.");
     }
+
+    public Guid? CharacterId => PlayerEntity.TryGetComponent<ClientOwnerComponent>(out var owner) ? owner.Owner : null;
 
     public void Teleport(Vector3 position, float yawDegrees)
     {

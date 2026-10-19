@@ -185,7 +185,7 @@ public static class SpawnFinder
         return center;
     }
 
-    public static Vector3? FindStandingPoint(IMapChunkManager chunkManager, Vector3 point, Vector3Int mapSizeChunks, int maxRadius)
+    public static Vector3? FindStandingPoint(IMapChunkManager chunkManager, Vector3 point, Vector3Int mapSizeChunks, int maxRadius, int minRadius = 0)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
 
@@ -197,7 +197,7 @@ public static class SpawnFinder
         int centerZ = (int)MathF.Floor(point.Z);
         int startY = Math.Min((int)MathF.Floor(point.Y) + StandingSearchHeadroom, sizeY - 1);
 
-        for (int radius = 0; radius <= maxRadius; radius++)
+        for (int radius = minRadius; radius <= maxRadius; radius++)
         {
             Vector3? best = null;
             float bestDistance = float.MaxValue;

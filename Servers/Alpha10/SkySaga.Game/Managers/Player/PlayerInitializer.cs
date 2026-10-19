@@ -3,6 +3,8 @@ namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
 {
+    private const byte BackpackSlots = 42;
+
     private const uint ForestMasterSigil = 10;
     private const byte VaultSlots = 200;
     private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
@@ -32,6 +34,9 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientOwnerComponent>(out var owner) && Guid.TryParse(Util.CharacterUuid(), out var characterUuid))
             owner.Owner = characterUuid;
+
+        if (player.TryGetComponent<UserComponent>(out var user) && Guid.TryParse(Util.CharacterUuid(), out var userUuid))
+            user.CharacterUuid = userUuid;
 
         if (player.TryGetComponent<ClientShopComponent>(out var shop))
             shop.ShopList = [new ClientShopComponent.Shop { Items = GlobalShopItems() }, new ClientShopComponent.Shop()];
@@ -169,7 +174,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientInventoryComponent>(out var clientInventoryComponent))
         {
-            clientInventoryComponent.MaxInventorySlots = 45;
+            clientInventoryComponent.MaxInventorySlots = (byte)(BackpackSlots + ClientEquippedItemComponent.SlotCount);
 
             for (int i = 0; i < clientInventoryComponent.MaxInventorySlots; i++)
                 clientInventoryComponent.InventoryEntityList.Add(0);

@@ -45,6 +45,17 @@ public static class ExecuteEntityAction
         if (actionName == "ResourcePickupAction" && srcEntityId == connection.PlayerEntity.Id)
             ResourcePickups.Assign(connection, (int)targetEntityId);
 
+        if (actionName == "InteractAction"
+            && srcEntityId == connection.PlayerEntity.Id
+            && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var target))
+        {
+            if (connection.PlayerEntity.TryGetComponent<ClientUseEntityComponent>(out var useEntity))
+                useEntity.UsingEntityId = target.Id;
+
+            if (connection.CharacterId is Guid character && target.TryGetComponent<ClientCampfireComponent>(out _))
+                connection.WorldManager.SetCheckpoint(character, target);
+        }
+
         return true;
     }
 }

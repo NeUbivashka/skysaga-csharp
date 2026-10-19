@@ -5,7 +5,6 @@ namespace SkySaga.Game.Managers.Entities;
 
 public static class ResourcePickups
 {
-    private const int StackLimit = 64;
     private const int GroundSearchDepth = 16;
     private const float RestHeight = 0.25f;
     private const float Scatter = 0.3f;
@@ -195,10 +194,10 @@ public static class ResourcePickups
         Remove(connection, pickup.Id);
     }
 
-    private static uint?[] MaterialsOf(Entity item)
+    internal static uint?[] MaterialsOf(Entity item)
         => item.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
 
-    private static bool TryFindStack(IMapEntityManager entityManager, ClientInventoryComponent inventory, uint? name, uint?[] materials, int count, [NotNullWhen(true)] out InventoryItemComponent? stack)
+    internal static bool TryFindStack(IMapEntityManager entityManager, ClientInventoryComponent inventory, uint? name, uint?[] materials, int count, [NotNullWhen(true)] out InventoryItemComponent? stack)
     {
         foreach (var entityId in inventory.InventoryEntityList)
         {
@@ -207,7 +206,7 @@ public static class ResourcePickups
                 && entity.TryGetComponent<InventoryItemComponent>(out var candidate)
                 && candidate.InventorySlotData.Name == name
                 && MaterialsOf(entity).SequenceEqual(materials)
-                && candidate.InventorySlotData.Count + count <= StackLimit)
+                && candidate.InventorySlotData.Count + count <= StackLimitTable.Get(name))
             {
                 stack = candidate;
                 return true;
