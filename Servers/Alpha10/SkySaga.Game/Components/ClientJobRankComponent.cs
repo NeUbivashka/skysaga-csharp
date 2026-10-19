@@ -11,6 +11,8 @@ public record ActiveJobChallenge(string Name, uint Progress);
 
 public record QuestOffer(int EntityId, List<string> Quests);
 
+public record JobChallengeRefresh(ulong ActiveTime, uint LastRefreshIndex, uint ActiveRefreshIndex);
+
 public class ClientJobRankComponent : Component
 {
     private const uint JobListEscape = 64;
@@ -30,6 +32,10 @@ public class ClientJobRankComponent : Component
     public List<string> CompletedJobChallengeList { get; set => SetIfChanged(ref field, value); } = [];
 
     public List<QuestOffer> QuestsForEntityList { get; set => SetIfChanged(ref field, value); } = [];
+
+    public JobChallengeRefresh NormalJobChallengeRefreshData { get; set => SetIfChanged(ref field, value); } = new(0, 0, 0);
+
+    public JobChallengeRefresh MasterJobChallengeRefreshData { get; set => SetIfChanged(ref field, value); } = new(0, 0, 0);
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
@@ -95,6 +101,18 @@ public class ClientJobRankComponent : Component
             return true;
         }
 
+        if (parameterName.Equals(nameof(NormalJobChallengeRefreshData), StringComparison.OrdinalIgnoreCase))
+        {
+            WriteRefresh(bitStream, NormalJobChallengeRefreshData);
+            return true;
+        }
+
+        if (parameterName.Equals(nameof(MasterJobChallengeRefreshData), StringComparison.OrdinalIgnoreCase))
+        {
+            WriteRefresh(bitStream, MasterJobChallengeRefreshData);
+            return true;
+        }
+
         if (parameterName.Equals(nameof(CompletedJobChallengeList), StringComparison.OrdinalIgnoreCase))
         {
             WriteCrcList(bitStream, CompletedJobChallengeList, CompletedJobChallengeListEscape, sorted: true);
@@ -102,6 +120,13 @@ public class ClientJobRankComponent : Component
         }
 
         return false;
+    }
+
+    private static void WriteRefresh(BitStream bitStream, JobChallengeRefresh refresh)
+    {
+        bitStream.WriteUInt64(refresh.ActiveTime);
+        bitStream.WriteFullWidthUInt32(refresh.LastRefreshIndex);
+        bitStream.WriteFullWidthUInt32(refresh.ActiveRefreshIndex);
     }
 
     private static void WriteCrc(BitStream bitStream, string name)

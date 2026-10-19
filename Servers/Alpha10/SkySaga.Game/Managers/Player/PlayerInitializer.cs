@@ -146,6 +146,16 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             clientJobRankComponent.CompletedJobChallengeList = completed;
             clientJobRankComponent.ActiveJobChallengeList = active;
+            var refreshIndex = JobChallenges.RefreshIndex(DateTime.UtcNow);
+            var lastRefreshIndex = save?.ChallengeRefreshIndex ?? refreshIndex;
+
+            clientJobRankComponent.NormalJobChallengeRefreshData = JobChallenges.RefreshData(lastRefreshIndex);
+            clientJobRankComponent.MasterJobChallengeRefreshData = JobChallenges.RefreshData(lastRefreshIndex);
+
+            var ranks = (save?.Jobs ?? [])
+                .GroupBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First().Rank, StringComparer.OrdinalIgnoreCase);
+
             clientJobRankComponent.JobList = [.. JobTable.All
                 .Where(job => !job.Hidden)
                 .Select(job =>
@@ -154,7 +164,9 @@ public class PlayerInitializer(IWorldManager worldManager)
 
                     return new JobProgress(job.Name, saved?.Rank ?? 0, saved?.Experience ?? 0, saved?.PrestigeRank ?? 0)
                     {
-                        NormalAvailable = saved?.Available ?? JobChallenges.RollDailies(job, completed, active)
+                        NormalAvailable = saved?.Available is { } offers && save?.ChallengeRefreshIndex == refreshIndex
+                            ? JobChallenges.KeepOffered(job, offers, ranks, completed, active)
+                            : JobChallenges.RollDailies(job, ranks, completed, active)
                     };
                 })];
             clientJobRankComponent.QuestsForEntityList = JobChallenges.OffersFor(_entityManager, clientJobRankComponent.JobList);
@@ -330,6 +342,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 Available = job.NormalAvailable
             })];
             data.CompletedChallenges = clientJobRankComponent.CompletedJobChallengeList;
+            data.ChallengeRefreshIndex = clientJobRankComponent.NormalJobChallengeRefreshData.ActiveRefreshIndex;
             var todoTasks = player.TryGetComponent<ClientTodoListComponent>(out var todoList) ? todoList.TodoTaskList : [];
 
             data.ActiveChallenges = [.. clientJobRankComponent.ActiveJobChallengeList.Select(challenge => new PlayerSaveData.ActiveChallengeEntry

@@ -46,6 +46,8 @@ public static class Combat
             ? 0
             : (int)MathF.Round(Lookup(attack.DamageLut ?? PlayerVersusCreatureDamage, weaponLevel - armourLevel)));
 
+        var wasUnhurt = (health.SyncedFullHPValues ?? health.MaxHP) >= health.MaxHP;
+
         health.Damage(damage);
 
         connection.PlayerConnectionManager.BroadcastToAll(new HitOccurred
@@ -84,6 +86,8 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
+
+        JobChallengeProgress.Killed(connection, target, usedItemCrc, wasUnhurt);
 
         ResourcePickups.SpawnCreatureLoot(connection, target);
     }

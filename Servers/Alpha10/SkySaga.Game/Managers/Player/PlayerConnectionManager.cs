@@ -3,6 +3,7 @@ namespace SkySaga.Game.Managers.Player;
 public sealed class PlayerConnectionManager
 {
     private readonly Dictionary<ulong, PlayerConnection> _connections = [];
+    private readonly List<int> _removedAfterSync = [];
 
     public void AddConnection(ulong guid, PlayerConnection connection)
     {
@@ -23,6 +24,16 @@ public sealed class PlayerConnectionManager
     public IEnumerable<PlayerConnection> GetAllConnections()
     {
         return _connections.Values;
+    }
+
+    public void BroadcastRemovedAfterSync(int entityId) => _removedAfterSync.Add(entityId);
+
+    public void FlushRemovedAfterSync()
+    {
+        foreach (var entityId in _removedAfterSync)
+            BroadcastToAll(new EntityRemoved { Id = entityId });
+
+        _removedAfterSync.Clear();
     }
 
     public void BroadcastToAll(ISerializablePacket packet)

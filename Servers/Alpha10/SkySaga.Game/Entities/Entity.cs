@@ -1,4 +1,6 @@
-﻿namespace SkySaga.Game.Entities;
+﻿using System.Linq;
+
+namespace SkySaga.Game.Entities;
 
 public class Entity
 {
@@ -12,6 +14,14 @@ public class Entity
     public string Name => _entityData.Name;
 
     public bool SyncRequired => _sync.HasAnySet();
+
+    public IReadOnlyList<string> TextListParameter(string name)
+        => _entityData.Parameters.Find(parameter => parameter.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } parameter
+           && parameter.Value.ValueKind == System.Text.Json.JsonValueKind.Array
+            ? [.. parameter.Value.EnumerateArray()
+                .Where(value => value.ValueKind == System.Text.Json.JsonValueKind.String)
+                .Select(value => value.GetString()!)]
+            : [];
 
     public string? TextParameter(string name)
         => _entityData.Parameters.Find(parameter => parameter.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } parameter

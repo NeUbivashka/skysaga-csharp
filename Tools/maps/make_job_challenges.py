@@ -13,6 +13,8 @@ CONDITION_TESTS = {"JobChallengeComplete", "JobChallengeActive", "ConditionOrLis
 def challenge(c):
     params = c.get(c["ActionName"] + "Params", {})
     condition = c.get("Condition") or {}
+    unlocked = c.get("UnlockedBy") or {}
+    time_of_day = c.get("TimeOfDay") or {}
     return {
         "Name": c["Name"],
         "Job": c.get("Job", ""),
@@ -29,6 +31,21 @@ def challenge(c):
         "ConditionInvert": bool(condition.get("Invert")),
         "Next": (c.get("Chain") or {}).get("NextChallengeInChain", ""),
         "HandInToNpc": c.get("HandInToNPC", ""),
+        "Events": [e["Event"] for e in (c.get("ValidEvents") or {}).get("Values", [])],
+        "EventsInvert": bool((c.get("ValidEvents") or {}).get("Invert")),
+        "UnlockJob": unlocked.get("Job", ""),
+        "UnlockRank": unlocked.get("JobRank", 0),
+        "UnlockRankRange": unlocked.get("JobRankRange", 0),
+        "UnlockChallenge": unlocked.get("JobChallengeRequired", ""),
+        "LockChallenge": unlocked.get("JobChallengeRequiredToLock", ""),
+        "Weight": c.get("RandomFrequencyWeighting", 0),
+        "OnlyAtDay": bool(time_of_day.get("OnlyAtDay")),
+        "OnlyAtNight": bool(time_of_day.get("OnlyAtNight")),
+        "FriendsRequired": c.get("LocalFriendsRequired", 0),
+        "CompleteWhenProgressReached": bool(c.get("CompleteWhenProgressReached")),
+        "CanBeCancelled": bool(c.get("CanBeCancelled")),
+        "LootTable": (c.get("Awards") or {}).get("LootTable", ""),
+        "PutAwardsInInventory": bool(c.get("PutAwardsInInventory")),
         "Params": params,
     }
 

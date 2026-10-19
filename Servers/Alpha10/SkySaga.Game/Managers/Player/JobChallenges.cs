@@ -13,7 +13,32 @@ public static class JobChallenges
     private static bool IsTutorial(JobChallengeInfo challenge)
         => challenge.Job == TutorialJob || TutorialPrefixes.Any(prefix => challenge.Name.StartsWith(prefix, StringComparison.Ordinal));
 
-    public static List<string> RollDailies(JobInfo job, IReadOnlyCollection<string> completed, IReadOnlyCollection<ActiveJobChallenge> active)
+    public static bool IsOffered(JobChallengeInfo challenge, JobInfo job, IReadOnlyDictionary<string, byte> ranks, ISet<string> done, ISet<string> running)
+        => challenge.Dailies && !challenge.Master && challenge.InQuestLog
+           && challenge.Job == job.Name
+           && JobChallengeProgress.SupportedActions.Contains(challenge.Action)
+           && challenge.Events.Count == 0 != challenge.EventsInvert
+           && IsUnlocked(challenge, ranks, done)
+           && !running.Contains(challenge.Name)
+           && (challenge.Reactivate || !done.Contains(challenge.Name))
+           && ConditionTable.Holds(challenge.Condition, challenge.ConditionInvert, done.Contains, running.Contains);
+
+    private static bool IsUnlocked(JobChallengeInfo challenge, IReadOnlyDictionary<string, byte> ranks, ISet<string> done)
+    {
+        if (challenge.UnlockChallenge.Length > 0 && !done.Contains(challenge.UnlockChallenge))
+            return false;
+
+        if (challenge.LockChallenge.Length > 0 && done.Contains(challenge.LockChallenge))
+            return false;
+
+        if (challenge.UnlockJob.Length == 0)
+            return true;
+
+        var rank = ranks.GetValueOrDefault(challenge.UnlockJob);
+        return rank >= challenge.UnlockRank && rank < (long)challenge.UnlockRank + challenge.UnlockRankRange;
+    }
+
+    public static List<string> RollDailies(JobInfo job, IReadOnlyDictionary<string, byte> ranks, IReadOnlyCollection<string> completed, IReadOnlyCollection<ActiveJobChallenge> active)
     {
         if (job.Hidden || job.Faction != job.Name)
             return [];
@@ -22,14 +47,66 @@ public static class JobChallenges
         var running = new HashSet<string>(active.Select(challenge => challenge.Name), StringComparer.OrdinalIgnoreCase);
 
         var candidates = JobChallengeTable.All
-            .Where(challenge => challenge.Dailies && !challenge.Master && challenge.InQuestLog
-                && challenge.Job == job.Name
-                && !running.Contains(challenge.Name)
-                && (challenge.Reactivate || !done.Contains(challenge.Name))
-                && ConditionTable.Holds(challenge.Condition, challenge.ConditionInvert, done.Contains, running.Contains))
+            .Where(challenge => challenge.Weight > 0 && IsOffered(challenge, job, ranks, done, running))
             .ToList();
 
-        return [.. candidates.OrderBy(_ => Random.Shared.Next()).Take(job.ActiveChallenges).Select(challenge => challenge.Name)];
+        List<string> rolled = [];
+
+        while (rolled.Count < job.ActiveChallenges && candidates.Count > 0)
+        {
+            var pick = Random.Shared.Next(candidates.Sum(challenge => challenge.Weight));
+            var index = 0;
+
+            while (pick >= candidates[index].Weight)
+                pick -= candidates[index++].Weight;
+
+            rolled.Add(candidates[index].Name);
+            candidates.RemoveAt(index);
+        }
+
+        return rolled;
+    }
+
+    public static List<string> KeepOffered(JobInfo job, IReadOnlyList<string> offers, IReadOnlyDictionary<string, byte> ranks, IReadOnlyCollection<string> completed, IReadOnlyCollection<ActiveJobChallenge> active)
+    {
+        var done = new HashSet<string>(completed, StringComparer.OrdinalIgnoreCase);
+        var running = new HashSet<string>(active.Select(challenge => challenge.Name), StringComparer.OrdinalIgnoreCase);
+
+        return [.. offers.Where(name => JobChallengeTable.TryGet(name, out var challenge) && IsOffered(challenge, job, ranks, done, running))];
+    }
+
+    public static uint RefreshIndex(DateTime utcNow) => (uint)(utcNow.Date - DateTime.UnixEpoch).TotalDays;
+
+    public static JobChallengeRefresh RefreshData(uint lastRefreshIndex)
+    {
+        var now = DateTime.UtcNow;
+        var untilNext = now.Date.AddDays(1) - now;
+
+        return new JobChallengeRefresh(RakNet.RakNet.GetTime() + (ulong)untilNext.TotalMilliseconds, lastRefreshIndex, RefreshIndex(now));
+    }
+
+    public static void RefreshIfDue(PlayerConnection connection)
+    {
+        if (!connection.PlayerEntity.TryGetComponent<ClientJobRankComponent>(out var jobRank)
+            || jobRank.JobList.Count == 0
+            || jobRank.NormalJobChallengeRefreshData.ActiveRefreshIndex == RefreshIndex(DateTime.UtcNow))
+            return;
+
+        var ranks = jobRank.JobList.ToDictionary(job => job.Job, job => job.Rank, StringComparer.OrdinalIgnoreCase);
+        var completed = jobRank.CompletedJobChallengeList;
+        var active = jobRank.ActiveJobChallengeList;
+
+        jobRank.JobList = [.. jobRank.JobList.Select(job => JobTable.TryGet(job.Job, out var info)
+            ? job with { NormalAvailable = RollDailies(info, ranks, completed, active) }
+            : job)];
+        jobRank.QuestsForEntityList = OffersFor(connection.WorldManager.EntityManager, jobRank.JobList);
+
+        var lastIndex = jobRank.NormalJobChallengeRefreshData.ActiveRefreshIndex;
+        jobRank.NormalJobChallengeRefreshData = RefreshData(lastIndex);
+        jobRank.MasterJobChallengeRefreshData = RefreshData(lastIndex);
+        connection.SaveState();
+
+        Console.WriteLine($"[Challenge] daily quests refreshed (day {jobRank.NormalJobChallengeRefreshData.ActiveRefreshIndex})");
     }
 
     private const string DailyFactionQuests = "dailyfactionquests";
@@ -46,7 +123,9 @@ public static class JobChallenges
     public static List<TodoTask> TodoTasksFor(IReadOnlyList<ActiveJobChallenge> active, IReadOnlyDictionary<string, ulong> timestamps)
         => [.. active
             .Where(challenge => JobChallengeTable.TryGet(challenge.Name, out var info) && info.InQuestLog)
-            .Select((challenge, index) => new TodoTask((byte)index, challenge.Name, false, timestamps.GetValueOrDefault(challenge.Name)))];
+            .Select((challenge, index) => new TodoTask((byte)index, challenge.Name,
+                JobChallengeTable.TryGet(challenge.Name, out var info) && challenge.Progress >= info.Number,
+                timestamps.GetValueOrDefault(challenge.Name)))];
 
     public static bool SetTodoTimestamp(PlayerConnection connection, byte taskId, ulong timestamp)
     {
@@ -95,6 +174,17 @@ public static class JobChallenges
 
         jobRank.JobList = jobs;
         jobRank.QuestsForEntityList = OffersFor(connection.WorldManager.EntityManager, jobs);
+
+        Start(connection, challenge);
+        return true;
+    }
+
+    public static void Start(PlayerConnection connection, JobChallengeInfo challenge)
+    {
+        if (!connection.PlayerEntity.TryGetComponent<ClientJobRankComponent>(out var jobRank)
+            || jobRank.ActiveJobChallengeList.Any(active => active.Name.Equals(challenge.Name, StringComparison.OrdinalIgnoreCase)))
+            return;
+
         jobRank.ActiveJobChallengeList = [.. jobRank.ActiveJobChallengeList, new ActiveJobChallenge(challenge.Name, 0)];
 
         if (connection.PlayerEntity.TryGetComponent<ClientTodoListComponent>(out var todoList))
@@ -103,6 +193,5 @@ public static class JobChallenges
         connection.SaveState();
 
         Console.WriteLine($"[Challenge] {challenge.Name} activated ({challenge.Action} x{challenge.Number}, {challenge.Xp} XP)");
-        return true;
     }
 }

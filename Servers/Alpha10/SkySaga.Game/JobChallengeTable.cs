@@ -22,6 +22,21 @@ public record JobChallengeInfo(
     JsonElement Params)
 {
     public int Index { get; set; }
+    public List<string> Events { get; init; } = [];
+    public bool EventsInvert { get; init; }
+    public string UnlockJob { get; init; } = "";
+    public int UnlockRank { get; init; }
+    public int UnlockRankRange { get; init; }
+    public string UnlockChallenge { get; init; } = "";
+    public string LockChallenge { get; init; } = "";
+    public int Weight { get; init; }
+    public bool OnlyAtDay { get; init; }
+    public bool OnlyAtNight { get; init; }
+    public int FriendsRequired { get; init; }
+    public bool CompleteWhenProgressReached { get; init; }
+    public bool CanBeCancelled { get; init; }
+    public string LootTable { get; init; } = "";
+    public bool PutAwardsInInventory { get; init; }
 }
 
 public static class JobChallengeTable

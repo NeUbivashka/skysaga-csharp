@@ -119,7 +119,7 @@ public static class InventoryItemTransfer
         from.InventoryEntityList = sourceList;
 
         connection.WorldManager.EntityManager.RemoveEntity(item.Id);
-        connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = item.Id });
+        connection.PlayerConnectionManager.BroadcastRemovedAfterSync(item.Id);
     }
 
     private static bool ReadQuantity(BitStream bitStream, out int quantity)

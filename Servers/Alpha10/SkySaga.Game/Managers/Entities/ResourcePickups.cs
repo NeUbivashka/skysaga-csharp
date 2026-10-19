@@ -194,11 +194,13 @@ public static class ResourcePickups
         }
 
         var slotData = itemComponent.InventorySlotData;
+        var collected = false;
 
         if (TryFindStack(entityManager, inventory, slotData.Name, MaterialsOf(item), slotData.Count, out var stack))
         {
             stack.InventorySlotData = stack.InventorySlotData.WithCount(stack.InventorySlotData.Count + slotData.Count);
             Remove(connection, item.Id);
+            collected = true;
             Console.WriteLine($"[Pickup] {pickupId} stacked, now {stack.InventorySlotData.Count}");
         }
         else
@@ -215,10 +217,14 @@ public static class ResourcePickups
             var list = inventory.InventoryEntityList.ToList();
             list[free] = item.Id;
             inventory.InventoryEntityList = list;
+            collected = true;
             Console.WriteLine($"[Pickup] {pickupId} placed in slot {free}");
         }
 
         Remove(connection, pickup.Id);
+
+        if (collected && slotData.Name is uint itemCrc)
+            JobChallengeProgress.Harvested(connection, itemCrc, slotData.Count);
     }
 
     internal static uint?[] MaterialsOf(Entity item)

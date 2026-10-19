@@ -277,6 +277,8 @@ public class Server : IDisposable
 
             _playerConnectionManager.BroadcastToAll(entitySync);
         }
+
+        _playerConnectionManager.FlushRemovedAfterSync();
     }
 
     private void ProcessConnections()

@@ -1,13 +1,16 @@
 namespace SkySaga.Game.Packets;
 
-public class TodoListTaskRemove : ISerializablePacket
+public static class TodoListTaskRemove
 {
-    public BitStream Serialize()
+    private const byte TaskIdMax = 255;
+    private const byte ReasonMax = 11;
+
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadByte(TaskIdMax, out var taskId) || !bitStream.ReadByte(ReasonMax, out var reason))
+            return false;
 
-        bitStream.WritePacketId(PacketId.TodoListTaskRemove);
-
-        return bitStream;
+        JobChallengeProgress.Cancel(connection, taskId, reason);
+        return true;
     }
 }

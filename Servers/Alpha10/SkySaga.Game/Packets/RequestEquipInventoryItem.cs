@@ -67,6 +67,9 @@ public static class RequestEquipInventoryItem
 
         Console.WriteLine($"[Equip] {(ClientEquippedItemComponent.Slot)location} = {ItemTable.NameOf(ItemTable.IndexOf(nameCrc))} (inventory slot {slotId})");
 
+        if (location < ClientEquippedItemComponent.SlotCount && nameCrc != 0)
+            JobChallengeProgress.Equipped(connection, nameCrc);
+
         return true;
     }
 

@@ -28,6 +28,8 @@ public class PlayerSaveData
 
     public List<string>? CompletedChallenges { get; set; }
 
+    public uint? ChallengeRefreshIndex { get; set; }
+
     public List<ActiveChallengeEntry> ActiveChallenges { get; set; } = [];
 
     public class ActiveChallengeEntry

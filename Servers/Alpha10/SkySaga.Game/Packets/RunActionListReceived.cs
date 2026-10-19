@@ -220,7 +220,7 @@ public static class RunActionListReceived
         }
 
         connection.WorldManager.EntityManager.RemoveEntity(itemEntity.Id);
-        connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = itemEntity.Id });
+        connection.PlayerConnectionManager.BroadcastRemovedAfterSync(itemEntity.Id);
         connection.LastUsedItemId = null;
     }
 

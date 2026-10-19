@@ -1,13 +1,20 @@
 namespace SkySaga.Game.Packets;
 
-public class MarkChallengeComplete : ISerializablePacket
+public static class MarkChallengeComplete
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        uint challengeCrc = 0;
 
-        bitStream.WritePacketId(PacketId.MarkChallengeComplete);
+        if (bitStream.ReadBit() && !bitStream.ReadFullWidthUInt32(out challengeCrc) || bitStream.GetNumberOfUnreadBits() < 2)
+            return false;
 
-        return bitStream;
+        var getReward = bitStream.ReadBit();
+        var submitQuest = bitStream.ReadBit();
+
+        Console.WriteLine($"[Challenge] mark complete 0x{challengeCrc:X8} getReward={getReward} submitQuest={submitQuest}");
+
+        JobChallengeProgress.Submit(connection, challengeCrc);
+        return true;
     }
 }
