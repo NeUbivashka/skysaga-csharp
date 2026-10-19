@@ -124,6 +124,8 @@ public class PlayerConnection
             PacketId.InventoryItemTransfer => InventoryItemTransfer.Handle(this, bitStream),
             PacketId.InventoryItemTransferToSlot => InventoryItemTransfer.HandleToSlot(this, bitStream),
             PacketId.ShopPurchaseWithCurrency => ShopPurchaseWithCurrency.Handle(this, bitStream),
+            PacketId.QueueRecipeOnEntity => QueueRecipeOnEntity.Handle(this, bitStream),
+            PacketId.CollectCraftedItemInSlot => CollectCraftedItemInSlot.Handle(this, bitStream),
 
             PacketId.EntityMoved => EntityMoved.Handle(this, bitStream),
             PacketId.SetInputMovement => SetInputMovement.Handle(this, bitStream),

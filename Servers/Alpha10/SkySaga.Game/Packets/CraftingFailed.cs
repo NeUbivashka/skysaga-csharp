@@ -9,12 +9,7 @@ public class CraftingFailed : ISerializablePacket
         var bitStream = new BitStream();
 
         bitStream.WritePacketId(PacketId.CraftingFailed);
-
-        var bytes = BitConverter.GetBytes(EntityId);
-
-        Array.Reverse(bytes);
-
-        bitStream.WriteBits(bytes, 32, true);
+        bitStream.WriteFullWidthUInt32((uint)EntityId);
 
         return bitStream;
     }

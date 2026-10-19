@@ -1,13 +1,26 @@
 namespace SkySaga.Game.Packets;
 
-public class QueueRecipeOnEntity : ISerializablePacket
+public static class QueueRecipeOnEntity
 {
-    public BitStream Serialize()
+    private const uint InputListEscape = 6;
+
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
+        if (!bitStream.ReadInt32(RecipeTable.VariantTableCount - 1, out var variant)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var colourScheme)) return false;
+        if (!bitStream.ReadByte(byte.MaxValue, out var count)) return false;
+        if (!bitStream.ReadEscapedCount(InputListEscape, out var inputCount)) return false;
 
-        bitStream.WritePacketId(PacketId.QueueRecipeOnEntity);
+        List<InventoryItemRef> inputs = [];
 
-        return bitStream;
+        for (var i = 0; i < inputCount; i++)
+        {
+            if (!InventoryItemRef.TryDecode(bitStream, out var input)) return false;
+            inputs.Add(input);
+        }
+
+        Crafting.Queue(connection, (int)entityId, (ushort)variant, colourScheme, count, inputs);
+        return true;
     }
 }

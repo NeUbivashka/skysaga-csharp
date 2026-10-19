@@ -1,13 +1,19 @@
 namespace SkySaga.Game.Packets;
 
-public class CollectCraftedItemInSlot : ISerializablePacket
+public static class CollectCraftedItemInSlot
 {
-    public BitStream Serialize()
+    private const uint SlotMax = 12;
+
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
+        if (!bitStream.ReadInt32(SlotMax, out var slot)) return false;
+        if (bitStream.GetNumberOfUnreadBits() < 2) return false;
 
-        bitStream.WritePacketId(PacketId.CollectCraftedItemInSlot);
+        var first = bitStream.ReadBit();
+        var second = bitStream.ReadBit();
 
-        return bitStream;
+        Crafting.Collect(connection, (int)entityId, slot, first, second);
+        return true;
     }
 }

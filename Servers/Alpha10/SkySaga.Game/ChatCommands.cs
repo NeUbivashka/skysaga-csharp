@@ -29,12 +29,31 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
             "spawn" => Spawn(connection, args),
             "time" => Time(args),
             "xp" => Experience(connection, args),
+            "recipe" => LearnRecipe(connection, args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>";
+
+    private static string LearnRecipe(PlayerConnection connection, string[] args)
+    {
+        if (args.Length < 2 || !connection.PlayerEntity.TryGetComponent<RecipeBookComponent>(out var book))
+            return "Usage: !recipe <name | all>";
+
+        var all = args[1].Equals("all", StringComparison.OrdinalIgnoreCase);
+        var recipes = all ? RecipeTable.All : RecipeTable.TryGetByName(args[1], out var recipe) ? [recipe] : [];
+
+        if (recipes.Count == 0)
+            return $"Unknown recipe {args[1]}.";
+
+        var learned = recipes.Where(entry => !book.Knows(entry.WireIndex)).ToList();
+
+        book.RecipeList = [.. book.RecipeList, .. learned.Select(entry => new KnownRecipe(entry.WireIndex, entry.Variants))];
+
+        return all ? $"Learned {learned.Count} recipes." : $"Learned {recipes[0].Name}.";
+    }
 
     private static string Experience(PlayerConnection connection, string[] args)
     {

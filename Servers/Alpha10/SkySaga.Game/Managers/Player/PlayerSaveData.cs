@@ -35,6 +35,8 @@ public class PlayerSaveData
 
     public List<string>? KeyboundEmotes { get; set; }
 
+    public List<string>? KnownRecipes { get; set; }
+
     public List<ActiveChallengeEntry> ActiveChallenges { get; set; } = [];
 
     public class ActiveChallengeEntry

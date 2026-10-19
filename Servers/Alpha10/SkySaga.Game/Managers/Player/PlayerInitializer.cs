@@ -152,6 +152,13 @@ public class PlayerInitializer(IWorldManager worldManager)
                 .Take(ClientEmoteComponent.KeyboundSlots)];
         }
 
+        if (player.TryGetComponent<RecipeBookComponent>(out var recipeBook))
+            recipeBook.RecipeList = [.. (save?.KnownRecipes ?? [.. RecipeTable.All.Where(recipe => recipe.NewPlayers).Select(recipe => recipe.Name)])
+                .Select(name => RecipeTable.TryGetByName(name, out var recipe) ? recipe : null)
+                .OfType<RecipeInfo>()
+                .DistinctBy(recipe => recipe.WireIndex)
+                .Select(recipe => new KnownRecipe(recipe.WireIndex, recipe.Variants))];
+
         if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
         {
             var refreshIndex = JobChallenges.RefreshIndex(DateTime.UtcNow);
@@ -312,6 +319,11 @@ public class PlayerInitializer(IWorldManager worldManager)
             data.AvailableEmotes = [.. emotes.AvailableEmotes.Select(EmoteTable.NameOf)];
             data.KeyboundEmotes = [.. emotes.KeyboundEmotes.Select(EmoteTable.NameOf)];
         }
+
+        if (player.TryGetComponent<RecipeBookComponent>(out var recipeBook))
+            data.KnownRecipes = [.. recipeBook.RecipeList
+                .Select(entry => RecipeTable.TryGetByWireIndex(entry.Recipe, out var recipe) ? recipe.Name : null)
+                .OfType<string>()];
 
         if (player.TryGetComponent<ClientSettingsComponent>(out var settings))
         {
