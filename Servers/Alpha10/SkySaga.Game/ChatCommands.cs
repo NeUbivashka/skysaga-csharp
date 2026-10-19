@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace SkySaga.Game;
 
-public class ChatCommands(IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
+public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager playerConnectionManager)
 {
     private const float EyeHeight = 1.6f;
     private const float LookRange = 64f;
@@ -131,13 +131,8 @@ public class ChatCommands(IWorldManager worldManager, PlayerInitializer playerIn
         if (ItemTable.IndexOf(args[1]) == 0)
             return $"Unknown item {args[1]}.";
 
-        if (!connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
-            return "The player has no inventory.";
-
-        if (playerInitializer.GiveItem(inventory, args[1], count) is not { } item)
+        if (!InventoryItems.Give(connection, Util.ComputeCrc32(args[1]), count))
             return "The inventory is full.";
-
-        Broadcast(item);
 
         return $"Gave {count} x {args[1]}.";
     }

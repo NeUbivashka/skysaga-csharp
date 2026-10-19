@@ -46,20 +46,13 @@ public static class ShopPurchaseWithCurrency
 
         var itemName = ItemTable.NameOf(item.Item.Item.Kind);
 
-        if (connection.PlayerInitializer.GiveItem(inventory, itemName, (int)(item.Item.Quantity * count)) is not { } given)
+        if (!InventoryItems.Give(connection, Util.ComputeCrc32(itemName), (int)(item.Item.Quantity * count)))
         {
             Console.WriteLine("[Shop] inventory full");
             return true;
         }
 
         wallet.WalletCurrency = new WalletData { CurrencyList = currencies };
-
-        connection.PlayerConnectionManager.BroadcastToAll(new EntityAdd
-        {
-            Id = given.Id,
-            NameHash = Util.ComputeCrc32(given.Name),
-            SyncData = given.GetSyncData(newEntity: true)
-        });
 
         Console.WriteLine($"[Shop] bought {item.Item.Quantity * count} x {itemName}");
         return true;

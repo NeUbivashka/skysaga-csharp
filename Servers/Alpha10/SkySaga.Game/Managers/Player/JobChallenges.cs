@@ -20,7 +20,7 @@ public static class JobChallenges
            && challenge.Events.Count == 0 != challenge.EventsInvert
            && IsUnlocked(challenge, ranks, done)
            && !running.Contains(challenge.Name)
-           && (challenge.Reactivate || !done.Contains(challenge.Name))
+           && !done.Contains(challenge.Name)
            && ConditionTable.Holds(challenge.Condition, challenge.ConditionInvert, done.Contains, running.Contains);
 
     private static bool IsUnlocked(JobChallengeInfo challenge, IReadOnlyDictionary<string, byte> ranks, ISet<string> done)
@@ -75,6 +75,9 @@ public static class JobChallenges
         return [.. offers.Where(name => JobChallengeTable.TryGet(name, out var challenge) && IsOffered(challenge, job, ranks, done, running))];
     }
 
+    public static List<string> ResetDailies(IReadOnlyList<string> completed)
+        => [.. completed.Where(name => !JobChallengeTable.TryGet(name, out var challenge) || !challenge.Dailies || !challenge.Reactivate)];
+
     public static uint RefreshIndex(DateTime utcNow) => (uint)(utcNow.Date - DateTime.UnixEpoch).TotalDays;
 
     public static JobChallengeRefresh RefreshData(uint lastRefreshIndex)
@@ -93,7 +96,7 @@ public static class JobChallenges
             return;
 
         var ranks = jobRank.JobList.ToDictionary(job => job.Job, job => job.Rank, StringComparer.OrdinalIgnoreCase);
-        var completed = jobRank.CompletedJobChallengeList;
+        var completed = jobRank.CompletedJobChallengeList = ResetDailies(jobRank.CompletedJobChallengeList);
         var active = jobRank.ActiveJobChallengeList;
 
         jobRank.JobList = [.. jobRank.JobList.Select(job => JobTable.TryGet(job.Job, out var info)

@@ -113,6 +113,7 @@ public class PlayerConnection
             PacketId.TodoListSetTaskTimestamp => TodoListSetTaskTimestamp.Handle(this, bitStream),
             PacketId.MarkChallengeComplete => MarkChallengeComplete.Handle(this, bitStream),
             PacketId.TodoListTaskRemove => TodoListTaskRemove.Handle(this, bitStream),
+            PacketId.InventoryArrange => InventoryArrange.Handle(this, bitStream),
             PacketId.InventoryItemTransfer => InventoryItemTransfer.Handle(this, bitStream),
             PacketId.InventoryItemTransferToSlot => InventoryItemTransfer.HandleToSlot(this, bitStream),
             PacketId.ShopPurchaseWithCurrency => ShopPurchaseWithCurrency.Handle(this, bitStream),

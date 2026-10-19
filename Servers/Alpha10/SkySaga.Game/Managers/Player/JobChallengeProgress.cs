@@ -122,48 +122,26 @@ public static class JobChallengeProgress
         if (challenge.LootTable.Length == 0)
             return;
 
-        if (!challenge.PutAwardsInInventory
-            || !connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+        if (!challenge.PutAwardsInInventory)
         {
             Console.WriteLine($"[Challenge] {challenge.Name} loot {challenge.LootTable} not given: only inventory awards are supported");
             return;
         }
 
         var drops = LootTable.Roll(challenge.LootTable, "");
-        List<int> list = [.. inventory.InventoryEntityList];
 
         foreach (var drop in drops)
         {
-            var free = list.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
             var name = ItemTable.NameOf(ItemTable.IndexOf(drop.ItemCrc));
-
-            if (free < 0)
-            {
-                Console.WriteLine($"[Challenge] {challenge.Name} loot {drop.Count} x {name} lost: inventory full");
-                continue;
-            }
-
             var materials = drop.Materials.Select(material => material is null || material == LootTable.EntityMaterial ? (uint?)null : Util.ComputeCrc32(material)).ToArray();
 
-            if (PlayerInitializer.CreateInventoryItem(connection.WorldManager.EntityManager, drop.ItemCrc, drop.Count, materialOverrides: materials) is not { } item)
-                continue;
-
-            list[free] = item.Id;
-
-            connection.PlayerConnectionManager.BroadcastToAll(new EntityAdd
-            {
-                Id = item.Id,
-                NameHash = Util.ComputeCrc32(item.Name),
-                SyncData = item.GetSyncData(newEntity: true)
-            });
-
-            Console.WriteLine($"[Challenge] {challenge.Name} loot {drop.Count} x {name} in slot {free}");
+            Console.WriteLine(InventoryItems.Give(connection, drop.ItemCrc, drop.Count, materials)
+                ? $"[Challenge] {challenge.Name} loot {drop.Count} x {name}"
+                : $"[Challenge] {challenge.Name} loot {drop.Count} x {name} lost: inventory full");
         }
 
         if (drops.Count == 0)
             Console.WriteLine($"[Challenge] {challenge.Name} loot {challenge.LootTable} rolled nothing");
-
-        inventory.InventoryEntityList = list;
     }
 
     public static void Submit(PlayerConnection connection, uint challengeCrc)

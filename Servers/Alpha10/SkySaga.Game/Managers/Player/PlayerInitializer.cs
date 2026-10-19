@@ -139,14 +139,17 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientJobRankComponent>(out var clientJobRankComponent))
         {
+            var refreshIndex = JobChallenges.RefreshIndex(DateTime.UtcNow);
             var completed = save?.CompletedChallenges ?? JobChallenges.TutorialCompleted();
+
+            if (save?.ChallengeRefreshIndex is { } savedIndex && savedIndex != refreshIndex)
+                completed = JobChallenges.ResetDailies(completed);
             List<ActiveJobChallenge> active = [.. (save?.ActiveChallenges ?? [])
                 .Where(entry => JobChallengeTable.TryGet(entry.Name, out _))
                 .Select(entry => new ActiveJobChallenge(entry.Name, entry.Progress))];
 
             clientJobRankComponent.CompletedJobChallengeList = completed;
             clientJobRankComponent.ActiveJobChallengeList = active;
-            var refreshIndex = JobChallenges.RefreshIndex(DateTime.UtcNow);
             var lastRefreshIndex = save?.ChallengeRefreshIndex ?? refreshIndex;
 
             clientJobRankComponent.NormalJobChallengeRefreshData = JobChallenges.RefreshData(lastRefreshIndex);
@@ -583,20 +586,6 @@ public class PlayerInitializer(IWorldManager worldManager)
 
     private void CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, string itemName, int count = 1)
         => CreateAndEquipInventoryItem(inventory, slot, Util.ComputeCrc32(itemName), count);
-
-    public Entity? GiveItem(ClientInventoryComponent inventory, string itemName, int count)
-    {
-        var free = inventory.InventoryEntityList.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount);
-
-        if (free < 0)
-            return null;
-
-        var item = CreateAndEquipInventoryItem(inventory, free, Util.ComputeCrc32(itemName), count);
-
-        inventory.InventoryEntityList = [.. inventory.InventoryEntityList];
-
-        return item;
-    }
 
     private Entity? CreateAndEquipInventoryItem(ClientInventoryComponent inventory, int slot, uint nameHash, int count = 1, string? itemUuid = null, uint?[]? materials = null)
     {

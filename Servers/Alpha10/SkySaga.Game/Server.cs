@@ -30,7 +30,7 @@ public class Server : IDisposable
         _port = port;
 
         _aiManager = new AiManager(_worldManager, _playerConnectionManager);
-        _chatCommands = new ChatCommands(_worldManager, _playerInitializer, _playerConnectionManager);
+        _chatCommands = new ChatCommands(_worldManager, _playerConnectionManager);
 
         _peer = RakPeerInterface.GetInstance();
 
