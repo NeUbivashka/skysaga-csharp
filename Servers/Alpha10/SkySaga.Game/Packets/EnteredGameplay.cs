@@ -23,20 +23,6 @@ public static class EnteredGameplay
 
         connection.CurrentVideoFileName = videoName;
 
-        var teleporting = SendTeleport && !_teleportSent;
-
-        if (teleporting)
-        {
-            _teleportSent = true;
-
-            SendTeleportBegins(connection);
-
-            Console.WriteLine("[EnteredGameplay] Teleporting - holding PlayFullScreenVideo until "
-                + "the client comes back.");
-
-            return true;
-        }
-
         SendIsLocal(connection);
 
         if (!connection.WorldManager.Definition.Spec.IsFtue)
@@ -62,39 +48,10 @@ public static class EnteredGameplay
         return true;
     }
 
-    private static readonly bool SendTeleport = false;
-
-    private static readonly bool AppendTrailingFloat = false;
-
-    private const float TrailingFloatValue = 1.0f;
-
-    private static bool _teleportSent;
-
     private static void SendIsLocal(PlayerConnection connection)
     {
         var now = DateTime.UtcNow;
         connection.IsLocalDueUtc.Enqueue(now);
         connection.IsLocalDueUtc.Enqueue(now + TimeSpan.FromSeconds(1));
-    }
-
-    private static void SendTeleportBegins(PlayerConnection connection)
-    {
-        var definition = connection.WorldManager.Definition;
-
-        var teleportBegins = new TeleportBegins
-        {
-            Spec = definition.Spec
-        };
-
-        var teleportStream = teleportBegins.Serialize();
-
-        if (AppendTrailingFloat)
-            teleportStream.WriteBits(BitConverter.GetBytes(TrailingFloatValue), 32, true);
-
-        Console.WriteLine($"[EnteredGameplay] Sending TeleportBegins (ordinal 35), "
-            + $"{teleportStream.GetNumberOfBytesUsed()} bytes"
-            + (AppendTrailingFloat ? $", trailing float {TrailingFloatValue}." : "."));
-
-        connection.Send(teleportStream);
     }
 }

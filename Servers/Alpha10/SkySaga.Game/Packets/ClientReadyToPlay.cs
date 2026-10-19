@@ -2,10 +2,6 @@ namespace SkySaga.Game.Packets;
 
 public static class ClientReadyToPlay
 {
-    private static readonly bool SendTeleportHere = false;
-
-    private static bool _teleportSent;
-
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
         Debug.WriteLine("", nameof(ClientReadyToPlay));
@@ -28,25 +24,6 @@ public static class ClientReadyToPlay
         Console.WriteLine($"[ClientReadyToPlay] Sent SetClientLocalPlayerEntity(EntityId={connection.PlayerEntity.Id}), "
             + $"PlayerSpawned(Position={playerSpawned.Position}, Yaw={playerSpawned.YawDegrees}, "
             + $"Pitch={playerSpawned.PitchDegrees}).");
-
-        if (SendTeleportHere && !_teleportSent)
-        {
-            _teleportSent = true;
-
-            var definition = connection.WorldManager.Definition;
-
-            var teleportBegins = new TeleportBegins
-            {
-                Spec = definition.Spec
-            };
-
-            var teleportStream = teleportBegins.Serialize();
-
-            Console.WriteLine($"[ClientReadyToPlay] Sending TeleportBegins (ordinal 35), "
-                + $"{teleportStream.GetNumberOfBytesUsed()} bytes.");
-
-            connection.Send(teleportStream);
-        }
 
         var entityAdd = new EntityAdd
         {

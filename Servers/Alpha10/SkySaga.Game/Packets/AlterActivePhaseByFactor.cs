@@ -4,8 +4,6 @@ public class AlterActivePhaseByFactor : ISerializablePacket
 {
     private const uint FactorMax = 0x20;
 
-    private const float FactorScale = 0.03125f;
-
     public float Factor;
 
     public int EntityId;
@@ -16,13 +14,9 @@ public class AlterActivePhaseByFactor : ISerializablePacket
 
         bitStream.WritePacketId(PacketId.AlterActivePhaseByFactor);
 
-        var units = (uint)Math.Clamp((int)(Factor / FactorScale), 0, (int)FactorMax);
+        bitStream.WriteRanged((uint)Math.Clamp((int)MathF.Round(Factor * FactorMax), 0, (int)FactorMax), FactorMax);
 
-        bitStream.WriteRanged(units, FactorMax);
-
-        var idBytes = BitConverter.GetBytes(EntityId);
-        Array.Reverse(idBytes);
-        bitStream.WriteBits(idBytes, 32, true);
+        InventoryItemRef.WriteUInt32(bitStream, (uint)EntityId);
 
         return bitStream;
     }
