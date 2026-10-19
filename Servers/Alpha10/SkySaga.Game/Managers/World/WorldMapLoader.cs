@@ -62,7 +62,7 @@ public static class WorldMapLoader
         }
 
         int sizeX = Math.Clamp(data.MapSizeChunks.X, 1, 32);
-        int sizeY = Math.Clamp(data.MapSizeChunks.Y, 1, 32);
+        int sizeY = Math.Clamp(data.MapSizeChunks.Y, 1, 7);
         int sizeZ = Math.Clamp(data.MapSizeChunks.Z, 1, 32);
 
         if (Environment.GetEnvironmentVariable("SKYSAGA_MAP_SIZE") is { } sizeOverride

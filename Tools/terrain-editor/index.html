@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,17 +13,16 @@
     root.innerHTML =
       '<pre style="color:#ff9e9e;background:#0b0d12;padding:20px;font-family:monospace;' +
       'white-space:pre-wrap;font-size:13px;margin:0;">' +
-      'Ошибка загрузки редактора:\n\n' + msg + (loc ? ('\n\n' + loc) : '') +
-      '\n\nЕсли тут написано что-то вроде "React is not defined" или "THREE is not defined" ' +
-      'или "Failed to fetch" — значит не догрузился CDN-скрипт (интернет/блокировка/файрвол). ' +
-      'Попробуй открыть эту страницу через VPN или на другой сети.' +
+      'Failed to load the editor:\n\n' + msg + (loc ? ('\n\n' + loc) : '') +
+      '\n\nIf this says "React is not defined", "THREE is not defined" or "Failed to fetch", ' +
+      'a CDN script did not load. Check the internet connection.' +
       '</pre>';
   });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.0/babel.min.js"></script>
 <style>
   html, body, #root { margin: 0; padding: 0; height: 100%; background: #0b0d12; }
 </style>
@@ -78,6 +77,41 @@ const CELL_BASE = 14;
 // islands per its own GeoData entry, but included since it's still a real,
 // selectable biome for other purposes).
 const REAL_BIOMES = ["Desert", "Forest", "Jungle", "Mountain", "NPCfriend"];
+
+const MAX_CHUNKS = { x: 32, y: 7, z: 32 };
+
+const MAP_SIZES = [
+  { x: 1, y: 1, z: 1, names: "MapSize_1x1x1" },
+  { x: 2, y: 2, z: 2, names: "UnitTest_2x2x2" },
+  { x: 4, y: 4, z: 4, names: "MapSize_4x4x4" },
+  { x: 4, y: 4, z: 5, names: "FTUEAdventure_4x4x5" },
+  { x: 4, y: 4, z: 8, names: "MapSize_4x4x8" },
+  { x: 5, y: 4, z: 7, names: "MapSize_5x4x7" },
+  { x: 6, y: 3, z: 6, names: "MapSize_6x3x6, Small_6x3x6" },
+  { x: 6, y: 4, z: 6, names: "HomeIsland_6x4x6, MapSize_6x4x6" },
+  { x: 6, y: 6, z: 6, names: "MapSize_6x6x6" },
+  { x: 7, y: 4, z: 5, names: "MapSize_7x4x5" },
+  { x: 7, y: 4, z: 11, names: "MapSize_7x4x11" },
+  { x: 8, y: 4, z: 4, names: "MapSize_8x4x4" },
+  { x: 8, y: 4, z: 10, names: "MapSize_8x4x10" },
+  { x: 8, y: 4, z: 16, names: "MapSize_8x4x16" },
+  { x: 9, y: 4, z: 9, names: "MapSize_9x4x9" },
+  { x: 9, y: 7, z: 9, names: "MapSize_9x7x9" },
+  { x: 10, y: 4, z: 8, names: "MapSize_10x4x8" },
+  { x: 10, y: 4, z: 14, names: "MapSize_10x4x14" },
+  { x: 10, y: 5, z: 10, names: "BlueprintStudio_10x5x10, MapSize_10x5x10" },
+  { x: 11, y: 4, z: 7, names: "MapSize_11x4x7" },
+  { x: 11, y: 4, z: 13, names: "MapSize_11x4x13" },
+  { x: 12, y: 4, z: 12, names: "MapSize_12x4x12" },
+  { x: 13, y: 4, z: 11, names: "MapSize_13x4x11" },
+  { x: 14, y: 4, z: 10, names: "MapSize_14x4x10" },
+  { x: 16, y: 4, z: 8, names: "MapSize_16x4x8" },
+  { x: 17, y: 2, z: 17, names: "MapSize_17x2x17" },
+];
+
+function mapSizeKey(x, y, z) {
+  return x + "x" + y + "x" + z;
+}
 
 const ENTITY_NAMES = [
   "AIPack", "AdventureName", "Airship", "Airship_Damaged", "Airship_Dock", "Airship_FTUE",
@@ -365,6 +399,7 @@ const ENTITY_NAMES = [
 const SINGLETON_ENTITY_NAMES = new Set(["Player", "TimeOfDay", "Airship"]);
 
 const BLOCK_NAMES = {
+  0: "Dirt",
   1: "Grass_Lime",
   2: "Stone_Blue",
   3: "Rock_Yellow",
@@ -512,10 +547,7 @@ const BLOCK_NAMES = {
   149: "Glass_Voxel_Yellow",
   150: "Glass_Voxel_Black",
 };
-// ID 0 (Dirt) is deliberately excluded: 0 is reserved internally (and by the
-// server's WorldChunk/GetChunkSyncData) as the "empty/air" sentinel, and gets
-// silently converted to network Air (255) before reaching the client. See
-// the conversation notes for the full explanation of this conflict.
+const AIR = 255;
 const DEFAULT_PALETTE = Object.keys(BLOCK_NAMES)
   .map(Number)
   .sort((a, b) => a - b);
@@ -528,6 +560,16 @@ const STRINGS = {
     title: "SkySaga · Terrain Editor",
     view2d: "2D Layers",
     view3d: "3D View",
+    mapSize: "Size",
+    airshipRequired: "Place an Airship entity first: players spawn on its landing pad",
+    airshipMissing: "No Airship",
+    mapSizeCustom: "Not in GeoData",
+    mapSizeTitle: "Chunk sizes from GeoData MapSizes. Other sizes stay within 32 × 7 × 32, but the client gets no matching map size.",
+    entityItems: "Items",
+    entityItemsHint: "Item names, one per line (chest contents)",
+    applyEdits: "Apply server edits",
+    applyEditsTitle: "Apply Data/Saves/voxel_edits_<map>.json from the server: [x, y, z, block], 255 is air",
+    editsApplied: (n) => `Applied ${n} server edits`,
     chunksX: "Chunks X",
     y: "Y",
     z: "Z",
@@ -579,7 +621,7 @@ const STRINGS = {
     hintOrbit:
       "LMB — build/erase (drag works) · RMB drag — orbit · Shift+RMB / MMB — pan · wheel — zoom to cursor",
     hintFly:
-      "LMB — break · RMB — place · WASD — move · Space/Shift — up/down · wheel — cycle palette",
+      "LMB — break · RMB — place · WASD — move · Space/Shift — up/down · wheel — zoom · Esc / MMB — release",
     cameraOrbit: "Orbit",
     cameraFly: "Fly (Creative)",
     seed: "Seed",
@@ -683,7 +725,7 @@ const STRINGS = {
     layerCopied: (y) => `Layer copied to Y=${y}`,
     clickToPlay: "Click to take control",
     controlsFly:
-      "WASD — move · Space / Shift — up / down · mouse — look\nLMB — break · RMB — place · Esc — release cursor",
+      "WASD — move · Space / Shift — up / down · mouse — look\nLMB — break · RMB — place · Esc / MMB — release cursor",
     pointerLockFailedMsg:
       "Pointer Lock didn't activate — it may be blocked in this preview window. Open the artifact in a separate browser tab and try again.",
     langLabel: "Language",
@@ -695,7 +737,7 @@ const STRINGS = {
 
 3D mode: switch between Orbit and Fly (Creative) camera in the top bar.
  • Orbit — LMB build/erase, RMB-drag to rotate, Shift+RMB or middle-drag to pan, wheel to zoom.
- • Fly (Creative) — click the canvas to lock the mouse, then WASD to move, Space/Shift up/down, LMB to break, RMB to place, wheel cycles the palette, R rotates a placed structure, Esc releases the mouse.
+ • Fly (Creative) — click the canvas to lock the mouse, then WASD to move, Space/Shift up/down, LMB to break, RMB to place, wheel zooms, R rotates a placed structure, Esc or the middle button releases the mouse.
 
 Randomizer (🎲 button): generates procedural terrain. Toggle Hills / Mountains / Plateaus / Valleys / Rivers / Lakes / Caves / Ore veins / Trees / Altitude blocks / Erosion / Island shape — click the ⚙ next to any of them for its settings — then press Generate. This replaces the ENTIRE map. Island shape has its own Floating vs Island (sea-level) mode, with Ground Depth / Max Thickness / Bottom Roughness controlling how thick and ragged a floating island looks.
 
@@ -730,7 +772,7 @@ WHERE THE JSON FILE GOES
 • Onion skin (2D) — shows the layer(s) above/below faded and tinted, for aligning multi-floor builds.
 • Randomize All — rerolls seed and every numeric generation parameter within sensible ranges in one click (leaves which features are on/off untouched). Press Generate afterward to see the result.
 • Compressed export (Export JSON .gz) — gzip via the browser's native CompressionStream, typically 80-90% smaller. The server-side loader now decompresses .gz files automatically.
-• Hotbar — 10 slots for quick block switching. Left click selects, right click assigns the current block, keys 1-9/0 select directly, scroll wheel cycles (2D canvas and Fly mode).
+• Hotbar — 10 slots for quick block switching. Left click selects, right click assigns the current block, keys 1-9/0 select directly.
 • Floating islands: Max Thickness cap (hard limit on total slab thickness, independent of Ground Depth) — fixes islands still looking too "fat" even with a ragged bottom.
 • Floating islands now have a ragged, torn-off underside (Bottom Roughness) instead of a flat column — deeper near the center, thinning to jagged edges near the coast. Rivers/lakes now share the exact same water-surface height as the global ocean in Island mode, so shoreline water bodies no longer sit at mismatched levels.
 • Ore veins: rare "jackpot" chance to generate a large irregular deposit (chain of overlapping blobs) instead of a small vein.
@@ -839,322 +881,6 @@ WHERE THE JSON FILE GOES
     bulkIdUnrecognized: "no ID detected",
     bulkApply: (n) => `Apply ${n} texture${n === 1 ? "" : "s"}`,
     bulkTexturesApplied: (n) => `Applied ${n} texture${n === 1 ? "" : "s"}`,
-  },
-  ru: {
-    title: "SkySaga · Terrain Editor",
-    view2d: "2D слои",
-    view3d: "3D вид",
-    chunksX: "Chunks X",
-    y: "Y",
-    z: "Z",
-    biome: "Biome",
-    gameMode: "GameMode",
-    importJson: "Импорт JSON",
-    exportJson: "Экспорт JSON",
-    exportJsonGz: "Экспорт JSON (.gz)",
-    exportJsonGzTitle: "Экспорт со сжатием gzip — обычно на 80-90% меньше. Серверу нужен обновлённый WorldMapLoader, чтобы читать .gz.",
-    compressionUnsupported: "Сжатие не поддерживается в этом браузере (нужен Chrome/Edge 80+, Firefox 113+, Safari 16.4+)",
-    exportedCompressed: (before, after, pct) =>
-      `Экспорт со сжатием: ${(before / 1024).toFixed(0)}КБ → ${(after / 1024).toFixed(0)}КБ (меньше на ${pct}%)`,
-    palette: "ПАЛИТРА",
-    idPlaceholder: "ID 1-255",
-    selectedBlock: "Выбран блок:",
-    pencil: "✏️ Карандаш",
-    pencilTitle: "Рисовать выбранным блоком",
-    eraser: "🧹 Ластик",
-    eraserTitle: "Стереть (воздух)",
-    rectFill: "▭ Прямоугольник",
-    rectFillTitle: "Залить прямоугольную область",
-    rectErase: "▭✕ Стереть область",
-    rectEraseTitle: "Очистить прямоугольную область",
-    bucket: "🪣 Заливка",
-    bucketTitle: "Заливка связной области",
-    undo: "↶ Отменить",
-    redo: "↷ Повторить",
-    copyArea: "▦ Копия области",
-    copyAreaTitle: "Потяни, чтобы выделить и скопировать область (текущий слой)",
-    pasteArea: "📋 Вставить",
-    pasteAreaTitle: "Клик — вставить скопированную область",
-    mirrorXTitle: "Зеркалить рисование по оси X",
-    mirrorZTitle: "Зеркалить рисование по оси Z",
-    onionSkin: "Onion skin",
-    onionSkinTitle: "Показать соседние слои полупрозрачно (синий = ниже, оранжевый = выше) для выравнивания",
-    clipboardStatus: (w, h, d, n) => `Буфер: ${w}×${h}×${d} (${n} вокселей)`,
-    hotbarHint: "ЛКМ — выбрать · ПКМ — записать текущий блок · 1-9,0 — выбор клавишей · колесо — прокрутка",
-    copyYFrom: "Y от",
-    copyYTo: "Y до",
-    fillLayer: "Залить слой",
-    clearLayer: "Очистить слой",
-    copyLayerUp: "Копия слоя ↑",
-    copyLayerDown: "Копия слоя ↓",
-    resetCameraOrbit: "🎯 Сбросить камеру",
-    resetCameraFly: "🎯 Сброс позиции",
-    randomizer: "🎲 Рандомайзер",
-    zoom: "Zoom",
-    speed: "Скорость",
-    hintOrbit:
-      "ЛКМ — строить/стирать (можно тянуть) · ПКМ тянуть — вращать · Shift+ПКМ / СКМ — панорама · колесо — зум к курсору",
-    hintFly:
-      "ЛКМ — сломать · ПКМ — поставить · WASD — движение · Space/Shift — вверх/вниз · колесо — блок в палитре",
-    cameraOrbit: "Орбита",
-    cameraFly: "Полёт (креатив)",
-    seed: "Seed",
-    seedTitle: "Случайный seed",
-    randomizeAll: "🎲 Randomize All",
-    randomizeAllTitle: "Перекатить seed и все числовые параметры генерации в разумных пределах (не трогает какие фичи включены, не генерирует — жми Generate после)",
-    randomizedAll: "Параметры перекатаны — жми Generate, чтобы увидеть результат",
-    heightMin: "Высота мин",
-    heightMax: "макс",
-    groundDepth: "Толщина породы",
-    groundDepthTitle: "Толщина сплошной породы под поверхностью — есть куда копать и где резать пещеры",
-    groundId: "Грунт ID",
-    surfaceId: "Поверхность ID",
-    decoId: "Декор ID (id:вес)",
-    decoPct: "Декор %",
-    islandShape: "остров (спад к краям)",
-    islandIrregularity: "Неровность берега %",
-    islandMode: "Тип острова",
-    islandModeFloating: "Плавающий (пропасть снизу)",
-    islandModeSea: "Остров (море снизу)",
-    seaLevel: "Уровень моря",
-    seaBlock: "ID моря",
-    bottomRoughness: "Неровность низа",
-    maxThickness: "Макс. толщина",
-    maxThicknessTitle: "Жёсткий потолок толщины всей плиты сверху донизу — не зависит от Ground Depth",
-    bottomRoughnessTitle: "Насколько рваный низ — глубокие оторванные куски у центра, к краю сходит на тонкие рваные выступы",
-    islandSize: "Размер острова",
-    archipelago: "Архипелаг (несколько островов)",
-    islandCount: "Кол-во островов",
-    altitudeBlocks: "Блоки по высоте",
-    beachLevel: "Уровень пляжа",
-    beachBlock: "ID пляжа",
-    snowLevel: "Уровень снега",
-    snowBlock: "ID снега",
-    ores: "Жилы руд",
-    oreIds: "ID руд",
-    oreCount: "Кол-во жил",
-    oreVeinSize: "Размер жилы",
-    caveGlow: "Светящиеся вкрапления",
-    caveGlowChance: "Шанс свечения %",
-    caveGlowBlock: "ID свечения",
-    smoothShore: "Плавный берег",
-    shoreRadius: "Радиус берега",
-    shoreBlock: "ID берега",
-    shoreCoverage: "Покрытие %",
-    shoreCoverageTitle: "Насколько непрерывный пляж — низкие значения дают рваные пятна, высокие — почти сплошную кайму",
-    waterfalls: "Водопады",
-    waterfallDrop: "Порог перепада",
-    presetsBtn: "🎛️ Пресеты",
-    presetsHint: "Сохранить/загрузить настройки генератора (не саму карту) под именем",
-    savePresetBtn: "Сохранить как новый пресет",
-    noPresets: "Пресетов пока нет",
-    presetSaved: (name) => `Пресет сохранён: "${name}"`,
-    presetLoaded: (name) => `Пресет загружен: "${name}"`,
-    regenHint: "Перекатить только одно, не трогая текущий рельеф:",
-    regenDeco: "🔄 Декор",
-    regenTrees: "🔄 Деревья и кусты",
-    regenOre: "🔄 Руда",
-    regenNeedsGenerate: "Сначала хотя бы раз запусти полный Generate",
-    regenNothingToDo: "Эта фича выключена или пустая — нечего перекатывать",
-    regenDone: "Перекатано",
-    oreBigChance: "Шанс большого кластера %",
-    oreBigSize: "Размер кластера",
-    roadTool: "🛣️ Дорога",
-    roadToolTitle: "Клик — старт, клик — финиш. Дорога идёт по фактическому рельефу",
-    roadWidth: "Ширина",
-    roadBlock: "ID дороги",
-    erosion: "Эрозия",
-    erosionStrength: "Сила эрозии %",
-    erosionIterations: "Итераций",
-    savesBtn: "💾 Сохранения",
-    savesHeader: "СЛОТЫ СОХРАНЕНИЙ",
-    slotNamePlaceholder: "Название слота",
-    saveSlotBtn: "Сохранить как новый слот",
-    noSlots: "Слотов пока нет",
-    slotLoad: "Загрузить",
-    slotDelete: "Удалить",
-    slotSaved: (name) => `Сохранён слот "${name}"`,
-    slotLoaded: (name) => `Загружен слот "${name}"`,
-    statsBtn: "📊 Статистика",
-    statsTitle: "Статистика карты",
-    statsTotal: (n) => `Всего вокселей: ${n}`,
-    statsNoData: "На карте пока нет вокселей",
-    small: "Маленький",
-    medium: "Средний",
-    large: "Большой",
-    generate: "⚡ Сгенерировать (заменит ВСЮ карту, все слои!)",
-    cursor: "Курсор:",
-    totalVoxels: "Вокселей всего:",
-    layerY: "СЛОЙ (Y)",
-    chunkLocal: (cy, ly) => `чанк Y=${cy}, локально ${ly}`,
-    quickJump: "Быстрый переход по чанкам:",
-    chunkY: (n) => `Чанк Y=${n}`,
-    savedAt: (t) => `Сохранено ${t}`,
-    saveError: "Ошибка автосохранения",
-    loadedAutosave: "Загружено из автосохранения",
-    generatedSeed: (s) => `Сгенерировано случайно (seed ${s}), отменить — Ctrl+Z`,
-    exportedCount: (n) => `Экспортировано: ${n} вокселей`,
-    importedFrom: (f) => `Импортировано из ${f}`,
-    importError: (e) => `Ошибка чтения файла: ${e}`,
-    layerCopied: (y) => `Слой скопирован на Y=${y}`,
-    clickToPlay: "Кликните, чтобы взять управление",
-    controlsFly:
-      "WASD — движение · Space / Shift — вверх / вниз · мышь — обзор\nЛКМ — сломать · ПКМ — поставить · Esc — отпустить курсор",
-    pointerLockFailedMsg:
-      "Pointer Lock не активировался — возможно, заблокирован в этом окне предпросмотра. Открой артефакт в отдельной вкладке браузера и попробуй снова.",
-    langLabel: "Язык",
-    helpBtn: "❓ Справка",
-    helpTitle: "SkySaga Terrain Editor — Справка",
-    helpUsage: `КАК ПОЛЬЗОВАТЬСЯ
-
-2D-режим: выбери инструмент слева (карандаш, ластик, прямоугольник, заливка, копировать/вставить — копия может охватывать несколько слоёв через поля Y from/to, дорога/тропа), выбери блок в палитре, кликай или тяни по холсту. Слои (Y) — на панели справа. Кнопки Mirror X/Z зеркалят всё, что рисуешь, относительно центра карты.
-
-3D-режим: переключатель Orbit / Fly (Creative) в шапке.
- • Orbit — ЛКМ строить/стирать, ПКМ-тяни — вращение, Shift+ПКМ или средняя кнопка — панорама, колесо — зум.
- • Fly (Creative) — клик по холсту захватывает курсор, дальше WASD — движение, Space/Shift — вверх/вниз, ЛКМ — сломать, ПКМ — поставить, колесо — блок в палитре, R — повернуть структуру, Esc — отпустить курсор.
-
-Рандомайзер (кнопка 🎲): генерирует рельеф процедурно. Включай Hills / Mountains / Plateaus / Valleys / Rivers / Lakes / Caves / Ore veins / Trees / блоки по высоте / Erosion / форму острова — у каждого есть ⚙ с настройками — потом жми Generate. Это заменяет ВСЮ карту. У формы острова свой режим Floating или Island (уровень моря), а Ground Depth / Max Thickness / Bottom Roughness управляют тем, насколько толстым и рваным выглядит floating-остров.
-
-Структуры (кнопка 🏛️): импортируй JSON-файлы построек (здания, данжи) или сохрани текущую карту как структуру, с категорией (Building/Dungeon/Decoration/Other) для фильтрации списка. Включи + задай счётчик — будут ставиться автоматически при генерации, либо жми 📍 рядом со структурой, чтобы вооружиться ей и поставить вручную (R — повернуть, Esc — отмена).
-
-Saves (кнопка 💾): именованные слоты сохранения — держи несколько версий карты параллельно, отдельно от автосейва. Stats (кнопка 📊): показывает разбивку, сколько вокселей каждого типа блока сейчас на карте.
-
-Текстуры: клик по превью блока в палитре — загрузить картинку на этот ID. "Bulk import textures" — сопоставить сразу папку картинок с ID по числу в имени файла (ID1.png → блок 1).
-
-Export JSON (справа сверху): скачивает worldmap.json — файл, который читает сервер.
-
-КУДА КЛАСТЬ JSON-ФАЙЛ
-
-1. Жмёшь "Export JSON" — получаешь файл worldmap.json.
-2. Переименовываешь ровно в: WorldMap.json
-3. Кладёшь в проект сервера по пути: SkySaga.Game\\Data\\WorldMap.json (рядом с существующим Entities.json).
-4. Для этого в проекте уже должен быть серверный код-загрузчик (WorldMapLoader.cs, WorldMapData.cs, обновлённые WorldManager.cs / MapChunkManager.cs). Если сервер этим кодом ещё не обновляли — спроси у того, кто собирал проект.
-5. Если файла нет или он битый — сервер просто откатится на старую захардкоженную генерацию острова, ничего не сломается.`,
-    helpChangelogTitle: "CHANGELOG (сначала новое)",
-    helpChangelog: `• Редактор теперь реально управляет позицией Airship и Player на сервере, а не просто игнорируется, пока сервер делает своё. Поставишь маркер "Airship" — его позиция переопределяет автоматический поиск у края острова; поставишь "Player" — подключающиеся игроки появятся именно там, а не рядом с кораблём (никакой сущности для "Player" не создаётся — это точка спавна, не объект). Маркеры "TimeOfDay" принимаются, но игнорируются — ему всегда нужно живое время старта сервера, поэтому он всегда создаётся на сервере вне зависимости от карты.
-• Player, TimeOfDay и Airship — не больше 1 на карту в панели Entities (помечены "макс. 1", кнопка размещения гаснет после одного).
-• Настоящие имена блоков теперь заблокированы — подпись в палитре для любого из 49 известных реальных ID больше нельзя переименовать (раньше было обычное текстовое поле). Собственные ID сверх реального набора всё ещё редактируемы — там нет настоящего имени, с которым можно конфликтовать. Имена сущностей уже были защищены (выбор только из реальных 384, никакого свободного ввода) — теперь та же дыра закрыта и для блоков. Старые сохранения с испорченным/переименованным реальным именем блока автоматически чинятся при загрузке.
-• Исправлено: размещение сущностей не работало в 3D Orbit-режиме — клик с вооружённой сущностью просто красил воксель, потому что в обработчике клика Orbit-режима проверка отсутствовала совсем (Fly-режим и 2D работали нормально). Теперь все три точки входа согласованы.
-• Сущности (экспериментально) — новая панель 🧍 со всеми 384 реальными именами сущностей из игрового Entities.json. Вооружаешь одну, кликаешь по карте (2D или 3D, любой режим камеры) — ставится маркер в этой точке. Расставленные сущности отдельны от вокселей, сохраняются/загружаются/экспортируются вместе с картой, но без визуальной модели — просто цветной маркер + имя/позиция. Задумано как стартовая точка для заселения карт существами/NPC/пропсами, не полноценный редактор сущностей.
-• Кустарники — меньше деревьев, без ствола, отдельная фича рядом с Trees (приоритет дерево > куст > обычный декор на одной клетке, чтобы не налезали друг на друга). Кнопка регенерации "🔄 Trees & Bushes" теперь охватывает и кусты тоже.
-• Плавный берег теперь пятнами, а не сплошным кольцом — грубый шум решает, какая часть "зоны у воды" реально станет пляжем, плюс параметр Coverage % для управления непрерывностью.
-• Водопады — там, где река граничит с сильно более низкой клеткой, режет каскадный вертикальный поток вниз по перепаду высоты.
-• Плавный берег — кольцо отдельного блока берега настраиваемого радиуса вокруг ЛЮБОЙ воды (не только у низкой высоты, как Altitude Blocks) — теперь и у горного озера будет пляж.
-• Пресеты генератора (🎛️ Presets) — сохранить/загрузить весь набор настроек рандомайзера под именем, отдельно от слотов карты (те сохраняют саму карту).
-• Точечная регенерация — перекатить только Декор, Деревья или Руду без пересборки рельефа, используя данные высот с последнего полного Generate.
-• Светящиеся вкрапления в пещерах — редкие блоки типа LitVoxel внутри вырезанных пещер вместо полной пустоты.
-• Onion skin (2D) — показывает соседние слои полупрозрачно и с оттенком, для выравнивания многоэтажных построек.
-• Randomize All — перекатывает seed и все числовые параметры генерации в разумных пределах одной кнопкой (какие фичи включены — не трогает). После жми Generate, чтобы увидеть результат.
-• Сжатый экспорт (Export JSON .gz) — gzip через встроенный в браузер CompressionStream, обычно на 80-90% меньше. Серверный загрузчик теперь сам распаковывает .gz.
-• Хотбар — 10 слотов для быстрого переключения блоков. ЛКМ — выбрать, ПКМ — записать текущий блок, клавиши 1-9/0 — выбор напрямую, колесо — прокрутка (2D-холст и Fly-режим).
-• Floating-острова: потолок Max Thickness (жёсткий лимит толщины всей плиты, не зависит от Ground Depth) — чинит "жирный" вид острова даже с рваным низом.
-• У floating-островов теперь рваный оторванный низ (Bottom Roughness) вместо ровного столба — глубже к центру, тоньше и рванее к краю берега. Реки/озёра теперь используют ровно тот же уровень воды, что и глобальный океан в режиме Island — вода у берега больше не "прыгает" по высоте.
-• Жилы руд: редкий шанс "джекпота" — вместо маленькой жилы генерируется крупное неровное месторождение (цепочка перекрывающихся сфер).
-• Исправлено: Forests теперь реально кластеризует Деревья (ствол+крона), а не список декораций — раньше "лес" был просто плотной кучкой камня/руды, не деревьями. Дефолтный список декораций очищен (там были случайные ID — Purple_Stone/Clay/Iron — оставшиеся от заглушек и не имевшие смысла как "декор").
-• Эрозия — сглаживает резкие перепады высот после гор/долин (генератор теперь идёт в два прохода: сначала высоты, потом сглаживание, потом воксели).
-• Веса у ID декораций — синтаксис "id:вес" (например 20:5,29:1) вместо равной вероятности для всех.
-• Именованные слоты сохранения (💾 Saves) — несколько версий карты параллельно, независимо от автосейва.
-• Статистика карты (📊 Stats) — количество и % вокселей по типам блоков.
-• Архипелаг — несколько отдельных островов вместо одного в центре.
-• Блоки по высоте — снег выше порога, пляж/песок ниже другого порога, обычная поверхность между ними.
-• Жилы руд — кластерные подземные залежи (медь/железо/золото), а не одиночные точки.
-• Инструмент дорога/тропа (🛣️) — клик по двум точкам, путь идёт по фактическому рельефу.
-• Объёмное копирование — copy теперь охватывает диапазон слоёв (реальный 3D-блок), а не только текущий слой.
-• Категории у структур (Building / Dungeon / Decoration / Other) с фильтром в списке.
-• Настоящие имена блоков (49 реальных игровых ID) + подобранные под них цвета (вода = синяя, лёд = бледно-голубой и т.д.). ID 0 (Dirt в игре) использовать нельзя — конфликтует с внутренним значением "пусто/воздух", которое используется везде.
-• Ground Depth — толщина сплошной породы под поверхностью, чтобы реально было куда копать и где резать пещеры. Также влияет на дно рек/озёр.
-• Тип острова: Floating (пропасть снизу, оригинальный вид летающего острова) или Island (море снизу, с настройками Sea Level и Sea Block).
-• Генерация деревьев — настоящий ствол+крона, а не одиночный блок декора.
-• Redo, копирование произвольной области, зеркальное рисование (симметрия по X/Z).
-• Структуры v2 — поворот, правила вставки (случайный поворот, проверка ровности площадки, минимальный отступ), ручная вставка кликом, превью-миниатюры.
-• Отдельная HTML-сборка (этот файл) — не нужна установка, работает офлайн после первой загрузки.
-• Серверный загрузчик (WorldMapLoader) читает экспортированный JSON при старте; исправлен баг, портивший данные чанка (0,0,0) перед отправкой клиенту.
-• В генератор добавлены озёра, долины, плато, кластерные леса (декорации группами).
-• Несколько ID декораций (случайный выбор на каждую точку) вместо одного фиксированного блока.
-• Исправлен реальный баг: остров всегда был сплошной плитой без дыр, независимо от настроек.
-• Структуры v1 — импорт/экспорт, сохранение текущей карты как структуры, случайная расстановка.
-• Слои генерации: горы, реки, холмы, пещеры.
-• Текстуры на блок (загрузка картинки на ID) + массовый импорт из папки.
-• Переключатель языка EN/RU.
-• Режимы камеры Orbit и Fly (Creative/в стиле Minecraft) для 3D.
-• Добавлен 3D-вид рядом с оригинальным 2D-редактором по слоям.
-• Процедурный генератор острова (seed, шум высоты, форма берега).
-• Первая версия 2D voxel-редактора — палитра, инструменты рисования, слои, импорт/экспорт JSON, автосохранение.`,
-    textureHint: "Клик по превью — загрузить текстуру",
-    blockNameLockedHint: "Настоящее имя блока — заблокировано, совпадает с реальными игровыми данными, переименовать нельзя",
-    clearTexture: "Убрать текстуру",
-    hills: "Холмы",
-    hillStrength: "Сила холмов %",
-    mountains: "Горы",
-    mountainHeight: "Высота гор",
-    rivers: "Реки",
-    riverBlock: "ID реки",
-    riverWidth: "Ширина реки",
-    caves: "Пещеры",
-    caveDensity: "Плотность пещер %",
-    settings: "Настройки",
-    plateaus: "Плато",
-    plateauHeight: "Высота плато",
-    valleys: "Долины",
-    valleyDepth: "Глубина долин",
-    lakes: "Озёра",
-    lakeBlock: "ID озера",
-    lakeSize: "Размер озёр",
-    forests: "Кластеровать в рощи",
-    forestDensity: "Плотность леса %",
-    trees: "Деревья",
-    treeDensity: "Плотность деревьев %",
-    treeHeightMin: "Ствол мин",
-    treeHeightMax: "макс",
-    treeWoodId: "ID дерева",
-    treeLeavesId: "ID листвы",
-    treeSpacing: "Отступ",
-    bushes: "Кустарники",
-    bushDensity: "Плотность кустов %",
-    bushBlock: "ID куста",
-    bushSpacing: "Отступ",
-    structuresBtn: "🏛️ Структуры",
-    entitiesBtn: "🧍 Сущности (экспериментально)",
-    entitiesHint: "Расставь реальные игровые сущности (существа, NPC, пропсы) на карте как маркеры — отдельно от вокселей, экспортируются вместе с ними. Экспериментально: нет визуального превью, только маркер + имя/позиция. Airship: его позиция переопределяет, где сервер сам ставит корабль. Player: не объект, а точка спавна подключающихся игроков. TimeOfDay: всегда создаётся сервером в любом случае — маркер здесь ни на что не влияет. Все три — не больше 1 на карту (помечены \"макс. 1\").",
-    entityArmed: (name) => `Вооружён: ${name} — клик по карте ставит, Esc отменяет`,
-    entitySearchPlaceholder: "Поиск сущностей...",
-    noEntityMatches: "Совпадений нет",
-    blockSearchPlaceholder: "Поиск блоков...",
-    noBlockMatches: "Совпадений нет",
-    entitySingletonBadge: "макс. 1",
-    entitySingletonBlocked: (name) =>
-      `На карте может быть только один ${name} — сначала удали существующего`,
-    cancel: "Отмена",
-    entitiesPlacedCount: (n) => `Расставлено: ${n}`,
-    clearAll: "Очистить всё",
-    structuresHeader: "СТРУКТУРЫ",
-    importStructures: "Импорт структур(ы)",
-    saveCurrentAsStructure: "Сохранить карту как структуру",
-    structureNamePlaceholder: "Название",
-    noStructures: "Структуры ещё не импортированы",
-    structureCount: "Кол-во",
-    structureCategory: "Категория",
-    catAll: "Все",
-    catBuilding: "Здание",
-    catDungeon: "Данж",
-    catDecoration: "Декор",
-    catOther: "Другое",
-    structureDelete: "Удалить",
-    structureExport: "Экспорт",
-    structureSaved: (name) => `Структура сохранена: "${name}"`,
-    structurePlace: "Разместить вручную (клик по холсту — штамп)",
-    structureRandomRotate: "Случайный поворот при спавне",
-    structureRequireFlat: "Требовать ровную площадку",
-    structureSpacing: "Мин. отступ",
-    structurePlacingHint: "Клик по холсту — поставить · R — повернуть · Esc — отмена",
-    structureCancelPlacing: "Отмена",
-    bulkImportBtn: "📁 Массовый импорт текстур",
-    bulkImportHeader: "Импорт из папки — файлы сопоставляются с ID блоков по числу в имени файла (например ID1.png → блок 1)",
-    chooseFolder: "Выбрать папку",
-    bulkNoFiles: "Файлов изображений пока нет — выбери папку",
-    bulkIdUnrecognized: "ID не распознан",
-    bulkApply: (n) => `Применить (${n})`,
-    bulkTexturesApplied: (n) => `Применено текстур: ${n}`,
   },
 };
 
@@ -1295,9 +1021,9 @@ function keyOf(x, y, z) {
 }
 
 function TerrainEditor() {
-  const [gridX, setGridX] = useState(4);
+  const [gridX, setGridX] = useState(6);
   const [gridY, setGridY] = useState(4);
-  const [gridZ, setGridZ] = useState(4);
+  const [gridZ, setGridZ] = useState(6);
   // FIXED (2026-08-21): "Sky_Island" does not exist in Alpha v10 36731's
   // GeoData.json (confirmed via direct search - zero matches). Real biomes
   // for this build: Desert, Forest, Jungle, Mountain, NPCfriend. Using
@@ -1308,6 +1034,7 @@ function TerrainEditor() {
   const [gameMode, setGameMode] = useState(1);
   const [currentLayer, setCurrentLayer] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
   const [tool, setTool] = useState("pencil");
   const clipboardRef = useRef(null);
   const roadStartRef = useRef(null);
@@ -1324,7 +1051,8 @@ function TerrainEditor() {
   const [selectedBlock, setSelectedBlock] = useState(1);
   const [hotbar, setHotbar] = useState(() => {
     const slots = new Array(10).fill(null);
-    for (let i = 0; i < 10 && i < DEFAULT_PALETTE.length; i++) slots[i] = DEFAULT_PALETTE[i];
+    const ids = DEFAULT_PALETTE.filter((id) => id !== 0);
+    for (let i = 0; i < 10 && i < ids.length; i++) slots[i] = ids[i];
     return slots;
   });
   const [hotbarIndex, setHotbarIndex] = useState(0);
@@ -1434,7 +1162,7 @@ function TerrainEditor() {
   const [newStructureCategory, setNewStructureCategory] = useState("other");
   const structureFileInputRef = useRef(null);
   const structuresRef = useRef([]);
-  const viewModeRef = useRef("2d");
+  const viewModeRef = useRef("3d");
 
   const [placingStructureId, setPlacingStructureId] = useState(null);
   const [placingRotation, setPlacingRotation] = useState(0);
@@ -1449,24 +1177,25 @@ function TerrainEditor() {
   const placingEntityRef = useRef(null);
   const [showEntitiesPanel, setShowEntitiesPanel] = useState(false);
   const [entitySearchQuery, setEntitySearchQuery] = useState("");
+  const [openItemsId, setOpenItemsId] = useState(null);
   // Search filter for the block palette - needed once BLOCK_NAMES grew from
   // 48 (Alpha 3-era stub table) to the real 146-entry Alpha v10 36731 list;
   // an unfiltered flat scroll of 146 rows was unusable.
   const [blockSearchQuery, setBlockSearchQuery] = useState("");
   const entityMarkersGroupRef = useRef(null);
 
-  const [viewMode, setViewMode] = useState("2d");
+  const [viewMode, setViewMode] = useState("3d");
   const [cameraMode, setCameraMode] = useState("fly");
-  const [lang, setLang] = useState("en");
   const [isLocked, setIsLocked] = useState(false);
   const [pointerLockFailed, setPointerLockFailed] = useState(false);
   const [moveSpeed, setMoveSpeed] = useState(16);
 
-  const t = STRINGS[lang];
+  const t = STRINGS.en;
 
   const voxelsRef = useRef(new Map());
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const editsInputRef = useRef(null);
   const isDrawingRef = useRef(false);
   const rectStartRef = useRef(null);
   const previewRectRef = useRef(null);
@@ -1631,10 +1360,9 @@ function TerrainEditor() {
         if (result && result.value) {
           const data = JSON.parse(result.value);
           applyLoadedData(data);
-          if (data.lang === "en" || data.lang === "ru") setLang(data.lang);
           if (data.cameraMode === "orbit" || data.cameraMode === "fly")
             setCameraMode(data.cameraMode);
-          setStatus(STRINGS[data.lang === "ru" ? "ru" : "en"].loadedAutosave);
+          setStatus(STRINGS.en.loadedAutosave);
         }
       } catch (e) {
         // no saved state yet, that's fine
@@ -1675,9 +1403,9 @@ function TerrainEditor() {
 
   function applyLoadedData(data) {
     if (data.mapSizeChunks) {
-      setGridX(clamp(data.mapSizeChunks.x, 1, 32));
-      setGridY(clamp(data.mapSizeChunks.y, 1, 32));
-      setGridZ(clamp(data.mapSizeChunks.z, 1, 32));
+      setGridX(clamp(data.mapSizeChunks.x, 1, MAX_CHUNKS.x));
+      setGridY(clamp(data.mapSizeChunks.y, 1, MAX_CHUNKS.y));
+      setGridZ(clamp(data.mapSizeChunks.z, 1, MAX_CHUNKS.z));
     }
     if (data.biomeName) setBiomeName(data.biomeName);
     if (typeof data.gameMode === "number") setGameMode(data.gameMode);
@@ -1709,6 +1437,7 @@ function TerrainEditor() {
           x: e.x,
           y: e.y,
           z: e.z,
+          items: Array.isArray(e.items) ? e.items.map(String) : [],
         }))
       );
     } else {
@@ -1723,12 +1452,11 @@ function TerrainEditor() {
         const data = buildExportData();
         data.paletteLabels = palette;
         data.hotbar = hotbarRef.current;
-        data.lang = lang;
         data.cameraMode = cameraMode;
         await window.storage.set(STORAGE_KEY, JSON.stringify(data), false);
-        setStatus(STRINGS[lang].savedAt(new Date().toLocaleTimeString()));
+        setStatus(STRINGS.en.savedAt(new Date().toLocaleTimeString()));
       } catch (e) {
-        setStatus(STRINGS[lang].saveError);
+        setStatus(STRINGS.en.saveError);
       }
     }, 700);
   }
@@ -1744,7 +1472,7 @@ function TerrainEditor() {
     return String(str)
       .split(/[,\s]+/)
       .map((s) => parseInt(s, 10))
-      .filter((n) => Number.isInteger(n) && n >= 1 && n <= 255);
+      .filter((n) => Number.isInteger(n) && n >= 0 && n < AIR);
   }
 
   function parseWeightedIdList(str) {
@@ -1754,7 +1482,7 @@ function TerrainEditor() {
       .map((s) => {
         const parts = s.split(":");
         const id = parseInt(parts[0], 10);
-        if (!Number.isInteger(id) || id < 1 || id > 255) return null;
+        if (!Number.isInteger(id) || id < 0 || id >= AIR) return null;
         const weight = parts[1] ? parseFloat(parts[1]) : 1;
         return { id, weight: weight > 0 ? weight : 1 };
       })
@@ -1816,7 +1544,7 @@ function TerrainEditor() {
     const match = stem.match(/(\d+)/);
     if (!match) return null;
     const id = parseInt(match[1], 10);
-    return id >= 1 && id <= 255 ? id : null;
+    return id >= 0 && id < AIR ? id : null;
   }
 
   function handleBulkFolderSelect(fileList) {
@@ -1868,7 +1596,7 @@ function TerrainEditor() {
     setTextureVersion((v) => v + 1);
     if (viewMode === "3d") rebuildInstances();
     await saveTextures();
-    setStatus(STRINGS[lang].bulkTexturesApplied(rows.length));
+    setStatus(STRINGS.en.bulkTexturesApplied(rows.length));
     bulkTextureRows.forEach((r) => URL.revokeObjectURL(r.previewUrl));
     setBulkTextureRows([]);
     setBulkApplying(false);
@@ -1932,7 +1660,7 @@ function TerrainEditor() {
             return next;
           });
         } catch (e) {
-          setStatus(STRINGS[lang].importError(e.message));
+          setStatus(STRINGS.en.importError(e.message));
         }
       };
       reader.readAsText(file);
@@ -2012,7 +1740,7 @@ function TerrainEditor() {
         continue;
       const key = keyOf(wx, wy, wz);
       const oldEntry = voxelsRef.current.get(key);
-      const oldBlock = oldEntry ? oldEntry.block : 0;
+      const oldBlock = oldEntry ? oldEntry.block : AIR;
       setVoxel(wx, wy, wz, v.block, v.meta || 0, true);
       if (viewModeRef.current === "3d") syncVoxel3D(wx, wy, wz, oldBlock, v.block);
     }
@@ -2029,7 +1757,7 @@ function TerrainEditor() {
       SINGLETON_ENTITY_NAMES.has(name) &&
       entityInstancesRef.current.some((e) => e.name === name)
     ) {
-      setStatus(STRINGS[lang].entitySingletonBlocked(name));
+      setStatus(STRINGS.en.entitySingletonBlocked(name));
       return;
     }
     const instance = {
@@ -2038,10 +1766,49 @@ function TerrainEditor() {
       x,
       y,
       z,
+      items: [],
     };
     setEntityInstances((prev) => [...prev, instance]);
     draw();
     scheduleSave();
+  }
+
+  function setEntityItems(id, text) {
+    const items = text
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setEntityInstances((prev) => prev.map((e) => (e.id === id ? { ...e, items } : e)));
+    scheduleSave();
+  }
+
+  function applyServerEdits(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const edits = JSON.parse(reader.result);
+        if (!Array.isArray(edits)) throw new Error("expected an array of [x, y, z, block]");
+        const dims = dimsRef.current;
+        beginStroke();
+        let n = 0;
+        for (const ed of edits) {
+          if (!Array.isArray(ed) || ed.length < 4) continue;
+          const [x, y, z, block] = ed.map(Number);
+          if (x < 0 || x >= dims.width || y < 0 || y >= dims.totalHeight || z < 0 || z >= dims.depth) continue;
+          setVoxel(x, y, z, block, 0, true);
+          n++;
+        }
+        commitStroke();
+        setVoxelCount(voxelsRef.current.size);
+        if (viewModeRef.current === "3d") rebuildInstances();
+        draw();
+        scheduleSave();
+        setStatus(STRINGS.en.editsApplied(n));
+      } catch (err) {
+        setStatus(STRINGS.en.importError(err.message));
+      }
+    };
+    reader.readAsText(file);
   }
 
   function removeEntityInstance(id) {
@@ -2108,7 +1875,7 @@ function TerrainEditor() {
       saveStructures(next);
       return next;
     });
-    setStatus(STRINGS[lang].structureSaved(entry.name));
+    setStatus(STRINGS.en.structureSaved(entry.name));
   }
 
   function exportStructure(entry) {
@@ -2169,7 +1936,7 @@ function TerrainEditor() {
   function setVoxel(x, y, z, block, meta, record) {
     const key = keyOf(x, y, z);
     const prev = voxelsRef.current.get(key);
-    const prevBlock = prev ? prev.block : 0;
+    const prevBlock = prev ? prev.block : AIR;
     const prevMeta = prev ? prev.meta : 0;
     const newMeta = meta || 0;
     if (prevBlock === block && prevMeta === newMeta) return;
@@ -2183,7 +1950,7 @@ function TerrainEditor() {
         strokeChangesRef.current[existingIdx].newMeta = newMeta;
       }
     }
-    if (block === 0) voxelsRef.current.delete(key);
+    if (block === AIR) voxelsRef.current.delete(key);
     else voxelsRef.current.set(key, { block, meta: newMeta });
   }
 
@@ -2210,7 +1977,7 @@ function TerrainEditor() {
     for (let i = stroke.length - 1; i >= 0; i--) {
       const c = stroke[i];
       const key = keyOf(c.x, c.y, c.z);
-      if (c.prevBlock === 0) voxelsRef.current.delete(key);
+      if (c.prevBlock === AIR) voxelsRef.current.delete(key);
       else voxelsRef.current.set(key, { block: c.prevBlock, meta: c.prevMeta });
     }
     redoStackRef.current.push(stroke);
@@ -2227,7 +1994,7 @@ function TerrainEditor() {
     for (let i = 0; i < stroke.length; i++) {
       const c = stroke[i];
       const key = keyOf(c.x, c.y, c.z);
-      if (c.newBlock === 0) voxelsRef.current.delete(key);
+      if (c.newBlock === AIR) voxelsRef.current.delete(key);
       else voxelsRef.current.set(key, { block: c.newBlock, meta: c.newMeta });
     }
     undoStackRef.current.push(stroke);
@@ -2300,7 +2067,7 @@ function TerrainEditor() {
   function findSurfaceY(x, z) {
     for (let y = totalHeight - 1; y >= 0; y--) {
       const v = voxelsRef.current.get(keyOf(x, y, z));
-      if (v && v.block !== 0) return y;
+      if (v && v.block !== AIR) return y;
     }
     return -1;
   }
@@ -2322,7 +2089,7 @@ function TerrainEditor() {
           const sy = findSurfaceY(wx, wz);
           if (sy < 0) continue;
           const oldEntry = voxelsRef.current.get(keyOf(wx, sy, wz));
-          const oldBlock = oldEntry ? oldEntry.block : 0;
+          const oldBlock = oldEntry ? oldEntry.block : AIR;
           setVoxel(wx, sy, wz, pathBlock, 0, true);
           if (viewModeRef.current === "3d") syncVoxel3D(wx, sy, wz, oldBlock, pathBlock);
         }
@@ -2431,7 +2198,7 @@ function TerrainEditor() {
     setRandIslandSize(["small", "medium", "large"][Math.floor(Math.random() * 3)]);
     setRandBottomRoughness(r(10, 35));
     setRandMaxThickness(r(15, 35));
-    setStatus(STRINGS[lang].randomizedAll);
+    setStatus(STRINGS.en.randomizedAll);
   }
 
   function generateRandomTerrain() {
@@ -2625,7 +2392,7 @@ function TerrainEditor() {
 
     for (const key of Array.from(voxelsRef.current.keys())) {
       const parts = key.split(",");
-      setVoxel(Number(parts[0]), Number(parts[1]), Number(parts[2]), 0, 0, true);
+      setVoxel(Number(parts[0]), Number(parts[1]), Number(parts[2]), AIR, 0, true);
     }
 
     const heightMap = new Array(width * depth).fill(0);
@@ -2926,7 +2693,7 @@ function TerrainEditor() {
               if (wx < 0 || wx >= width || wy < 0 || wy >= totalHeight || wz < 0 || wz >= depth)
                 continue;
               const existing = voxelsRef.current.get(keyOf(wx, wy, wz));
-              if (!existing || existing.block === 0) continue;
+              if (!existing || existing.block === AIR) continue;
               setVoxel(wx, wy, wz, oreBlock, 0, true);
             }
           }
@@ -3045,7 +2812,7 @@ function TerrainEditor() {
 
     commitStroke();
     draw();
-    setStatus(STRINGS[lang].generatedSeed(seedVal));
+    setStatus(STRINGS.en.generatedSeed(seedVal));
     if (viewMode === "3d") rebuildInstances();
 
     lastHeightMapRef.current = {
@@ -3065,7 +2832,7 @@ function TerrainEditor() {
     }
     for (const key of toRemove) {
       const parts = key.split(",");
-      setVoxel(Number(parts[0]), Number(parts[1]), Number(parts[2]), 0, 0, true);
+      setVoxel(Number(parts[0]), Number(parts[1]), Number(parts[2]), AIR, 0, true);
     }
   }
 
@@ -3129,14 +2896,14 @@ function TerrainEditor() {
   function regenerateDecorations() {
     const snap = lastHeightMapRef.current;
     if (!snap || snap.width !== width || snap.depth !== depth || snap.totalHeight !== totalHeight) {
-      setStatus(STRINGS[lang].regenNeedsGenerate);
+      setStatus(STRINGS.en.regenNeedsGenerate);
       return;
     }
     const rand = mulberry32(Math.floor(Math.random() * 1e9));
     const decoWeightedList = parseWeightedIdList(randDecoBlocks);
     const decoChance = clamp(randDecoChance, 0, 100) / 100;
     if (!decoWeightedList.length || decoChance <= 0) {
-      setStatus(STRINGS[lang].regenNothingToDo);
+      setStatus(STRINGS.en.regenNothingToDo);
       return;
     }
     const idSet = new Set(decoWeightedList.map((e) => e.id));
@@ -3156,17 +2923,17 @@ function TerrainEditor() {
     commitStroke();
     draw();
     if (viewMode === "3d") rebuildInstances();
-    setStatus(STRINGS[lang].regenDone);
+    setStatus(STRINGS.en.regenDone);
   }
 
   function regenerateTrees() {
     const snap = lastHeightMapRef.current;
     if (!snap || snap.width !== width || snap.depth !== depth || snap.totalHeight !== totalHeight) {
-      setStatus(STRINGS[lang].regenNeedsGenerate);
+      setStatus(STRINGS.en.regenNeedsGenerate);
       return;
     }
     if (!randTrees && !randBushes) {
-      setStatus(STRINGS[lang].regenNothingToDo);
+      setStatus(STRINGS.en.regenNothingToDo);
       return;
     }
     const rand = mulberry32(Math.floor(Math.random() * 1e9));
@@ -3235,13 +3002,13 @@ function TerrainEditor() {
     commitStroke();
     draw();
     if (viewMode === "3d") rebuildInstances();
-    setStatus(STRINGS[lang].regenDone);
+    setStatus(STRINGS.en.regenDone);
   }
 
   function regenerateOre() {
     const snap = lastHeightMapRef.current;
     if (!snap || snap.width !== width || snap.depth !== depth || snap.totalHeight !== totalHeight) {
-      setStatus(STRINGS[lang].regenNeedsGenerate);
+      setStatus(STRINGS.en.regenNeedsGenerate);
       return;
     }
     const oreBlockList = parseIdList(randOreBlocks);
@@ -3249,7 +3016,7 @@ function TerrainEditor() {
       clamp(randOreCount, 0, 500) * ((width * depth) / (128 * 128))
     );
     if (!oreBlockList.length || oreCountScaled <= 0) {
-      setStatus(STRINGS[lang].regenNothingToDo);
+      setStatus(STRINGS.en.regenNothingToDo);
       return;
     }
     const groundDepth = clamp(randGroundDepth, 0, totalHeight);
@@ -3272,7 +3039,7 @@ function TerrainEditor() {
             if (wx < 0 || wx >= width || wy < 0 || wy >= totalHeight || wz < 0 || wz >= depth)
               continue;
             const existing = voxelsRef.current.get(keyOf(wx, wy, wz));
-            if (!existing || existing.block === 0) continue;
+            if (!existing || existing.block === AIR) continue;
             setVoxel(wx, wy, wz, oreBlock, 0, true);
           }
         }
@@ -3308,7 +3075,7 @@ function TerrainEditor() {
     commitStroke();
     draw();
     if (viewMode === "3d") rebuildInstances();
-    setStatus(STRINGS[lang].regenDone);
+    setStatus(STRINGS.en.regenDone);
   }
 
   // ---- 3D view / builder (Three.js) ----
@@ -3559,7 +3326,7 @@ function TerrainEditor() {
   }
 
   function addInstance(blockId, x, y, z) {
-    if (blockId === 0) return;
+    if (blockId === AIR) return;
     let g = getOrCreateGroup(blockId);
     const key = keyOf(x, y, z);
     if (g.indexMap.has(key)) return;
@@ -3604,8 +3371,8 @@ function TerrainEditor() {
 
   function syncVoxel3D(x, y, z, oldBlock, newBlock) {
     if (oldBlock === newBlock) return;
-    if (oldBlock !== 0) removeInstanceAtCoord(oldBlock, x, y, z);
-    if (newBlock !== 0) addInstance(newBlock, x, y, z);
+    if (oldBlock !== AIR) removeInstanceAtCoord(oldBlock, x, y, z);
+    if (newBlock !== AIR) addInstance(newBlock, x, y, z);
   }
 
   function panOrbit(dx, dy) {
@@ -3718,8 +3485,8 @@ function TerrainEditor() {
 
     const key = keyOf(cx, cy, cz);
     const oldEntry = voxelsRef.current.get(key);
-    const oldBlock = oldEntry ? oldEntry.block : 0;
-    const newBlock = isErase ? 0 : selectedBlockRef.current;
+    const oldBlock = oldEntry ? oldEntry.block : AIR;
+    const newBlock = isErase ? AIR : selectedBlockRef.current;
     setVoxel(cx, cy, cz, newBlock, 0, true);
     syncVoxel3D(cx, cy, cz, oldBlock, newBlock);
     setCurrentLayer(cy);
@@ -3753,7 +3520,7 @@ function TerrainEditor() {
       cy >= dims.totalHeight
     )
       return;
-    setVoxel(cx, cy, cz, 0, 0, true);
+    setVoxel(cx, cy, cz, AIR, 0, true);
     syncVoxel3D(cx, cy, cz, blockId, 0);
     setCurrentLayer(cy);
   }
@@ -3799,7 +3566,7 @@ function TerrainEditor() {
 
     const key = keyOf(cx, cy, cz);
     const oldEntry = voxelsRef.current.get(key);
-    const oldBlock = oldEntry ? oldEntry.block : 0;
+    const oldBlock = oldEntry ? oldEntry.block : AIR;
     const newBlock = selectedBlockRef.current;
     setVoxel(cx, cy, cz, newBlock, 0, true);
     syncVoxel3D(cx, cy, cz, oldBlock, newBlock);
@@ -3913,6 +3680,11 @@ function TerrainEditor() {
     }
     function onMouseDown(e) {
       if (!st.locked) return;
+      if (e.button === 1) {
+        e.preventDefault();
+        document.exitPointerLock();
+        return;
+      }
       if (e.button === 0) {
         beginStroke();
         st.leftDown = true;
@@ -3964,9 +3736,10 @@ function TerrainEditor() {
         st.keys.down = false;
     }
     function onWheel(e) {
-      if (!st.locked) return;
       e.preventDefault();
-      cycleHotbar(e.deltaY > 0 ? 1 : -1);
+      if (!st.camera) return;
+      st.camera.fov = Math.max(15, Math.min(100, st.camera.fov * (1 + e.deltaY * 0.001)));
+      st.camera.updateProjectionMatrix();
     }
 
     canvas.addEventListener("click", onCanvasClick);
@@ -3998,6 +3771,31 @@ function TerrainEditor() {
   useEffect(() => {
     if (viewMode === "3d") rebuildEntityMarkers();
   }, [entityInstances, viewMode]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return undefined;
+    function onWheel2d(e) {
+      if (viewModeRef.current !== "2d") return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const ox = e.clientX - rect.left;
+      const oy = e.clientY - rect.top;
+      const px = ox + el.scrollLeft;
+      const py = oy + el.scrollTop;
+      const old = zoomRef.current;
+      const next = Math.round(clamp(old * (e.deltaY > 0 ? 0.9 : 1 / 0.9), 0.4, 3) * 100) / 100;
+      if (next === old) return;
+      zoomRef.current = next;
+      setZoom(next);
+      requestAnimationFrame(() => {
+        el.scrollLeft = px * (next / old) - ox;
+        el.scrollTop = py * (next / old) - oy;
+      });
+    }
+    el.addEventListener("wheel", onWheel2d, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel2d);
+  }, []);
 
   useEffect(() => {
     if (viewMode !== "3d") return undefined;
@@ -4140,7 +3938,7 @@ function TerrainEditor() {
   function floodFill(startX, startZ) {
     const startKey = keyOf(startX, currentLayer, startZ);
     const startVal = voxelsRef.current.get(startKey);
-    const startBlock = startVal ? startVal.block : 0;
+    const startBlock = startVal ? startVal.block : AIR;
     if (startBlock === selectedBlock) return;
     const stack = [[startX, startZ]];
     const visited = new Set();
@@ -4155,7 +3953,7 @@ function TerrainEditor() {
       visited.add(vk);
       const key = keyOf(x, currentLayer, z);
       const val = voxelsRef.current.get(key);
-      const block = val ? val.block : 0;
+      const block = val ? val.block : AIR;
       if (block !== startBlock) continue;
       setVoxelMirrored(x, currentLayer, z, selectedBlock, 0, true);
       stack.push([x + 1, z]);
@@ -4183,7 +3981,7 @@ function TerrainEditor() {
   }
 
   function clearLayer() {
-    fillRect(0, 0, width - 1, depth - 1, 0);
+    fillRect(0, 0, width - 1, depth - 1, AIR);
   }
 
   function fillLayer() {
@@ -4197,11 +3995,11 @@ function TerrainEditor() {
     for (let x = 0; x < width; x++) {
       for (let z = 0; z < depth; z++) {
         const val = voxelsRef.current.get(keyOf(x, currentLayer, z));
-        setVoxel(x, target, z, val ? val.block : 0, val ? val.meta : 0, true);
+        setVoxel(x, target, z, val ? val.block : AIR, val ? val.meta : 0, true);
       }
     }
     commitStroke();
-    setStatus(STRINGS[lang].layerCopied(target));
+    setStatus(STRINGS.en.layerCopied(target));
   }
 
   // ---- canvas drawing (2D) ----
@@ -4411,7 +4209,7 @@ function TerrainEditor() {
     isDrawingRef.current = true;
     if (tool === "pencil" || tool === "eraser") {
       beginStroke();
-      setVoxelMirrored(x, currentLayer, z, tool === "eraser" ? 0 : selectedBlock, 0, true);
+      setVoxelMirrored(x, currentLayer, z, tool === "eraser" ? AIR : selectedBlock, 0, true);
       draw();
     } else if (tool === "rect-fill" || tool === "rect-erase" || tool === "copy") {
       rectStartRef.current = { x, z };
@@ -4428,7 +4226,7 @@ function TerrainEditor() {
     if (!isDrawingRef.current) return;
     if (x < 0 || x >= width || z < 0 || z >= depth) return;
     if (tool === "pencil" || tool === "eraser") {
-      setVoxelMirrored(x, currentLayer, z, tool === "eraser" ? 0 : selectedBlock, 0, true);
+      setVoxelMirrored(x, currentLayer, z, tool === "eraser" ? AIR : selectedBlock, 0, true);
       draw();
     } else if (tool === "rect-fill" || tool === "rect-erase" || tool === "copy") {
       if (rectStartRef.current) {
@@ -4451,7 +4249,7 @@ function TerrainEditor() {
     } else if (tool === "rect-fill" || tool === "rect-erase") {
       if (previewRectRef.current) {
         const { x0, z0, x1, z1 } = previewRectRef.current;
-        fillRect(x0, z0, x1, z1, tool === "rect-erase" ? 0 : selectedBlock);
+        fillRect(x0, z0, x1, z1, tool === "rect-erase" ? AIR : selectedBlock);
       }
       rectStartRef.current = null;
       previewRectRef.current = null;
@@ -4563,11 +4361,23 @@ function TerrainEditor() {
       biomeName: biomeName,
       gameMode: gameMode,
       voxels: voxels,
-      entities: entityInstancesRef.current.map((e) => ({ name: e.name, x: e.x, y: e.y, z: e.z })),
+      entities: entityInstancesRef.current.map((e) =>
+        e.items && e.items.length
+          ? { name: e.name, x: e.x, y: e.y, z: e.z, items: e.items }
+          : { name: e.name, x: e.x, y: e.y, z: e.z }
+      ),
     };
   }
 
+  function hasAirship() {
+    return entityInstancesRef.current.some((e) => e.name === "Airship");
+  }
+
   function exportJson() {
+    if (!hasAirship()) {
+      setStatus(STRINGS.en.airshipRequired);
+      return;
+    }
     const data = buildExportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
@@ -4580,12 +4390,16 @@ function TerrainEditor() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setStatus(STRINGS[lang].exportedCount(data.voxels.length));
+    setStatus(STRINGS.en.exportedCount(data.voxels.length));
   }
 
   async function exportJsonCompressed() {
     if (typeof CompressionStream === "undefined") {
-      setStatus(STRINGS[lang].compressionUnsupported);
+      setStatus(STRINGS.en.compressionUnsupported);
+      return;
+    }
+    if (!hasAirship()) {
+      setStatus(STRINGS.en.airshipRequired);
       return;
     }
     const data = buildExportData();
@@ -4603,7 +4417,7 @@ function TerrainEditor() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     const pct = json.length > 0 ? Math.round((1 - compressedBlob.size / json.length) * 100) : 0;
-    setStatus(STRINGS[lang].exportedCompressed(json.length, compressedBlob.size, pct));
+    setStatus(STRINGS.en.exportedCompressed(json.length, compressedBlob.size, pct));
   }
 
   // ---- named save slots ----
@@ -4627,7 +4441,7 @@ function TerrainEditor() {
     try {
       await window.storage.set("terrain-editor-slot:" + trimmed, JSON.stringify(data), false);
       await refreshSaveSlots();
-      setStatus(STRINGS[lang].slotSaved(trimmed));
+      setStatus(STRINGS.en.slotSaved(trimmed));
     } catch (e) {
       // ignore, non-critical
     }
@@ -4641,7 +4455,7 @@ function TerrainEditor() {
         applyLoadedData(data);
         draw();
         if (viewMode === "3d") rebuildInstances();
-        setStatus(STRINGS[lang].slotLoaded(name));
+        setStatus(STRINGS.en.slotLoaded(name));
       }
     } catch (e) {
       // ignore
@@ -4832,7 +4646,7 @@ function TerrainEditor() {
         false
       );
       await refreshPresets();
-      setStatus(STRINGS[lang].presetSaved(trimmed));
+      setStatus(STRINGS.en.presetSaved(trimmed));
     } catch (e) {
       // ignore
     }
@@ -4843,7 +4657,7 @@ function TerrainEditor() {
       const res = await window.storage.get("terrain-editor-preset:" + name, false);
       if (res && res.value) {
         applyGeneratorParams(JSON.parse(res.value));
-        setStatus(STRINGS[lang].presetLoaded(name));
+        setStatus(STRINGS.en.presetLoaded(name));
       }
     } catch (e) {
       // ignore
@@ -4887,10 +4701,10 @@ function TerrainEditor() {
         const data = JSON.parse(reader.result);
         applyLoadedData(data);
         draw();
-        setStatus(STRINGS[lang].importedFrom(file.name));
+        setStatus(STRINGS.en.importedFrom(file.name));
         if (viewMode === "3d") rebuildInstances();
       } catch (err) {
-        setStatus(STRINGS[lang].importError(err.message));
+        setStatus(STRINGS.en.importError(err.message));
       }
     };
     reader.readAsText(file);
@@ -5039,9 +4853,10 @@ function TerrainEditor() {
         style={{
           display: "flex",
           flexWrap: "wrap",
+          flexShrink: 0,
           alignItems: "center",
-          gap: 12,
-          padding: "10px 14px",
+          gap: 8,
+          padding: "8px 12px",
           borderBottom: "1px solid #1e222b",
           background: "#10131a",
         }}
@@ -5115,13 +4930,44 @@ function TerrainEditor() {
         )}
 
         <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+          {t.mapSize}
+          <select
+            value={
+              MAP_SIZES.some((s) => mapSizeKey(s.x, s.y, s.z) === mapSizeKey(gridX, gridY, gridZ))
+                ? mapSizeKey(gridX, gridY, gridZ)
+                : "custom"
+            }
+            onChange={(e) => {
+              const s = MAP_SIZES.find((m) => mapSizeKey(m.x, m.y, m.z) === e.target.value);
+              if (s) applyGridResize(s.x, s.y, s.z);
+            }}
+            style={{
+              ...inputStyle,
+              width: 130,
+              color: MAP_SIZES.some((s) => mapSizeKey(s.x, s.y, s.z) === mapSizeKey(gridX, gridY, gridZ))
+                ? inputStyle.color
+                : "#ffb86b",
+            }}
+            title={t.mapSizeTitle}
+          >
+            {MAP_SIZES.map((s) => (
+              <option key={mapSizeKey(s.x, s.y, s.z)} value={mapSizeKey(s.x, s.y, s.z)} title={s.names}>
+                {s.x} × {s.y} × {s.z}
+              </option>
+            ))}
+            <option value="custom" disabled>
+              {t.mapSizeCustom}
+            </option>
+          </select>
+        </label>
+        <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
           {t.chunksX}
           <input
             type="number"
             min={1}
-            max={32}
+            max={MAX_CHUNKS.x}
             value={gridX}
-            onChange={(e) => applyGridResize(clamp(e.target.value, 1, 32), gridY, gridZ)}
+            onChange={(e) => applyGridResize(clamp(e.target.value, 1, MAX_CHUNKS.x), gridY, gridZ)}
             style={inputStyle}
           />
         </label>
@@ -5130,9 +4976,9 @@ function TerrainEditor() {
           <input
             type="number"
             min={1}
-            max={32}
+            max={MAX_CHUNKS.y}
             value={gridY}
-            onChange={(e) => applyGridResize(gridX, clamp(e.target.value, 1, 32), gridZ)}
+            onChange={(e) => applyGridResize(gridX, clamp(e.target.value, 1, MAX_CHUNKS.y), gridZ)}
             style={inputStyle}
           />
         </label>
@@ -5141,9 +4987,9 @@ function TerrainEditor() {
           <input
             type="number"
             min={1}
-            max={32}
+            max={MAX_CHUNKS.z}
             value={gridZ}
-            onChange={(e) => applyGridResize(gridX, gridY, clamp(e.target.value, 1, 32))}
+            onChange={(e) => applyGridResize(gridX, gridY, clamp(e.target.value, 1, MAX_CHUNKS.z))}
             style={inputStyle}
           />
         </label>
@@ -5180,44 +5026,6 @@ function TerrainEditor() {
 
         <div style={{ flex: 1 }} />
 
-        <div
-          style={{
-            display: "flex",
-            gap: 2,
-            border: "1px solid #2a2f3a",
-            borderRadius: 6,
-            padding: 2,
-          }}
-          title={t.langLabel}
-        >
-          <button
-            onClick={() => {
-              setLang("en");
-              scheduleSave();
-            }}
-            style={{
-              ...actionBtn,
-              border: "none",
-              background: lang === "en" ? "#22314d" : "transparent",
-            }}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => {
-              setLang("ru");
-              scheduleSave();
-            }}
-            style={{
-              ...actionBtn,
-              border: "none",
-              background: lang === "ru" ? "#22314d" : "transparent",
-            }}
-          >
-            RU
-          </button>
-        </div>
-
         <button onClick={() => setShowHelp(true)} style={actionBtn}>
           {t.helpBtn}
         </button>
@@ -5232,6 +5040,25 @@ function TerrainEditor() {
           onChange={importJson}
           style={{ display: "none" }}
         />
+        <button onClick={() => editsInputRef.current.click()} style={actionBtn} title={t.applyEditsTitle}>
+          {t.applyEdits}
+        </button>
+        <input
+          type="file"
+          accept="application/json,.json"
+          ref={editsInputRef}
+          onChange={(ev) => {
+            const f = ev.target.files && ev.target.files[0];
+            if (f) applyServerEdits(f);
+            ev.target.value = "";
+          }}
+          style={{ display: "none" }}
+        />
+        {!entityInstances.some((e) => e.name === "Airship") && (
+          <span style={{ fontSize: 12, color: "#ffb86b" }} title={t.airshipRequired}>
+            {t.airshipMissing}
+          </span>
+        )}
         <button onClick={exportJson} style={{ ...actionBtn, background: "#1b3a2a", borderColor: "#2f6b48" }}>
           {t.exportJson}
         </button>
@@ -5700,7 +5527,10 @@ function TerrainEditor() {
                     max={3}
                     step={0.1}
                     value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
+                    onChange={(e) => {
+                      zoomRef.current = Number(e.target.value);
+                      setZoom(zoomRef.current);
+                    }}
                   />
                 </label>
               </>
@@ -7356,6 +7186,7 @@ function TerrainEditor() {
                   key={inst.id}
                   style={{
                     display: "flex",
+                    flexWrap: "wrap",
                     alignItems: "center",
                     gap: 8,
                     padding: "5px 8px",
@@ -7376,9 +7207,25 @@ function TerrainEditor() {
                   <span style={{ fontSize: 11, color: "#8a91a3" }}>
                     {inst.x}, {inst.y}, {inst.z}
                   </span>
+                  <button
+                    style={{ ...actionBtn, background: openItemsId === inst.id ? "#22314d" : actionBtn.background }}
+                    onClick={() => setOpenItemsId(openItemsId === inst.id ? null : inst.id)}
+                    title={t.entityItemsHint}
+                  >
+                    {t.entityItems} ({(inst.items || []).length})
+                  </button>
                   <button style={actionBtn} onClick={() => removeEntityInstance(inst.id)}>
                     {t.slotDelete}
                   </button>
+                  {openItemsId === inst.id && (
+                    <textarea
+                      defaultValue={(inst.items || []).join("\n")}
+                      onBlur={(e) => setEntityItems(inst.id, e.target.value)}
+                      placeholder={t.entityItemsHint}
+                      rows={6}
+                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box", flexBasis: "100%", fontSize: 11 }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -7401,10 +7248,6 @@ function TerrainEditor() {
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseLeave}
-              onWheel={(e) => {
-                e.preventDefault();
-                cycleHotbar(e.deltaY > 0 ? 1 : -1);
-              }}
               style={{
                 display: viewMode === "2d" ? "block" : "none",
                 cursor: "crosshair",
@@ -7842,7 +7685,7 @@ root.render(<TerrainEditor />);
   var rootEl = document.getElementById('root');
   rootEl.innerHTML = '<pre style="color:#ff9e9e;background:#0b0d12;padding:20px;' +
     'font-family:monospace;white-space:pre-wrap;font-size:13px;margin:0;">' +
-    'Ошибка при запуске редактора:\n\n' + (err && err.message ? err.message : String(err)) +
+    'Editor error:\n\n' + (err && err.message ? err.message : String(err)) +
     (err && err.stack ? ('\n\n' + err.stack) : '') + '</pre>';
   console.error(err);
 }
