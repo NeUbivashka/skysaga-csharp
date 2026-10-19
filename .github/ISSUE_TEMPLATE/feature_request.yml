@@ -1,0 +1,16 @@
+name: Feature / research task
+description: Implement a game feature, packet or RE finding
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: Which feature / packet / system, and how it behaves in the original game.
+    validations:
+      required: true
+  - type: textarea
+    id: refs
+    attributes:
+      label: References
+      description: Client builds, RPC names, captures, docs/ pages, Discord threads.

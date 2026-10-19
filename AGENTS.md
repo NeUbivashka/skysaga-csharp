@@ -52,7 +52,7 @@ dotnet run
 1. **This is a fork, not upstream.** Preserve EDITzDev's original structure. Changes are additive or fixing.
 2. **Wire protocol is king.** Packet ordinals, bit layouts, and field order match the real client. Never change a packet format without confirming against the live client.
 3. **RakNet variant: Windows-compatible baseline.** This repo ships the unmodified RakNet C# port. Sergei has a separate modified variant (SWIG wrappers) for the Go server — that lives in `skysaga-go`, not here.
-4. **Lёva (NeUbivashka) has write access.** He works on this repo directly. Coordinate changes to avoid conflicts.
+4. **Maintainers:** NeUbivashka and v1k1ng31 push directly; external contributors work via fork + PR (see CONTRIBUTING.md).
 5. **No co-author / attribution trailers in commits.** Clean messages only.
 6. **Do not commit** build artifacts (`bin/`, `obj/` — already in .gitignore), secrets, or .env files.
 

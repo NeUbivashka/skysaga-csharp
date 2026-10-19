@@ -34,7 +34,8 @@ services:
     environment:
       SKYSAGA_ROLE: web
       # What geonode/retrieve hand the client. GAME_IP must be an address the
-      # client can reach (tailnet IP here), and WEB_PORT is the Caddy front
+      # client can reach (set SKYSAGA_GAME_IP; 127.0.0.1 only works for a local
+      # client), and WEB_PORT is the Caddy front
       # door, not Kestrel's 5164.
       SKYSAGA_GAME_IP: ${SKYSAGA_GAME_IP:-127.0.0.1}
       SKYSAGA_WEB_PORT: ${SKYSAGA_WEB_PORT:-5001}
