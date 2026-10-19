@@ -45,6 +45,13 @@ public static class ExecuteEntityAction
         if (actionName == "ResourcePickupAction" && srcEntityId == connection.PlayerEntity.Id)
             ResourcePickups.Assign(connection, (int)targetEntityId);
 
+        if (actionName == "PickupAction"
+            && srcEntityId == connection.PlayerEntity.Id
+            && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var device)
+            && (!device.TryGetComponent<ClientOwnerComponent>(out var owner) || owner.Owner is null || owner.Owner == connection.CharacterId)
+            && ResourcePickups.RemoveDevice(connection, device, placedOnly: true))
+            Console.WriteLine($"[Device] {device.Name}#{device.Id} picked up by player {srcEntityId}");
+
         if (actionName == "InteractAction"
             && srcEntityId == connection.PlayerEntity.Id
             && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var target))

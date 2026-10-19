@@ -20,7 +20,21 @@ public static class ResourcePickups
         Spawn(connection, itemCrc, 1, new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f), voxel, connection.PlayerEntity.Id);
     }
 
-    public static void SpawnDeviceDrops(PlayerConnection connection, WorldManager.PlacedDevice device)
+    public static bool RemoveDevice(PlayerConnection connection, Entity device, bool placedOnly)
+    {
+        if (connection.WorldManager.RemoveDevice(device, placedOnly, out var placed) is not { Count: > 0 } removed)
+            return false;
+
+        foreach (var id in removed)
+            connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = id });
+
+        if (placed is not null)
+            SpawnDeviceDrops(connection, placed);
+
+        return true;
+    }
+
+    private static void SpawnDeviceDrops(PlayerConnection connection, WorldManager.PlacedDevice device)
     {
         var voxel = new Vector3Int(device.X, device.Y, device.Z);
         var start = new Vector3(device.X + 0.5f, device.Y + 0.5f, device.Z + 0.5f);

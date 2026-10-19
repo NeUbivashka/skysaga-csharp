@@ -291,12 +291,18 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return entities;
     }
 
-    public List<int> RemoveDevice(Entity entity, out PlacedDevice? placed)
+    public List<int> RemoveDevice(Entity entity, bool placedOnly, out PlacedDevice? placed)
     {
         placed = null;
 
         if (!DeviceTable.TryGetByEntity(entity.Name, out _))
             return [];
+
+        lock (_devicesLock)
+        {
+            if (placedOnly && !_deviceEntities.ContainsKey(entity.Id))
+                return [];
+        }
 
         if (entity.TryGetComponent<ClientVoxelLinkComponent>(out var voxelLink)
             && entity.TryGetComponent<TransformComponent>(out var transform))

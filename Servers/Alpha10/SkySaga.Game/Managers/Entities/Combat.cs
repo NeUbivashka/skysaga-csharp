@@ -60,16 +60,9 @@ public static class Combat
         if (!health.IsDead)
             return;
 
-        if (connection.WorldManager.RemoveDevice(target, out var placed) is { Count: > 0 } removed)
+        if (ResourcePickups.RemoveDevice(connection, target, placedOnly: false))
         {
-            foreach (var id in removed)
-                connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = id });
-
             Console.WriteLine($"[Combat] {target.Name}#{target.Id} destroyed by player {player.Id}");
-
-            if (placed is not null)
-                ResourcePickups.SpawnDeviceDrops(connection, placed);
-
             return;
         }
 
