@@ -32,12 +32,13 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
             "xp" => Experience(connection, args),
             "recipe" => LearnRecipe(connection, args),
             "mental" => MentalState(connection, args),
+            "charge" => Charge(connection, args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius]";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>";
 
     private static string LearnRecipe(PlayerConnection connection, string[] args)
     {
@@ -83,6 +84,19 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
         }
 
         return $"{CharacterStateComponent.MentalStates[state]} set on {changed} creatures.";
+    }
+
+    private static string Charge(PlayerConnection connection, string[] args)
+    {
+        if (args.Length < 2 || !float.TryParse(args[1], CultureInfo.InvariantCulture, out var value))
+            return $"Usage: !charge <points>";
+
+        if (!connection.PlayerEntity.TryGetComponent<ClientChargeBarComponent>(out var chargeBar))
+            return "The player has no charge bar.";
+
+        chargeBar.Gain(value, DateTime.UtcNow);
+
+        return $"Charge {chargeBar.CurrentCharge / ClientChargeBarComponent.UnitsPerPoint:0.#} of {ChargeBarTable.Max}.";
     }
 
     private static string Experience(PlayerConnection connection, string[] args)

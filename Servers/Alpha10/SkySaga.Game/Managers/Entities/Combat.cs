@@ -50,6 +50,9 @@ public static class Combat
 
         health.Damage(damage);
 
+        if (player.TryGetComponent<ClientChargeBarComponent>(out var chargeBar))
+            chargeBar.Gain(attacks.Max(attack => ChargeBarTable.HitGain(attack.EquippedAction, usedItemCrc)), DateTime.UtcNow);
+
         connection.PlayerConnectionManager.BroadcastToAll(new HitOccurred
         {
             SourceEntityId = player.Id,

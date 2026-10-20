@@ -186,6 +186,9 @@ public class PlayerConnection
             health.Regenerate(DateTime.UtcNow);
         }
 
+        if (PlayerEntity.TryGetComponent<ClientChargeBarComponent>(out var chargeBar))
+            chargeBar.Decay(DateTime.UtcNow);
+
         if (IsLocalDueUtc.TryPeek(out var due) && DateTime.UtcNow >= due)
         {
             IsLocalDueUtc.Dequeue();
