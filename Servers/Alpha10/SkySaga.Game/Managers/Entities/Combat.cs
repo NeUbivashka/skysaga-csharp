@@ -106,12 +106,15 @@ public static class Combat
         ResourcePickups.SpawnCreatureLoot(connection, target);
     }
 
-    public static void CreatureAttack(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability)
+    public static void CreatureProjectileHit(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability, ProjectileLaunch launch)
+        => CreatureAttack(connections, entityManager, creature, player, ability, launch.ImpactWeaponLevel);
+
+    public static void CreatureAttack(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability, float? weaponLevelModifier = null)
     {
         if (!player.TryGetComponent<ClientHealthComponent>(out var health) || health.IsDead)
             return;
 
-        var weaponLevel = CharacterStats(creature).WeaponLevel + ActionStatTable.Get(ability.Action).WeaponLevelModifier;
+        var weaponLevel = CharacterStats(creature).WeaponLevel + (weaponLevelModifier ?? ActionStatTable.Get(ability.Action).WeaponLevelModifier);
         var armourLevel = CharacterStats(player).ArmourLevel + EquipmentStats(entityManager, player).ArmourLevel;
         var damage = (int)MathF.Round(Lookup(CreatureAiTable.DamageLut, weaponLevel - armourLevel));
 

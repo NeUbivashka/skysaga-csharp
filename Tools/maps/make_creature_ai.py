@@ -55,6 +55,9 @@ def main():
     slots = by_name(geo["AITimeSlots"])
     sleeps = by_name(geo["AISleepTraits"])
     restlessness = by_name(geo["AIRestlessnessTraits"])
+    always = by_name(geo["AlwaysActions"])
+    projectile_data = by_name(geo["ProjectileComponentData"])
+    blueprints = {e["Name"].lower(): e for e in entities}
     loudness = geo["GlobalConstants"][0]["SensoryEventLoudness"]
     default_time = geo["UseTimes"][0]["Time"]
     lut = geo["GlobalConstantsCombat"][0]["CreatureVersusPlayerDamage"]["ValueLookup"]
@@ -144,6 +147,37 @@ def main():
                 f"{window['BeginFactor']:g}", f"{window['EndFactor']:g}",
                 ",".join(tags) or "-",
             ]))
+
+    launched = set()
+    for action in geo["EquippedActions"]:
+        for entry in (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []:
+            launch = always.get(entry.get("ActionAlways", "").lower(), {}).get("LaunchProjectileAction")
+            if not launch or action["Name"] in launched:
+                continue
+            blueprint = blueprints.get(launch["Projectile"].lower())
+            data_name = ((blueprint or {}).get("parameters", {}).get("projectilecomponentdata", {}).get("value") or "").lower()
+            data = projectile_data.get(data_name)
+            if not blueprint or not data:
+                continue
+            launched.add(action["Name"])
+            transform = launch.get("Transform", {})
+            offset = transform.get("UseOffset")
+            position = transform.get("UsePositionOffset")
+            impact = properties.get(data.get("OnImpactPhysicalProperties", "").lower())
+            fields = {
+                "entity": blueprint["Name"],
+                "dataindex": data["Index"], "datacount": len(geo["ProjectileComponentData"]),
+                "speed": float(launch["MaxProjectileSpeed"]), "gravity": float(launch["GravityFactor"]),
+                "inaccmin": float(launch["MinInaccuracyAngle"]), "inaccmax": float(launch["MaxInaccuracyAngle"]),
+                "offx": float(transform.get("OffsetX", 0)) if position else 0.0,
+                "offy": float(transform.get("OffsetY", 0)) if position else 0.0,
+                "offz": float(transform.get("OffsetZ", 0)) if position else 0.0,
+                "pitch": float(transform.get("OffsetPitch", 0)) if offset else 0.0,
+                "yaw": float(transform.get("OffsetYaw", 0)) if offset else 0.0,
+                "lifetime": float(data.get("Lifetime", 0)),
+                "impactlevel": stat(impact, "WeaponLevelModifier"),
+            }
+            rows.append(" ".join(["projectile", action["Name"]] + [f"{k}={v:g}" if isinstance(v, float) else f"{k}={v}" for k, v in fields.items()]))
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(rows) + "\n")

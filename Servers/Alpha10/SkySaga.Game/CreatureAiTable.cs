@@ -30,6 +30,9 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
 
 public readonly record struct SpawnParams(float HomeRange, float Roam);
 
+public sealed record ProjectileLaunch(string Entity, uint DataIndex, uint DataCount, float Speed, float GravityFactor,
+    float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel);
+
 public readonly record struct SleepTimes(float IdleMin, float IdleMax, float SleepMin, float SleepMax)
 {
     public bool CanSleep => SleepMax > 0;
@@ -154,13 +157,13 @@ public sealed class CreatureAi
 public static class CreatureAiTable
 {
     private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness,
-        Dictionary<string, SpawnParams> Spawns, (float Input, float Output)[] DamageLut);
+        Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
-        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), []);
+        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), []);
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
@@ -182,6 +185,13 @@ public static class CreatureAiTable
                     break;
                 case ["spawnparams", var spawnName, var home, var roam]:
                     data.Spawns[spawnName] = new SpawnParams(Number(home.Split('=')[1]), Number(roam.Split('=')[1]));
+                    break;
+                case ["projectile", var launchAction, ..]:
+                    var f = parts[2..].Select(field => field.Split('=', 2)).ToDictionary(field => field[0], field => field[1]);
+                    data.Projectiles[launchAction] = new ProjectileLaunch(f["entity"], uint.Parse(f["dataindex"]), uint.Parse(f["datacount"]),
+                        Number(f["speed"]), Number(f["gravity"]), Number(f["inaccmin"]), Number(f["inaccmax"]),
+                        new Vector3(Number(f["offx"]), Number(f["offy"]), Number(f["offz"])), Number(f["pitch"]), Number(f["yaw"]),
+                        Number(f["lifetime"]), Number(f["impactlevel"]));
                     break;
                 case ["loudness", var sensoryEvent, var loudness]:
                     data.Loudness[sensoryEvent] = Enum.Parse<AiLoudness>(loudness);
@@ -209,6 +219,8 @@ public static class CreatureAiTable
 
     public static bool TryGetLoudness(string sensoryEvent, out AiLoudness loudness)
         => Table.Value.Loudness.TryGetValue(sensoryEvent, out loudness);
+
+    public static bool TryGetProjectile(string action, out ProjectileLaunch launch) => Table.Value.Projectiles.TryGetValue(action, out launch!);
 
     public static bool TryGetSpawnParams(string name, out SpawnParams spawn) => Table.Value.Spawns.TryGetValue(name, out spawn);
 

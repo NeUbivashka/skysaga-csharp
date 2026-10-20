@@ -18,6 +18,7 @@ public class AiManager
     private const float InputSpeedScale = 8f;
     private const string MeleeTag = "ActionMelee";
     private const string DefaultSpawnParams = "GenericFeatureSpawner";
+    private const float ProjectileAimHeight = 1f;
     private const string ProjectileTag = "ActionProjectile";
     private const string AlertTag = "EmoteAlert";
     private const string LostTag = "EmoteLost";
@@ -37,6 +38,7 @@ public class AiManager
     private readonly IWorldManager _worldManager;
     private readonly PlayerConnectionManager _playerConnectionManager;
     private readonly Random _random = new();
+    private readonly Projectiles _projectiles;
 
     private DateTime _lastUpdate = DateTime.UtcNow;
 
@@ -56,6 +58,7 @@ public class AiManager
         public DateTime? AsleepUntil;
         public Vector3? BackOffDirection;
         public bool Blocked;
+        public float KeepRange;
         public required Vector3 Home;
         public required SpawnParams Spawn;
         public DateTime NextWander;
@@ -75,6 +78,7 @@ public class AiManager
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
+        _projectiles = new Projectiles(worldManager, playerConnectionManager);
     }
 
     public static void Hit(Entity creature, Entity attacker)
@@ -111,6 +115,7 @@ public class AiManager
         _lastUpdate = now;
 
         RemoveCorpses(now);
+        _projectiles.Update(now, delta);
 
         var players = _playerConnectionManager.GetAllConnections()
             .Select(connection => connection.PlayerEntity)
@@ -168,6 +173,14 @@ public class AiManager
 
             if (TargetPosition(brain, players) is Vector3 position)
                 Face(transform, Horizontal(position - transform.Position));
+
+            if (attack.Ability.HasTag(ProjectileTag) && !attack.Resolved && now >= attack.HitAt)
+            {
+                attack.Resolved = true;
+
+                if (CreatureAiTable.TryGetProjectile(attack.Ability.Action, out var launch) && TargetPosition(brain, players) is Vector3 aim)
+                    _projectiles.Launch(entity, transform.Position, transform.YawDegrees, aim + Vector3.UnitY * ProjectileAimHeight, attack.Ability, launch, now);
+            }
 
             if (attack.Ability.HasTag(MeleeTag) && !attack.Resolved && now >= attack.HitAt)
             {
@@ -432,6 +445,7 @@ public class AiManager
             brain.TargetId = source.Id;
             brain.Mode = ai.OnHearing;
             brain.HuntUntil = now;
+            brain.KeepRange = ranges[(int)loudness];
 
             Console.WriteLine($"[AiManager] {ai.Name} hears {sound.Event} ({loudness}) of {source.Id} at {Vector3.Distance(sound.Position, transform.Position):0.#} m: {ai.OnHearing}");
 
@@ -498,7 +512,7 @@ public class AiManager
             var current = players.FirstOrDefault(player => player.Id == brain.TargetId);
 
             if (current is not null && Combat.PositionOf(current) is Vector3 position
-                && (now < brain.HuntUntil || Vector3.Distance(position, transform.Position) <= ai.SeenDistance))
+                && (now < brain.HuntUntil || Vector3.Distance(position, transform.Position) <= MathF.Max(ai.SeenDistance, brain.KeepRange)))
                 return current;
 
             brain.TargetId = 0;
@@ -527,6 +541,7 @@ public class AiManager
             brain.TargetId = player.Id;
             brain.Mode = reaction;
             brain.HuntUntil = now;
+            brain.KeepRange = 0;
 
             Console.WriteLine($"[AiManager] {ai.Name} {(distance <= ai.CloseDistance && angle <= ai.CloseAngle / 2 ? "notices close" : "sees")} {player.Id} at {distance:0.#} m, {angle:0} deg: {reaction}");
 
