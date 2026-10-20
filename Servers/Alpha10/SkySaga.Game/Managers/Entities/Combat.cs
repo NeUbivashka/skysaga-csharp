@@ -88,7 +88,7 @@ public static class Combat
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
 
         JobChallengeProgress.Killed(connection, target, usedItemCrc, wasUnhurt);
-        JobExperience.Grinder(connection, "Grinder_Kill", targetCrc: target.TryGetComponent<TagsComponent>(out var tags) ? TagNameTable.NameOf(tags.TagList) : null);
+        JobExperience.Grinder(connection, "Grinder_Kill", targetCrc: TagNameTable.NameOf(target.TextListParameter("taglist").Select(tag => Util.ComputeCrc32(tag))));
 
         ResourcePickups.SpawnCreatureLoot(connection, target);
     }
