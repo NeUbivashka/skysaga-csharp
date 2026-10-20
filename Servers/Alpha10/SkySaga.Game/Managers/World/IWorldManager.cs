@@ -17,5 +17,6 @@ public interface IWorldManager
     List<int> RemoveDevice(Entity entity, bool placedOnly, out WorldManager.PlacedDevice? placed);
     List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Guid? owner, uint?[] materials);
     List<Entity> RespawnMapCreature(Entity creature);
+    (Vector3 Position, string? SpawnParams)? MapSpawnOf(int entityId);
     void Reset();
 }

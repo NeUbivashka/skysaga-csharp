@@ -28,6 +28,8 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
     public float Duration => ChargeTime + ActiveTime + RecoverTime;
 }
 
+public readonly record struct SpawnParams(float HomeRange, float Roam);
+
 public readonly record struct SleepTimes(float IdleMin, float IdleMax, float SleepMin, float SleepMax)
 {
     public bool CanSleep => SleepMax > 0;
@@ -78,6 +80,9 @@ public sealed class CreatureAi
         BackOffMinAngle = Number("backoffmin");
         BackOffMaxAngle = Number("backoffmax");
         BackOffLookAtTarget = _fields["backofflook"] == "1";
+        var idle = _fields["idle"].Split(':');
+        IdleMin = Parse(idle[0]);
+        IdleMax = Parse(idle[1]);
         Sleep = ParseSleep(_fields["sleep"].Split(':'));
         Segments = _fields["segments"] == "-"
             ? []
@@ -121,6 +126,8 @@ public sealed class CreatureAi
     public float BackOffMinAngle { get; }
     public float BackOffMaxAngle { get; }
     public bool BackOffLookAtTarget { get; }
+    public float IdleMin { get; }
+    public float IdleMax { get; }
     public SleepTimes Sleep { get; }
     public SleepSegment[] Segments { get; }
     public List<CreatureAbility> Abilities { get; } = [];
@@ -146,13 +153,14 @@ public sealed class CreatureAi
 
 public static class CreatureAiTable
 {
-    private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness, (float Input, float Output)[] DamageLut);
+    private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness,
+        Dictionary<string, SpawnParams> Spawns, (float Input, float Output)[] DamageLut);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
-        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), []);
+        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), []);
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
@@ -171,6 +179,9 @@ public static class CreatureAiTable
                     {
                         DamageLut = lut.Split(',').Select(point => point.Split(':')).Select(point => (Number(point[0]), Number(point[1]))).ToArray()
                     };
+                    break;
+                case ["spawnparams", var spawnName, var home, var roam]:
+                    data.Spawns[spawnName] = new SpawnParams(Number(home.Split('=')[1]), Number(roam.Split('=')[1]));
                     break;
                 case ["loudness", var sensoryEvent, var loudness]:
                     data.Loudness[sensoryEvent] = Enum.Parse<AiLoudness>(loudness);
@@ -198,6 +209,8 @@ public static class CreatureAiTable
 
     public static bool TryGetLoudness(string sensoryEvent, out AiLoudness loudness)
         => Table.Value.Loudness.TryGetValue(sensoryEvent, out loudness);
+
+    public static bool TryGetSpawnParams(string name, out SpawnParams spawn) => Table.Value.Spawns.TryGetValue(name, out spawn);
 
     public static (float Input, float Output)[] DamageLut => Table.Value.DamageLut;
 }

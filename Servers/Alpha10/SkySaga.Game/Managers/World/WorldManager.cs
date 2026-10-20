@@ -39,7 +39,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private Dictionary<Guid, float[]> _checkpoints = LoadCheckpoints();
     private readonly object _devicesLock = new();
 
-    private readonly Dictionary<int, (Vector3 Position, float? Yaw)> _mapCreatureSpawns = [];
+    private readonly Dictionary<int, (Vector3 Position, float? Yaw, string? SpawnParams)> _mapCreatureSpawns = [];
 
     private const int LandingSearchRadius = 16;
 
@@ -574,7 +574,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 continue;
             }
 
-            _mapCreatureSpawns[creature[^1].Id] = (position, spec.Yaw);
+            _mapCreatureSpawns[creature[^1].Id] = (position, spec.Yaw, spec.SpawnParams);
 
             spawned++;
         }
@@ -594,6 +594,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         inventory.InventoryEntityList = [.. items, .. Enumerable.Repeat(0, Math.Max(0, inventory.MaxInventorySlots - items.Count))];
     }
+
+    public (Vector3 Position, string? SpawnParams)? MapSpawnOf(int entityId)
+        => _mapCreatureSpawns.TryGetValue(entityId, out var spawn) ? (spawn.Position, spawn.SpawnParams) : null;
 
     public List<Entity> RespawnMapCreature(Entity creature)
     {

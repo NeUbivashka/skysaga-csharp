@@ -17,6 +17,7 @@ public class AiManager
     private const float DirectionScale = 64f;
     private const float InputSpeedScale = 8f;
     private const string MeleeTag = "ActionMelee";
+    private const string DefaultSpawnParams = "GenericFeatureSpawner";
     private const string ProjectileTag = "ActionProjectile";
     private const string AlertTag = "EmoteAlert";
     private const string LostTag = "EmoteLost";
@@ -44,7 +45,7 @@ public class AiManager
     private sealed class Brain
     {
         public required float GroundOffset;
-        public required bool CanSleep;
+        public required bool Free;
         public int TargetId;
         public AiReaction Mode;
         public DateTime HuntUntil;
@@ -55,6 +56,11 @@ public class AiManager
         public DateTime? AsleepUntil;
         public Vector3? BackOffDirection;
         public bool Blocked;
+        public required Vector3 Home;
+        public required SpawnParams Spawn;
+        public DateTime NextWander;
+        public Vector3? WanderTarget;
+        public bool ReturningHome;
     }
 
     private sealed class Attack
@@ -130,8 +136,11 @@ public class AiManager
             if (!Brains.TryGetValue(entity.Id, out var brain))
                 Brains[entity.Id] = brain = new Brain
                 {
+                    Home = _worldManager.MapSpawnOf(entity.Id)?.Position ?? transform.Position,
+                    Spawn = CreatureAiTable.TryGetSpawnParams(_worldManager.MapSpawnOf(entity.Id)?.SpawnParams ?? DefaultSpawnParams, out var spawn) ? spawn : default,
+                    NextWander = now.AddSeconds(Between(ai.IdleMin, ai.IdleMax)),
                     GroundOffset = transform.Position.Y - GroundTop(transform.Position),
-                    CanSleep = !entity.TryGetComponent<CharacterStateComponent>(out var initial) || initial.CharacterMentalStateId == MentalNormal,
+                    Free = !entity.TryGetComponent<CharacterStateComponent>(out var initial) || initial.CharacterMentalStateId == MentalNormal,
                     IdleSince = now
                 };
 
@@ -204,6 +213,29 @@ public class AiManager
                 Wake(entity, brain, now);
         }
 
+        if (brain.TargetId != 0 && brain.Spawn.HomeRange > 0 && Horizontal(transform.Position - brain.Home).Length() > brain.Spawn.HomeRange)
+        {
+            Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} is {Horizontal(transform.Position - brain.Home).Length():0.#} m from home, returning");
+            Forget(component, brain, now);
+            brain.ReturningHome = true;
+        }
+
+        if (brain.ReturningHome)
+        {
+            var toHome = Horizontal(brain.Home - transform.Position);
+
+            if (toHome.Length() > Math.Max(brain.Spawn.Roam, ai.RunSpeed * delta) && !brain.Blocked)
+            {
+                Move(entity, transform, ai, brain, Vector3.Normalize(toHome), ai.Speed(ai.ToTarget), State(ai.ToTarget), delta);
+                return;
+            }
+
+            brain.ReturningHome = false;
+            brain.Blocked = false;
+            brain.IdleSince = now;
+            brain.NextWander = now.AddSeconds(Between(ai.IdleMin, ai.IdleMax));
+        }
+
         var hadTarget = brain.TargetId != 0;
         var target = Target(transform, ai, brain, players, now) ?? Heard(transform, ai, brain, sounds, ai.HearingRanges, now);
 
@@ -222,10 +254,15 @@ public class AiManager
             }
 
             Rest(entity, ai, brain, timeOfDay, now);
+
+            if (brain.AsleepUntil is null)
+                Wander(entity, transform, ai, brain, now, delta);
+
             return;
         }
 
         brain.SleepAt = null;
+        brain.WanderTarget = null;
 
         var offset = Horizontal(targetPosition - transform.Position);
         var distance = offset.Length();
@@ -309,7 +346,7 @@ public class AiManager
     {
         var sleep = ai.SleepAt(timeOfDay);
 
-        if (!brain.CanSleep || !sleep.CanSleep)
+        if (!brain.Free || !sleep.CanSleep)
         {
             brain.SleepAt = null;
             return;
@@ -327,6 +364,37 @@ public class AiManager
             state.CharacterMentalStateId = MentalSleep;
 
         Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} falls asleep until {brain.AsleepUntil:HH:mm:ss}");
+    }
+
+    private void Wander(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, DateTime now, float delta)
+    {
+        if (!brain.Free || brain.Spawn.Roam <= 0 || ai.WalkSpeed <= 0)
+            return;
+
+        if (brain.WanderTarget is null)
+        {
+            if (now < brain.NextWander)
+                return;
+
+            var angle = (float)(_random.NextDouble() * Math.PI * 2);
+            var radius = brain.Spawn.Roam * MathF.Sqrt((float)_random.NextDouble());
+            brain.WanderTarget = brain.Home + new Vector3(MathF.Sin(angle) * radius, 0f, MathF.Cos(angle) * radius);
+            brain.Blocked = false;
+        }
+
+        var offset = Horizontal(brain.WanderTarget.Value - transform.Position);
+        var step = ai.WalkSpeed * delta;
+
+        if (offset.Length() <= step || brain.Blocked)
+        {
+            brain.WanderTarget = null;
+            brain.Blocked = false;
+            brain.NextWander = now.AddSeconds(Between(ai.IdleMin, ai.IdleMax));
+            Stop(entity);
+            return;
+        }
+
+        Move(entity, transform, ai, brain, Vector3.Normalize(offset), ai.WalkSpeed, StateWalk, delta);
     }
 
     private static void Wake(Entity entity, Brain brain, DateTime now)
@@ -409,6 +477,7 @@ public class AiManager
         brain.TargetId = 0;
         brain.Mode = AiReaction.Ignore;
         brain.BackOffDirection = null;
+        brain.WanderTarget = null;
         brain.IdleSince = now;
         component.TargetEntityId = 0;
     }

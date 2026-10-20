@@ -6,6 +6,7 @@ from targets import BUILD, GAME, GEODATA, ROOT
 
 SERVICE_ENTITIES = {"Player", "TimeOfDay"}
 DATA_TAG = '<script id="skysaga-data">'
+DEFAULT_SPAWN_PARAMS = "GenericFeatureSpawner"
 
 
 def category(entity):
@@ -63,6 +64,9 @@ def main():
         "serviceEntities": [e["name"] for e in placeable if e["category"] == "service"],
         "deviceCells": dict(sorted(cells.items())),
         "mapSizes": map_sizes,
+        "spawnParams": [{"name": s["Name"], "home": s["HomeRange"], "roam": s["MaxDistanceFromSpawnPosition"]}
+                        for s in sorted(geo["SpawnParams"], key=lambda s: s["Name"].lower())],
+        "defaultSpawnParams": DEFAULT_SPAWN_PARAMS,
     }
 
     path = os.path.join(ROOT, "Tools", "terrain-editor", "index.html")

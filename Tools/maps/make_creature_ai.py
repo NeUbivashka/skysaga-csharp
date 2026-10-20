@@ -54,11 +54,14 @@ def main():
     movements = by_name(geo["AIMovementTraits"])
     slots = by_name(geo["AITimeSlots"])
     sleeps = by_name(geo["AISleepTraits"])
+    restlessness = by_name(geo["AIRestlessnessTraits"])
     loudness = geo["GlobalConstants"][0]["SensoryEventLoudness"]
     default_time = geo["UseTimes"][0]["Time"]
     lut = geo["GlobalConstantsCombat"][0]["CreatureVersusPlayerDamage"]["ValueLookup"]
 
     rows = ["damage " + ",".join(f"{p['Input']:g}:{p['Output']:g}" for p in lut)]
+    rows += [f"spawnparams {spawn['Name']} home={spawn['HomeRange']:g} roam={spawn['MaxDistanceFromSpawnPosition']:g}"
+             for spawn in geo["SpawnParams"]]
     rows += [f"loudness {event} {value['Loudness']}" for event, value in loudness.items() if value.get("Loudness")]
     for entity in entities:
         parameters = entity["parameters"]
@@ -82,6 +85,11 @@ def main():
         movement = {m["MovementState"]: m["ConfigData"]
                     for m in movements.get(capability.get("MovementTrait", "").lower(), {}).get("MovementStates", [])}
         back_off = movement.get("BackOffAfterAttack")
+
+        def restless(slot_name):
+            slot = slots.get(slot_name.lower(), {})
+            trait = restlessness.get(slot.get("RestlessnessTrait", "").lower(), {})
+            return f"{trait.get('MinTimeToIdleInSeconds', 0):g}:{trait.get('MaxTimeToIdleInSeconds', 0):g}"
 
         def sleep(slot_name):
             slot = slots.get(slot_name.lower(), {})
@@ -111,6 +119,7 @@ def main():
             "backoff": back_off["MovementType"] if back_off else "-",
             "backoffmin": (back_off or {}).get("MinAngleOffset", 0), "backoffmax": (back_off or {}).get("MaxAngleOffset", 0),
             "backofflook": int(bool((back_off or {}).get("LookAtTarget"))),
+            "idle": restless(capability.get("TimeSegmentDefault", "")),
             "sleep": sleep(capability.get("TimeSegmentDefault", "")),
             "segments": ";".join(f"{seg['StartTime']:g}:{seg['EndTime']:g}:{sleep(seg['AITimeSlot'])}"
                                  for seg in capability.get("TimeSegment", [])) or "-",
