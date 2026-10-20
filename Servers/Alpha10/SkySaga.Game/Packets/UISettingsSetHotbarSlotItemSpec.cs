@@ -17,7 +17,7 @@ public static class UISettingsSetHotbarSlotItemSpec
 
             if (TwoHandedTable.Contains(item.Kind))
                 settings.SetHotbarItem((uint)slot, otherHand, item);
-            else if (other is not null && TwoHandedTable.Contains(other.Kind))
+            else if (other is not null && (TwoHandedTable.Contains(other.Kind) || item.ItemUuid is { } uuid && other.ItemUuid == uuid))
                 settings.SetHotbarItem((uint)slot, otherHand, null);
         }
 
