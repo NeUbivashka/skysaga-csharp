@@ -235,7 +235,10 @@ public static class ResourcePickups
         Remove(connection, pickup.Id);
 
         if (collected && slotData.Name is uint itemCrc)
+        {
             JobChallengeProgress.Harvested(connection, itemCrc, slotData.Count);
+            JobExperience.Grinder(connection, "Grinder_Harvest", itemSpec: new InventoryItemRef { Kind = ItemTable.IndexOf(itemCrc), Amounts = [.. MaterialsOf(item)] });
+        }
     }
 
     internal static uint?[] MaterialsOf(Entity item)

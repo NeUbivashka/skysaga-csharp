@@ -7,6 +7,7 @@ public class XPGained : ISerializablePacket
     public int? JobChallengeIndex;
     public int JobIndex;
     public uint? TargetCrc;
+    public InventoryItemRef? ItemSpec;
     public uint BonusExperience;
 
     public BitStream Serialize()
@@ -27,7 +28,14 @@ public class XPGained : ISerializablePacket
         else
             bitStream.Write0();
 
-        bitStream.Write0();
+        if (ItemSpec is not null)
+        {
+            bitStream.Write1();
+            ItemSpec.Encode(bitStream);
+        }
+        else
+            bitStream.Write0();
+
         bitStream.Write0();
         bitStream.Write0();
         InventoryItemRef.WriteUInt32(bitStream, BonusExperience);

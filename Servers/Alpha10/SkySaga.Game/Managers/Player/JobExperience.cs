@@ -2,7 +2,13 @@ namespace SkySaga.Game.Managers.Player;
 
 public static class JobExperience
 {
-    public static bool Award(PlayerConnection connection, uint amount, int? jobChallengeIndex = null, uint? targetCrc = null)
+    public const uint GrinderExperience = 1;
+
+    public static bool Grinder(PlayerConnection connection, string challengeName, uint? targetCrc = null, InventoryItemRef? itemSpec = null)
+        => JobChallengeTable.TryGet(challengeName, out var challenge)
+            && Award(connection, GrinderExperience, challenge.Index, targetCrc, itemSpec);
+
+    public static bool Award(PlayerConnection connection, uint amount, int? jobChallengeIndex = null, uint? targetCrc = null, InventoryItemRef? itemSpec = null)
     {
         if (amount == 0
             || !JobTable.TryGet(JobTable.HudJob, out var job)
@@ -16,7 +22,8 @@ public static class JobExperience
             Experience = amount,
             JobChallengeIndex = jobChallengeIndex,
             JobIndex = job.Index,
-            TargetCrc = targetCrc
+            TargetCrc = targetCrc,
+            ItemSpec = itemSpec
         });
 
         connection.SaveState();
