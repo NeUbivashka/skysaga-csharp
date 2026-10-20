@@ -16,6 +16,24 @@ public static class SpawnFinder
         return chunkManager.GetVoxel(chunkPosition, voxelPosition) != WorldChunk.Air;
     }
 
+    public static float? GroundBelow(IMapChunkManager chunkManager, Vector3 position, float rise)
+    {
+        ArgumentNullException.ThrowIfNull(chunkManager);
+
+        int x = (int)MathF.Floor(position.X), z = (int)MathF.Floor(position.Z);
+
+        for (var y = (int)MathF.Floor(position.Y + rise); y >= 0; y--)
+        {
+            var chunkPosition = new Vector3Int(FloorDiv(x, ChunkSize), FloorDiv(y, ChunkSize), FloorDiv(z, ChunkSize));
+            var voxelPosition = new Vector3Int(Mod(x, ChunkSize), Mod(y, ChunkSize), Mod(z, ChunkSize));
+
+            if (chunkManager.GetVoxel(chunkPosition, voxelPosition) != WorldChunk.Air)
+                return y + 1;
+        }
+
+        return null;
+    }
+
     public static int FindGroundHeight(IMapChunkManager chunkManager, int worldX, int worldZ, int mapHeightVoxels)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);

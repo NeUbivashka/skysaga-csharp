@@ -7,7 +7,6 @@ public static class Knockback
     private const float MaxKnockbackStrength = 100f;
     private const float CurveFactor = 1f;
     private const float Gravity = 20f;
-    private const float GroundOffset = 1.1f;
 
     private sealed class Flight
     {
@@ -97,14 +96,5 @@ public static class Knockback
     }
 
     private static float? GroundY(IWorldManager worldManager, Vector3 position)
-    {
-        var mapHeightVoxels = Math.Max(worldManager.Definition.MapSizeChunks.Y, 1) * 32;
-        var groundY = SpawnFinder.FindGroundHeight(
-            worldManager.ChunkManager,
-            (int)MathF.Floor(position.X),
-            (int)MathF.Floor(position.Z),
-            mapHeightVoxels);
-
-        return groundY < 0 ? null : groundY + GroundOffset;
-    }
+        => SpawnFinder.GroundBelow(worldManager.ChunkManager, position, 0f);
 }

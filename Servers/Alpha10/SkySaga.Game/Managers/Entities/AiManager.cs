@@ -19,6 +19,7 @@ public class AiManager
     private const string MeleeTag = "ActionMelee";
     private const string DefaultSpawnParams = "GenericFeatureSpawner";
     private const float ProjectileAimHeight = 1f;
+    private const float Gravity = 20f;
     private const string ProjectileTag = "ActionProjectile";
     private const string AlertTag = "EmoteAlert";
     private const string LostTag = "EmoteLost";
@@ -46,7 +47,7 @@ public class AiManager
 
     private sealed class Brain
     {
-        public required float GroundOffset;
+        public float FallSpeed;
         public required bool Free;
         public int TargetId;
         public AiReaction Mode;
@@ -144,7 +145,6 @@ public class AiManager
                     Home = _worldManager.MapSpawnOf(entity.Id)?.Position ?? transform.Position,
                     Spawn = CreatureAiTable.TryGetSpawnParams(_worldManager.MapSpawnOf(entity.Id)?.SpawnParams ?? DefaultSpawnParams, out var spawn) ? spawn : default,
                     NextWander = now.AddSeconds(Between(ai.IdleMin, ai.IdleMax)),
-                    GroundOffset = transform.Position.Y - GroundTop(transform.Position),
                     Free = !entity.TryGetComponent<CharacterStateComponent>(out var initial) || initial.CharacterMentalStateId == MentalNormal,
                     IdleSince = now
                 };
@@ -152,6 +152,12 @@ public class AiManager
             if (entity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead || Knockback.IsActive(entity.Id))
             {
                 brain.Current = null;
+                Stop(entity);
+                continue;
+            }
+
+            if (Fall(transform, brain, delta))
+            {
                 Stop(entity);
                 continue;
             }
@@ -581,9 +587,9 @@ public class AiManager
         Face(transform, direction);
 
         var next = transform.Position + direction * speed * delta;
-        var ground = GroundTop(next);
+        var ground = SpawnFinder.GroundBelow(_worldManager.ChunkManager, next, ai.JumpHeight);
 
-        if (ground - GroundTop(transform.Position) > ai.JumpHeight)
+        if (ground is not float groundY || groundY - transform.Position.Y > ai.JumpHeight)
         {
             brain.Blocked = true;
             Stop(entity);
@@ -592,7 +598,7 @@ public class AiManager
 
         brain.Blocked = false;
 
-        transform.Position = new Vector3(next.X, ground + brain.GroundOffset, next.Z);
+        transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
 
         SetMovement(entity, direction, speed, state);
     }
@@ -632,11 +638,27 @@ public class AiManager
         return timeOfDay is null ? 0f : timeOfDay.CurrentTime(RakNet.RakNet.GetTime()) / (float)TimeOfDayComponent.DayLength;
     }
 
-    private float GroundTop(Vector3 position)
+    private bool Fall(TransformComponent transform, Brain brain, float delta)
     {
-        var mapHeightVoxels = Math.Max(_worldManager.Definition.MapSizeChunks.Y, 1) * 32;
+        var position = transform.Position;
 
-        return SpawnFinder.FindGroundHeight(_worldManager.ChunkManager, (int)MathF.Floor(position.X), (int)MathF.Floor(position.Z), mapHeightVoxels) + 1;
+        if (SpawnFinder.GroundBelow(_worldManager.ChunkManager, position, 0f) is not float ground)
+            return false;
+
+        if (position.Y <= ground)
+        {
+            brain.FallSpeed = 0f;
+
+            if (position.Y < ground)
+                transform.Position = position with { Y = ground };
+
+            return false;
+        }
+
+        brain.FallSpeed += Gravity * delta;
+        transform.Position = position with { Y = MathF.Max(ground, position.Y - brain.FallSpeed * delta) };
+
+        return true;
     }
 
     private void RemoveCorpses(DateTime now)
