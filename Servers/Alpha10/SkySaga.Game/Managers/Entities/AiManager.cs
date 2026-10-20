@@ -17,6 +17,7 @@ public class AiManager
     private const float DirectionScale = 64f;
     private const float InputSpeedScale = 8f;
     private const string MeleeTag = "ActionMelee";
+    private const string ProjectileTag = "ActionProjectile";
     private const string AlertTag = "EmoteAlert";
     private const string LostTag = "EmoteLost";
     private const string VictoryTag = "EmoteVictory";
@@ -53,6 +54,7 @@ public class AiManager
         public DateTime? SleepAt;
         public DateTime? AsleepUntil;
         public Vector3? BackOffDirection;
+        public bool Blocked;
     }
 
     private sealed class Attack
@@ -172,7 +174,7 @@ public class AiManager
 
             brain.Current = null;
 
-            if (attack.Ability.HasTag(MeleeTag))
+            if (attack.Ability.HasTag(MeleeTag) || attack.Ability.HasTag(ProjectileTag))
             {
                 brain.NextAttack = now.AddSeconds(ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime));
                 brain.BackOffDirection = ai.BackOff is null || TargetPosition(brain, players) is not Vector3 from
@@ -270,6 +272,24 @@ public class AiManager
         }
 
         var inRange = melee.Where(ability => distance <= ability.Reach).ToList();
+
+        if (inRange.Count == 0 && brain.Blocked)
+        {
+            var projectiles = ai.Tagged(ProjectileTag).Where(ability => distance <= ability.Reach).ToList();
+
+            Stop(entity);
+            Face(transform, toTarget);
+
+            if (ready && projectiles.Count > 0)
+            {
+                brain.Blocked = false;
+                Perform(entity, transform, brain, projectiles[_random.Next(projectiles.Count)], toTarget, 0, now);
+            }
+            else if (ready)
+                brain.Blocked = false;
+
+            return;
+        }
 
         if (inRange.Count == 0)
         {
@@ -477,9 +497,12 @@ public class AiManager
 
         if (ground - GroundTop(transform.Position) > ai.JumpHeight)
         {
+            brain.Blocked = true;
             Stop(entity);
             return;
         }
+
+        brain.Blocked = false;
 
         transform.Position = new Vector3(next.X, ground + brain.GroundOffset, next.Z);
 
