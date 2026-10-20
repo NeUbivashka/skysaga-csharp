@@ -15,6 +15,8 @@ public static class EntityLanded
         var fallHeight = (fallStart - landing) * HeightScale;
         var damage = (int)((fallHeight - SafeFallHeight) * DamagePerVoxel);
 
+        AiManager.Hear(connection.PlayerEntity, "Land");
+
         Console.WriteLine($"[EntityLanded] fell {fallHeight:0.##} voxels, damage {Math.Max(damage, 0)}");
 
         if (damage > 0 && connection.PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))

@@ -50,10 +50,16 @@ def main():
     actions = by_name(geo["EquippedActions"])
     windows = by_name(geo["ActiveWindows"])
     anim_states = by_name(geo["AIAnimStates"])
+    hearings = by_name(geo["AIHearingTraits"])
+    movements = by_name(geo["AIMovementTraits"])
+    slots = by_name(geo["AITimeSlots"])
+    sleeps = by_name(geo["AISleepTraits"])
+    loudness = geo["GlobalConstants"][0]["SensoryEventLoudness"]
     default_time = geo["UseTimes"][0]["Time"]
     lut = geo["GlobalConstantsCombat"][0]["CreatureVersusPlayerDamage"]["ValueLookup"]
 
     rows = ["damage " + ",".join(f"{p['Input']:g}:{p['Output']:g}" for p in lut)]
+    rows += [f"loudness {event} {value['Loudness']}" for event, value in loudness.items() if value.get("Loudness")]
     for entity in entities:
         parameters = entity["parameters"]
         if "clientenemyaicomponent" not in entity.get("client", {}).get("components", {}):
@@ -71,17 +77,46 @@ def main():
         description = descriptions[player_relationship(tables, profile["RelationshipTable"]).lower()]
         reactions = [description["RelationshipProperty"][r]["Relationship"] for r in REACTIONS]
 
+        hearing = hearings.get(capability.get("AIHearingTrait", "").lower(), {})
+        heard = description["RelationshipProperty"]["OnHearing"]
+        movement = {m["MovementState"]: m["ConfigData"]
+                    for m in movements.get(capability.get("MovementTrait", "").lower(), {}).get("MovementStates", [])}
+        back_off = movement.get("BackOffAfterAttack")
+
+        def sleep(slot_name):
+            slot = slots.get(slot_name.lower(), {})
+            trait = sleeps.get(slot.get("SleepTrait", "").lower(), {})
+            if not trait.get("CanSleep"):
+                return "0:0:0:0"
+            return ":".join(f"{trait[k]:g}" for k in ("MinTimeIdleToSleepInSeconds", "MaxTimeIdleToSleepInSeconds",
+                                                       "MinTimeToSleepInSeconds", "MaxTimeToSleepInSeconds"))
+
+        fields = {
+            "walk": stat(creature, "WalkSpeed"), "run": stat(creature, "RunSpeed"), "sprint": stat(creature, "SprintSpeed"),
+            "jump": stat(creature, "JumpHeight"),
+            "seen": aware.get("AggroSeenDistance", 0), "seenangle": aware.get("AggroSeenMinAngle", 0),
+            "close": aware.get("AggroCloseRangeDistance", 0), "closeangle": aware.get("AggroCloseRangeAngle", 0),
+            "wake": aware.get("WakeFromSleepDistance", 0),
+            "hunt": persist.get("HuntTimeAfterHitInSeconds", 0),
+            "nextmin": attack_time.get("NextAttackMinTime", 0), "nextmax": attack_time.get("NextAttackMaxTime", 0),
+            "nearmin": fight.get("NearRangeMin", 0), "nearmax": fight.get("NearRangeMax", 0),
+            "onsight": reactions[0], "onclose": reactions[1], "onhit": reactions[2], "onhearing": heard["Relationship"],
+            "hearing": ",".join(v["Value"] for v in heard["HearingEventTypes"]["Values"]) or "-",
+            "quiet": hearing.get("Awake1QuietRange", 0), "normal": hearing.get("Awake2NormalRange", 0), "loud": hearing.get("Awake3LoudRange", 0),
+            "sleepquiet": hearing.get("Sleep1QuietRange", 0), "sleepnormal": hearing.get("Sleep2NormalRange", 0), "sleeploud": hearing.get("Sleep3LoudRange", 0),
+            "alert": anim.get("AlertTime", 0), "lost": anim.get("LostTime", 0),
+            "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
+            "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
+            "totarget": movement.get("ToTarget", {}).get("MovementType", "Run"),
+            "backoff": back_off["MovementType"] if back_off else "-",
+            "backoffmin": (back_off or {}).get("MinAngleOffset", 0), "backoffmax": (back_off or {}).get("MaxAngleOffset", 0),
+            "backofflook": int(bool((back_off or {}).get("LookAtTarget"))),
+            "sleep": sleep(capability.get("TimeSegmentDefault", "")),
+            "segments": ";".join(f"{seg['StartTime']:g}:{seg['EndTime']:g}:{sleep(seg['AITimeSlot'])}"
+                                 for seg in capability.get("TimeSegment", [])) or "-",
+        }
         name = entity["Name"]
-        rows.append(" ".join([
-            "creature", name,
-            f"{stat(creature, 'WalkSpeed'):g}", f"{stat(creature, 'RunSpeed'):g}", f"{stat(creature, 'JumpHeight'):g}",
-            f"{aware.get('AggroSeenDistance', 0):g}", f"{aware.get('AggroSeenMinAngle', 0):g}",
-            f"{aware.get('AggroCloseRangeDistance', 0):g}", f"{aware.get('AggroCloseRangeAngle', 0):g}",
-            f"{persist.get('HuntTimeAfterHitInSeconds', 0):g}",
-            f"{attack_time.get('NextAttackMinTime', 0):g}", f"{attack_time.get('NextAttackMaxTime', 0):g}",
-            *reactions,
-            f"{anim.get('AlertTime', 0):g}", f"{anim.get('LostTime', 0):g}",
-        ]))
+        rows.append(" ".join(["creature", name] + [f"{k}={v:g}" if isinstance(v, float) else f"{k}={v}" for k, v in fields.items()]))
 
         ability = abilities.get((parameters.get("defaultactions", {}).get("value") or "").lower())
         for entry in (ability or {}).get("Actions", []):

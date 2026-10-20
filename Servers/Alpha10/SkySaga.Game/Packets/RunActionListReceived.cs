@@ -43,6 +43,9 @@ public static class RunActionListReceived
 
         Combat.ActionStarted(connection, actionListId);
 
+        if (ActionListAttackTable.Get(actionListId).Count > 0)
+            AiManager.Hear(connection.PlayerEntity, "Attack");
+
         if (ActionListEatTable.TryGet(actionListId, out var eat))
         {
             Eat(connection, eat, usedItem);
@@ -63,6 +66,7 @@ public static class RunActionListReceived
             && (ActionListVoxelActionTable.Has(actionListId, "CreateDeviceAction") || ActionListVoxelActionTable.Has(actionListId, "CreateEntityAction")))
         {
             PlaceDevice(connection, deviceItem.Entity, device, voxel, hitNormal);
+            AiManager.Hear(connection.PlayerEntity, "Build");
             return true;
         }
         var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
@@ -75,6 +79,7 @@ public static class RunActionListReceived
                 voxel.Z + (int)MathF.Round(hitNormal.Z));
 
             SetWorldVoxel(connection, placeAt, (byte)placedBlock);
+            AiManager.Hear(connection.PlayerEntity, "Build");
             VoxelDamage.TryRemove(placeAt, out _);
 
             if (usedItem is { } placedItem)
@@ -88,6 +93,8 @@ public static class RunActionListReceived
 
         if (!VoxelTable.TryGet(voxelType, out var voxelStats) || !voxelStats.IsDiggable)
             return true;
+
+        AiManager.Hear(connection.PlayerEntity, "Dig");
 
         var (digLevel, powerTier) = usedItemCrc is uint toolCrc && ToolStatTable.TryGet(toolCrc, out var tool)
             ? (tool.DigLevel, tool.MiningPowerTier)

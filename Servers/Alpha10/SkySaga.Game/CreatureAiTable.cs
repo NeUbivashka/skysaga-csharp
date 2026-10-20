@@ -11,6 +11,13 @@ public enum AiReaction
     Scared
 }
 
+public enum AiLoudness
+{
+    Quiet,
+    Normal,
+    Loud
+}
+
 public readonly record struct CreatureAbility(string Action, uint ActionCrc, uint PropertiesCrc, float Reach,
     float ChargeTime, float ActiveTime, float RecoverTime, float BeginFactor, float EndFactor, string[] Tags)
 {
@@ -21,23 +28,131 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
     public float Duration => ChargeTime + ActiveTime + RecoverTime;
 }
 
-public sealed record CreatureAi(float WalkSpeed, float RunSpeed, float JumpHeight,
-    float SeenDistance, float SeenAngle, float CloseDistance, float CloseAngle, float HuntTimeAfterHit,
-    float NextAttackMinTime, float NextAttackMaxTime, AiReaction OnSight, AiReaction OnCloseRange, AiReaction OnHit,
-    float AlertTime, float LostTime, List<CreatureAbility> Abilities)
+public readonly record struct SleepTimes(float IdleMin, float IdleMax, float SleepMin, float SleepMax)
 {
+    public bool CanSleep => SleepMax > 0;
+}
+
+public readonly record struct SleepSegment(float Start, float End, SleepTimes Times)
+{
+    public bool Contains(float timeOfDay) => Start <= End
+        ? timeOfDay >= Start && timeOfDay < End
+        : timeOfDay >= Start || timeOfDay < End;
+}
+
+public sealed class CreatureAi
+{
+    private readonly Dictionary<string, string> _fields;
+
+    public CreatureAi(string name, Dictionary<string, string> fields)
+    {
+        _fields = fields;
+        Name = name;
+
+        WalkSpeed = Number("walk");
+        RunSpeed = Number("run");
+        SprintSpeed = Number("sprint");
+        JumpHeight = Number("jump");
+        SeenDistance = Number("seen");
+        SeenAngle = Number("seenangle");
+        CloseDistance = Number("close");
+        CloseAngle = Number("closeangle");
+        WakeDistance = Number("wake");
+        HuntTimeAfterHit = Number("hunt");
+        NextAttackMinTime = Number("nextmin");
+        NextAttackMaxTime = Number("nextmax");
+        NearRangeMin = Number("nearmin");
+        OnSight = Enum.Parse<AiReaction>(_fields["onsight"]);
+        OnCloseRange = Enum.Parse<AiReaction>(_fields["onclose"]);
+        OnHit = Enum.Parse<AiReaction>(_fields["onhit"]);
+        OnHearing = Enum.Parse<AiReaction>(_fields["onhearing"]);
+        HearingEvents = _fields["hearing"] == "-" ? [] : [.. _fields["hearing"].Split(',')];
+        HearingRanges = [Number("quiet"), Number("normal"), Number("loud")];
+        SleepHearingRanges = [Number("sleepquiet"), Number("sleepnormal"), Number("sleeploud")];
+        AlertTime = Number("alert");
+        LostTime = Number("lost");
+        RunFromHealth = Number("runfromhealth");
+        ToAttack = _fields["toattack"];
+        ToTarget = _fields["totarget"];
+        BackOff = _fields["backoff"] == "-" ? null : _fields["backoff"];
+        BackOffMinAngle = Number("backoffmin");
+        BackOffMaxAngle = Number("backoffmax");
+        BackOffLookAtTarget = _fields["backofflook"] == "1";
+        Sleep = ParseSleep(_fields["sleep"].Split(':'));
+        Segments = _fields["segments"] == "-"
+            ? []
+            : [.. _fields["segments"].Split(';').Select(segment => segment.Split(':'))
+                .Select(parts => new SleepSegment(Parse(parts[0]), Parse(parts[1]), ParseSleep(parts[2..])))];
+    }
+
+    private static float Parse(string value) => float.Parse(value, CultureInfo.InvariantCulture);
+
+    private static SleepTimes ParseSleep(string[] parts) => new(Parse(parts[0]), Parse(parts[1]), Parse(parts[2]), Parse(parts[3]));
+
+    private float Number(string key) => Parse(_fields[key]);
+
+    public string Name { get; }
+    public float WalkSpeed { get; }
+    public float RunSpeed { get; }
+    public float SprintSpeed { get; }
+    public float JumpHeight { get; }
+    public float SeenDistance { get; }
+    public float SeenAngle { get; }
+    public float CloseDistance { get; }
+    public float CloseAngle { get; }
+    public float WakeDistance { get; }
+    public float HuntTimeAfterHit { get; }
+    public float NextAttackMinTime { get; }
+    public float NextAttackMaxTime { get; }
+    public float NearRangeMin { get; }
+    public AiReaction OnSight { get; }
+    public AiReaction OnCloseRange { get; }
+    public AiReaction OnHit { get; }
+    public AiReaction OnHearing { get; }
+    public HashSet<string> HearingEvents { get; }
+    public float[] HearingRanges { get; }
+    public float[] SleepHearingRanges { get; }
+    public float AlertTime { get; }
+    public float LostTime { get; }
+    public float RunFromHealth { get; }
+    public string ToAttack { get; }
+    public string ToTarget { get; }
+    public string? BackOff { get; }
+    public float BackOffMinAngle { get; }
+    public float BackOffMaxAngle { get; }
+    public bool BackOffLookAtTarget { get; }
+    public SleepTimes Sleep { get; }
+    public SleepSegment[] Segments { get; }
+    public List<CreatureAbility> Abilities { get; } = [];
+
     public IEnumerable<CreatureAbility> Tagged(string tag) => Abilities.Where(ability => ability.HasTag(tag));
+
+    public float Speed(string movementType) => movementType switch
+    {
+        "Walk" => WalkSpeed,
+        "Sprint" => SprintSpeed,
+        _ => RunSpeed
+    };
+
+    public SleepTimes SleepAt(float timeOfDay)
+    {
+        foreach (var segment in Segments)
+            if (segment.Contains(timeOfDay))
+                return segment.Times;
+
+        return Sleep;
+    }
 }
 
 public static class CreatureAiTable
 {
-    private sealed record Data(Dictionary<uint, CreatureAi> Creatures, (float Input, float Output)[] DamageLut);
+    private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness, (float Input, float Output)[] DamageLut);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
-        var data = new Data([], []);
+        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), []);
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
@@ -57,13 +172,13 @@ public static class CreatureAiTable
                         DamageLut = lut.Split(',').Select(point => point.Split(':')).Select(point => (Number(point[0]), Number(point[1]))).ToArray()
                     };
                     break;
-                case ["creature", var name, ..] when parts.Length == 17:
-                    data.Creatures[Util.ComputeCrc32(name)] = new CreatureAi(
-                        Number(parts[2]), Number(parts[3]), Number(parts[4]),
-                        Number(parts[5]), Number(parts[6]), Number(parts[7]), Number(parts[8]), Number(parts[9]),
-                        Number(parts[10]), Number(parts[11]),
-                        Enum.Parse<AiReaction>(parts[12]), Enum.Parse<AiReaction>(parts[13]), Enum.Parse<AiReaction>(parts[14]),
-                        Number(parts[15]), Number(parts[16]), []);
+                case ["loudness", var sensoryEvent, var loudness]:
+                    data.Loudness[sensoryEvent] = Enum.Parse<AiLoudness>(loudness);
+                    break;
+                case ["creature", var name, ..]:
+                    data.Creatures[Util.ComputeCrc32(name)] = new CreatureAi(name, parts[2..]
+                        .Select(field => field.Split('=', 2))
+                        .ToDictionary(field => field[0], field => field[1]));
                     break;
                 case ["ability", var owner, var action, var properties, ..] when parts.Length == 11
                     && data.Creatures.TryGetValue(Util.ComputeCrc32(owner), out var creature):
@@ -80,6 +195,9 @@ public static class CreatureAiTable
 
     public static bool TryGet(string entityName, out CreatureAi creature)
         => Table.Value.Creatures.TryGetValue(Util.ComputeCrc32(entityName), out creature!);
+
+    public static bool TryGetLoudness(string sensoryEvent, out AiLoudness loudness)
+        => Table.Value.Loudness.TryGetValue(sensoryEvent, out loudness);
 
     public static (float Input, float Output)[] DamageLut => Table.Value.DamageLut;
 }

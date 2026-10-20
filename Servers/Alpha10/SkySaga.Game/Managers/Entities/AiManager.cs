@@ -8,7 +8,12 @@ public class AiManager
     private static readonly uint DefaultPerformerKey = Util.ComputeCrc32("Default Performer");
 
     private const byte StateIdle = 0;
+    private const byte StateWalk = 3;
     private const byte StateRun = 4;
+    private const byte StateSprint = 5;
+    private const byte StateSwim = 6;
+    private const byte MentalNormal = 0;
+    private const byte MentalSleep = 3;
     private const float DirectionScale = 64f;
     private const float InputSpeedScale = 8f;
     private const string MeleeTag = "ActionMelee";
@@ -16,7 +21,16 @@ public class AiManager
     private const string LostTag = "EmoteLost";
     private const string VictoryTag = "EmoteVictory";
 
+    private static readonly Dictionary<byte, string> Footsteps = new()
+    {
+        [StateWalk] = "WalkingFootsteps",
+        [StateRun] = "RunningFootsteps",
+        [StateSprint] = "SprintingFootsteps",
+        [StateSwim] = "Swim"
+    };
+
     private static readonly Dictionary<int, Brain> Brains = [];
+    private static readonly List<Sound> Sounds = [];
 
     private readonly IWorldManager _worldManager;
     private readonly PlayerConnectionManager _playerConnectionManager;
@@ -24,14 +38,21 @@ public class AiManager
 
     private DateTime _lastUpdate = DateTime.UtcNow;
 
+    private readonly record struct Sound(int SourceId, Vector3 Position, string Event);
+
     private sealed class Brain
     {
         public required float GroundOffset;
+        public required bool CanSleep;
         public int TargetId;
         public AiReaction Mode;
         public DateTime HuntUntil;
         public DateTime NextAttack;
         public Attack? Current;
+        public DateTime IdleSince;
+        public DateTime? SleepAt;
+        public DateTime? AsleepUntil;
+        public Vector3? BackOffDirection;
     }
 
     private sealed class Attack
@@ -53,12 +74,20 @@ public class AiManager
         if (!Brains.TryGetValue(creature.Id, out var brain) || !CreatureAiTable.TryGet(creature.Name, out var ai))
             return;
 
+        Wake(creature, brain, DateTime.UtcNow);
+
         if (ai.OnHit is not (AiReaction.Aggressive or AiReaction.Scared))
             return;
 
         brain.TargetId = attacker.Id;
         brain.Mode = ai.OnHit;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
+    }
+
+    public static void Hear(Entity source, string sensoryEvent)
+    {
+        if (Combat.PositionOf(source) is Vector3 position)
+            Sounds.Add(new Sound(source.Id, position, sensoryEvent));
     }
 
     public void Tick()
@@ -80,6 +109,15 @@ public class AiManager
             .Where(player => player.TryGetComponent<ClientHealthComponent>(out var health) && !health.IsDead && Combat.PositionOf(player) is not null)
             .ToList();
 
+        foreach (var player in players)
+            if (player.TryGetComponent<ClientCharacterStateComponent>(out var state) && Footsteps.TryGetValue(state.CharacterStateId, out var footsteps))
+                Hear(player, footsteps);
+
+        var sounds = Sounds.ToList();
+        Sounds.Clear();
+
+        var timeOfDay = TimeOfDay();
+
         foreach (var entity in _worldManager.EntityManager.Entities.ToList())
         {
             if (!entity.TryGetComponent<ClientEnemyAiComponent>(out var component)
@@ -88,7 +126,12 @@ public class AiManager
                 continue;
 
             if (!Brains.TryGetValue(entity.Id, out var brain))
-                Brains[entity.Id] = brain = new Brain { GroundOffset = transform.Position.Y - GroundTop(transform.Position) };
+                Brains[entity.Id] = brain = new Brain
+                {
+                    GroundOffset = transform.Position.Y - GroundTop(transform.Position),
+                    CanSleep = !entity.TryGetComponent<CharacterStateComponent>(out var initial) || initial.CharacterMentalStateId == MentalNormal,
+                    IdleSince = now
+                };
 
             if (entity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead || Knockback.IsActive(entity.Id))
             {
@@ -97,12 +140,16 @@ public class AiManager
                 continue;
             }
 
-            Think(entity, component, transform, ai, brain, players, now, delta);
+            if (brain.TargetId != 0 && ai.RunFromHealth > 0 && health is not null && health.MaxHP > 0
+                && (health.SyncedFullHPValues ?? health.MaxHP) < ai.RunFromHealth * health.MaxHP)
+                brain.Mode = AiReaction.Scared;
+
+            Think(entity, component, transform, ai, brain, players, sounds, timeOfDay, now, delta);
         }
     }
 
     private void Think(Entity entity, ClientEnemyAiComponent component, TransformComponent transform, CreatureAi ai, Brain brain,
-        List<Entity> players, DateTime now, float delta)
+        List<Entity> players, List<Sound> sounds, float timeOfDay, DateTime now, float delta)
     {
         if (brain.Current is Attack attack)
         {
@@ -126,7 +173,12 @@ public class AiManager
             brain.Current = null;
 
             if (attack.Ability.HasTag(MeleeTag))
+            {
                 brain.NextAttack = now.AddSeconds(ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime));
+                brain.BackOffDirection = ai.BackOff is null || TargetPosition(brain, players) is not Vector3 from
+                    ? null
+                    : BackOffDirection(ai, Horizontal(transform.Position - from));
+            }
         }
 
         if (brain.TargetId != 0 && !players.Any(player => player.Id == brain.TargetId)
@@ -134,14 +186,24 @@ public class AiManager
             && fallen.TryGetComponent<ClientHealthComponent>(out var fallenHealth) && fallenHealth.IsDead)
         {
             var aggressive = brain.Mode == AiReaction.Aggressive;
-            Forget(component, brain);
+            Forget(component, brain, now);
 
             if (aggressive && Emote(entity, transform, ai, brain, VictoryTag, 0, now))
                 return;
         }
 
+        if (brain.AsleepUntil is DateTime asleepUntil)
+        {
+            if (now >= asleepUntil || players.Any(player => Distance(player, transform) <= ai.WakeDistance))
+                Wake(entity, brain, now);
+            else if (Heard(transform, ai, brain, sounds, ai.SleepHearingRanges, now) is null)
+                return;
+            else
+                Wake(entity, brain, now);
+        }
+
         var hadTarget = brain.TargetId != 0;
-        var target = Target(transform, ai, brain, players, now);
+        var target = Target(transform, ai, brain, players, now) ?? Heard(transform, ai, brain, sounds, ai.HearingRanges, now);
 
         component.TargetEntityId = target?.Id ?? 0;
 
@@ -150,10 +212,18 @@ public class AiManager
             Stop(entity);
 
             if (hadTarget)
+            {
+                brain.IdleSince = now;
+                brain.SleepAt = null;
                 Emote(entity, transform, ai, brain, LostTag, ai.LostTime, now);
+                return;
+            }
 
+            Rest(entity, ai, brain, timeOfDay, now);
             return;
         }
+
+        brain.SleepAt = null;
 
         var offset = Horizontal(targetPosition - transform.Position);
         var distance = offset.Length();
@@ -169,8 +239,25 @@ public class AiManager
 
         if (brain.Mode == AiReaction.Scared)
         {
-            Move(entity, transform, ai, brain, -toTarget, ai.RunSpeed, delta);
+            Move(entity, transform, ai, brain, -toTarget, ai.RunSpeed, StateRun, delta);
             return;
+        }
+
+        var ready = now >= brain.NextAttack;
+
+        if (brain.BackOffDirection is Vector3 away)
+        {
+            if (!ready && distance < ai.NearRangeMin)
+            {
+                Move(entity, transform, ai, brain, away, ai.Speed(ai.BackOff!), State(ai.BackOff!), delta);
+
+                if (ai.BackOffLookAtTarget)
+                    Face(transform, toTarget);
+
+                return;
+            }
+
+            brain.BackOffDirection = null;
         }
 
         var melee = ai.Tagged(MeleeTag).ToList();
@@ -186,16 +273,105 @@ public class AiManager
 
         if (inRange.Count == 0)
         {
-            Move(entity, transform, ai, brain, toTarget, ai.RunSpeed, delta);
+            var movement = ready ? ai.ToAttack : ai.ToTarget;
+            Move(entity, transform, ai, brain, toTarget, ai.Speed(movement), State(movement), delta);
             return;
         }
 
         Stop(entity);
         Face(transform, toTarget);
 
-        if (now >= brain.NextAttack)
+        if (ready)
             Perform(entity, transform, brain, inRange[_random.Next(inRange.Count)], toTarget, 0, now);
     }
+
+    private void Rest(Entity entity, CreatureAi ai, Brain brain, float timeOfDay, DateTime now)
+    {
+        var sleep = ai.SleepAt(timeOfDay);
+
+        if (!brain.CanSleep || !sleep.CanSleep)
+        {
+            brain.SleepAt = null;
+            return;
+        }
+
+        brain.SleepAt ??= brain.IdleSince.AddSeconds(Between(sleep.IdleMin, sleep.IdleMax));
+
+        if (now < brain.SleepAt)
+            return;
+
+        brain.AsleepUntil = now.AddSeconds(Between(sleep.SleepMin, sleep.SleepMax));
+        brain.SleepAt = null;
+
+        if (entity.TryGetComponent<CharacterStateComponent>(out var state))
+            state.CharacterMentalStateId = MentalSleep;
+
+        Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} falls asleep until {brain.AsleepUntil:HH:mm:ss}");
+    }
+
+    private static void Wake(Entity entity, Brain brain, DateTime now)
+    {
+        if (brain.AsleepUntil is null)
+            return;
+
+        brain.AsleepUntil = null;
+        brain.IdleSince = now;
+
+        if (entity.TryGetComponent<CharacterStateComponent>(out var state))
+            state.CharacterMentalStateId = MentalNormal;
+
+        Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} wakes up");
+    }
+
+    private Entity? Heard(TransformComponent transform, CreatureAi ai, Brain brain, List<Sound> sounds, float[] ranges, DateTime now)
+    {
+        if (ai.OnHearing is not (AiReaction.Aggressive or AiReaction.Scared))
+            return null;
+
+        foreach (var sound in sounds)
+        {
+            if (!ai.HearingEvents.Contains(sound.Event)
+                || !CreatureAiTable.TryGetLoudness(sound.Event, out var loudness)
+                || Vector3.Distance(sound.Position, transform.Position) > ranges[(int)loudness]
+                || !_worldManager.EntityManager.TryGetEntity(sound.SourceId, out var source)
+                || !source.TryGetComponent<ClientPlayerAspectsComponent>(out _))
+                continue;
+
+            brain.TargetId = source.Id;
+            brain.Mode = ai.OnHearing;
+            brain.HuntUntil = now;
+
+            Console.WriteLine($"[AiManager] {ai.Name} hears {sound.Event} ({loudness}) of {source.Id} at {Vector3.Distance(sound.Position, transform.Position):0.#} m: {ai.OnHearing}");
+
+            return source;
+        }
+
+        return null;
+    }
+
+    private Vector3 BackOffDirection(CreatureAi ai, Vector3 away)
+    {
+        if (away.LengthSquared() < 0.0001f)
+            return Vector3.Zero;
+
+        var angle = Between(ai.BackOffMinAngle, ai.BackOffMaxAngle) * (_random.Next(2) == 0 ? -1 : 1) * MathF.PI / 180f;
+        var direction = Vector3.Normalize(away);
+        var (sin, cos) = MathF.SinCos(angle);
+
+        return new Vector3(direction.X * cos - direction.Z * sin, 0f, direction.X * sin + direction.Z * cos);
+    }
+
+    private float Between(float min, float max) => min + (float)_random.NextDouble() * (max - min);
+
+    private static byte State(string movementType) => movementType switch
+    {
+        "Walk" => StateWalk,
+        "Sprint" => StateSprint,
+        _ => StateRun
+    };
+
+    private static float Distance(Entity player, TransformComponent transform)
+        => Vector3.Distance(Combat.PositionOf(player)!.Value, transform.Position);
 
     private bool Emote(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, string tag, float time, DateTime now)
     {
@@ -208,10 +384,12 @@ public class AiManager
         return true;
     }
 
-    private static void Forget(ClientEnemyAiComponent component, Brain brain)
+    private static void Forget(ClientEnemyAiComponent component, Brain brain, DateTime now)
     {
         brain.TargetId = 0;
         brain.Mode = AiReaction.Ignore;
+        brain.BackOffDirection = null;
+        brain.IdleSince = now;
         component.TargetEntityId = 0;
     }
 
@@ -232,6 +410,7 @@ public class AiManager
 
             brain.TargetId = 0;
             brain.Mode = AiReaction.Ignore;
+            brain.BackOffDirection = null;
             return null;
         }
 
@@ -255,6 +434,8 @@ public class AiManager
             brain.TargetId = player.Id;
             brain.Mode = reaction;
             brain.HuntUntil = now;
+
+            Console.WriteLine($"[AiManager] {ai.Name} {(distance <= ai.CloseDistance && angle <= ai.CloseAngle / 2 ? "notices close" : "sees")} {player.Id} at {distance:0.#} m, {angle:0} deg: {reaction}");
 
             return player;
         }
@@ -287,7 +468,7 @@ public class AiManager
         Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} performs {ability.Action} ({string.Join(",", ability.Tags)}) target {brain.TargetId}");
     }
 
-    private void Move(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 direction, float speed, float delta)
+    private void Move(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 direction, float speed, byte state, float delta)
     {
         Face(transform, direction);
 
@@ -302,7 +483,7 @@ public class AiManager
 
         transform.Position = new Vector3(next.X, ground + brain.GroundOffset, next.Z);
 
-        SetMovement(entity, direction, speed, StateRun);
+        SetMovement(entity, direction, speed, state);
     }
 
     private static void Stop(Entity entity) => SetMovement(entity, Vector3.Zero, 0f, StateIdle);
@@ -329,6 +510,15 @@ public class AiManager
     {
         var yaw = yawDegrees * MathF.PI / 180f;
         return new Vector3(MathF.Sin(yaw), 0f, MathF.Cos(yaw));
+    }
+
+    private float TimeOfDay()
+    {
+        var timeOfDay = _worldManager.EntityManager.Entities
+            .Select(entity => entity.TryGetComponent<ClientTimeOfDayComponent>(out var component) ? component : null)
+            .FirstOrDefault(component => component is not null);
+
+        return timeOfDay is null ? 0f : timeOfDay.CurrentTime(RakNet.RakNet.GetTime()) / (float)TimeOfDayComponent.DayLength;
     }
 
     private float GroundTop(Vector3 position)
