@@ -32,4 +32,6 @@ public class WorldMapEntityData
     public int Y { get; set; }
     public int Z { get; set; }
     public List<string>? Items { get; set; }
+    public string? MentalState { get; set; }
+    public float? Yaw { get; set; }
 }

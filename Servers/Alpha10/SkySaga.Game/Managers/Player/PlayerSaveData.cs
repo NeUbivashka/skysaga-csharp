@@ -14,6 +14,7 @@ public class PlayerSaveData
     public float PositionY { get; set; }
     public float PositionZ { get; set; }
     public float YawDegrees { get; set; }
+    public float LookPitch { get; set; }
 
     public SettingsEntry? Settings { get; set; }
 

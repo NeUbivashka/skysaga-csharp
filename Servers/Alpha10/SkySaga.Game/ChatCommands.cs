@@ -11,6 +11,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
     private const float FallbackDistance = 4f;
     private const int ChunkSize = 32;
     private const int MaxSpawnCount = 20;
+    private const float DefaultMentalStateRadius = 8f;
 
     public string Execute(PlayerConnection connection, string text)
     {
@@ -30,12 +31,13 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
             "time" => Time(args),
             "xp" => Experience(connection, args),
             "recipe" => LearnRecipe(connection, args),
+            "mental" => MentalState(connection, args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius]";
 
     private static string LearnRecipe(PlayerConnection connection, string[] args)
     {
@@ -53,6 +55,34 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
         book.RecipeList = [.. book.RecipeList, .. learned.Select(entry => new KnownRecipe(entry.WireIndex, entry.Variants))];
 
         return all ? $"Learned {learned.Count} recipes." : $"Learned {recipes[0].Name}.";
+    }
+
+    private string MentalState(PlayerConnection connection, string[] args)
+    {
+        var state = args.Length < 2 ? -1 : Array.FindIndex(CharacterStateComponent.MentalStates, name => name.Equals(args[1], StringComparison.OrdinalIgnoreCase));
+        var radius = DefaultMentalStateRadius;
+
+        if (state < 0 || args.Length > 2 && !float.TryParse(args[2], CultureInfo.InvariantCulture, out radius))
+            return $"Usage: !mental <{string.Join(" | ", CharacterStateComponent.MentalStates)}> [radius]";
+
+        if (Combat.PositionOf(connection.PlayerEntity) is not Vector3 center)
+            return "The player has no position.";
+
+        var changed = 0;
+
+        foreach (var entity in worldManager.EntityManager.Entities.ToList())
+        {
+            if (entity.Id == connection.PlayerEntity.Id
+                || !entity.TryGetComponent<CharacterStateComponent>(out var characterState)
+                || Combat.PositionOf(entity) is not Vector3 position
+                || Vector3.Distance(center, position) > radius)
+                continue;
+
+            characterState.CharacterMentalStateId = (byte)state;
+            changed++;
+        }
+
+        return $"{CharacterStateComponent.MentalStates[state]} set on {changed} creatures.";
     }
 
     private static string Experience(PlayerConnection connection, string[] args)

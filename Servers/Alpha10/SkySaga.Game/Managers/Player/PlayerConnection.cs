@@ -93,7 +93,12 @@ public class PlayerConnection
         if (!IsPlayerInitialized)
             return;
 
-        PlayerSaveStore.Save(_playerInitializer.CaptureSaveData(PlayerEntity));
+        var data = _playerInitializer.CaptureSaveData(PlayerEntity);
+
+        data.YawDegrees = LookYaw;
+        data.LookPitch = LookPitch;
+
+        PlayerSaveStore.Save(data);
     }
 
     public bool ProcessPacket(PacketId packetId, BitStream bitStream)

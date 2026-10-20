@@ -41,6 +41,11 @@ REFERENCE_CHEST_SLOTS = 55 - 9
 REFERENCE_CHEST_SPACING = 2
 REFERENCE_CHEST_BUILDS = {"36731"}
 ROW_SPACING = 6
+MENTAL_STATE_CREATURE = "Forest_Chicken"
+MENTAL_STATE_NEIGHBOUR = "Forest_Skitterling_Fighter_0"
+MENTAL_STATES = ["Stun", "Dazed", "Sleep", "Resting", "Immobilised", "Vulnerable"]
+MENTAL_STATE_SPACING = 1
+FACING_START_YAW = 180
 COLUMN_SPACING = 4
 
 
@@ -96,6 +101,17 @@ def reference_chests(z):
             for i, batch in enumerate(batches)]
 
 
+def mental_state_row(entities):
+    by_name = {e["name"]: e for e in entities}
+    creature, neighbour = by_name.get(MENTAL_STATE_CREATURE), by_name.get(MENTAL_STATE_NEIGHBOUR)
+    if creature is None or neighbour is None:
+        return []
+    creature["x"] = neighbour["x"] - 2
+    return [{"name": MENTAL_STATE_CREATURE, "x": creature["x"] - (i + 1) * MENTAL_STATE_SPACING, "y": GROUND_Y,
+             "z": creature["z"], "yaw": FACING_START_YAW, "mentalState": state}
+            for i, state in enumerate(MENTAL_STATES)]
+
+
 def main():
     all_types = "--all" in sys.argv
     sx, sz = SIZE_CHUNKS[0] * 32, SIZE_CHUNKS[2] * 32
@@ -129,8 +145,11 @@ def main():
             entities.append({"name": name,
                              "x": EDGE + (i % per_row) * 6,
                              "y": GROUND_Y,
-                             "z": gallery_end_z + 8 + (i // per_row) * 6})
+                             "z": gallery_end_z + 8 + (i // per_row) * 6,
+                             "yaw": FACING_START_YAW})
     creatures = entities[1:]
+    if "--broken" not in sys.argv and not all_types:
+        entities += mental_state_row(creatures)
     if BUILD in REFERENCE_CHEST_BUILDS:
         entities += reference_chests(gallery_end_z + 4)
     entities.append({"name": "Airship",

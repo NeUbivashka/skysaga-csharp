@@ -16,7 +16,8 @@ public static class ClientReadyToPlay
         if (connection.PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform))
         {
             playerSpawned.Position = transform.Position;
-            playerSpawned.YawDegrees = transform.YawDegrees;
+            playerSpawned.YawDegrees = connection.LookYaw;
+            playerSpawned.PitchDegrees = connection.LookPitch;
         }
 
         connection.Send(playerSpawned);

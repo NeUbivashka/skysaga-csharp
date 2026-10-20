@@ -115,7 +115,7 @@ public static class Combat
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} knocked back {travel:0.##} m (distance {distance:0.##}, strength {strength:0.##}, resistance {resistance:0.##}, pitch {attack.KnockbackPitch:0.##})");
     }
 
-    private static Vector3? PositionOf(Entity entity)
+    internal static Vector3? PositionOf(Entity entity)
     {
         if (entity.TryGetComponent<SmoothedTransformComponent>(out var smoothed))
             return smoothed.Position;

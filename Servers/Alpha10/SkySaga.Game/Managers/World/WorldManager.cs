@@ -39,7 +39,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private Dictionary<Guid, float[]> _checkpoints = LoadCheckpoints();
     private readonly object _devicesLock = new();
 
-    private readonly Dictionary<int, Vector3> _mapCreatureSpawns = [];
+    private readonly Dictionary<int, (Vector3 Position, float? Yaw)> _mapCreatureSpawns = [];
 
     private const int LandingSearchRadius = 16;
 
@@ -551,6 +551,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (spec.Items is { Count: > 0 } && creature.Count > 0)
                 FillInventory(creature[^1], spec.Items);
 
+            if (spec.MentalState is { Length: > 0 } && creature.Count > 0)
+                SetMentalState(creature[^1], spec.MentalState);
+
+            if (spec.Yaw is float yaw && creature.Count > 0)
+                SetYaw(creature[^1], yaw);
+
             if (creature.Count > 0 && DeviceTable.TryGetByEntity(spec.Name, out var linkedDevice))
             {
                 FillLinkedVoxels(creature[^1], linkedDevice);
@@ -568,7 +574,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 continue;
             }
 
-            _mapCreatureSpawns[creature[^1].Id] = position;
+            _mapCreatureSpawns[creature[^1].Id] = (position, spec.Yaw);
 
             spawned++;
         }
@@ -591,15 +597,45 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     public List<Entity> RespawnMapCreature(Entity creature)
     {
-        if (!_mapCreatureSpawns.Remove(creature.Id, out var position))
+        if (!_mapCreatureSpawns.Remove(creature.Id, out var spawn))
             return [];
 
-        var entities = SpawnCreature(creature.Name, position);
+        var entities = SpawnCreature(creature.Name, spawn.Position);
 
         if (entities.Count > 0)
-            _mapCreatureSpawns[entities[^1].Id] = position;
+        {
+            _mapCreatureSpawns[entities[^1].Id] = spawn;
+
+            if (spawn.Yaw is float yaw)
+                SetYaw(entities[^1], yaw);
+
+            if (creature.TryGetComponent<CharacterStateComponent>(out var oldState)
+                && entities[^1].TryGetComponent<CharacterStateComponent>(out var newState))
+                newState.CharacterMentalStateId = oldState.CharacterMentalStateId;
+        }
 
         return entities;
+    }
+
+    private static void SetYaw(Entity entity, float yaw)
+    {
+        if (entity.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransform))
+            smoothedTransform.YawDegrees = yaw;
+        else if (entity.TryGetComponent<TransformComponent>(out var transform))
+            transform.YawDegrees = yaw;
+    }
+
+    private static void SetMentalState(Entity creature, string mentalState)
+    {
+        var state = Array.FindIndex(CharacterStateComponent.MentalStates, name => name.Equals(mentalState, StringComparison.OrdinalIgnoreCase));
+
+        if (state < 0 || !creature.TryGetComponent<CharacterStateComponent>(out var characterState))
+        {
+            Console.WriteLine($"[WorldManager] {creature.Name}#{creature.Id}: mental state '{mentalState}' not set");
+            return;
+        }
+
+        characterState.CharacterMentalStateId = (byte)state;
     }
 
     public List<Entity> SpawnCreature(string name, Vector3 position)
@@ -668,6 +704,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
         ArgumentNullException.ThrowIfNull(playerInitializer);
 
         playerInitializer.InitializePlayer(player);
+
+        if (player.TryGetComponent<SmoothedTransformComponent>(out var transform))
+            connection.LookYaw = transform.YawDegrees;
+
+        connection.LookPitch = PlayerSaveStore.Load()?.LookPitch ?? 0f;
 
         connection.IsPlayerInitialized = true;
 
