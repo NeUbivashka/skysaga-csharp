@@ -368,7 +368,7 @@ public class AiManager
 
     private void Wander(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, DateTime now, float delta)
     {
-        if (!brain.Free || brain.Spawn.Roam <= 0 || ai.WalkSpeed <= 0)
+        if (brain.Spawn.Roam <= 0 || ai.WalkSpeed <= 0)
             return;
 
         if (brain.WanderTarget is null)
