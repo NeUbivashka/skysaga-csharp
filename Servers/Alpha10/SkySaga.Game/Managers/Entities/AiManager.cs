@@ -174,7 +174,7 @@ public class AiManager
                 attack.Resolved = true;
 
                 if (players.FirstOrDefault(player => player.Id == brain.TargetId) is { } victim
-                    && Horizontal(Combat.PositionOf(victim)!.Value - transform.Position).Length() <= attack.Ability.Reach)
+                    && Vector3.Distance(Combat.PositionOf(victim)!.Value, transform.Position) <= attack.Ability.Reach)
                     Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
             }
 
@@ -308,11 +308,15 @@ public class AiManager
             return;
         }
 
-        var inRange = melee.Where(ability => distance <= ability.Reach).ToList();
+        var reach = Vector3.Distance(targetPosition, transform.Position);
+        var inRange = melee.Where(ability => reach <= ability.Reach).ToList();
+
+        if (inRange.Count == 0 && melee.Any(ability => distance <= ability.Reach))
+            brain.Blocked = true;
 
         if (inRange.Count == 0 && brain.Blocked)
         {
-            var projectiles = ai.Tagged(ProjectileTag).Where(ability => distance <= ability.Reach).ToList();
+            var projectiles = ai.Tagged(ProjectileTag).Where(ability => reach <= ability.Reach).ToList();
 
             Stop(entity);
             Face(transform, toTarget);
