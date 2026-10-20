@@ -119,6 +119,8 @@ const STRINGS = {
     mapSizeCustom: "Not in GeoData",
     mapSizeTitle: "Chunk sizes from GeoData MapSizes. Other sizes stay within 32 × 7 × 32, but the client gets no matching map size.",
     entityItems: "Items",
+    entityYaw: "Yaw",
+    entityYawHint: "Facing in degrees: 0 faces +Z, 90 faces +X, 180 faces -Z",
     entityItemsHint: "Item names, one per line (chest contents)",
     applyEdits: "Apply server edits",
     applyEditsTitle: "Apply Data/Saves/voxel_edits_<map>.json from the server: [x, y, z, block], 255 is air",
@@ -959,6 +961,8 @@ function TerrainEditor() {
           y: e.y,
           z: e.z,
           items: Array.isArray(e.items) ? e.items.map(String) : [],
+          yaw: Number.isFinite(e.yaw) ? e.yaw : 0,
+          mentalState: typeof e.mentalState === "string" ? e.mentalState : undefined,
         }))
       );
     } else {
@@ -1305,9 +1309,16 @@ function TerrainEditor() {
       y,
       z,
       items: [],
+      yaw: 0,
     };
     setEntityInstances((prev) => [...prev, instance]);
     draw();
+    scheduleSave();
+  }
+
+  function setEntityYaw(id, value) {
+    const yaw = ((Math.round(Number(value) || 0) % 360) + 360) % 360;
+    setEntityInstances((prev) => prev.map((e) => (e.id === id ? { ...e, yaw } : e)));
     scheduleSave();
   }
 
@@ -3921,11 +3932,15 @@ function TerrainEditor() {
       biomeName: biomeName,
       gameMode: gameMode,
       voxels: voxels,
-      entities: entityInstancesRef.current.map((e) =>
-        e.items && e.items.length
-          ? { name: e.name, x: e.x, y: e.y, z: e.z, items: e.items }
-          : { name: e.name, x: e.x, y: e.y, z: e.z }
-      ),
+      entities: entityInstancesRef.current.map((e) => ({
+        name: e.name,
+        x: e.x,
+        y: e.y,
+        z: e.z,
+        ...(e.items && e.items.length ? { items: e.items } : {}),
+        ...(e.yaw ? { yaw: e.yaw } : {}),
+        ...(e.mentalState ? { mentalState: e.mentalState } : {}),
+      })),
     };
   }
 
@@ -6826,6 +6841,20 @@ function TerrainEditor() {
                   <span style={{ fontSize: 11, color: "#8a91a3" }}>
                     {inst.x}, {inst.y}, {inst.z}
                   </span>
+                  <label style={{ fontSize: 11, color: "#8a91a3", display: "flex", alignItems: "center", gap: 4 }} title={t.entityYawHint}>
+                    {t.entityYaw}
+                    <input
+                      type="number"
+                      step={15}
+                      min={0}
+                      max={345}
+                      key={inst.id + ":" + (inst.yaw || 0)}
+                      defaultValue={inst.yaw || 0}
+                      onBlur={(e) => setEntityYaw(inst.id, e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                      style={{ ...inputStyle, width: 56, fontSize: 11 }}
+                    />
+                  </label>
                   <button
                     style={{ ...actionBtn, background: openItemsId === inst.id ? "#22314d" : actionBtn.background }}
                     onClick={() => setOpenItemsId(openItemsId === inst.id ? null : inst.id)}
