@@ -7,9 +7,9 @@ public class EntityPerformedAbility : ISerializablePacket
     private const uint SlotMax = 8;
 
     public int EntityId;
-    public int AbilityId;
-    public uint? Origin;
-    public uint? Target;
+    public int ItemId;
+    public uint? PerformerKey;
+    public uint? PropertiesCrc;
     public Vector3 Position;
 
     public Vector3Int Direction;
@@ -18,7 +18,7 @@ public class EntityPerformedAbility : ISerializablePacket
 
     public AbilityTarget Impact = new();
 
-    public uint? Charge;
+    public uint? ActionCrc;
     public bool Flag;
     public uint Slot;
 
@@ -28,10 +28,10 @@ public class EntityPerformedAbility : ISerializablePacket
         bitStream.WritePacketId(PacketId.EntityPerformedAbility);
 
         InventoryItemRef.WriteUInt32(bitStream, (uint)EntityId);
-        InventoryItemRef.WriteUInt32(bitStream, (uint)AbilityId);
+        InventoryItemRef.WriteUInt32(bitStream, (uint)ItemId);
 
-        InventoryItemRef.WriteOptionalUInt32(bitStream, Origin);
-        InventoryItemRef.WriteOptionalUInt32(bitStream, Target);
+        InventoryItemRef.WriteOptionalUInt32(bitStream, PerformerKey);
+        InventoryItemRef.WriteOptionalUInt32(bitStream, PropertiesCrc);
 
         AbilityTarget.WriteHorizontal(bitStream, Position.X);
         AbilityTarget.WriteVertical(bitStream, Position.Y);
@@ -46,7 +46,7 @@ public class EntityPerformedAbility : ISerializablePacket
 
         Impact.Encode(bitStream);
 
-        InventoryItemRef.WriteOptionalUInt32(bitStream, Charge);
+        InventoryItemRef.WriteOptionalUInt32(bitStream, ActionCrc);
 
         bitStream.Write(Flag);
 

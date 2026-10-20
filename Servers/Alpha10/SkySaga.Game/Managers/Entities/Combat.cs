@@ -78,7 +78,10 @@ public static class Combat
         Console.WriteLine($"[Combat] player {player.Id} hit {target.Name}#{target.Id} with {attacks[0].EquippedAction}/{string.Join("+", attacks.Select(a => a.EntityAction))}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
 
         if (!health.IsDead && target.TryGetComponent<ClientEnemyAiComponent>(out _))
+        {
             KnockBack(connection, player, target, attacks, usedItemCrc);
+            AiManager.Hit(target, player);
+        }
 
         if (!health.IsDead)
             return;
@@ -101,6 +104,35 @@ public static class Combat
         JobExperience.Grinder(connection, "Grinder_Kill", targetCrc: Util.ComputeCrc32(target.Name));
 
         ResourcePickups.SpawnCreatureLoot(connection, target);
+    }
+
+    public static void CreatureAttack(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability)
+    {
+        if (!player.TryGetComponent<ClientHealthComponent>(out var health) || health.IsDead)
+            return;
+
+        var weaponLevel = CharacterStats(creature).WeaponLevel + ActionStatTable.Get(ability.Action).WeaponLevelModifier;
+        var armourLevel = CharacterStats(player).ArmourLevel + EquipmentStats(entityManager, player).ArmourLevel;
+        var damage = (int)MathF.Round(Lookup(CreatureAiTable.DamageLut, weaponLevel - armourLevel));
+
+        health.Damage(damage);
+
+        connections.BroadcastToAll(new HitOccurred
+        {
+            SourceEntityId = creature.Id,
+            TargetEntityId = player.Id,
+            Amount = (uint)damage
+        });
+
+        connections.BroadcastToAll(new CombatResult
+        {
+            AttackerEntityId = creature.Id,
+            VictimEntityId = player.Id,
+            Position = PositionOf(player) ?? Vector3.Zero,
+            Damage = (uint)damage
+        });
+
+        Console.WriteLine($"[Combat] {creature.Name}#{creature.Id} hit player {player.Id} with {ability.Action}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
     }
 
     private static void KnockBack(PlayerConnection connection, Entity player, Entity target, IReadOnlyList<ListAttack> attacks, uint? usedItemCrc)

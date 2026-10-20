@@ -15,7 +15,7 @@ EDGE = 8
 SMALL_SETS = {
     "36731": [
         "HUB_NPC_Trader", "HUB_NPC_Gladiator", "HUB_NPC_Explorer", "HUB_NPC_Crafter",
-        "Forest_Chicken", "Forest_Skitterling_Fighter_0", "Forest_Human_Fighter_0",
+        "Forest_Chicken", "Forest_Skitterling_Fighter_0",
     ],
     "38328": [
         "HUB_NPC_ExplorerShop", "HUB_NPC_FoodShop",
@@ -46,6 +46,8 @@ MENTAL_STATE_NEIGHBOUR = "Forest_Skitterling_Fighter_0"
 MENTAL_STATES = ["Stun", "Dazed", "Sleep", "Resting", "Immobilised", "Vulnerable"]
 MENTAL_STATE_SPACING = 1
 FACING_START_YAW = 180
+HOSTILE_CREATURE = "Forest_Skitterling_Fighter_0"
+HOSTILE_DISTANCE = 20
 COLUMN_SPACING = 4
 
 
@@ -150,6 +152,9 @@ def main():
     creatures = entities[1:]
     if "--broken" not in sys.argv and not all_types:
         entities += mental_state_row(creatures)
+        for creature in creatures:
+            if creature["name"] == HOSTILE_CREATURE:
+                creature["z"] += HOSTILE_DISTANCE
     if BUILD in REFERENCE_CHEST_BUILDS:
         entities += reference_chests(gallery_end_z + 4)
     entities.append({"name": "Airship",
