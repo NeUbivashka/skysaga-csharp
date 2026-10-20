@@ -4,7 +4,6 @@ import os
 from targets import BUNDLE, GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "CreatureAi.txt")
 PLAYER_BLUEPRINT = "Player"
-MELEE_TAG = "ActionMelee"
 REACTIONS = ("OnSight", "OnCloseRange", "OnHit")
 
 
@@ -50,6 +49,7 @@ def main():
     abilities = by_name(geo["Abilities"])
     actions = by_name(geo["EquippedActions"])
     windows = by_name(geo["ActiveWindows"])
+    anim_states = by_name(geo["AIAnimStates"])
     default_time = geo["UseTimes"][0]["Time"]
     lut = geo["GlobalConstantsCombat"][0]["CreatureVersusPlayerDamage"]["ValueLookup"]
 
@@ -67,6 +67,7 @@ def main():
         persist = persistence.get(capability.get("AIPersistenceTrait", "").lower(), {})
         fight = fighting.get(capability.get("AIFightingAbility", "").lower(), {})
         attack_time = fight.get("AttackTime", {})
+        anim = anim_states.get(capability.get("AnimState", "").lower(), {})
         description = descriptions[player_relationship(tables, profile["RelationshipTable"]).lower()]
         reactions = [description["RelationshipProperty"][r]["Relationship"] for r in REACTIONS]
 
@@ -79,6 +80,7 @@ def main():
             f"{persist.get('HuntTimeAfterHitInSeconds', 0):g}",
             f"{attack_time.get('NextAttackMinTime', 0):g}", f"{attack_time.get('NextAttackMaxTime', 0):g}",
             *reactions,
+            f"{anim.get('AlertTime', 0):g}", f"{anim.get('LostTime', 0):g}",
         ]))
 
         ability = abilities.get((parameters.get("defaultactions", {}).get("value") or "").lower())
@@ -86,7 +88,7 @@ def main():
             action = actions.get(entry["Action"].lower())
             if not action:
                 continue
-            tags = {t["Value"] for t in action.get("TagList", {}).get("Values", [])}
+            tags = [t["Value"] for t in action.get("TagList", {}).get("Values", [])]
             action_properties = properties.get(action.get("PhysicalProperties", "").lower())
             window = windows.get(action.get("ActiveWindow", "").lower(), {"BeginFactor": 0.0, "EndFactor": 1.0})
             times = [stat(action_properties, f"UseTime{part}") * stat(creature, f"UseTime{part}") * default_time[part]["Value"]
@@ -96,7 +98,7 @@ def main():
                 f"{stat(action_properties, 'Reach') * stat(creature, 'Reach'):g}",
                 *(f"{t:g}" for t in times),
                 f"{window['BeginFactor']:g}", f"{window['EndFactor']:g}",
-                "1" if MELEE_TAG in tags else "0",
+                ",".join(tags) or "-",
             ]))
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:

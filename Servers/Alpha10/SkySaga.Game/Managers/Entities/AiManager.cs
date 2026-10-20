@@ -11,6 +11,10 @@ public class AiManager
     private const byte StateRun = 4;
     private const float DirectionScale = 64f;
     private const float InputSpeedScale = 8f;
+    private const string MeleeTag = "ActionMelee";
+    private const string AlertTag = "EmoteAlert";
+    private const string LostTag = "EmoteLost";
+    private const string VictoryTag = "EmoteVictory";
 
     private static readonly Dictionary<int, Brain> Brains = [];
 
@@ -100,21 +104,68 @@ public class AiManager
     private void Think(Entity entity, ClientEnemyAiComponent component, TransformComponent transform, CreatureAi ai, Brain brain,
         List<Entity> players, DateTime now, float delta)
     {
+        if (brain.Current is Attack attack)
+        {
+            Stop(entity);
+
+            if (TargetPosition(brain, players) is Vector3 position)
+                Face(transform, Horizontal(position - transform.Position));
+
+            if (attack.Ability.HasTag(MeleeTag) && !attack.Resolved && now >= attack.HitAt)
+            {
+                attack.Resolved = true;
+
+                if (players.FirstOrDefault(player => player.Id == brain.TargetId) is { } victim
+                    && Horizontal(Combat.PositionOf(victim)!.Value - transform.Position).Length() <= attack.Ability.Reach)
+                    Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
+            }
+
+            if (now < attack.EndsAt)
+                return;
+
+            brain.Current = null;
+
+            if (attack.Ability.HasTag(MeleeTag))
+                brain.NextAttack = now.AddSeconds(ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime));
+        }
+
+        if (brain.TargetId != 0 && !players.Any(player => player.Id == brain.TargetId)
+            && _worldManager.EntityManager.TryGetEntity(brain.TargetId, out var fallen)
+            && fallen.TryGetComponent<ClientHealthComponent>(out var fallenHealth) && fallenHealth.IsDead)
+        {
+            var aggressive = brain.Mode == AiReaction.Aggressive;
+            Forget(component, brain);
+
+            if (aggressive && Emote(entity, transform, ai, brain, VictoryTag, 0, now))
+                return;
+        }
+
+        var hadTarget = brain.TargetId != 0;
         var target = Target(transform, ai, brain, players, now);
 
         component.TargetEntityId = target?.Id ?? 0;
 
         if (target is null || Combat.PositionOf(target) is not Vector3 targetPosition)
         {
-            brain.Current = null;
             Stop(entity);
+
+            if (hadTarget)
+                Emote(entity, transform, ai, brain, LostTag, ai.LostTime, now);
+
             return;
         }
 
-        var offset = targetPosition - transform.Position;
-        offset.Y = 0f;
+        var offset = Horizontal(targetPosition - transform.Position);
         var distance = offset.Length();
         var toTarget = distance > 0.0001f ? offset / distance : Forward(transform.YawDegrees);
+
+        if (!hadTarget && brain.Mode == AiReaction.Aggressive)
+        {
+            Face(transform, toTarget);
+
+            if (Emote(entity, transform, ai, brain, AlertTag, ai.AlertTime, now))
+                return;
+        }
 
         if (brain.Mode == AiReaction.Scared)
         {
@@ -122,38 +173,18 @@ public class AiManager
             return;
         }
 
-        if (brain.Current is Attack attack)
-        {
-            Face(transform, toTarget);
-            Stop(entity);
+        var melee = ai.Tagged(MeleeTag).ToList();
 
-            if (!attack.Resolved && now >= attack.HitAt)
-            {
-                attack.Resolved = true;
-
-                if (distance <= attack.Ability.Reach)
-                    Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, target, attack.Ability);
-            }
-
-            if (now >= attack.EndsAt)
-            {
-                brain.Current = null;
-                brain.NextAttack = now.AddSeconds(ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime));
-            }
-
-            return;
-        }
-
-        if (ai.Abilities.FindIndex(a => a.Melee) is var index && index < 0)
+        if (melee.Count == 0)
         {
             Stop(entity);
             Face(transform, toTarget);
             return;
         }
 
-        var ability = ai.Abilities[index];
+        var inRange = melee.Where(ability => distance <= ability.Reach).ToList();
 
-        if (distance > ability.Reach)
+        if (inRange.Count == 0)
         {
             Move(entity, transform, ai, brain, toTarget, ai.RunSpeed, delta);
             return;
@@ -163,8 +194,31 @@ public class AiManager
         Face(transform, toTarget);
 
         if (now >= brain.NextAttack)
-            StartAttack(entity, transform, brain, ability, toTarget, now);
+            Perform(entity, transform, brain, inRange[_random.Next(inRange.Count)], toTarget, 0, now);
     }
+
+    private bool Emote(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, string tag, float time, DateTime now)
+    {
+        var emotes = ai.Tagged(tag).ToList();
+
+        if (emotes.Count == 0)
+            return false;
+
+        Perform(entity, transform, brain, emotes[_random.Next(emotes.Count)], Forward(transform.YawDegrees), time, now);
+        return true;
+    }
+
+    private static void Forget(ClientEnemyAiComponent component, Brain brain)
+    {
+        brain.TargetId = 0;
+        brain.Mode = AiReaction.Ignore;
+        component.TargetEntityId = 0;
+    }
+
+    private static Vector3? TargetPosition(Brain brain, List<Entity> players)
+        => players.FirstOrDefault(player => player.Id == brain.TargetId) is { } target ? Combat.PositionOf(target) : null;
+
+    private static Vector3 Horizontal(Vector3 value) => new(value.X, 0f, value.Z);
 
     private static Entity? Target(TransformComponent transform, CreatureAi ai, Brain brain, List<Entity> players, DateTime now)
     {
@@ -178,6 +232,7 @@ public class AiManager
 
             brain.TargetId = 0;
             brain.Mode = AiReaction.Ignore;
+            return null;
         }
 
         foreach (var player in players)
@@ -207,13 +262,13 @@ public class AiManager
         return null;
     }
 
-    private void StartAttack(Entity entity, TransformComponent transform, Brain brain, CreatureAbility ability, Vector3 direction, DateTime now)
+    private void Perform(Entity entity, TransformComponent transform, Brain brain, CreatureAbility ability, Vector3 direction, float time, DateTime now)
     {
         brain.Current = new Attack
         {
             Ability = ability,
             HitAt = now.AddSeconds(ability.HitTime),
-            EndsAt = now.AddSeconds(ability.Duration)
+            EndsAt = now.AddSeconds(time > 0 ? time : ability.Duration)
         };
 
         _playerConnectionManager.BroadcastToAll(new EntityPerformedAbility
@@ -229,7 +284,7 @@ public class AiManager
             Flag = true
         });
 
-        Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} performs {ability.Action} on {brain.TargetId}");
+        Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} performs {ability.Action} ({string.Join(",", ability.Tags)}) target {brain.TargetId}");
     }
 
     private void Move(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 direction, float speed, float delta)
