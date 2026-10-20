@@ -28,6 +28,12 @@ public class ClientChargeBarComponent : Component
         CurrentCharge = (uint)MathF.Round(_points * UnitsPerPoint);
     }
 
+    public void Empty()
+    {
+        _points = 0;
+        CurrentCharge = 0;
+    }
+
     public void Decay(DateTime now)
     {
         if (_points <= 0 || (now - _lastGainUtc).TotalSeconds < ChargeBarTable.PauseSeconds || (now - _lastDecayUtc).TotalSeconds < DecaySyncSeconds)

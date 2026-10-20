@@ -41,6 +41,8 @@ public static class RunActionListReceived
         var usedItem = UsedItem(connection);
         var usedItemCrc = usedItem?.Crc;
 
+        Combat.ActionStarted(connection, actionListId);
+
         if (ActionListEatTable.TryGet(actionListId, out var eat))
         {
             Eat(connection, eat, usedItem);

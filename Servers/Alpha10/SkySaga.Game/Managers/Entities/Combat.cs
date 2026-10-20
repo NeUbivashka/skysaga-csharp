@@ -23,6 +23,13 @@ public static class Combat
             health.MaxHP = (int)stats.Health;
     }
 
+    public static void ActionStarted(PlayerConnection connection, uint actionListId)
+    {
+        if (ActionListAttackTable.Get(actionListId).Any(attack => ActionStatTable.Get(attack.EquippedAction).ConsumesChargeBar)
+            && connection.PlayerEntity.TryGetComponent<ClientChargeBarComponent>(out var chargeBar))
+            chargeBar.Empty();
+    }
+
     public static void PlayerAttack(PlayerConnection connection, uint actionListId, int targetEntityId, uint? usedItemCrc)
     {
         var attacks = ActionListAttackTable.Get(actionListId);
@@ -39,7 +46,7 @@ public static class Combat
             return;
 
         var player = connection.PlayerEntity;
-        var weaponLevel = AttackLevel(entityManager, player, usedItemCrc);
+        var weaponLevel = AttackLevel(entityManager, player, usedItemCrc) + attacks.Max(attack => ActionStatTable.Get(attack.EquippedAction).WeaponLevelModifier);
         var armourLevel = CharacterStats(target).ArmourLevel + EquipmentStats(entityManager, target).ArmourLevel;
 
         var damage = attacks.Sum(attack => attack.ForceZeroDamage

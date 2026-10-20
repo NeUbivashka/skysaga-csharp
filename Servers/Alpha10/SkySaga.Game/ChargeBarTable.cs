@@ -4,13 +4,13 @@ namespace SkySaga.Game;
 
 public static class ChargeBarTable
 {
-    private sealed record Data(float Max, float PlayerBoost, float RecoveryRate, float PauseSeconds, Dictionary<string, float> Actions, Dictionary<uint, float> Items);
+    private sealed record Data(float Max, float PlayerBoost, float RecoveryRate, float PauseSeconds, Dictionary<uint, float> Items);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
-        var data = new Data(0, 0, 0, 0, new(StringComparer.OrdinalIgnoreCase), []);
+        var data = new Data(0, 0, 0, 0, []);
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "ChargeBar.txt");
 
         if (!File.Exists(path))
@@ -29,9 +29,6 @@ public static class ChargeBarTable
                 case ["pause", _]:
                     data = data with { PauseSeconds = Number(1) };
                     break;
-                case ["action", _, _]:
-                    data.Actions[parts[1]] = Number(2);
-                    break;
                 case ["item", _, _]:
                     data.Items[Util.ComputeCrc32(parts[1])] = Number(2);
                     break;
@@ -49,7 +46,9 @@ public static class ChargeBarTable
 
     public static float HitGain(string equippedAction, uint? itemCrc)
     {
-        if (!Table.Value.Actions.TryGetValue(equippedAction, out var action))
+        var action = ActionStatTable.Get(equippedAction).ChargeBarBoost;
+
+        if (action == 0)
             return 0;
 
         var equipment = itemCrc is uint crc ? Table.Value.Items.GetValueOrDefault(crc) : 1f;

@@ -1,32 +1,5 @@
 player 70 1 -7
 pause 7
-action Axe_Basic_1 10
-action Dagger_Basic_1 10
-action Dagger_Basic_2 10
-action Dagger_Quick_Lunge 12
-action Dart_Trap 1
-action Mace_Basic_1 10
-action Mace_Basic_1_Defender 10
-action Mace_Basic_1_Guardian 10
-action Mace_Basic_2 10
-action Mace_Basic_2_Defender 10
-action Mace_Basic_2_Guardian 10
-action Mace_Quick_Lunge 12
-action Shield_Block 2
-action Shield_Heavy_Guardian 10
-action Spear_Basic_1 10
-action Spear_Basic_2 10
-action Spear_Quick_Lunge 12
-action Sword_Basic_1 10
-action Sword_Basic_1_Fighter 10
-action Sword_Basic_2 10
-action Sword_Quick_Lunge 12
-action Sword_Quick_Lunge_Blademaster 12
-action TwoHanded_Basic_1 10
-action TwoHanded_Basic_1_Brute 10
-action TwoHanded_Basic_2 10
-action TwoHanded_Basic_2_Brute 10
-action TwoHanded_Quick_Lunge 12
 item Armour_Arctic_Exile_Beastmaster_3_Head 1
 item Armour_Arctic_Exile_Heavy_1_Arms 1
 item Armour_Arctic_Exile_Heavy_1_Head 1
