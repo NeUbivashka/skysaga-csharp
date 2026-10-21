@@ -403,6 +403,7 @@ Servers/*/SkySaga.Game/server.key
 server.crt
 server.key
 Servers/*/SkySaga.Game/Data/account.json
+Servers/*/SkySaga.Game/Data/accounts/
 Servers/*.rar
 
 # Archives never belong in the repo

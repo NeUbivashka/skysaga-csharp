@@ -29,6 +29,8 @@ http://127.0.0.1:5001 - the proxy sorts out which backend answers.
 
 import asyncio
 import datetime
+import hashlib
+import ipaddress
 import json
 import os
 import lzma
@@ -57,6 +59,7 @@ KEY_FILE = Path(r"C:\SkySagaCerts\server.key")
 # character keeps the same uuid across restarts. SKYSAGA_PLAYER_NAME overrides the name only
 # when the file is first created; edit the file to rename later.
 ACCOUNT_FILE = Path(__file__).resolve().parent / "Data" / "account.json"
+ACCOUNTS_DIR = ACCOUNT_FILE.parent / "accounts"
 DEFAULT_PLAYER_NAME = os.environ.get("SKYSAGA_PLAYER_NAME", "NeUbivashka")
 
 
@@ -79,6 +82,97 @@ def _load_account():
 ACCOUNT = _load_account()
 PLAYER_NAME = ACCOUNT["name"]
 ACCOUNT_CREATED = int(ACCOUNT_FILE.stat().st_ctime)
+
+# The proxy's backend socket port identifies the original TCP peer even for TLS.
+# Flask's request.remote_addr is always the loopback backend address here.
+_proxy_peers = {}
+_peer_accounts = {}
+_identity_lock = threading.Lock()
+
+
+def _peer_ip():
+    try:
+        backend_port = int(request.environ["REMOTE_PORT"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    with _identity_lock:
+        return _proxy_peers.get(backend_port)
+
+
+def _is_local_peer(peer):
+    try:
+        return ipaddress.ip_address(peer).is_loopback
+    except (ValueError, TypeError):
+        return False
+
+
+def _login_username():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = request.form.to_dict()
+
+    def find_name(value):
+        if not isinstance(value, dict):
+            return None
+        for key, item in value.items():
+            if key.lower() in ("username", "user_name") and isinstance(item, str):
+                return item.strip()
+        for item in value.values():
+            found = find_name(item)
+            if found:
+                return found
+        return None
+    name = find_name(payload)
+    return name if name and len(name) <= 64 and name.isprintable() else None
+
+
+def _remote_account(name):
+    key = name.casefold()
+    path = ACCOUNTS_DIR / (hashlib.sha256(key.encode("utf-8")).hexdigest() + ".json")
+    with _identity_lock:
+        if path.exists():
+            account = json.loads(path.read_text(encoding="utf-8"))
+            if account["name"].casefold() != key:
+                raise ValueError("Stored account name does not match its file")
+        else:
+            account = {"name": name, "characterUuid": str(uuid.uuid4()), "homeBiome": ACCOUNT["homeBiome"]}
+            ACCOUNTS_DIR.mkdir(parents=True, exist_ok=True)
+            temp_path = path.with_suffix(".tmp")
+            temp_path.write_text(json.dumps(account, indent=2), encoding="utf-8")
+            os.replace(temp_path, path)
+    return account
+
+
+def _select_login_account():
+    peer = _peer_ip()
+    if _is_local_peer(peer):
+        return ACCOUNT
+    name = _login_username()
+    if not peer or not name:
+        payload = request.get_json(silent=True)
+        keys = list(payload) if isinstance(payload, dict) else []
+        print(f"[identity] login has no usable peer/name (peer={peer}, JSON keys={keys}); keeping previous identity")
+        return _account_for_peer(peer)
+    account = _remote_account(name)
+    with _identity_lock:
+        _peer_accounts[peer] = account
+    print(f"[identity] peer={peer} name={account['name']} characterUuid={account['characterUuid']}")
+    return account
+
+
+def _account_for_peer(peer):
+    if _is_local_peer(peer):
+        return ACCOUNT
+    with _identity_lock:
+        return _peer_accounts.get(peer)
+
+
+def _account_for_request():
+    peer = _peer_ip()
+    account = _account_for_peer(peer)
+    if account is None:
+        print(f"[identity] no login account for peer={peer}; using legacy host response")
+    return account or ACCOUNT
 
 
 # ---------------------------------------------------------------------------
@@ -114,10 +208,8 @@ sys.stdout = _TimestampedStdout(sys.stdout)
 
 app = Flask(__name__)
 
-# The account's character. Always present: the 36731 client never calls _create (it asks
-# characters/_active, and with character=null it walked into the world with characterUUID ""
-# and the world owner GUID did not match the player).
-_state = {"character_uuid": ACCOUNT["characterUuid"]}
+# The host character is always present: build 36731 asks characters/_active
+# and does not recover correctly from a null active character.
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +264,7 @@ def _token():
 
 @app.route("/api/authentication/applications/names/login", methods=["POST"])
 def alpha10_login():
+    _select_login_account()
     print("=== alpha10 login request ===")
     print("Body:", request.get_data(as_text=True))
     return jsonify({"result": _token()}), 200
@@ -179,13 +272,14 @@ def alpha10_login():
 
 @app.route("/api/authentication/sgauth/_login", methods=["POST"])
 def alpha10_sgauth_login():
+    account = _select_login_account()
     print("=== alpha10 sgauth login request ===")
     print("Body:", request.get_data(as_text=True))
     return jsonify({
         "result": {
             "sgUser": "",
             "memberId": "1",
-            "username": PLAYER_NAME,
+            "username": account["name"] if account else PLAYER_NAME,
             "token": _token(),
         }
     }), 200
@@ -225,13 +319,14 @@ def login():
     # Main.LoginResult, matched to what bgwLogin_DoWork expects. acceptedVersion
     # MUST equal currentVersion or the launcher will not consider the login flow
     # complete even with a valid token.
+    account = _select_login_account()
     return jsonify({
         "token": {
             "tokenId": str(uuid.uuid4()),
             "refreshingTokenId": str(uuid.uuid4()),
             "timeout": 999999,
         },
-        "principal": PLAYER_NAME,
+        "principal": account["name"] if account else PLAYER_NAME,
         "legals": {
             "acceptedVersion": 1,
             "currentVersion": 1,
@@ -256,10 +351,11 @@ def accept_legals():
 # ---------------------------------------------------------------------------
 
 def _character():
+    account = _account_for_request()
     return {
-        "uuid": _state["character_uuid"],
-        "name": PLAYER_NAME,
-        "homeBiome": ACCOUNT["homeBiome"],
+        "uuid": account["characterUuid"],
+        "name": account["name"],
+        "homeBiome": account["homeBiome"],
         "positionInList": 0,
     }
 
@@ -271,7 +367,7 @@ def alpha10_profanity_blacklist():
 
 @app.route("/api/persistent-record/characters/list", methods=["GET"])
 def alpha10_characters_list():
-    if _state["character_uuid"] is None:
+    if _account_for_request()["characterUuid"] is None:
         # No character yet -> explicit error code, which is what prompts the
         # client to call _create next.
         return jsonify({"Error": {"code": 11001, "message": "", "detail": ""}}), 200
@@ -290,7 +386,7 @@ def alpha10_characters_active():
     # no-character case must be a SUCCESS with character=null, NOT the 11001 error
     # /list uses - the client renders that differently here and treating "no
     # character" as an error blocks it from reaching character creation.
-    if _state["character_uuid"] is None:
+    if _account_for_request()["characterUuid"] is None:
         return jsonify({"result": {"character": None}}), 200
     return jsonify({"result": {"character": _character(), **_character()}}), 200
 
@@ -298,8 +394,9 @@ def alpha10_characters_active():
 @app.route("/api/persistent-record/characters/_create", methods=["POST"])
 def alpha10_characters_create():
     # One account, one character: creation hands back the existing uuid.
-    print("=== alpha10 character create ->", _state["character_uuid"], "===")
-    return jsonify({"result": {"characterUUID": _state["character_uuid"]}}), 200
+    character_uuid = _account_for_request()["characterUuid"]
+    print("=== alpha10 character create ->", character_uuid, "===")
+    return jsonify({"result": {"characterUUID": character_uuid}}), 200
 
 
 @app.route("/GetGUID", methods=["GET"])
@@ -308,9 +405,24 @@ def get_guid():
     # ServerInfo.ServerOwnerGuid, so it matches what the client's
     # ClientOwnerComponent expects. A mismatch here is what made home-island
     # locked items refuse placement.
-    return jsonify({
-        "result": {"GUID": _state["character_uuid"], "Name": PLAYER_NAME}
-    }), 200
+    account = _account_for_request()
+    return jsonify({"result": {"GUID": account["characterUuid"], "Name": account["name"]}}), 200
+
+
+@app.route("/internal/player-identity", methods=["GET"])
+def player_identity():
+    if not _is_local_peer(_peer_ip()):
+        return jsonify({"error": "local server only"}), 403
+    peer = request.args.get("peer")
+    account = _account_for_peer(peer)
+    if account is None:
+        return jsonify({"error": "no login for peer"}), 404
+    is_host = account is ACCOUNT
+    return jsonify({"result": {
+        "GUID": account["characterUuid"],
+        "Name": account["name"],
+        "SaveFile": "player.json" if is_host else f"player_{account['characterUuid']}.json",
+    }}), 200
 
 
 @app.route("/api/account/name/checkName", methods=["GET", "POST"])
@@ -330,16 +442,26 @@ def alpha10_account_check_name():
 def alpha10_character_profile_batch():
     body = request.get_json(silent=True, force=True) or {}
     params = body.get("params", body)
-    recipients = params.get("recipients") or [_state["character_uuid"]]
+    recipients = params.get("recipients") or [_account_for_request()["characterUuid"]]
     print("=== alpha10 character profile batch", request.get_data(as_text=True), "===", flush=True)
     return jsonify({"result": [_character_profile(uuid_) for uuid_ in recipients]}), 200
 
 
 def _character_profile(character_uuid):
+    account = _account_for_request()
+    if character_uuid != account["characterUuid"]:
+        if character_uuid == ACCOUNT["characterUuid"]:
+            account = ACCOUNT
+        else:
+            for path in ACCOUNTS_DIR.glob("*.json"):
+                candidate = json.loads(path.read_text(encoding="utf-8"))
+                if candidate.get("characterUuid") == character_uuid:
+                    account = candidate
+                    break
     return {
         "characterOnlineData": {
             "characterUuid": character_uuid,
-            "characterName": PLAYER_NAME,
+            "characterName": account["name"],
         },
         "counts": {"follows": 0, "followedBy": 0, "friends": 0},
         "accountCreated": ACCOUNT_CREATED,
@@ -348,7 +470,7 @@ def _character_profile(character_uuid):
 
 @app.route("/api/account/get", methods=["POST"])
 def alpha10_account_get():
-    return jsonify({"result": {"keySubset": {"RESERVED_NAME": PLAYER_NAME}}}), 200
+    return jsonify({"result": {"keySubset": {"RESERVED_NAME": _account_for_request()["name"]}}}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -468,7 +590,7 @@ def _home_world(world_uuid):
     return {
         "uuid": world_uuid,
         "mapSpec": HOME_ISLAND_MAP_SPEC,
-        "owner": _state["character_uuid"],
+        "owner": ACCOUNT["characterUuid"],
         "ownerName": PLAYER_NAME,
         "ownerType": "C",
         "name": f"{PLAYER_NAME}'s Ruins",
@@ -506,7 +628,7 @@ def alpha10_game_conductor_retrieve():
         "result": {
             "retryInMillis": 5000,
             "world": str(uuid.uuid4()),
-            "ip": "127.0.0.1",
+            "ip": "100.76.72.11",
             "port": 42069,
             "server": str(uuid.uuid4()),
         }
@@ -593,14 +715,21 @@ async def handle_client(client_reader: asyncio.StreamReader,
         client_writer.close()
         return
 
-    # Forward the byte we already consumed.
-    backend_writer.write(first_byte)
-    await backend_writer.drain()
+    backend_port = backend_writer.get_extra_info("sockname")[1]
+    with _identity_lock:
+        _proxy_peers[backend_port] = peer[0]
+    try:
+        # Forward the byte we already consumed.
+        backend_writer.write(first_byte)
+        await backend_writer.drain()
 
-    await asyncio.gather(
-        pipe(client_reader, backend_writer),
-        pipe(backend_reader, client_writer),
-    )
+        await asyncio.gather(
+            pipe(client_reader, backend_writer),
+            pipe(backend_reader, client_writer),
+        )
+    finally:
+        with _identity_lock:
+            _proxy_peers.pop(backend_port, None)
 
 
 async def run_proxy():

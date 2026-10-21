@@ -706,12 +706,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(playerInitializer);
 
-        playerInitializer.InitializePlayer(player);
+        playerInitializer.InitializePlayer(player, connection);
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var transform))
             connection.LookYaw = transform.YawDegrees;
 
-        connection.LookPitch = PlayerSaveStore.Load()?.LookPitch ?? 0f;
+        connection.LookPitch = connection.SaveFileName is { } saveFileName ? PlayerSaveStore.Load(saveFileName)?.LookPitch ?? 0f : 0f;
 
         connection.IsPlayerInitialized = true;
 

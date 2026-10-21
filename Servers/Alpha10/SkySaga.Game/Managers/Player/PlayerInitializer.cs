@@ -7,22 +7,24 @@ public class PlayerInitializer(IWorldManager worldManager)
 
     private const uint ForestMasterSigil = 10;
     private const byte VaultSlots = 200;
+    private const string DefaultPlayerCustomisation = "hub_npc_explorer_customisation";
     private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
 
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
     private IMapEntityManager _entityManager => _worldManager.EntityManager;
 
-    public void InitializePlayer(Entity player)
+    public void InitializePlayer(Entity player, PlayerConnection connection)
     {
         ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(connection);
 
-        var save = PlayerSaveStore.Load();
+        var save = connection.SaveFileName is { } saveFileName ? PlayerSaveStore.Load(saveFileName) : null;
 
         if (player.TryGetComponent<ClientPlayernameComponent>(out var clientPlayernameComponent))
         {
             clientPlayernameComponent.Playername = !string.IsNullOrEmpty(save?.Playername)
                 ? save.Playername
-                : Util.CharacterName();
+                : connection.Identity.Name;
 
             var sigilFields = (Environment.GetEnvironmentVariable("SKYSAGA_SIGIL_FIELDS") ?? "0,0").Split(',');
             var sigilA = uint.TryParse(sigilFields[0], out var a) ? a : 0u;
@@ -32,11 +34,11 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
         }
 
-        if (player.TryGetComponent<ClientOwnerComponent>(out var owner) && Guid.TryParse(Util.CharacterUuid(), out var characterUuid))
-            owner.Owner = characterUuid;
+        if (player.TryGetComponent<ClientOwnerComponent>(out var owner))
+            owner.Owner = connection.Identity.CharacterUuid;
 
-        if (player.TryGetComponent<UserComponent>(out var user) && Guid.TryParse(Util.CharacterUuid(), out var userUuid))
-            user.CharacterUuid = userUuid;
+        if (player.TryGetComponent<UserComponent>(out var user))
+            user.CharacterUuid = connection.Identity.CharacterUuid;
 
         if (player.TryGetComponent<ClientShopComponent>(out var shop))
             shop.ShopList = [new ClientShopComponent.Shop { Items = GlobalShopItems() }, new ClientShopComponent.Shop()];
@@ -44,12 +46,18 @@ public class PlayerInitializer(IWorldManager worldManager)
         if (player.TryGetComponent<TagsComponent>(out var tags))
             tags.TagList = [Util.ComputeCrc32("Player")];
 
-        if (player.TryGetComponent<ClientCharacterCustomisationComponent>(out var customisation) && save is not null)
+        if (player.TryGetComponent<ClientCharacterCustomisationComponent>(out var customisation))
         {
-            customisation.IsCharacterCustomised = save.IsCharacterCustomised;
-
-            if (!string.IsNullOrEmpty(save.CustomisationData))
+            if (!string.IsNullOrEmpty(save?.CustomisationData))
+            {
+                customisation.IsCharacterCustomised = save.IsCharacterCustomised;
                 customisation.CustomisationData = Convert.FromBase64String(save.CustomisationData);
+            }
+            else
+            {
+                customisation.CustomisationListCrc = DefaultPlayerCustomisation;
+                Console.WriteLine($"[PlayerInitializer] No saved appearance for {connection.Identity.CharacterUuid}; using {DefaultPlayerCustomisation}.");
+            }
         }
 
         if (player.TryGetComponent<ClientSettingsComponent>(out var settings) && save?.Settings is { } saved)
@@ -295,8 +303,8 @@ public class PlayerInitializer(IWorldManager worldManager)
             }
         }
 
-        if (save is null)
-            PlayerSaveStore.Save(CaptureSaveData(player));
+        if (save is null && connection.SaveFileName is { } newSaveFileName)
+            PlayerSaveStore.Save(CaptureSaveData(player), newSaveFileName);
     }
 
     public PlayerSaveData CaptureSaveData(Entity player)

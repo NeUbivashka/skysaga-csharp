@@ -11,6 +11,9 @@ public class PlayerConnection
 
     public readonly RakNetGUID Guid;
 
+    public PlayerIdentity Identity { get; }
+    public string? SaveFileName => Identity.SaveFileName;
+
     public Entity PlayerEntity { get; }
     public IWorldManager WorldManager => _worldManager;
     public PlayerConnectionManager PlayerConnectionManager => _playerConnectionManager;
@@ -25,14 +28,16 @@ public class PlayerConnection
 
     public string? CurrentVideoFileName { get; set; }
 
-    public PlayerConnection(Server server, RakNetGUID guid, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
+    public PlayerConnection(Server server, RakNetGUID guid, string? peerIp, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
     {
         _server = server ?? throw new ArgumentNullException(nameof(server));
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _playerInitializer = playerInitializer ?? throw new ArgumentNullException(nameof(playerInitializer));
         _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
 
-        Guid = guid;
+        // Packet.guid borrows memory owned by the packet, which is deallocated after this handler.
+        Guid = new RakNetGUID(guid.g);
+        Identity = Util.ResolvePlayerIdentity(peerIp);
 
         _worldManager.EntityManager.TryCreateEntity("Player", out var player);
 
@@ -90,7 +95,7 @@ public class PlayerConnection
 
     public void SaveState()
     {
-        if (!IsPlayerInitialized)
+        if (!IsPlayerInitialized || SaveFileName is not { } saveFileName)
             return;
 
         var data = _playerInitializer.CaptureSaveData(PlayerEntity);
@@ -98,7 +103,7 @@ public class PlayerConnection
         data.YawDegrees = LookYaw;
         data.LookPitch = LookPitch;
 
-        PlayerSaveStore.Save(data);
+        PlayerSaveStore.Save(data, saveFileName);
     }
 
     public bool ProcessPacket(PacketId packetId, BitStream bitStream)

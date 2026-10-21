@@ -181,13 +181,14 @@ public class Server : IDisposable
             if (!_connections.TryGetValue(packet.guid.g, out var connection)
                 && messageId == (byte)DefaultMessageIDTypes.ID_NEW_INCOMING_CONNECTION)
             {
-                connection = new PlayerConnection(this, packet.guid, _worldManager, _playerInitializer, _playerConnectionManager);
+                connection = new PlayerConnection(this, packet.guid, packet.systemAddress?.ToString(false), _worldManager, _playerInitializer, _playerConnectionManager);
 
                 _connections.TryAdd(packet.guid.g, connection);
 
                 OnConnectionAdded(connection);
 
-                Console.WriteLine($"[conn] New connection accepted, guid={packet.guid.g:X}. Total connections: {_connections.Count}");
+                Console.WriteLine($"[conn] New connection accepted, peer={packet.systemAddress?.ToString(false)}, guid={packet.guid.g:X}, entity={connection.PlayerEntity.Id}, "
+                    + $"character={connection.Identity.CharacterUuid}, name={connection.Identity.Name}, save={connection.SaveFileName}. Total connections: {_connections.Count}");
 
                 goto Deallocate;
             }

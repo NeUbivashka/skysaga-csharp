@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 
 namespace SkySaga.Game;
 
@@ -118,6 +119,46 @@ public static class Util
 
     private static string? _characterName;
 
+    public static PlayerIdentity ResolvePlayerIdentity(string? peerIp)
+    {
+        var webUrl = Environment.GetEnvironmentVariable("SKYSAGA_WEB_URL") ?? "http://127.0.0.1:5001";
+        try
+        {
+            using var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var json = client.GetStringAsync($"{webUrl}/internal/player-identity?peer={Uri.EscapeDataString(peerIp ?? "")}").Result;
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var result = document.RootElement.GetProperty("result");
+            var uuidText = result.GetProperty("GUID").GetString();
+            var name = result.GetProperty("Name").GetString();
+            var fileName = result.GetProperty("SaveFile").GetString();
+            if (!Guid.TryParse(uuidText, out var uuid) || string.IsNullOrWhiteSpace(name)
+                || (fileName != "player.json" && fileName != $"player_{uuid:D}.json"))
+                throw new InvalidDataException("Invalid player identity response");
+            return new PlayerIdentity(uuid, name, fileName);
+        }
+        catch (Exception exception)
+        {
+            if (IsLocalAddress(peerIp))
+            {
+                Console.WriteLine($"[identity] could not resolve local peer={peerIp} ({exception.Message}); using legacy host account");
+                return new PlayerIdentity(Guid.Parse(CharacterUuid()), CharacterName(), "player.json");
+            }
+            Console.WriteLine($"[identity] could not resolve remote peer={peerIp} ({exception.Message}); using an unsaved guest identity");
+            return new PlayerIdentity(Guid.NewGuid(), "Guest", null);
+        }
+    }
+
+    private static bool IsLocalAddress(string? peerIp)
+    {
+        if (!System.Net.IPAddress.TryParse(peerIp, out var address))
+            return false;
+        if (System.Net.IPAddress.IsLoopback(address))
+            return true;
+        return System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+            .SelectMany(network => network.GetIPProperties().UnicastAddresses)
+            .Any(local => local.Address.Equals(address));
+    }
+
     public static string CharacterName()
     {
         CharacterUuid();
@@ -167,3 +208,5 @@ public static class Util
         return _characterUuid;
     }
 }
+
+public readonly record struct PlayerIdentity(Guid CharacterUuid, string Name, string? SaveFileName);
