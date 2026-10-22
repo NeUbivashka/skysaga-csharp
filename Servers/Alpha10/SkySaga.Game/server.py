@@ -547,7 +547,7 @@ def _character_profile(character_uuid):
             "currentWorldAdventure": "home",
             "currentWorldSingleton": True,
         },
-        "counts": {"follows": 0, "followedBy": 0, "friends": 0},
+        "counts": ACCOUNT_STORE.relationship_counts(account),
         "accountCreated": created_at,
     }
 
@@ -599,7 +599,13 @@ def alpha10_character_relationship_info():
         if not u_str or u_str in seen:
             continue
         seen.add(u_str)
-        result.append([u_str, False, False, False, False, False, False, False, False, False])
+        other = ACCOUNT_STORE.get_by_character_uuid(u_str)
+        flags = ACCOUNT_STORE.relationship(_account_for_request(), other)
+        result.append([
+            u_str,
+            flags["friend"], flags["following"], flags["followedBy"],
+            False, flags["incoming"], flags["outgoing"], False, False, False,
+        ])
 
     print(f"=== alpha10 character relationship info: {result} ===", flush=True)
     return jsonify(result), 200
@@ -607,23 +613,208 @@ def alpha10_character_relationship_info():
 
 @app.route("/api/social-graph/character/friends/info", methods=["POST"])
 def alpha10_character_friends_info():
-    # SkySaga.exe 0x0090fbe2 expects integer 'total'
-    resp = {"friends": [], "total": 0, "totalHits": 0}
+    # The client uses this list as a set of character UUIDs, then resolves the
+    # display details through character/profile/batch.
+    friends = ACCOUNT_STORE.list_friends(_account_for_request())
+    resp = {"friends": [item["characterUuid"] for item in friends],
+            "total": len(friends), "totalHits": len(friends)}
     return jsonify({"result": resp, **resp}), 200
 
 
 @app.route("/api/social-graph/character/follows/info", methods=["POST"])
 def alpha10_character_follows_info():
-    # SkySaga.exe 0x0090fbe2 expects integer 'total'
-    resp = {"follows": [], "total": 0, "totalHits": 0}
+    follows = ACCOUNT_STORE.list_follows(_account_for_request())
+    resp = {"follows": [item["characterUuid"] for item in follows],
+            "total": len(follows), "totalHits": len(follows)}
     return jsonify({"result": resp, **resp}), 200
 
 
 @app.route("/api/social-graph/character/followedby/info", methods=["POST"])
 def alpha10_character_followedby_info():
-    # SkySaga.exe 0x0090fbe2 expects integer 'total'
-    resp = {"followedBy": [], "total": 0, "totalHits": 0}
+    followed_by = ACCOUNT_STORE.list_followed_by(_account_for_request())
+    resp = {"followedBy": [item["characterUuid"] for item in followed_by],
+            "total": len(followed_by), "totalHits": len(followed_by)}
     return jsonify({"result": resp, **resp}), 200
+
+
+def _social_request_params():
+    """Read the client action payload without assuming one JSON wrapper.
+
+    The Alpha 10 client uses different payload builders for social screens and
+    context-menu actions.  Some deliver a normal object, while others pass a
+    bare UUID or a list.  Keep the original data so the target resolver can
+    identify the other signed-in character in any of those forms.
+    """
+    parsed = request.get_json(silent=True, force=True)
+    if isinstance(parsed, dict):
+        params = parsed.get("params", parsed)
+        return parsed, params if isinstance(params, dict) else {}
+    if isinstance(parsed, (list, tuple)):
+        return {"_values": list(parsed)}, {}
+    if isinstance(parsed, str):
+        return {"_rawTarget": parsed}, {}
+    raw = request.get_data(cache=True, as_text=True).strip()
+    return ({"_rawTarget": raw} if raw else {}), {}
+
+
+def _social_target(body, params):
+    """Resolve an action recipient without trusting a display name or peer IP."""
+    candidates = ("recipient", "character", "characterUuid", "characterUUID", "characterId",
+                  "target", "targetCharacterUuid", "friendUuid", "friendUUID", "requester",
+                  "sender", "player", "id")
+    for values in (params, body):
+        for key in candidates:
+            value = values.get(key)
+            if isinstance(value, dict):
+                value = value.get("characterUuid") or value.get("uuid") or value.get("id")
+            if value:
+                account = ACCOUNT_STORE.get_by_character_uuid(value)
+                if account and account["accountId"] != _account_for_request()["accountId"]:
+                    print(f"[social] {request.path} target={account['name']} via {key}")
+                    return account
+
+    # Bare UUID and list payloads are emitted by some context-menu actions.
+    # Search them after named fields and ignore the requesting account when a
+    # request carries both the sender and recipient IDs.
+    request_account = _account_for_request()
+    values_to_check = []
+
+    def collect(value):
+        if isinstance(value, str):
+            values_to_check.append(value)
+        elif isinstance(value, dict):
+            for nested in value.values():
+                collect(nested)
+        elif isinstance(value, (list, tuple)):
+            for nested in value:
+                collect(nested)
+
+    collect(params)
+    collect(body)
+    for value in values_to_check:
+        account = ACCOUNT_STORE.get_by_character_uuid(value)
+        if account and account["accountId"] != request_account["accountId"]:
+            print(f"[social] {request.path} target={account['name']} via bare payload")
+            return account
+    print(f"[social] {request.path} had no resolvable target; payload keys={list(body)}")
+    return None
+
+
+def _social_action_error(message, status=400):
+    return jsonify({"error": message, "result": {"ok": False, "error": message}}), status
+
+
+def _social_action_ok():
+    # Mutation RPCs only require a successful object response.  The client
+    # refreshes relationship state separately.
+    return jsonify({"result": {}, "ok": True}), 200
+
+
+@app.route("/api/social-graph/friendrequest/incoming", methods=["POST"])
+def alpha10_friend_requests_incoming():
+    accounts = ACCOUNT_STORE.list_friend_requests(_account_for_request(), incoming=True)
+    values = [item["characterUuid"] for item in accounts]
+    response = {"friendRequests": values, "requests": values,
+                "total": len(values), "totalHits": len(values)}
+    return jsonify({"result": response, **response}), 200
+
+
+@app.route("/api/social-graph/friendrequest/outgoing", methods=["POST"])
+def alpha10_friend_requests_outgoing():
+    accounts = ACCOUNT_STORE.list_friend_requests(_account_for_request(), incoming=False)
+    values = [item["characterUuid"] for item in accounts]
+    response = {"friendRequests": values, "requests": values,
+                "total": len(values), "totalHits": len(values)}
+    return jsonify({"result": response, **response}), 200
+
+
+@app.route("/api/social-graph/friendrequest/create", methods=["POST"])
+def alpha10_friend_request_create():
+    body, params = _social_request_params()
+    account = _account_for_request()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown friend request recipient", 404)
+    try:
+        ACCOUNT_STORE.create_friend_request(account, target)
+    except ValueError as exc:
+        return _social_action_error(str(exc))
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/friendrequest/cancel", methods=["POST"])
+def alpha10_friend_request_cancel():
+    body, params = _social_request_params()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown friend request recipient", 404)
+    ACCOUNT_STORE.cancel_friend_request(_account_for_request(), target)
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/friendrequest/accept", methods=["POST"])
+def alpha10_friend_request_accept():
+    body, params = _social_request_params()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown friend request sender", 404)
+    if not ACCOUNT_STORE.accept_friend_request(_account_for_request(), target):
+        return _social_action_error("Friend request was not pending", 409)
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/friendrequest/reject", methods=["POST"])
+def alpha10_friend_request_reject():
+    body, params = _social_request_params()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown friend request sender", 404)
+    ACCOUNT_STORE.reject_friend_request(_account_for_request(), target)
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/character/unfriend", methods=["POST"])
+def alpha10_unfriend():
+    body, params = _social_request_params()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown friend", 404)
+    ACCOUNT_STORE.remove_friend(_account_for_request(), target)
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/character/follow", methods=["POST"])
+def alpha10_follow():
+    body, params = _social_request_params()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown player to follow", 404)
+    try:
+        ACCOUNT_STORE.follow(_account_for_request(), target)
+    except ValueError as exc:
+        return _social_action_error(str(exc))
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/character/unfollow", methods=["POST"])
+def alpha10_unfollow():
+    body, params = _social_request_params()
+    target = _social_target(body, params)
+    if target is None:
+        return _social_action_error("Unknown player to unfollow", 404)
+    ACCOUNT_STORE.unfollow(_account_for_request(), target)
+    return _social_action_ok()
+
+
+@app.route("/api/persistent-record/groups/info", methods=["POST"])
+def alpha10_groups_info():
+    """Return a typed empty group collection until the UDP group protocol is complete.
+
+    The former catch-all returned the string ``ok`` here, which is not a
+    collection and leaves the Groups page with an invalid response shape.
+    """
+    result = {"groups": [], "total": 0, "totalHits": 0}
+    return jsonify({"result": result, **result}), 200
 
 
 @app.route("/api/account/get", methods=["POST"])
@@ -802,13 +993,11 @@ def alpha10_world_browser_search():
     owner_search = str(body.get("ownerNameSearch") or "").strip().casefold()
     name_search = str(body.get("nameSearch") or "").strip().casefold()
 
-    viewer_uuid = _account_for_request()["characterUuid"]
     worlds = [_home_world(record) for record in ACCOUNT_STORE.list_home_worlds()]
-    worlds = [world for world in worlds if world["published"]
-              and world["owner"] != viewer_uuid and (
+    worlds = [world for world in worlds if world.get("published", True) and (
         (not owner_search and not name_search)
-        or (owner_search and owner_search in world["ownerName"].casefold())
-        or (name_search and name_search in world["name"].casefold())
+        or (owner_search and owner_search in world.get("ownerName", "").casefold())
+        or (name_search and name_search in world.get("name", "").casefold())
     )]
     result = {
         "totalHotWorldCount": len(worlds),
@@ -823,6 +1012,50 @@ def alpha10_world_browser_search():
     print(f"[world-browser] search owner={owner_search!r} name={name_search!r} "
           f"matched={len(worlds)} returned={len(result['worlds'])}")
     return jsonify({"result": result, **result}), 200
+
+
+@app.route("/api/persistent-record/curatedcontent/dsscontent/_search", methods=["POST"])
+def alpha10_featured_ugc_islands():
+    """Answer the Destination Selection featured-island request with an empty world list.
+
+    SkySaga V10 identifies this RPC as HTTPRPCGetFeaturedUGCIslands and looks
+    for a 'worlds' key in the root JSON response object.
+    """
+    result = {"worlds": []}
+    return jsonify({"result": result, **result}), 200
+
+
+@app.route("/api/persistent-record/worlds/multiGet", methods=["POST"])
+def alpha10_worlds_multi_get():
+    """Return the complete browser records requested for a page of islands.
+
+    The V10 client identifies this call as HTTPRPCGetGenericIslandList and
+    requires a JSON array of world card objects (matching HTTPRPCGetHomeIslandList).
+    """
+    body = request.get_json(silent=True) or {}
+    if isinstance(body, list):
+        requested_ids = body
+    elif isinstance(body, dict):
+        requested_ids = body.get("ids", [])
+    else:
+        requested_ids = []
+
+    if not isinstance(requested_ids, list):
+        requested_ids = []
+
+    known_worlds = {
+        world["uuid"]: world
+        for world in ACCOUNT_STORE.list_home_worlds()
+    }
+    cards = []
+    for world_id in requested_ids:
+        wid_str = str(world_id)
+        world = known_worlds.get(wid_str) or ACCOUNT_STORE.get_home_world_by_uuid(wid_str)
+        if world is not None:
+            cards.append(_home_world(world))
+
+    print(f"[world-browser] multiGet requested={len(requested_ids)} returned={len(cards)}")
+    return jsonify(cards), 200
 
 
 @app.route("/api/binary-storage/photos/<photo_uuid>/_upload", methods=["POST"])
@@ -1227,15 +1460,27 @@ def alpha10_worlds_get_specific():
 
 
 def _home_world(world_record):
+    owner_name = world_record.get("ownerName") or world_record.get("name") or "Player"
+    world_name = world_record.get("name") or f"{owner_name}'s Ruins"
     return {
         "uuid": world_record["uuid"],
         "mapSpec": HOME_ISLAND_MAP_SPEC,
         "owner": world_record["owner"],
-        "ownerName": world_record["ownerName"],
+        "ownerName": owner_name,
         "ownerType": "C",
-        "name": f"{world_record['ownerName']}'s Ruins",
+        "name": world_name,
         "homeWorld": True,
         "published": True,
+        "deleted": False,
+        "blueprint": False,
+        "created": int(world_record.get("created_at") or 0),
+        "updated": int(world_record.get("created_at") or 0),
+        "publishId": 0,
+        "likes": int(world_record.get("likes") or 0),
+        "visits": int(world_record.get("visits") or 0),
+        "photoIds": [],
+        "engagement": "",
+        "tagCrcs": [],
     }
 
 
@@ -1243,12 +1488,22 @@ def _social_hub_world():
     return {
         "uuid": SOCIAL_HUB_WORLD_UUID,
         "mapSpec": SOCIAL_HUB_MAP_SPEC,
-        "owner": "",
+        "owner": "00000000-0000-0000-0000-000000000000",
         "ownerName": "The City of Last Light",
         "ownerType": "C",
         "name": "The City of Last Light",
         "homeWorld": False,
         "published": True,
+        "deleted": False,
+        "blueprint": False,
+        "created": 0,
+        "updated": 0,
+        "publishId": 0,
+        "likes": 0,
+        "visits": 0,
+        "photoIds": [],
+        "engagement": "",
+        "tagCrcs": [],
     }
 
 
