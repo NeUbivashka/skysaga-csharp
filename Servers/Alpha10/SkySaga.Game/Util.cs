@@ -148,6 +148,55 @@ public static class Util
         }
     }
 
+    public static bool TryResolveHomeWorld(Guid characterUuid, out HomeWorldDestination destination)
+    {
+        destination = default;
+        var webUrl = Environment.GetEnvironmentVariable("SKYSAGA_WEB_URL") ?? "http://127.0.0.1:5001";
+        try
+        {
+            using var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var json = client.GetStringAsync($"{webUrl}/internal/home-island?characterUuid={characterUuid:D}").Result;
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var result = document.RootElement.GetProperty("result");
+            if (!Guid.TryParse(result.GetProperty("WorldUUID").GetString(), out var worldUuid)
+                || !Guid.TryParse(result.GetProperty("ServerUUID").GetString(), out var serverUuid)
+                || !result.GetProperty("Port").TryGetUInt16(out var port) || port == 0)
+                throw new InvalidDataException("Invalid home-island response");
+            destination = new HomeWorldDestination(worldUuid, serverUuid, port);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"[home-island] could not resolve destination for {characterUuid:D}: {exception.Message}");
+            return false;
+        }
+    }
+
+    public static bool TryResolveWorld(Guid worldUuid, out HomeWorldDestination destination)
+    {
+        destination = default;
+        var webUrl = Environment.GetEnvironmentVariable("SKYSAGA_WEB_URL") ?? "http://127.0.0.1:5001";
+        try
+        {
+            using var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var json = client.GetStringAsync($"{webUrl}/internal/world-island?worldUuid={worldUuid:D}").Result;
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var result = document.RootElement.GetProperty("result");
+            if (!Guid.TryParse(result.GetProperty("WorldUUID").GetString(), out var resolvedWorldUuid)
+                || resolvedWorldUuid != worldUuid
+                || !Guid.TryParse(result.GetProperty("ServerUUID").GetString(), out var serverUuid)
+                || !result.GetProperty("Port").TryGetUInt16(out var port) || port == 0)
+                throw new InvalidDataException("Invalid world-island response");
+            destination = new HomeWorldDestination(resolvedWorldUuid, serverUuid, port);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"[world-island] could not resolve destination {worldUuid:D}: {exception.Message}");
+            return false;
+        }
+    }
+
     private static bool IsLocalAddress(string? peerIp)
     {
         if (!System.Net.IPAddress.TryParse(peerIp, out var address))
@@ -210,3 +259,5 @@ public static class Util
 }
 
 public readonly record struct PlayerIdentity(Guid CharacterUuid, string Name, string? SaveFileName);
+
+public readonly record struct HomeWorldDestination(Guid WorldUuid, Guid ServerUuid, ushort Port);

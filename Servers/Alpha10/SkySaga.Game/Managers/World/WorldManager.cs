@@ -180,6 +180,13 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (airShip.TryGetComponent<TransformComponent>(out var transformComponent))
             transformComponent.Position = position;
 
+        // Airship_Arrive_CoFL selects its first City prop by this tag. Its
+        // second prop is HUB_NPC_RecipeBuyerShop, supplied by the City map
+        // entity conversion below. Both are required for the client sequence.
+        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social" &&
+            airShip.TryGetComponent<TagsComponent>(out var tags))
+            tags.TagList = [Util.ComputeCrc32("AnimSequenceEntity")];
+
         if (airShip.TryGetComponent<ClientPickupComponent>(out var pickup))
         {
             var nameHash = Util.ComputeCrc32("Airship");
@@ -230,6 +237,23 @@ public sealed class WorldManager : IWorldManager, IDisposable
             || !entity.TryGetComponent<ClientVoxelLinkComponent>(out var voxelLink)
             || !entity.TryGetComponent<TransformComponent>(out var transform))
             return;
+
+        // ReturnTeleporter is a solid 9x9 plane of voxel 39. That material is
+        // not rendered by this reconstructed map, while replacing the whole
+        // plane with opaque voxel 38 creates a large wall. Keep the original
+        // interaction entity and render only its outer frame with the known
+        // visible fallback material.
+        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social"
+            && entity.Name.Equals("ReturnTeleporter", StringComparison.OrdinalIgnoreCase))
+        {
+            voxelLink.Voxels = [.. voxelLink.Voxels
+                .Where(voxel => voxel.VoxelType != 39 ||
+                    (voxel.Offset.Z == 0 &&
+                        (voxel.Offset.Y == 0 || voxel.Offset.Y == 8 || Math.Abs(voxel.Offset.X) == 4)))
+                .Select(voxel => voxel.VoxelType == 39 ? voxel with { VoxelType = 38 } : voxel)];
+
+            Console.WriteLine($"[WorldManager] Rendered the City portal as a {voxelLink.Voxels.Count}-voxel frame.");
+        }
 
         foreach (var (position, voxelType) in voxelLink.GetWorldVoxels(transform.Position, transform.YawDegrees))
         {
@@ -522,6 +546,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition)
     {
         airshipPosition = null;
+        var ownerUuid = Environment.GetEnvironmentVariable("SKYSAGA_HOME_OWNER_UUID") ?? Util.CharacterUuid();
+        var isSocialWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
 
         int spawned = 0;
 
@@ -546,7 +572,16 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (string.Equals(spec.Name, "Player", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            var creature = SpawnCreature(spec.Name, position);
+            // FTUECOFL_ARRIVE_AIRSHIP names HUB_NPC_RecipeBuyerShop as its
+            // dialogue speaker and arrival prop. The prototype previously
+            // placed a generic trader here, leaving the cutscene without its
+            // second required prop. It occupies the same City-only position.
+            var entityName = isSocialWorld &&
+                spec.Name.Equals("HUB_NPC_Trader", StringComparison.OrdinalIgnoreCase)
+                ? "HUB_NPC_RecipeBuyerShop"
+                : spec.Name;
+
+            var creature = SpawnCreature(entityName, position);
 
             if (spec.Items is { Count: > 0 } && creature.Count > 0)
                 FillInventory(creature[^1], spec.Items);
@@ -564,7 +599,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 var nameHash = Util.ComputeCrc32(spec.Name);
                 SetDeviceItemSpec(creature[^1], nameHash, MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
 
-                if (creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Guid.TryParse(Util.CharacterUuid(), out var islandOwner))
+                if (creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Guid.TryParse(ownerUuid, out var islandOwner))
                     mapOwner.Owner = islandOwner;
             }
 

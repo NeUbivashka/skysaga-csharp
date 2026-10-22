@@ -2,7 +2,10 @@ namespace SkySaga.Game.Managers.Player;
 
 public static class PlayerSaveStore
 {
-    private static readonly string SaveDirectory = Path.Combine(AppContext.BaseDirectory, "Data", "Saves");
+    private static readonly string HomeSaveDirectory = Path.Combine(AppContext.BaseDirectory, "Data", "Saves");
+    private static readonly bool IsSocialWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
+    private static readonly string SaveDirectory = IsSocialWorld
+        ? Path.Combine(HomeSaveDirectory, "SocialHub") : HomeSaveDirectory;
     private const string DefaultFileName = "player.json";
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -17,7 +20,15 @@ public static class PlayerSaveStore
             var path = Path.Combine(SaveDirectory, fileName);
 
             if (!File.Exists(path))
-                return null;
+            {
+                if (!IsSocialWorld)
+                    return null;
+
+                // Seed the destination character from the home save without ever writing back to it.
+                path = Path.Combine(HomeSaveDirectory, fileName);
+                if (!File.Exists(path))
+                    return null;
+            }
 
             var json = File.ReadAllText(path);
             var data = JsonSerializer.Deserialize<PlayerSaveData>(json);

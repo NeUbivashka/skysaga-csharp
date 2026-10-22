@@ -13,6 +13,8 @@ public class PlayerConnection
 
     public PlayerIdentity Identity { get; }
     public string? SaveFileName => Identity.SaveFileName;
+    public string? GameHost { get; set; }
+    public string? SessionTicket { get; set; }
 
     public Entity PlayerEntity { get; }
     public IWorldManager WorldManager => _worldManager;
@@ -25,6 +27,8 @@ public class PlayerConnection
     public DateTime LastFallRespawn { get; set; }
 
     public int? LastUsedItemId { get; set; }
+
+    public HashSet<ushort> CompletedNarrativeIndices { get; } = [];
 
     public string? CurrentVideoFileName { get; set; }
 
@@ -102,6 +106,7 @@ public class PlayerConnection
 
         data.YawDegrees = LookYaw;
         data.LookPitch = LookPitch;
+        data.CompletedNarrativeIndices = [.. CompletedNarrativeIndices];
 
         PlayerSaveStore.Save(data, saveFileName);
     }
@@ -146,6 +151,9 @@ public class PlayerConnection
             PacketId.EntityLanded => Packets.EntityLanded.Handle(this, bitStream),
             PacketId.RequestRespawn => Packets.RequestRespawn.Handle(this, bitStream),
             PacketId.JoinDestinationSelectionWorld => JoinDestinationSelectionWorld.Handle(this, bitStream),
+            PacketId.JoinSocialHub => JoinSocialHub.Handle(this, bitStream),
+            PacketId.JoinHomeWorld => JoinHomeWorld.Handle(this, bitStream),
+            PacketId.RequestWorldTeleport => RequestWorldTeleport.Handle(this, bitStream),
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
             PacketId.UISettingsSetGameplayCameraState => UISettingsSetGameplayCameraState.Handle(this, bitStream),

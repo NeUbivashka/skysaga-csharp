@@ -19,6 +19,8 @@ public class PlayerInitializer(IWorldManager worldManager)
         ArgumentNullException.ThrowIfNull(connection);
 
         var save = connection.SaveFileName is { } saveFileName ? PlayerSaveStore.Load(saveFileName) : null;
+        if (save?.CompletedNarrativeIndices is { } completedNarratives)
+            connection.CompletedNarrativeIndices.UnionWith(completedNarratives);
 
         if (player.TryGetComponent<ClientPlayernameComponent>(out var clientPlayernameComponent))
         {
@@ -91,9 +93,19 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {
-            var savedPosition = save is { HasPosition: true } && save.PositionMap == WorldMapLoader.MapFileName
+            var isSocialHub = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
+            // The City arrival sequence is anchored to its airship landing pad.
+            // A previous City position can be many voxels away from that prop,
+            // leaving the player and camera out of sync when the sequence starts.
+            // Keep appearance, inventory, settings and progress, but always use
+            // the current landing point for a social-hub entry.
+            var savedPosition = !isSocialHub && save is { HasPosition: true } && save.PositionMap == WorldMapLoader.MapFileName
                 ? new Vector3(save.PositionX, save.PositionY, save.PositionZ)
                 : (Vector3?)null;
+
+            if (isSocialHub && save is { HasPosition: true })
+                Console.WriteLine($"[PlayerInitializer] Ignoring cached City position "
+                    + $"({save.PositionX}, {save.PositionY}, {save.PositionZ}); using the airship landing point.");
 
             if (savedPosition is { } position && SpawnFinder.IsSolidAt(_worldManager.ChunkManager, position))
             {

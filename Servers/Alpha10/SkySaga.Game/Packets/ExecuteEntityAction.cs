@@ -56,12 +56,21 @@ public static class ExecuteEntityAction
             && srcEntityId == connection.PlayerEntity.Id
             && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var target))
         {
+            if (target.Name.Equals("ReturnTeleporter", StringComparison.OrdinalIgnoreCase))
+                return JoinHomeWorld.Transfer(connection, srcEntityId);
+
             if (connection.PlayerEntity.TryGetComponent<ClientUseEntityComponent>(out var useEntity))
                 useEntity.UsingEntityId = target.Id;
 
             if (connection.CharacterId is Guid character && target.TryGetComponent<ClientCampfireComponent>(out _))
                 connection.WorldManager.SetCheckpoint(character, target);
         }
+
+        if (actionName == "ActivatePortalAction"
+            && srcEntityId == connection.PlayerEntity.Id
+            && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var portal)
+            && portal.Name.Equals("ReturnTeleporter", StringComparison.OrdinalIgnoreCase))
+            return JoinHomeWorld.Transfer(connection, srcEntityId);
 
         return true;
     }

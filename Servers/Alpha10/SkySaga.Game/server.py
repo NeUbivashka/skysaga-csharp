@@ -29,7 +29,6 @@ http://127.0.0.1:5001 - the proxy sorts out which backend answers.
 
 import asyncio
 import datetime
-import hashlib
 import ipaddress
 import json
 import os
@@ -41,6 +40,8 @@ import uuid
 from pathlib import Path
 
 from flask import Flask, Response, jsonify, request
+from account_store import AccountStore
+from home_islands import HomeIslandManager
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -48,6 +49,7 @@ from flask import Flask, Response, jsonify, request
 
 LISTEN_HOST = "0.0.0.0"
 LISTEN_PORT = 5001
+GAME_ENTRY_PORT = int(os.environ.get("SKYSAGA_GAME_ENTRY_PORT", "42069"))
 
 HTTP_BACKEND = ("127.0.0.1", 5080)
 HTTPS_BACKEND = ("127.0.0.1", 5443)
@@ -55,11 +57,12 @@ HTTPS_BACKEND = ("127.0.0.1", 5443)
 CERT_FILE = Path(r"C:\SkySagaCerts\server.crt")
 KEY_FILE = Path(r"C:\SkySagaCerts\server.key")
 
-# The single local account. Created once and kept in Data/account.json (not in git), so the
-# character keeps the same uuid across restarts. SKYSAGA_PLAYER_NAME overrides the name only
-# when the file is first created; edit the file to rename later.
+# Import existing JSON identities into SQLite once. Keep the host JSON and old
+# remote account files untouched for rollback; SQLite is the account store after
+# import. Player and world saves remain in their existing locations.
 ACCOUNT_FILE = Path(__file__).resolve().parent / "Data" / "account.json"
 ACCOUNTS_DIR = ACCOUNT_FILE.parent / "accounts"
+ACCOUNT_DB_FILE = ACCOUNT_FILE.parent / "accounts.sqlite3"
 DEFAULT_PLAYER_NAME = os.environ.get("SKYSAGA_PLAYER_NAME", "NeUbivashka")
 
 
@@ -79,9 +82,12 @@ def _load_account():
     return account
 
 
-ACCOUNT = _load_account()
+ACCOUNT_STORE = AccountStore(ACCOUNT_DB_FILE)
+ACCOUNT_STORE.initialize(_load_account, ACCOUNT_FILE, ACCOUNTS_DIR)
+ACCOUNT = ACCOUNT_STORE.get_host()
 PLAYER_NAME = ACCOUNT["name"]
-ACCOUNT_CREATED = int(ACCOUNT_FILE.stat().st_ctime)
+ACCOUNT_CREATED = ACCOUNT["createdAt"]
+HOME_ISLANDS = HomeIslandManager(Path(__file__).resolve().parent)
 
 # The proxy's backend socket port identifies the original TCP peer even for TLS.
 # Flask's request.remote_addr is always the loopback backend address here.
@@ -127,25 +133,24 @@ def _login_username():
 
 
 def _remote_account(name):
-    key = name.casefold()
-    path = ACCOUNTS_DIR / (hashlib.sha256(key.encode("utf-8")).hexdigest() + ".json")
-    with _identity_lock:
-        if path.exists():
-            account = json.loads(path.read_text(encoding="utf-8"))
-            if account["name"].casefold() != key:
-                raise ValueError("Stored account name does not match its file")
-        else:
-            account = {"name": name, "characterUuid": str(uuid.uuid4()), "homeBiome": ACCOUNT["homeBiome"]}
-            ACCOUNTS_DIR.mkdir(parents=True, exist_ok=True)
-            temp_path = path.with_suffix(".tmp")
-            temp_path.write_text(json.dumps(account, indent=2), encoding="utf-8")
-            os.replace(temp_path, path)
-    return account
+    return ACCOUNT_STORE.get_or_create_remote(name, ACCOUNT["homeBiome"])
 
 
 def _select_login_account():
+    global ACCOUNT, PLAYER_NAME, ACCOUNT_CREATED
+
     peer = _peer_ip()
     if _is_local_peer(peer):
+        name = _login_username()
+        if name and name.casefold() != ACCOUNT["name"].casefold():
+            # The local launcher owns the host account.  This changes its
+            # display name only: character UUID, account id, home-world UUID,
+            # port, map and player save remain associated with the same row.
+            ACCOUNT = ACCOUNT_STORE.rename_host(name)
+            PLAYER_NAME = ACCOUNT["name"]
+            ACCOUNT_CREATED = ACCOUNT["createdAt"]
+            print(f"[identity] updated host display name to {ACCOUNT['name']!r}; "
+                  f"characterUuid={ACCOUNT['characterUuid']}")
         return ACCOUNT
     name = _login_username()
     if not peer or not name:
@@ -157,6 +162,8 @@ def _select_login_account():
     with _identity_lock:
         _peer_accounts[peer] = account
     print(f"[identity] peer={peer} name={account['name']} characterUuid={account['characterUuid']}")
+    if GAME_ENTRY_PORT == 42069:
+        HOME_ISLANDS.start_in_background(ACCOUNT_STORE.get_or_create_home_world(account))
     return account
 
 
@@ -242,7 +249,7 @@ def catch_all_get(path):
             "UUID": str(uuid.uuid4()),
             "DataCentre": "UK",
             "IP": "127.0.0.1",
-            "Port": 42069,
+            "Port": GAME_ENTRY_PORT,
         }])
 
     # Everything else - server-status file, home page, unknown paths - is
@@ -425,6 +432,49 @@ def player_identity():
     }}), 200
 
 
+@app.route("/internal/home-island", methods=["GET"])
+def home_island_destination():
+    """Resolve and start the home island for a connected game character."""
+    if not _is_local_peer(_peer_ip()):
+        return jsonify({"error": "local server only"}), 403
+    account = ACCOUNT_STORE.get_by_character_uuid(request.args.get("characterUuid"))
+    if account is None:
+        return jsonify({"error": "unknown character"}), 404
+    world = ACCOUNT_STORE.get_or_create_home_world(account)
+    try:
+        HOME_ISLANDS.ensure_running(world)
+    except (OSError, RuntimeError) as exc:
+        print(f"[home-island] Return transfer unavailable for {account['name']}: {exc}", flush=True)
+        return jsonify({"error": "Home island unavailable"}), 503
+    return jsonify({"result": {
+        "WorldUUID": world["uuid"],
+        "ServerUUID": world["serverUuid"],
+        "Port": world["port"],
+    }}), 200
+
+
+@app.route("/internal/world-island", methods=["GET"])
+def world_island_destination():
+    """Resolve and start a published island selected in the world browser."""
+    if not _is_local_peer(_peer_ip()):
+        return jsonify({"error": "local server only"}), 403
+    world = ACCOUNT_STORE.get_home_world_by_uuid(request.args.get("worldUuid"))
+    if world is None:
+        return jsonify({"error": "unknown world"}), 404
+    try:
+        HOME_ISLANDS.ensure_running(world)
+    except (OSError, RuntimeError) as exc:
+        print(f"[world-island] Transfer unavailable for {world['uuid']}: {exc}", flush=True)
+        return jsonify({"error": "Island unavailable"}), 503
+    return jsonify({"result": {
+        "WorldUUID": world["uuid"],
+        "ServerUUID": world["serverUuid"],
+        "Port": world["port"],
+        "OwnerUUID": world["owner"],
+        "OwnerName": world["ownerName"],
+    }}), 200
+
+
 @app.route("/api/account/name/checkName", methods=["GET", "POST"])
 def alpha10_account_check_name():
     # The character creator checks the chosen name here before it sends RPCSaveCharacterName
@@ -450,14 +500,7 @@ def alpha10_character_profile_batch():
 def _character_profile(character_uuid):
     account = _account_for_request()
     if character_uuid != account["characterUuid"]:
-        if character_uuid == ACCOUNT["characterUuid"]:
-            account = ACCOUNT
-        else:
-            for path in ACCOUNTS_DIR.glob("*.json"):
-                candidate = json.loads(path.read_text(encoding="utf-8"))
-                if candidate.get("characterUuid") == character_uuid:
-                    account = candidate
-                    break
+        account = ACCOUNT_STORE.get_by_character_uuid(character_uuid) or account
     return {
         "characterOnlineData": {
             "characterUuid": character_uuid,
@@ -544,7 +587,60 @@ def alpha10_binary_storage_cooler():
 @app.route("/api/persistent-record/worlds/listforowner/<owner>", methods=["GET"])
 def alpha10_worlds_list_for_owner(owner):
     print("=== worlds/listforowner", owner, "===")
-    return jsonify([_home_world(HOME_WORLD_UUID)]), 200
+    # My Islands is an account-owned list.  Resolve it through the signed-in
+    # proxy identity as well as the URL so one client cannot substitute another
+    # character UUID and make that island appear as its own.
+    account = _account_for_request()
+    try:
+        requested_owner = str(uuid.UUID(owner))
+    except (TypeError, ValueError, AttributeError):
+        return jsonify([]), 200
+    if requested_owner != account["characterUuid"]:
+        print(f"[my-islands] Ignored owner mismatch for {account['name']}: {requested_owner}")
+        return jsonify([]), 200
+    world = ACCOUNT_STORE.get_or_create_home_world(account)
+    print(f"[my-islands] Listed {account['name']}'s home island {world['uuid']}")
+    return jsonify([_home_world(world)]), 200
+
+
+@app.route("/api/persistent-record/curatedcontent/ugcbrowserworldcontent/_search", methods=["POST"])
+def alpha10_world_browser_search():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return jsonify({"error": "Invalid world search"}), 400
+
+    def nonnegative_int(value, default):
+        try:
+            return max(0, int(value))
+        except (TypeError, ValueError):
+            return default
+
+    first = nonnegative_int(body.get("first"), 0)
+    page_size = min(nonnegative_int(body.get("pageSize"), 12), 100)
+    owner_search = str(body.get("ownerNameSearch") or "").strip().casefold()
+    name_search = str(body.get("nameSearch") or "").strip().casefold()
+
+    viewer_uuid = _account_for_request()["characterUuid"]
+    worlds = [_home_world(record) for record in ACCOUNT_STORE.list_home_worlds()]
+    worlds = [world for world in worlds if world["published"]
+              and world["owner"] != viewer_uuid and (
+        (not owner_search and not name_search)
+        or (owner_search and owner_search in world["ownerName"].casefold())
+        or (name_search and name_search in world["name"].casefold())
+    )]
+    result = {
+        "totalHotWorldCount": len(worlds),
+        "totalWorldCount": len(worlds),
+        "hotUgcWorlds": [
+            {"id": world["uuid"], "thumbnails": []}
+            for world in worlds[first:first + page_size]
+        ],
+        "promotedUgcWorlds": [],
+        "worlds": [world["uuid"] for world in worlds[first:first + page_size]],
+    }
+    print(f"[world-browser] search owner={owner_search!r} name={name_search!r} "
+          f"matched={len(worlds)} returned={len(result['worlds'])}")
+    return jsonify({"result": result, **result}), 200
 
 
 @app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
@@ -552,7 +648,52 @@ def binary_storage_photo_likes():
     return jsonify({"result": {"likes": {}}}), 200
 
 
+def _empty_batch(field):
+    """Return an accepted empty batch using both Alpha 10 response views."""
+    values = []
+    return jsonify({field: values, "result": {field: values}}), 200
+
+
+@app.route("/api/persistent-record/world/like/find/batch", methods=["POST"])
+@app.route("/api/persistent-record/worlds/visits/multicount", methods=["POST"])
+@app.route("/api/persistent-record/worlds/engagements/worlds", methods=["POST"])
+@app.route("/api/persistent-record/world/like/character/batch", methods=["POST"])
+def alpha10_world_metadata_batch():
+    return _empty_batch("worlds")
+
+
+@app.route("/api/persistent-record/character/favourite/find/batch", methods=["POST"])
+def alpha10_world_favourites_batch():
+    return _empty_batch("favourite")
+
+
+@app.route("/api/persistent-record/world/buildpermission/batch", methods=["POST"])
+def alpha10_world_permissions_batch():
+    return _empty_batch("worldPermission")
+
+
+@app.route("/api/persistent-record/world/buildpermission/character/batch", methods=["POST"])
+def alpha10_character_world_permissions_batch():
+    return _empty_batch("characterPermission")
+
+
+@app.route("/api/persistent-record/worlds/engagements/numberPromotions", methods=["POST"])
+def alpha10_world_promotions_batch():
+    return _empty_batch("promotions")
+
+
+@app.route("/api/persistent-record/worlds/engagements/engagement/multiavailable", methods=["POST"])
+def alpha10_world_rewards_batch():
+    return _empty_batch("ugcIds")
+
+
+@app.route("/api/social-graph/character/relationship/info", methods=["POST"])
+def alpha10_character_relationships_batch():
+    return _empty_batch("relationships")
+
+
 HOME_WORLD_UUID = "6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25"
+SOCIAL_HUB_WORLD_UUID = "b6574a23-64df-4c26-9c31-40b2a485d0fe"
 
 HOME_ISLAND_MAP_SPEC = [
     [
@@ -577,25 +718,73 @@ HOME_ISLAND_MAP_SPEC = [
     "",
 ]
 
+# The client calls worlds/getSpecific after a transfer has already connected to
+# the City server.  This record must agree with the live social-hub handshake;
+# returning a player's home record here makes the client replace the City title
+# and map metadata with "<player>'s Ruins" during the loading sequence.
+SOCIAL_HUB_MAP_SPEC = [
+    [
+        "NPCfriend",
+        0,
+        "NPC_Friend_Adventure",
+        "Easy",
+        "",
+        1337,
+        "BiomePalette_SocialHub",
+        0, 0, 0,
+        "MidMorning",
+        0,
+        "Special",
+        "MapSize_4x4x4",
+        0,
+        "City_Social_Centre_Area",
+        "NoEvent",
+    ],
+    ["", 0],
+    [],
+    "",
+]
+
 
 @app.route("/api/persistent-record/worlds/getSpecific", methods=["POST"])
 def alpha10_worlds_get_specific():
     body = request.get_json(silent=True) or {}
     print("=== worlds/getSpecific", body, "===")
-    world = _home_world(body.get("uuid", HOME_WORLD_UUID))
+    requested_uuid = body.get("uuid")
+    if requested_uuid == SOCIAL_HUB_WORLD_UUID:
+        world = _social_hub_world()
+    else:
+        world_record = ACCOUNT_STORE.get_home_world_by_uuid(requested_uuid)
+        if world_record is None:
+            world_record = dict(ACCOUNT_STORE.get_or_create_home_world(ACCOUNT))
+            world_record["uuid"] = requested_uuid or HOME_WORLD_UUID
+        world = _home_world(world_record)
     return jsonify({"result": dict(world), **world}), 200
 
 
-def _home_world(world_uuid):
+def _home_world(world_record):
     return {
-        "uuid": world_uuid,
+        "uuid": world_record["uuid"],
         "mapSpec": HOME_ISLAND_MAP_SPEC,
-        "owner": ACCOUNT["characterUuid"],
-        "ownerName": PLAYER_NAME,
+        "owner": world_record["owner"],
+        "ownerName": world_record["ownerName"],
         "ownerType": "C",
-        "name": f"{PLAYER_NAME}'s Ruins",
+        "name": f"{world_record['ownerName']}'s Ruins",
         "homeWorld": True,
-        "published": False,
+        "published": True,
+    }
+
+
+def _social_hub_world():
+    return {
+        "uuid": SOCIAL_HUB_WORLD_UUID,
+        "mapSpec": SOCIAL_HUB_MAP_SPEC,
+        "owner": "",
+        "ownerName": "The City of Last Light",
+        "ownerType": "C",
+        "name": "The City of Last Light",
+        "homeWorld": False,
+        "published": True,
     }
 
 
@@ -624,13 +813,29 @@ def alpha10_game_conductor_reserve():
 @app.route("/api/game-conductor/retrieve", methods=["POST"])
 def alpha10_game_conductor_retrieve():
     print("=== alpha10 game-conductor retrieve (client wants game server address) ===")
+    account = _account_for_request()
+    if GAME_ENTRY_PORT == 42069:
+        world = ACCOUNT_STORE.get_or_create_home_world(account)
+        try:
+            HOME_ISLANDS.ensure_running(world)
+        except (OSError, RuntimeError) as exc:
+            print(f"[home-island] Refusing to route {account['name']}: {exc}", flush=True)
+            return jsonify({"error": "Home island unavailable"}), 503
+        destination_world = world["uuid"]
+        destination_server = world["serverUuid"]
+        destination_port = world["port"]
+    else:
+        # Preserve the explicit social-hub test launcher and its fixed entry port.
+        destination_world = str(uuid.uuid4())
+        destination_server = str(uuid.uuid4())
+        destination_port = GAME_ENTRY_PORT
     return jsonify({
         "result": {
             "retryInMillis": 5000,
-            "world": str(uuid.uuid4()),
+            "world": destination_world,
             "ip": "100.76.72.11",
-            "port": 42069,
-            "server": str(uuid.uuid4()),
+            "port": destination_port,
+            "server": destination_server,
         }
     }), 200
 

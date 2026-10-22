@@ -30,6 +30,11 @@ public class PlayerSaveData
 
     public List<string>? CompletedChallenges { get; set; }
 
+    // Client narrative wire indices reported through RPCNarrativeCompleted.
+    // These are separate from job challenges and are required by client-side
+    // conditions such as Condition_VisitedCity.
+    public List<ushort>? CompletedNarrativeIndices { get; set; }
+
     public uint? ChallengeRefreshIndex { get; set; }
 
     public List<string>? AvailableEmotes { get; set; }

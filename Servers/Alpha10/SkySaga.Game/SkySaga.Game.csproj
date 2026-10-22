@@ -101,6 +101,9 @@
     <None Update="Data\TestZoo.json" Condition="Exists('Data\TestZoo.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\SocialHub.json" Condition="Exists('Data\SocialHub.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\WorldMap.json" Condition="Exists('Data\WorldMap.json')">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

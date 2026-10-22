@@ -1,6 +1,10 @@
 ﻿
+var isSocialWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
+var isHomeIslandInstance = Environment.GetEnvironmentVariable("SKYSAGA_HOME_OWNER_UUID") is { Length: > 0 };
+var logName = Environment.GetEnvironmentVariable("SKYSAGA_INSTANCE_LOG")
+    ?? (isSocialWorld ? "server-socialhub.log" : "server.log");
 Console.SetOut(TextWriter.Synchronized(new TimestampedTextWriter(Console.Out,
-    new StreamWriter(Path.Combine(AppContext.BaseDirectory, "server.log"), append: false) { AutoFlush = true })));
+    new StreamWriter(Path.Combine(AppContext.BaseDirectory, logName), append: false) { AutoFlush = true })));
 
 if (!File.Exists("RakNet.dll"))
 {
@@ -43,7 +47,8 @@ var builder = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IrcServer>();
 
         services.AddHostedService<ServerHostedService>();
-        services.AddHostedService<IrcServerHostedService>();
+        if (!isSocialWorld && !isHomeIslandInstance)
+            services.AddHostedService<IrcServerHostedService>();
     })
     .ConfigureLogging(logging =>
     {

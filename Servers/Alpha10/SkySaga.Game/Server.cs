@@ -27,7 +27,8 @@ public class Server : IDisposable
         _playerInitializer = playerInitializer ?? throw new ArgumentNullException(nameof(playerInitializer));
         _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
         _password = password ?? throw new ArgumentNullException(nameof(password));
-        _port = port;
+        _port = ushort.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_GAME_PORT"), out var configuredPort)
+            ? configuredPort : port;
 
         _aiManager = new AiManager(_worldManager, _playerConnectionManager);
         _chatCommands = new ChatCommands(_worldManager, _playerConnectionManager);

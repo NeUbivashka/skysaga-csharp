@@ -62,6 +62,20 @@ public class MapSpec
         return spec;
     }
 
+    public static MapSpec SocialHub(uint seed)
+    {
+        // The City needs its original adventure to initialize its environment,
+        // including its skybox and arrival sequence.
+        var spec = HomeIsland(seed);
+        spec.Searchable[0] = 5; // NPC friend biome
+        spec.Searchable[AdventureSlot] = SocialHubAdventureIndex;
+        spec.Searchable[PaletteSlot] = SocialHubPaletteIndex;
+        spec.Searchable[TimeOfDayPresetSlot] = SocialHubTimeOfDayPresetIndex;
+        spec.Searchable[MapSizeSlot] = SocialHubMapSizeIndex;
+        spec.FeatureName = "City_Social_Centre_Area";
+        return spec;
+    }
+
     public bool IsFtue => Searchable[2] == 79;
 
     public uint Palette => Searchable[PaletteSlot];
@@ -79,19 +93,38 @@ public class MapSpec
     }
 
     public static MapSpec FromEnvironment(uint seed)
-        => Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.ToLowerInvariant() switch
+        => Environment.GetEnvironmentVariable("SKYSAGA_WORLD")?.ToLowerInvariant() switch
+        {
+            "social" => SocialHub(seed),
+            _ => Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.ToLowerInvariant() switch
         {
             "home" => HomeIsland(seed),
             "airship" => DestinationSelection(seed),
             "ftue" => Ftue(seed),
             _ => PlayerSaveStore.Load()?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
+        }
         };
 
+    private const int AdventureSlot = 2;
+
     private const int PaletteSlot = 4;
+
+    private const int TimeOfDayPresetSlot = 8;
 
     private const uint FtuePaletteIndex = 29;
 
     private const uint HomeIslandPaletteIndex = 23;
+
+    // GeoData indices are encoded with zero reserved for an unset reference.
+    // NPC_Friend_Adventure is 109, BiomePalette_SocialHub is 42,
+    // MidMorning is 10, and MapSize_10x5x10 is 6 in GeoData.
+    private const uint SocialHubAdventureIndex = 110;
+
+    private const uint SocialHubPaletteIndex = 43;
+
+    private const uint SocialHubTimeOfDayPresetIndex = 11;
+
+    private const uint SocialHubMapSizeIndex = 7;
 
     public const int MapSizeSlot = 11;
 
