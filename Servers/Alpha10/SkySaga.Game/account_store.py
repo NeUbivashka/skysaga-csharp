@@ -203,6 +203,23 @@ class AccountStore:
             """, (parsed_uuid, uuid_no_hyphen)).fetchone()
         return self._account(row)
 
+    def get_by_name(self, name):
+        if not name or not isinstance(name, str):
+            return None
+        name_key = name.strip().casefold()
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT * FROM accounts WHERE name_key = ?", (name_key,)
+            ).fetchone()
+        return self._account(row)
+
+    def list_all_accounts(self):
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                "SELECT * FROM accounts ORDER BY name_key"
+            ).fetchall()
+        return self._social_accounts(rows)
+
     def get_or_create_home_world(self, account):
         with closing(self._connect()) as connection:
             with connection:
@@ -351,8 +368,11 @@ class AccountStore:
         with closing(self._connect()) as connection:
             with connection:
                 connection.execute(
-                    "DELETE FROM friend_requests WHERE requester_account_id = ? AND recipient_account_id = ?",
-                    (requester["accountId"], recipient["accountId"]),
+                    """DELETE FROM friend_requests
+                       WHERE (requester_account_id = ? AND recipient_account_id = ?)
+                          OR (requester_account_id = ? AND recipient_account_id = ?)""",
+                    (requester["accountId"], recipient["accountId"],
+                     recipient["accountId"], requester["accountId"]),
                 )
 
     def accept_friend_request(self, recipient, requester):
@@ -361,18 +381,25 @@ class AccountStore:
             with connection:
                 connection.execute("BEGIN IMMEDIATE")
                 pending = connection.execute(
-                    "SELECT 1 FROM friend_requests WHERE requester_account_id = ? AND recipient_account_id = ?",
-                    (requester["accountId"], recipient["accountId"]),
+                    """SELECT 1 FROM friend_requests
+                       WHERE (requester_account_id = ? AND recipient_account_id = ?)
+                          OR (requester_account_id = ? AND recipient_account_id = ?)""",
+                    (requester["accountId"], recipient["accountId"],
+                     recipient["accountId"], requester["accountId"]),
                 ).fetchone()
                 if pending is None:
-                    return False
+                    # Direct accept or implicit request
+                    pass
                 connection.execute(
                     "INSERT OR IGNORE INTO friendships (first_account_id, second_account_id, created_at) VALUES (?, ?, ?)",
                     (first, second, int(time.time())),
                 )
                 connection.execute(
-                    "DELETE FROM friend_requests WHERE requester_account_id = ? AND recipient_account_id = ?",
-                    (requester["accountId"], recipient["accountId"]),
+                    """DELETE FROM friend_requests
+                       WHERE (requester_account_id = ? AND recipient_account_id = ?)
+                          OR (requester_account_id = ? AND recipient_account_id = ?)""",
+                    (requester["accountId"], recipient["accountId"],
+                     recipient["accountId"], requester["accountId"]),
                 )
         return True
 
@@ -380,8 +407,11 @@ class AccountStore:
         with closing(self._connect()) as connection:
             with connection:
                 connection.execute(
-                    "DELETE FROM friend_requests WHERE requester_account_id = ? AND recipient_account_id = ?",
-                    (requester["accountId"], recipient["accountId"]),
+                    """DELETE FROM friend_requests
+                       WHERE (requester_account_id = ? AND recipient_account_id = ?)
+                          OR (requester_account_id = ? AND recipient_account_id = ?)""",
+                    (requester["accountId"], recipient["accountId"],
+                     recipient["accountId"], requester["accountId"]),
                 )
 
     def remove_friend(self, account, other):

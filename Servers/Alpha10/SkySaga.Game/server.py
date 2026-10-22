@@ -179,6 +179,26 @@ def _account_for_peer(peer):
 
 
 def _account_for_request():
+    try:
+        body = request.get_json(silent=True) if request.is_json or request.data else {}
+    except Exception:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    if not isinstance(params, dict):
+        params = {}
+
+    for source in (body, params, getattr(request, "args", {})):
+        for key in ("character", "characterUuid", "characterUUID", "requester", "sender"):
+            val = source.get(key)
+            if isinstance(val, dict):
+                val = val.get("characterUuid") or val.get("uuid") or val.get("id")
+            if val and isinstance(val, str):
+                acc = ACCOUNT_STORE.get_by_character_uuid(val)
+                if acc:
+                    return acc
+
     peer = _peer_ip()
     account = _account_for_peer(peer)
     if account is None:
@@ -546,9 +566,14 @@ def _character_profile(character_uuid):
             "currentWorldBiome": biome,
             "currentWorldAdventure": "home",
             "currentWorldSingleton": True,
+            "online": True,
+            "isOnline": True,
+            "status": "online",
         },
         "counts": ACCOUNT_STORE.relationship_counts(account),
         "accountCreated": created_at,
+        "online": True,
+        "isOnline": True,
     }
 
 
@@ -613,27 +638,136 @@ def alpha10_character_relationship_info():
 
 @app.route("/api/social-graph/character/friends/info", methods=["POST"])
 def alpha10_character_friends_info():
-    # The client uses this list as a set of character UUIDs, then resolves the
-    # display details through character/profile/batch.
+    # SkySaga.exe 0x90fed0 looks for "characterOnlineData" (array of objects with "characterUuid")
+    # and "total" (integer count), triggering 0x5b5500 to update the online notification badge.
     friends = ACCOUNT_STORE.list_friends(_account_for_request())
-    resp = {"friends": [item["characterUuid"] for item in friends],
-            "total": len(friends), "totalHits": len(friends)}
+    online_data = [{
+        "characterUuid": item["characterUuid"],
+        "characterName": item.get("name", "Explorer"),
+        "online": True,
+        "isOnline": True,
+        "status": "online",
+    } for item in friends]
+    values = [item["characterUuid"] for item in friends]
+    resp = {
+        "characterOnlineData": online_data,
+        "characters": online_data,
+        "total": len(friends),
+        "totalHits": len(friends),
+        "count": len(friends),
+        "friends": values,
+    }
     return jsonify({"result": resp, **resp}), 200
 
 
 @app.route("/api/social-graph/character/follows/info", methods=["POST"])
 def alpha10_character_follows_info():
+    # SkySaga.exe 0x90fcc0 checks "characterOnlineData" + "total"; 0x910d10 checks "characters" + "count".
     follows = ACCOUNT_STORE.list_follows(_account_for_request())
-    resp = {"follows": [item["characterUuid"] for item in follows],
-            "total": len(follows), "totalHits": len(follows)}
+    char_list = [{
+        "characterUuid": item["characterUuid"],
+        "characterName": item.get("name", "Explorer"),
+        "online": True,
+        "isOnline": True,
+        "status": "online",
+    } for item in follows]
+    values = [item["characterUuid"] for item in follows]
+    resp = {
+        "characters": char_list,
+        "characterOnlineData": char_list,
+        "count": len(follows),
+        "total": len(follows),
+        "totalHits": len(follows),
+        "follows": values,
+    }
     return jsonify({"result": resp, **resp}), 200
 
 
 @app.route("/api/social-graph/character/followedby/info", methods=["POST"])
 def alpha10_character_followedby_info():
+    # SkySaga.exe 0x910d10 checks "characters" + "count".
     followed_by = ACCOUNT_STORE.list_followed_by(_account_for_request())
-    resp = {"followedBy": [item["characterUuid"] for item in followed_by],
-            "total": len(followed_by), "totalHits": len(followed_by)}
+    char_list = [{
+        "characterUuid": item["characterUuid"],
+        "characterName": item.get("name", "Explorer"),
+        "online": True,
+        "isOnline": True,
+        "status": "online",
+    } for item in followed_by]
+    values = [item["characterUuid"] for item in followed_by]
+    resp = {
+        "characters": char_list,
+        "characterOnlineData": char_list,
+        "count": len(followed_by),
+        "total": len(followed_by),
+        "totalHits": len(followed_by),
+        "followedBy": values,
+    }
+    return jsonify({"result": resp, **resp}), 200
+
+
+@app.route("/api/social-graph/character/<char_uuid>/blocked", methods=["GET", "POST"])
+@app.route("/api/social-graph/character/blocked", methods=["GET", "POST"])
+def alpha10_character_blocked(char_uuid=None):
+    # SkySaga.exe 0x910f10 expects an array of blocked objects with "characterUuid".
+    return jsonify([]), 200
+
+
+@app.route("/api/social-graph/character/block", methods=["POST"])
+def alpha10_character_block():
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/character/block/remove", methods=["POST"])
+def alpha10_character_block_remove():
+    return _social_action_ok()
+
+
+@app.route("/api/social-graph/character/buildpermission/update", methods=["POST"])
+def alpha10_character_buildpermission_update():
+    return _social_action_ok()
+
+
+@app.route("/api/persistent-record/characters/_findWithOnlineInfo", methods=["POST"])
+def alpha10_characters_find_with_online_info():
+    # SkySaga.exe 0x910d10 expects "characters" array and "count" integer.
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    if not isinstance(params, dict):
+        params = {}
+    include_friends = params.get("includeFriends", True)
+    name_starts_with = (params.get("nameStartsWith") or "").strip().lower()
+
+    req_account = _account_for_request()
+    friend_ids = set()
+    if req_account:
+        friends = ACCOUNT_STORE.list_friends(req_account)
+        friend_ids = {f["accountId"] for f in friends}
+
+    accounts = ACCOUNT_STORE.list_all_accounts()
+    char_list = []
+    for acc in accounts:
+        if req_account and acc["accountId"] == req_account["accountId"]:
+            continue
+        if not include_friends and acc["accountId"] in friend_ids:
+            continue
+        if name_starts_with and not acc["name"].lower().startswith(name_starts_with):
+            continue
+        char_list.append({
+            "characterUuid": acc["characterUuid"],
+            "characterName": acc["name"],
+            "online": True,
+            "isOnline": True,
+            "status": "online",
+        })
+
+    resp = {
+        "characters": char_list,
+        "characterOnlineData": char_list,
+        "count": len(char_list),
+        "total": len(char_list),
+        "totalHits": len(char_list),
+    }
     return jsonify({"result": resp, **resp}), 200
 
 
@@ -658,25 +792,27 @@ def _social_request_params():
 
 
 def _social_target(body, params):
-    """Resolve an action recipient without trusting a display name or peer IP."""
+    """Resolve an action recipient by UUID or display name."""
     candidates = ("recipient", "character", "characterUuid", "characterUUID", "characterId",
                   "target", "targetCharacterUuid", "friendUuid", "friendUUID", "requester",
-                  "sender", "player", "id")
+                  "sender", "player", "id", "name", "characterName", "playerName", "username")
+    request_account = _account_for_request()
+
     for values in (params, body):
         for key in candidates:
             value = values.get(key)
             if isinstance(value, dict):
-                value = value.get("characterUuid") or value.get("uuid") or value.get("id")
+                value = (value.get("characterUuid") or value.get("uuid") or value.get("id") or
+                         value.get("name") or value.get("characterName"))
             if value:
                 account = ACCOUNT_STORE.get_by_character_uuid(value)
-                if account and account["accountId"] != _account_for_request()["accountId"]:
+                if not account and isinstance(value, str):
+                    account = ACCOUNT_STORE.get_by_name(value)
+                if account and account["accountId"] != request_account["accountId"]:
                     print(f"[social] {request.path} target={account['name']} via {key}")
                     return account
 
-    # Bare UUID and list payloads are emitted by some context-menu actions.
-    # Search them after named fields and ignore the requesting account when a
-    # request carries both the sender and recipient IDs.
-    request_account = _account_for_request()
+    # Bare UUID, display name, and list payloads emitted by some context-menu actions.
     values_to_check = []
 
     def collect(value):
@@ -693,6 +829,8 @@ def _social_target(body, params):
     collect(body)
     for value in values_to_check:
         account = ACCOUNT_STORE.get_by_character_uuid(value)
+        if not account and isinstance(value, str):
+            account = ACCOUNT_STORE.get_by_name(value)
         if account and account["accountId"] != request_account["accountId"]:
             print(f"[social] {request.path} target={account['name']} via bare payload")
             return account
@@ -712,31 +850,58 @@ def _social_action_ok():
 
 @app.route("/api/social-graph/friendrequest/incoming", methods=["POST"])
 def alpha10_friend_requests_incoming():
+    # SkySaga.exe 0x9104c0 expects "results" (array of {"characterUuid": ...}) and "totalHits" (int).
+    # When totalHits > 0, 0x5b5500 is called to trigger the HUD notification popup/badge!
     accounts = ACCOUNT_STORE.list_friend_requests(_account_for_request(), incoming=True)
+    results = [{"characterUuid": item["characterUuid"], "characterName": item.get("name", "Explorer")} for item in accounts]
     values = [item["characterUuid"] for item in accounts]
-    response = {"friendRequests": values, "requests": values,
-                "total": len(values), "totalHits": len(values)}
+    response = {
+        "results": results,
+        "totalHits": len(results),
+        "total": len(results),
+        "count": len(results),
+        "friendRequests": values,
+        "requests": values,
+    }
     return jsonify({"result": response, **response}), 200
 
 
 @app.route("/api/social-graph/friendrequest/outgoing", methods=["POST"])
 def alpha10_friend_requests_outgoing():
+    # SkySaga.exe 0x910ab0 expects "results" and "totalHits" parsed via 0x9111d0.
     accounts = ACCOUNT_STORE.list_friend_requests(_account_for_request(), incoming=False)
+    results = [{"characterUuid": item["characterUuid"], "characterName": item.get("name", "Explorer")} for item in accounts]
     values = [item["characterUuid"] for item in accounts]
-    response = {"friendRequests": values, "requests": values,
-                "total": len(values), "totalHits": len(values)}
+    response = {
+        "results": results,
+        "totalHits": len(results),
+        "total": len(results),
+        "count": len(results),
+        "friendRequests": values,
+        "requests": values,
+    }
     return jsonify({"result": response, **response}), 200
 
 
 @app.route("/api/social-graph/friendrequest/create", methods=["POST"])
 def alpha10_friend_request_create():
     body, params = _social_request_params()
-    account = _account_for_request()
-    target = _social_target(body, params)
+    sender = None
+    target = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            sender = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            target = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if sender is None:
+        sender = _account_for_request()
     if target is None:
+        target = _social_target(body, params)
+    if target is None or sender is None:
         return _social_action_error("Unknown friend request recipient", 404)
+    if sender["accountId"] == target["accountId"]:
+        return _social_action_error("Cannot friend request yourself", 400)
     try:
-        ACCOUNT_STORE.create_friend_request(account, target)
+        ACCOUNT_STORE.create_friend_request(sender, target)
     except ValueError as exc:
         return _social_action_error(str(exc))
     return _social_action_ok()
@@ -745,20 +910,35 @@ def alpha10_friend_request_create():
 @app.route("/api/social-graph/friendrequest/cancel", methods=["POST"])
 def alpha10_friend_request_cancel():
     body, params = _social_request_params()
-    target = _social_target(body, params)
-    if target is None:
-        return _social_action_error("Unknown friend request recipient", 404)
-    ACCOUNT_STORE.cancel_friend_request(_account_for_request(), target)
+    acc1 = None
+    acc2 = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if not acc1 or not acc2:
+        acc1 = _account_for_request()
+        acc2 = _social_target(body, params)
+    if acc1 and acc2:
+        ACCOUNT_STORE.cancel_friend_request(acc1, acc2)
     return _social_action_ok()
 
 
 @app.route("/api/social-graph/friendrequest/accept", methods=["POST"])
 def alpha10_friend_request_accept():
     body, params = _social_request_params()
-    target = _social_target(body, params)
-    if target is None:
+    acc1 = None
+    acc2 = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if not acc1 or not acc2:
+        acc1 = _account_for_request()
+        acc2 = _social_target(body, params)
+    if acc1 is None or acc2 is None:
         return _social_action_error("Unknown friend request sender", 404)
-    if not ACCOUNT_STORE.accept_friend_request(_account_for_request(), target):
+    if not ACCOUNT_STORE.accept_friend_request(acc1, acc2):
         return _social_action_error("Friend request was not pending", 409)
     return _social_action_ok()
 
@@ -766,31 +946,56 @@ def alpha10_friend_request_accept():
 @app.route("/api/social-graph/friendrequest/reject", methods=["POST"])
 def alpha10_friend_request_reject():
     body, params = _social_request_params()
-    target = _social_target(body, params)
-    if target is None:
-        return _social_action_error("Unknown friend request sender", 404)
-    ACCOUNT_STORE.reject_friend_request(_account_for_request(), target)
+    acc1 = None
+    acc2 = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if not acc1 or not acc2:
+        acc1 = _account_for_request()
+        acc2 = _social_target(body, params)
+    if acc1 and acc2:
+        ACCOUNT_STORE.reject_friend_request(acc1, acc2)
     return _social_action_ok()
 
 
 @app.route("/api/social-graph/character/unfriend", methods=["POST"])
 def alpha10_unfriend():
     body, params = _social_request_params()
-    target = _social_target(body, params)
-    if target is None:
-        return _social_action_error("Unknown friend", 404)
-    ACCOUNT_STORE.remove_friend(_account_for_request(), target)
+    acc1 = None
+    acc2 = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if not acc1 or not acc2:
+        acc1 = _account_for_request()
+        acc2 = _social_target(body, params)
+    if acc1 and acc2:
+        ACCOUNT_STORE.remove_friend(acc1, acc2)
     return _social_action_ok()
 
 
 @app.route("/api/social-graph/character/follow", methods=["POST"])
 def alpha10_follow():
     body, params = _social_request_params()
-    target = _social_target(body, params)
-    if target is None:
+    follower = None
+    followed = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            follower = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            followed = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if follower is None:
+        follower = _account_for_request()
+    if followed is None:
+        followed = _social_target(body, params)
+    if follower is None or followed is None:
         return _social_action_error("Unknown player to follow", 404)
+    if follower["accountId"] == followed["accountId"]:
+        return _social_action_error("Cannot follow yourself", 400)
     try:
-        ACCOUNT_STORE.follow(_account_for_request(), target)
+        ACCOUNT_STORE.follow(follower, followed)
     except ValueError as exc:
         return _social_action_error(str(exc))
     return _social_action_ok()
@@ -799,10 +1004,18 @@ def alpha10_follow():
 @app.route("/api/social-graph/character/unfollow", methods=["POST"])
 def alpha10_unfollow():
     body, params = _social_request_params()
-    target = _social_target(body, params)
-    if target is None:
-        return _social_action_error("Unknown player to unfollow", 404)
-    ACCOUNT_STORE.unfollow(_account_for_request(), target)
+    follower = None
+    followed = None
+    if isinstance(body, dict):
+        if "requester" in body and "recipient" in body:
+            follower = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
+            followed = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
+    if follower is None:
+        follower = _account_for_request()
+    if followed is None:
+        followed = _social_target(body, params)
+    if follower and followed:
+        ACCOUNT_STORE.unfollow(follower, followed)
     return _social_action_ok()
 
 
@@ -815,6 +1028,23 @@ def alpha10_groups_info():
     """
     result = {"groups": [], "total": 0, "totalHits": 0}
     return jsonify({"result": result, **result}), 200
+
+
+@app.route("/api/social-graph/guilds/members/list/info", methods=["GET", "POST"])
+def alpha10_guild_members_list_info():
+    # SkySaga.exe 0x00a73357 expects characterOnlineData and members
+    resp = {
+        "characterOnlineData": [],
+        "members": [],
+        "total": 0,
+        "count": 0,
+    }
+    return jsonify({"result": resp, **resp}), 200
+
+
+@app.route("/api/online-presence/onlineCharacterHandler", methods=["GET", "POST"])
+def alpha10_online_character_handler():
+    return jsonify({"status": "ok"}), 200
 
 
 @app.route("/api/account/get", methods=["POST"])
