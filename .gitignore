@@ -405,6 +405,9 @@ server.key
 Servers/*/SkySaga.Game/Data/account.json
 Servers/*/SkySaga.Game/Data/accounts/
 Servers/*/SkySaga.Game/Data/accounts.sqlite3*
+Servers/*/SkySaga.Game/*.sqlite3*
+Servers/*/SkySaga.Game/Data/*.sqlite3*
+Servers/*/SkySaga.Game/Data/photos/
 Servers/*.rar
 
 # Archives never belong in the repo

@@ -44,6 +44,14 @@ public sealed class PlayerConnectionManager
         }
     }
 
+    public void BroadcastToAll(BitStream bitStream)
+    {
+        foreach (var connection in _connections.Values)
+        {
+            connection.Send(bitStream);
+        }
+    }
+
     public void BroadcastToAllExcept(ulong excludeGuid, ISerializablePacket packet)
     {
         foreach (var kvp in _connections)
@@ -51,6 +59,17 @@ public sealed class PlayerConnectionManager
             if (kvp.Key != excludeGuid)
             {
                 kvp.Value.Send(packet);
+            }
+        }
+    }
+
+    public void BroadcastToAllExcept(ulong excludeGuid, BitStream bitStream)
+    {
+        foreach (var kvp in _connections)
+        {
+            if (kvp.Key != excludeGuid)
+            {
+                kvp.Value.Send(bitStream);
             }
         }
     }

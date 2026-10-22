@@ -42,6 +42,7 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request
 from account_store import AccountStore
 from home_islands import HomeIslandManager
+from photo_store import PhotoStore
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -88,6 +89,9 @@ ACCOUNT = ACCOUNT_STORE.get_host()
 PLAYER_NAME = ACCOUNT["name"]
 ACCOUNT_CREATED = ACCOUNT["createdAt"]
 HOME_ISLANDS = HomeIslandManager(Path(__file__).resolve().parent)
+PHOTO_DB_FILE = ACCOUNT_FILE.parent / "photos.sqlite3"
+PHOTOS_DIR = ACCOUNT_FILE.parent / "photos"
+PHOTO_STORE = PhotoStore(PHOTO_DB_FILE, PHOTOS_DIR)
 
 # The proxy's backend socket port identifies the original TCP peer even for TLS.
 # Flask's request.remote_addr is always the loopback backend address here.
@@ -491,24 +495,135 @@ def alpha10_account_check_name():
 @app.route("/api/social-graph/character/profile/batch", methods=["POST"])
 def alpha10_character_profile_batch():
     body = request.get_json(silent=True, force=True) or {}
-    params = body.get("params", body)
-    recipients = params.get("recipients") or [_account_for_request()["characterUuid"]]
-    print("=== alpha10 character profile batch", request.get_data(as_text=True), "===", flush=True)
-    return jsonify({"result": [_character_profile(uuid_) for uuid_ in recipients]}), 200
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    recipients = None
+    if isinstance(params, dict):
+        recipients = params.get("recipients")
+    if not recipients and isinstance(body, dict):
+        recipients = body.get("recipients")
+    if not recipients:
+        req = _account_for_request()
+        recipients = [req["characterUuid"]] if req else []
+    print(f"=== alpha10 character profile batch recipients={recipients} ===", flush=True)
+    profiles = [_character_profile(uuid_) for uuid_ in recipients]
+    # SkySaga.exe 0x009f1f53 expects root JSON node type == 2 (Array)
+    return jsonify(profiles), 200
 
 
 def _character_profile(character_uuid):
-    account = _account_for_request()
-    if character_uuid != account["characterUuid"]:
-        account = ACCOUNT_STORE.get_by_character_uuid(character_uuid) or account
+    req_account = _account_for_request()
+    account = None
+    char_str = str(character_uuid).strip().lower() if character_uuid else ""
+
+    if char_str:
+        if req_account and str(req_account.get("characterUuid", "")).lower() == char_str:
+            account = req_account
+        if not account:
+            account = ACCOUNT_STORE.get_by_character_uuid(char_str)
+        if not account:
+            with _identity_lock:
+                for peer_acc in _peer_accounts.values():
+                    if peer_acc and str(peer_acc.get("characterUuid", "")).lower() == char_str:
+                        account = peer_acc
+                        break
+        if not account and str(ACCOUNT.get("characterUuid", "")).lower() == char_str:
+            account = ACCOUNT
+
+    if not account:
+        account = req_account or ACCOUNT
+
+    world = ACCOUNT_STORE.get_or_create_home_world(account) if account else None
+    world_uuid = world.get("uuid", "") if world else ""
+    biome = account.get("homeBiome", "Desert") if account else "Desert"
+    created_at = account.get("createdAt", ACCOUNT_CREATED) if account else ACCOUNT_CREATED
+    resolved_char_uuid = account.get("characterUuid", char_str) if account else char_str
+
     return {
         "characterOnlineData": {
-            "characterUuid": character_uuid,
-            "characterName": account["name"],
+            "characterUuid": resolved_char_uuid,
+            "characterName": account.get("name", "Explorer"),
+            "currentWorld": world_uuid,
+            "currentWorldBiome": biome,
+            "currentWorldAdventure": "home",
+            "currentWorldSingleton": True,
         },
         "counts": {"follows": 0, "followedBy": 0, "friends": 0},
-        "accountCreated": ACCOUNT_CREATED,
+        "accountCreated": created_at,
     }
+
+
+@app.route("/api/social-graph/character/profile", methods=["POST"])
+def alpha10_character_profile():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    recipient = None
+    if isinstance(params, dict):
+        recipient = params.get("recipient") or params.get("id") or params.get("characterId")
+    if not recipient and isinstance(body, dict):
+        recipient = body.get("recipient") or body.get("id") or body.get("characterId")
+    if not recipient:
+        req = _account_for_request()
+        recipient = req["characterUuid"] if req else None
+    profile = _character_profile(recipient)
+    print(f"=== alpha10 character profile recipient={recipient} name={profile['characterOnlineData']['characterName']} ===", flush=True)
+    return jsonify({"result": profile, **profile}), 200
+
+
+@app.route("/api/social-graph/character/relationship/info", methods=["POST"])
+def alpha10_character_relationship_info():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    rel_list = None
+    if isinstance(params, dict):
+        rel_list = params.get("relationships") or params.get("recipients")
+    if not rel_list and isinstance(body, dict):
+        rel_list = body.get("relationships") or body.get("recipients")
+    if not rel_list:
+        target = params.get("character") or params.get("recipient") or params.get("id") if isinstance(params, dict) else None
+        if target:
+            rel_list = [target]
+        else:
+            req = _account_for_request()
+            rel_list = [req["characterUuid"]] if req and req.get("characterUuid") else []
+
+    if isinstance(rel_list, str):
+        rel_list = [rel_list]
+
+    # SkySaga.exe 0x009f21d3 expects root JSON node type == 2 (Array)
+    # SkySaga.exe 0x009edfe0 expects each element to be a 10-element array:
+    # [ "<character_uuid>", is_friend, is_following, is_followed_by, is_blocked, is_incoming, is_outgoing, is_ignored, bit7, bit8 ]
+    result = []
+    seen = set()
+    for char_uuid in rel_list:
+        u_str = str(char_uuid).strip().lower()
+        if not u_str or u_str in seen:
+            continue
+        seen.add(u_str)
+        result.append([u_str, False, False, False, False, False, False, False, False, False])
+
+    print(f"=== alpha10 character relationship info: {result} ===", flush=True)
+    return jsonify(result), 200
+
+
+@app.route("/api/social-graph/character/friends/info", methods=["POST"])
+def alpha10_character_friends_info():
+    # SkySaga.exe 0x0090fbe2 expects integer 'total'
+    resp = {"friends": [], "total": 0, "totalHits": 0}
+    return jsonify({"result": resp, **resp}), 200
+
+
+@app.route("/api/social-graph/character/follows/info", methods=["POST"])
+def alpha10_character_follows_info():
+    # SkySaga.exe 0x0090fbe2 expects integer 'total'
+    resp = {"follows": [], "total": 0, "totalHits": 0}
+    return jsonify({"result": resp, **resp}), 200
+
+
+@app.route("/api/social-graph/character/followedby/info", methods=["POST"])
+def alpha10_character_followedby_info():
+    # SkySaga.exe 0x0090fbe2 expects integer 'total'
+    resp = {"followedBy": [], "total": 0, "totalHits": 0}
+    return jsonify({"result": resp, **resp}), 200
 
 
 @app.route("/api/account/get", methods=["POST"])
@@ -579,9 +694,76 @@ def alpha10_matchmaking_create():
     return "", 200
 
 
+def _photo_metadata(record, host_url=None):
+    if not host_url:
+        http_scheme = "https" if request.is_secure else "http"
+        host_url = f"{http_scheme}://{request.host}"
+    photo_uuid = record["uuid"]
+    md5_hash = record["hash"]
+    img_url = f"{host_url}/api/binary-storage/photos/{photo_uuid}/image"
+
+    file_info = {
+        "url": img_url,
+        "hash": md5_hash,
+    }
+
+    return {
+        "uuid": photo_uuid,
+        "photoUUID": photo_uuid,
+        "photo": photo_uuid,
+        "name": record.get("caption") or f"Photo {photo_uuid[:8]}",
+        "thumbnail": file_info,
+        "scaled": file_info,
+        "file": file_info,
+        "large": file_info,
+        "gallery": True,
+        "likes": record.get("likes", 0),
+        "avatarPhoto": bool(record.get("is_avatar", 0)),
+        "created": record.get("created_at") or "",
+        "creationDate": record.get("created_at") or "",
+        "access": {
+            "visiblePublic": bool(record.get("visible_public", 1)),
+            "visibleFriends": bool(record.get("visible_friends", 1)),
+        },
+        "game": {
+            "won": 0,
+            "lost": 0,
+            "thumbsTotal": record.get("likes", 0),
+        },
+        "privateData": {
+            "owner": record["owner_uuid"],
+            "ownerName": record["owner_name"],
+            "visiblePublic": bool(record.get("visible_public", 1)),
+            "visibleFriends": bool(record.get("visible_friends", 1)),
+            "avatarPhoto": bool(record.get("is_avatar", 0)),
+            "likes": record.get("likes", 0),
+        },
+        "metaData": {
+            "owner": record["owner_uuid"],
+            "created": record.get("created_at") or "",
+            "worldUUID": record.get("world_uuid", ""),
+            "biome": record.get("biome", "Forest"),
+            "adventure": record.get("adventure", "home"),
+            "seed": 1337,
+            "paletteName": record.get("palette_name", "Forest"),
+            "caption": record.get("caption", ""),
+            "avatarPhoto": bool(record.get("is_avatar", 0)),
+            "tags": [],
+        }
+    }
+
+
 @app.route("/api/binary-storage/photos/_whichIsCooler", methods=["POST"])
 def alpha10_binary_storage_cooler():
-    return "", 200
+    photos = PHOTO_STORE.list_public_photos()
+    if len(photos) >= 2:
+        return jsonify({
+            "result": {
+                "results": [photos[0]["uuid"], photos[1]["uuid"]],
+                "battleToken": "battle_token_1"
+            }
+        }), 200
+    return jsonify({"result": {"results": []}}), 200
 
 
 @app.route("/api/persistent-record/worlds/listforowner/<owner>", methods=["GET"])
@@ -643,9 +825,293 @@ def alpha10_world_browser_search():
     return jsonify({"result": result, **result}), 200
 
 
+@app.route("/api/binary-storage/photos/<photo_uuid>/_upload", methods=["POST"])
+def alpha10_photo_upload(photo_uuid):
+    account = _account_for_request()
+    owner_uuid = account["characterUuid"]
+    owner_name = account["name"]
+
+    file_bytes = b""
+    if "photo" in request.files:
+        file_bytes = request.files["photo"].read()
+    elif request.data:
+        file_bytes = request.data
+
+    world_uuid = ""
+    home_world = ACCOUNT_STORE.get_or_create_home_world(account)
+    if home_world:
+        world_uuid = home_world.get("uuid", "")
+
+    record = PHOTO_STORE.save_photo_file(
+        photo_uuid=photo_uuid,
+        image_bytes=file_bytes,
+        owner_uuid=owner_uuid,
+        owner_name=owner_name,
+        world_uuid=world_uuid,
+    )
+
+    PHOTO_STORE.set_avatar(owner_uuid, photo_uuid)
+    record["is_avatar"] = 1
+
+    print(f"[photo-upload] Uploaded {photo_uuid} ({len(file_bytes)} bytes) by {owner_name} ({owner_uuid}) - set as avatar")
+    meta = _photo_metadata(record)
+    return jsonify({"result": meta, **meta}), 200
+
+
+@app.route("/api/binary-storage/photos/<photo_uuid>/access", methods=["POST"])
+def alpha10_photo_access(photo_uuid):
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body)
+    vis_public = params.get("visiblePublic", True)
+    vis_friends = params.get("visibleFriends", True)
+    PHOTO_STORE.update_access(photo_uuid, vis_public, vis_friends)
+    print(f"[photo-access] Updated access for {photo_uuid}: public={vis_public}, friends={vis_friends}")
+    return jsonify({"result": "OK"}), 200
+
+
+@app.route("/api/binary-storage/photos/<photo_uuid>", methods=["GET"])
+def alpha10_photo_get(photo_uuid):
+    record = PHOTO_STORE.get_photo(photo_uuid)
+    if not record:
+        return jsonify({"error": "Photo not found"}), 404
+    meta = _photo_metadata(record)
+    return jsonify({"result": meta, **meta}), 200
+
+
+@app.route("/api/binary-storage/photos/<photo_uuid>/image", methods=["GET"])
+def alpha10_photo_download(photo_uuid):
+    file_path = PHOTO_STORE.photos_dir / f"{photo_uuid}.jpg"
+    if not file_path.exists():
+        return Response("Photo not found", status=404)
+    data = file_path.read_bytes()
+    return Response(data, mimetype="image/jpeg", headers={
+        "Content-Type": "image/jpeg",
+        "Content-Length": str(len(data)),
+        "Cache-Control": "no-cache, must-revalidate"
+    })
+
+
+@app.route("/api/binary-storage/photos/<photo_uuid>", methods=["DELETE", "POST"])
+@app.route("/api/binary-storage/photos/<photo_uuid>/_delete", methods=["DELETE", "POST"])
+def alpha10_photo_delete(photo_uuid):
+    account = _account_for_request()
+    owner_uuid = account.get("characterUuid") if isinstance(account, dict) else None
+    PHOTO_STORE.delete_photo(photo_uuid, owner_uuid)
+    print(f"[photo-delete] Photo {photo_uuid} deleted (requester={owner_uuid})")
+    return jsonify({"result": "OK"}), 200
+
+
+@app.route("/api/binary-storage/photos/_searchAvatarByCharacterId", methods=["POST"])
+def alpha10_photo_search_avatar():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    char_id = None
+    if isinstance(params, dict):
+        char_id = params.get("id") or params.get("characterId") or params.get("recipient") or params.get("characterUuid")
+    if not char_id and isinstance(body, dict):
+        char_id = body.get("id") or body.get("characterId") or body.get("recipient") or body.get("characterUuid")
+    if not char_id:
+        req = _account_for_request()
+        char_id = req["characterUuid"] if req else None
+    avatar = PHOTO_STORE.get_avatar(char_id) if char_id else None
+    if avatar:
+        results = [_photo_metadata(avatar)]
+    else:
+        results = []
+    print(f"[photo-avatar] Avatar for {char_id}: found={bool(avatar)}, photo={avatar['uuid'] if avatar else None}")
+    return jsonify({"result": {"results": results}, "results": results}), 200
+
+
+def _get_page_range(body, params, default_size=24):
+    first_val = None
+    if isinstance(params, dict):
+        first_val = params.get("pageStart") if "pageStart" in params else params.get("first")
+    if first_val is None and isinstance(body, dict):
+        first_val = body.get("pageStart") if "pageStart" in body else body.get("first")
+    try:
+        first = max(0, int(first_val))
+    except (TypeError, ValueError):
+        first = 0
+
+    size_val = None
+    if isinstance(params, dict):
+        size_val = params.get("pageSize")
+    if size_val is None and isinstance(body, dict):
+        size_val = body.get("pageSize")
+    try:
+        page_size = max(1, int(size_val))
+    except (TypeError, ValueError):
+        page_size = default_size
+
+    return first, page_size
+
+
+@app.route("/api/binary-storage/photos/_searchByCharacterAndWorldId", methods=["POST"])
+def alpha10_photo_search_by_char_and_world():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    char_id = params.get("characterId") or params.get("characterUUID") or params.get("ownerId")
+    world_id = params.get("worldId") or params.get("worldUUID")
+    first, page_size = _get_page_range(body, params, default_size=24)
+
+    all_photos = PHOTO_STORE.list_photos_by_character_and_world(char_id, world_id)
+    page_photos = all_photos[first:first + page_size]
+    results = [_photo_metadata(p) for p in page_photos]
+    total_hits = max(len(all_photos), first + len(results))
+    print(f"[photo-search] char={char_id} world={world_id} first={first} pageSize={page_size} total={total_hits} returned={len(results)}")
+    res = {"results": results, "totalHits": total_hits}
+    return jsonify({"result": res, **res}), 200
+
+
+@app.route("/api/persistent-record/curatedcontent/ugcbrowserphotocontent/_search", methods=["POST"])
+def alpha10_ugc_browser_photos_search():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    first, page_size = _get_page_range(body, params, default_size=24)
+    sort = str(params.get("sort", "hot")).lower()
+
+    all_photos = PHOTO_STORE.list_public_photos(sort=sort)
+    page_photos = all_photos[first:first + page_size]
+
+    entries = [
+        {
+            "photo": p["uuid"],
+            "likes": p["likes"],
+            "creationDate": p["created_at"],
+            "ownerName": p["owner_name"],
+        }
+        for p in page_photos
+    ]
+
+    # In SkySaga client (0x00a34d00 & 0x00a355a0), the promoted photo vector capacity is
+    # permanently 0 (never resized). Returning any items in promotedUgcPhotos causes an
+    # assertion failure cmp index, 0 at 0x00a355c1. It MUST ALWAYS be empty [].
+    result = {
+        "totalHotPhotoCount": len(all_photos),
+        "hotUgcPhotos": entries,
+        "promotedUgcPhotos": [],
+    }
+    print(f"[photo-browser] UGC Gallery search: sort={sort} total={len(all_photos)}, first={first}, page={len(entries)}")
+    return jsonify({"result": result, **result}), 200
+
+
 @app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
 def binary_storage_photo_likes():
-    return jsonify({"result": {"likes": {}}}), 200
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    ids = params.get("ids", [])
+    likes_dict = {photo_id: (PHOTO_STORE.get_photo(photo_id)["likes"] if PHOTO_STORE.get_photo(photo_id) else 0) for photo_id in ids}
+    return jsonify({"result": {"likes": likes_dict}, "likes": likes_dict}), 200
+
+
+@app.route("/api/persistent-record/likes/_multiIsLiked", methods=["POST"])
+def alpha10_multi_is_liked():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    char_id = params.get("characterId") or _account_for_request()["characterUuid"]
+    ids = params.get("ids", [])
+    liked_map = PHOTO_STORE.multi_is_liked(ids, char_id)
+    # The client checks "likes" in 0x00a8b470 and "isPlayerLiked" in other places
+    res = {
+        "likes": liked_map,
+        "isLiked": liked_map,
+        "isPlayerLiked": liked_map,
+    }
+    return jsonify({"result": res, **res, **liked_map}), 200
+
+
+@app.route("/api/binary-storage/photos/_like", methods=["POST"])
+def alpha10_photo_like():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    photo_uuid = params.get("id") or params.get("photoUUID")
+    char_uuid = params.get("characterId") or _account_for_request()["characterUuid"]
+    total = 0
+    if photo_uuid:
+        PHOTO_STORE.like_photo(photo_uuid, char_uuid)
+        photo = PHOTO_STORE.get_photo(photo_uuid)
+        total = photo["likes"] if photo else 0
+    result = {"id": photo_uuid, "total": total}
+    return jsonify({"result": result, **result}), 200
+
+
+@app.route("/api/binary-storage/photos/_unlike", methods=["POST"])
+def alpha10_photo_unlike():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    photo_uuid = params.get("id") or params.get("photoUUID")
+    char_uuid = params.get("characterId") or _account_for_request()["characterUuid"]
+    total = 0
+    if photo_uuid:
+        PHOTO_STORE.unlike_photo(photo_uuid, char_uuid)
+        photo = PHOTO_STORE.get_photo(photo_uuid)
+        total = photo["likes"] if photo else 0
+    result = {"id": photo_uuid, "total": total}
+    return jsonify({"result": result, **result}), 200
+
+
+@app.route("/api/persistent-record/curatedcontent/ugcbrowserblueprintcontent/_search", methods=["POST"])
+def alpha10_ugc_browser_blueprints_search():
+    result = {
+        "totalHotBlueprintCount": 0,
+        "hotUgcBlueprints": [],
+    }
+    return jsonify({"result": result, **result}), 200
+
+
+@app.route("/api/binary-storage/photos/_searchByName", methods=["POST"])
+def alpha10_photo_search_by_name():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    name = str(params.get("name", "")).strip().casefold()
+    first, page_size = _get_page_range(body, params, default_size=24)
+
+    all_photos = PHOTO_STORE.list_public_photos()
+    matches = [p for p in all_photos if not name or name in (p.get("caption") or "").casefold()]
+    page_photos = matches[first:first + page_size]
+    results = [_photo_metadata(p) for p in page_photos]
+    total_hits = max(len(matches), first + len(results))
+    res = {"results": results, "totalHits": total_hits}
+    return jsonify({"result": res, **res}), 200
+
+
+@app.route("/api/binary-storage/photos/_searchRandomByWorldId", methods=["POST"])
+def alpha10_photo_search_random_by_world():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    world_id = params.get("worldId") or params.get("worldUUID")
+    photos = PHOTO_STORE.list_photos_by_character_and_world(world_uuid=world_id) if world_id else PHOTO_STORE.list_public_photos()
+    if photos:
+        import random
+        chosen = random.choice(photos)
+        meta = _photo_metadata(chosen)
+        return jsonify({"result": meta, **meta}), 200
+    return jsonify({"result": {}, "results": []}), 200
+
+
+@app.route("/api/binary-storage/photos/_searchByMapSpec", methods=["POST"])
+def alpha10_photo_search_by_mapspec():
+    body = request.get_json(silent=True, force=True) or {}
+    params = body.get("params", body) if isinstance(body, dict) else {}
+    char_id = params.get("characterId") or params.get("characterUUID") or params.get("ownerId")
+    first, page_size = _get_page_range(body, params, default_size=24)
+
+    all_photos = PHOTO_STORE.list_photos_by_character_and_world(char_id) if char_id else PHOTO_STORE.list_public_photos()
+    page_photos = all_photos[first:first + page_size]
+    results = [_photo_metadata(p) for p in page_photos]
+    total_hits = max(len(all_photos), first + len(results))
+    res = {"results": results, "totalHits": total_hits}
+    return jsonify({"result": res, **res}), 200
+
+
+@app.route("/api/binary-storage/photos/_whichIsCoolerOutcome", methods=["POST"])
+def alpha10_photo_which_is_cooler_outcome():
+    return jsonify({"result": "OK"}), 200
+
+
+@app.route("/api/binary-storage/photos/_report", methods=["POST"])
+def alpha10_photo_report():
+    return jsonify({"result": "OK"}), 200
 
 
 def _empty_batch(field):
@@ -687,9 +1153,7 @@ def alpha10_world_rewards_batch():
     return _empty_batch("ugcIds")
 
 
-@app.route("/api/social-graph/character/relationship/info", methods=["POST"])
-def alpha10_character_relationships_batch():
-    return _empty_batch("relationships")
+# Duplicate relationship route removed; handled by alpha10_character_relationship_info
 
 
 HOME_WORLD_UUID = "6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25"

@@ -157,14 +157,18 @@ class AccountStore:
         return self._account(row)
 
     def get_by_character_uuid(self, character_uuid):
-        try:
-            character_uuid = str(uuid.UUID(character_uuid))
-        except (TypeError, ValueError, AttributeError):
+        if not character_uuid:
             return None
+        try:
+            parsed_uuid = str(uuid.UUID(str(character_uuid).strip()))
+        except (TypeError, ValueError, AttributeError):
+            parsed_uuid = str(character_uuid).strip().lower()
+        uuid_no_hyphen = parsed_uuid.replace("-", "")
         with closing(self._connect()) as connection:
-            row = connection.execute(
-                "SELECT * FROM accounts WHERE character_uuid = ?", (character_uuid,)
-            ).fetchone()
+            row = connection.execute("""
+                SELECT * FROM accounts 
+                WHERE LOWER(character_uuid) = ? OR LOWER(REPLACE(character_uuid, '-', '')) = ?
+            """, (parsed_uuid, uuid_no_hyphen)).fetchone()
         return self._account(row)
 
     def get_or_create_home_world(self, account):

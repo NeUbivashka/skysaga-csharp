@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
@@ -278,6 +278,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 }
 
                 EnsureItem(clientInventoryComponent, save.Inventory, "Tool_Explorer_Generic_Pickaxe_1");
+                EnsureItem(clientInventoryComponent, save.Inventory, "Camera");
             }
             else
             {
@@ -299,6 +300,7 @@ public class PlayerInitializer(IWorldManager worldManager)
                 CreateAndEquipInventoryItem(clientInventoryComponent, 18, "Clay", 10);
 
                 CreateAndEquipInventoryItem(clientInventoryComponent, 19, "Flint_and_Tinder", 1);
+                CreateAndEquipInventoryItem(clientInventoryComponent, 20, "Camera", 1);
             }
 
             CreateVault(clientInventoryComponent);
@@ -313,6 +315,8 @@ public class PlayerInitializer(IWorldManager worldManager)
                 else
                     AttachHotbarMaterials(clientInventoryComponent, hotbarSettings);
             }
+
+            connection.SyncEquippedHotbar();
         }
 
         if (save is null && connection.SaveFileName is { } newSaveFileName)

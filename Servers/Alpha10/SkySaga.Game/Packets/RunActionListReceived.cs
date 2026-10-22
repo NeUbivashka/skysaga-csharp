@@ -79,11 +79,38 @@ public static class RunActionListReceived
                 voxel.Z + (int)MathF.Round(hitNormal.Z));
 
             SetWorldVoxel(connection, placeAt, (byte)placedBlock);
+            connection.PlayerConnectionManager.BroadcastToAllExcept(
+                connection.Guid.g,
+                new PlacedVoxel
+                {
+                    EntityId = connection.PlayerEntity.Id,
+                    VoxelType = (byte)placedBlock
+                });
             AiManager.Hear(connection.PlayerEntity, "Build");
             VoxelDamage.TryRemove(placeAt, out _);
 
             if (usedItem is { } placedItem)
                 ConsumeOne(connection, placedItem.Entity);
+
+            if (DateTime.UtcNow - connection.LastPerformedAbilityTime > TimeSpan.FromMilliseconds(500))
+            {
+                var playerPos = connection.PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform) ? transform.Position : Vector3.Zero;
+                connection.PlayerConnectionManager.BroadcastToAllExcept(
+                    connection.Guid.g,
+                    new EntityPerformedAbility
+                    {
+                        EntityId = connection.PlayerEntity.Id,
+                        ItemId = 0,
+                        PerformerKey = Util.ComputeCrc32("Default Performer"),
+                        PropertiesCrc = null,
+                        Position = playerPos,
+                        Direction = new Vector3Int((int)MathF.Round(hitNormal.X * 64), (int)MathF.Round(hitNormal.Y * 64), (int)MathF.Round(hitNormal.Z * 64)),
+                        Power = 1f,
+                        Impact = new AbilityTarget { Flag = true, Position = new Vector3(placeAt.X, placeAt.Y, placeAt.Z) },
+                        ActionCrc = Util.ComputeCrc32("PlaceVoxel"),
+                        Flag = true
+                    });
+            }
 
             Console.WriteLine($"[Voxel] placed {placedBlock} at {placeAt}");
             return true;

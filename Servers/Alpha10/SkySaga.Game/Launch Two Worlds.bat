@@ -5,6 +5,7 @@ set "BIN=%ROOT%bin\Debug\net10.0"
 
 echo Stopping any old Alpha V10 game server processes...
 taskkill /f /t /im SkySaga.Game.exe >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5001" ^| findstr "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
 timeout /t 1 /nobreak >nul
 
 echo Building the Alpha V10 game server...

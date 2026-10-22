@@ -7,7 +7,10 @@ public static class UISettingsSelectHotbarSlot
         if (!bitStream.ReadInt32(ClientSettingsComponent.LastActivatedSlotMax, out var slot)) return false;
 
         if (connection.PlayerEntity.TryGetComponent<ClientSettingsComponent>(out var settings))
+        {
             settings.LastActivatedSlot = (uint)slot;
+            connection.SyncEquippedHotbar();
+        }
 
         return true;
     }

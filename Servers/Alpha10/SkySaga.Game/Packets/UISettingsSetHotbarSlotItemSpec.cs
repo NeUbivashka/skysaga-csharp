@@ -19,6 +19,9 @@ public static class UISettingsSetHotbarSlotItemSpec
                 settings.SetHotbarItem((uint)slot, otherHand, item);
             else if (other is not null && (TwoHandedTable.Contains(other.Kind) || item.ItemUuid is { } uuid && other.ItemUuid == uuid))
                 settings.SetHotbarItem((uint)slot, otherHand, null);
+
+            if (slot == (int)settings.LastActivatedSlot)
+                connection.SyncEquippedHotbar();
         }
 
         Console.WriteLine($"[Hotbar] slot {slot} hand {hand} = {ItemTable.NameOf(item.Kind)} ({item.Kind})");

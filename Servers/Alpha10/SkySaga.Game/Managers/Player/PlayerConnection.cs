@@ -1,4 +1,5 @@
-﻿using SkySaga.Game.Packets;
+using SkySaga.Game.Components;
+using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
 
@@ -27,6 +28,7 @@ public class PlayerConnection
     public DateTime LastFallRespawn { get; set; }
 
     public int? LastUsedItemId { get; set; }
+    public DateTime LastPerformedAbilityTime { get; set; }
 
     public HashSet<ushort> CompletedNarrativeIndices { get; } = [];
 
@@ -160,6 +162,7 @@ public class PlayerConnection
             PacketId.UISettingsSetHotbarSlotItemSpec => UISettingsSetHotbarSlotItemSpec.Handle(this, bitStream),
             PacketId.UISettingsSelectHotbarSlot => UISettingsSelectHotbarSlot.Handle(this, bitStream),
             PacketId.RunActionList => RunActionListReceived.Handle(this, bitStream),
+            PacketId.SetEntityActionState => SetEntityActionState.Handle(this, bitStream),
             PacketId.AssignCollectionResourcePickup => AssignCollectionResourcePickup.Handle(this, bitStream),
             PacketId.FinalizeCollectionResourcePickup => FinalizeCollectionResourcePickup.Handle(this, bitStream),
             PacketId.EntityPerformedAbility => EntityPerformedAbilityReceived.Handle(this, bitStream),
@@ -172,6 +175,8 @@ public class PlayerConnection
             PacketId.RequestStartAnimationSequence => RequestStartAnimationSequenceReceived.Handle(this, bitStream),
             PacketId.AnimationSequenceCompleted => AnimationSequenceCompletedReceived.Handle(this, bitStream),
             PacketId.NarrativeCompleted => NarrativeCompletedReceived.Handle(this, bitStream),
+            PacketId.NotifyPhotoCaptured => NotifyPhotoCaptured.Handle(this, bitStream),
+            PacketId.PhotoDelete => PhotoDelete.Handle(this, bitStream),
 
             (PacketId)241 => PerformVoxelActions.Handle(this, bitStream),
             (PacketId)242 => RequestChatChannelData.Handle(this, bitStream),
@@ -266,5 +271,45 @@ public class PlayerConnection
     public void InitialEntitiySync()
     {
         _worldManager.SendInitialEntities(this, PlayerEntity, _playerInitializer);
+    }
+
+    public void SyncEquippedHotbar()
+    {
+        if (!PlayerEntity.TryGetComponent<ClientSettingsComponent>(out var settings)
+            || !PlayerEntity.TryGetComponent<ClientEquippedItemComponent>(out var equipped))
+            return;
+
+        var slot = settings.LastActivatedSlot;
+        if (slot >= ClientSettingsComponent.HotbarSlotCount)
+            return;
+
+        var leftItem = settings.HotbarItems[slot * 2];
+        var rightItem = settings.HotbarItems[slot * 2 + 1];
+
+        ushort leftKind = leftItem?.Kind ?? 0;
+        Guid? leftUuid = leftItem?.ItemUuid;
+        uint?[]? leftMats = leftItem?.Amounts?.ToArray();
+
+        ushort rightKind = rightItem?.Kind ?? 0;
+        Guid? rightUuid = rightItem?.ItemUuid;
+        uint?[]? rightMats = rightItem?.Amounts?.ToArray();
+
+        if (TwoHandedTable.Contains(rightKind))
+        {
+            leftKind = rightKind;
+            leftUuid = rightUuid;
+            leftMats = rightMats;
+        }
+
+        equipped.SetSlot((uint)ClientEquippedItemComponent.Slot.LeftHand, leftKind, leftUuid, leftMats);
+        equipped.SetSlot((uint)ClientEquippedItemComponent.Slot.RightHand, rightKind, rightUuid, rightMats);
+
+        var leftName = ItemTable.NameOf(leftKind);
+        var rightName = ItemTable.NameOf(rightKind);
+
+        LeftHandBlockId = !string.IsNullOrEmpty(leftName) ? BlockCrcMapping.GetBlockId(Util.ComputeCrc32(leftName)) : null;
+        RightHandBlockId = !string.IsNullOrEmpty(rightName) ? BlockCrcMapping.GetBlockId(Util.ComputeCrc32(rightName)) : null;
+
+        Console.WriteLine($"[SyncEquippedHotbar] Player {PlayerEntity.Name}#{PlayerEntity.Id} slot {slot}: Left={leftName} ({leftKind}), Right={rightName} ({rightKind})");
     }
 }
