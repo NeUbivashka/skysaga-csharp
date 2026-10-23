@@ -418,8 +418,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     private static void SetDeviceItemSpec(Entity entity, uint itemCrc, uint?[] materials)
     {
-        if (entity.TryGetComponent<ClientPerUserInventoryStoreComponent>(out var store))
-            store.IsLootFountain = false;
+        ConfigureWritableStorage(entity);
 
         if (entity.TryGetComponent<ClientPickupComponent>(out var pickup))
             pickup.InventoryItemSpec = new InventoryItemRef
@@ -617,6 +616,26 @@ public sealed class WorldManager : IWorldManager, IDisposable
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
     }
 
+    private static void ConfigureWritableStorage(Entity entity)
+    {
+        if (!entity.TryGetComponent<ClientPerUserInventoryStoreComponent>(out var store))
+            return;
+
+        store.IsLootFountain = false;
+
+        if (entity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+        {
+            inventory.TakeOnly = false;
+
+            if (inventory.InventoryEntityList.Count < inventory.MaxInventorySlots)
+            {
+                List<int> slots = [.. inventory.InventoryEntityList];
+                slots.AddRange(Enumerable.Repeat(0, inventory.MaxInventorySlots - slots.Count));
+                inventory.InventoryEntityList = slots;
+            }
+        }
+    }
+
     private void FillInventory(Entity container, List<string> itemNames)
     {
         if (!container.TryGetComponent<ClientInventoryComponent>(out var inventory))
@@ -694,6 +713,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         else if (entity.TryGetComponent<TransformComponent>(out var transform))
             transform.Position = position;
 
+        ConfigureWritableStorage(entity);
         CreatureLoadoutTable.Equip(entity, loadoutItems);
         Combat.ApplyMaxHealth(entity);
 
