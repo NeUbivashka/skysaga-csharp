@@ -180,9 +180,17 @@ def _account_for_peer(peer):
 
 def _account_for_request():
     try:
-        body = request.get_json(silent=True) if request.is_json or request.data else {}
+        body = request.get_json(silent=True, force=True)
     except Exception:
-        body = {}
+        body = None
+    if not isinstance(body, dict):
+        try:
+            raw = request.get_data(cache=True)
+            if raw:
+                import json as _json
+                body = _json.loads(raw.decode("utf-8", "ignore"))
+        except Exception:
+            body = {}
     if not isinstance(body, dict):
         body = {}
     params = body.get("params", body) if isinstance(body, dict) else {}
@@ -530,6 +538,32 @@ def alpha10_character_profile_batch():
     return jsonify(profiles), 200
 
 
+def _build_online_data(account):
+    if not account:
+        return {}
+    world = ACCOUNT_STORE.get_or_create_home_world(account)
+    world_uuid = world.get("uuid", "")
+    server_uuid = world.get("serverUuid") or world_uuid or account.get("characterUuid", "")
+    biome = account.get("homeBiome", "Desert") or "Desert"
+    name = account.get("name", "Explorer")
+    char_uuid = account.get("characterUuid", "")
+
+    return {
+        "characterUuid": char_uuid,
+        "characterName": name,
+        "currentWorld": world_uuid,
+        "currentWorldBiome": biome,
+        "currentWorldAdventure": "home",
+        "currentWorldSingleton": True,
+        "instanceUuid": server_uuid,
+        "worldOwnerUuid": char_uuid,
+        "worldOwnerName": name,
+        "online": True,
+        "isOnline": True,
+        "status": "online",
+    }
+
+
 def _character_profile(character_uuid):
     req_account = _account_for_request()
     account = None
@@ -552,28 +586,17 @@ def _character_profile(character_uuid):
     if not account:
         account = req_account or ACCOUNT
 
-    world = ACCOUNT_STORE.get_or_create_home_world(account) if account else None
-    world_uuid = world.get("uuid", "") if world else ""
-    biome = account.get("homeBiome", "Desert") if account else "Desert"
     created_at = account.get("createdAt", ACCOUNT_CREATED) if account else ACCOUNT_CREATED
-    resolved_char_uuid = account.get("characterUuid", char_str) if account else char_str
+    online_data = _build_online_data(account)
 
     return {
-        "characterOnlineData": {
-            "characterUuid": resolved_char_uuid,
-            "characterName": account.get("name", "Explorer"),
-            "currentWorld": world_uuid,
-            "currentWorldBiome": biome,
-            "currentWorldAdventure": "home",
-            "currentWorldSingleton": True,
-            "online": True,
-            "isOnline": True,
-            "status": "online",
-        },
+        "characterOnlineData": online_data,
         "counts": ACCOUNT_STORE.relationship_counts(account),
         "accountCreated": created_at,
         "online": True,
         "isOnline": True,
+        "status": "online",
+        "instanceUuid": online_data.get("instanceUuid", ""),
     }
 
 
@@ -590,7 +613,7 @@ def alpha10_character_profile():
         req = _account_for_request()
         recipient = req["characterUuid"] if req else None
     profile = _character_profile(recipient)
-    print(f"=== alpha10 character profile recipient={recipient} name={profile['characterOnlineData']['characterName']} ===", flush=True)
+    print(f"=== alpha10 character profile recipient={recipient} name={profile['characterOnlineData']['characterName']} instance={profile['characterOnlineData']['instanceUuid']} ===", flush=True)
     return jsonify({"result": profile, **profile}), 200
 
 
@@ -598,6 +621,20 @@ def alpha10_character_profile():
 def alpha10_character_relationship_info():
     body = request.get_json(silent=True, force=True) or {}
     params = body.get("params", body) if isinstance(body, dict) else {}
+    if not isinstance(params, dict):
+        params = {}
+
+    req_account = None
+    for src in (body, params):
+        if isinstance(src, dict):
+            c_val = src.get("character")
+            if c_val and isinstance(c_val, str):
+                req_account = ACCOUNT_STORE.get_by_character_uuid(c_val)
+                if req_account:
+                    break
+    if not req_account:
+        req_account = _account_for_request()
+
     rel_list = None
     if isinstance(params, dict):
         rel_list = params.get("relationships") or params.get("recipients")
@@ -608,8 +645,7 @@ def alpha10_character_relationship_info():
         if target:
             rel_list = [target]
         else:
-            req = _account_for_request()
-            rel_list = [req["characterUuid"]] if req and req.get("characterUuid") else []
+            rel_list = [req_account["characterUuid"]] if req_account and req_account.get("characterUuid") else []
 
     if isinstance(rel_list, str):
         rel_list = [rel_list]
@@ -625,14 +661,14 @@ def alpha10_character_relationship_info():
             continue
         seen.add(u_str)
         other = ACCOUNT_STORE.get_by_character_uuid(u_str)
-        flags = ACCOUNT_STORE.relationship(_account_for_request(), other)
+        flags = ACCOUNT_STORE.relationship(req_account, other)
         result.append([
             u_str,
             flags["friend"], flags["following"], flags["followedBy"],
             False, flags["incoming"], flags["outgoing"], False, False, False,
         ])
 
-    print(f"=== alpha10 character relationship info: {result} ===", flush=True)
+    print(f"=== alpha10 character relationship info for {req_account['name']}: {result} ===", flush=True)
     return jsonify(result), 200
 
 
@@ -640,14 +676,9 @@ def alpha10_character_relationship_info():
 def alpha10_character_friends_info():
     # SkySaga.exe 0x90fed0 looks for "characterOnlineData" (array of objects with "characterUuid")
     # and "total" (integer count), triggering 0x5b5500 to update the online notification badge.
-    friends = ACCOUNT_STORE.list_friends(_account_for_request())
-    online_data = [{
-        "characterUuid": item["characterUuid"],
-        "characterName": item.get("name", "Explorer"),
-        "online": True,
-        "isOnline": True,
-        "status": "online",
-    } for item in friends]
+    req_account = _account_for_request()
+    friends = ACCOUNT_STORE.list_friends(req_account)
+    online_data = [_build_online_data(item) for item in friends]
     values = [item["characterUuid"] for item in friends]
     resp = {
         "characterOnlineData": online_data,
@@ -657,20 +688,16 @@ def alpha10_character_friends_info():
         "count": len(friends),
         "friends": values,
     }
+    print(f"=== friends/info for {req_account['name']}: {len(friends)} friends ===", flush=True)
     return jsonify({"result": resp, **resp}), 200
 
 
 @app.route("/api/social-graph/character/follows/info", methods=["POST"])
 def alpha10_character_follows_info():
     # SkySaga.exe 0x90fcc0 checks "characterOnlineData" + "total"; 0x910d10 checks "characters" + "count".
-    follows = ACCOUNT_STORE.list_follows(_account_for_request())
-    char_list = [{
-        "characterUuid": item["characterUuid"],
-        "characterName": item.get("name", "Explorer"),
-        "online": True,
-        "isOnline": True,
-        "status": "online",
-    } for item in follows]
+    req_account = _account_for_request()
+    follows = ACCOUNT_STORE.list_follows(req_account)
+    char_list = [_build_online_data(item) for item in follows]
     values = [item["characterUuid"] for item in follows]
     resp = {
         "characters": char_list,
@@ -686,14 +713,9 @@ def alpha10_character_follows_info():
 @app.route("/api/social-graph/character/followedby/info", methods=["POST"])
 def alpha10_character_followedby_info():
     # SkySaga.exe 0x910d10 checks "characters" + "count".
-    followed_by = ACCOUNT_STORE.list_followed_by(_account_for_request())
-    char_list = [{
-        "characterUuid": item["characterUuid"],
-        "characterName": item.get("name", "Explorer"),
-        "online": True,
-        "isOnline": True,
-        "status": "online",
-    } for item in followed_by]
+    req_account = _account_for_request()
+    followed_by = ACCOUNT_STORE.list_followed_by(req_account)
+    char_list = [_build_online_data(item) for item in followed_by]
     values = [item["characterUuid"] for item in followed_by]
     resp = {
         "characters": char_list,
@@ -753,13 +775,7 @@ def alpha10_characters_find_with_online_info():
             continue
         if name_starts_with and not acc["name"].lower().startswith(name_starts_with):
             continue
-        char_list.append({
-            "characterUuid": acc["characterUuid"],
-            "characterName": acc["name"],
-            "online": True,
-            "isOnline": True,
-            "status": "online",
-        })
+        char_list.append(_build_online_data(acc))
 
     resp = {
         "characters": char_list,
@@ -852,8 +868,9 @@ def _social_action_ok():
 def alpha10_friend_requests_incoming():
     # SkySaga.exe 0x9104c0 expects "results" (array of {"characterUuid": ...}) and "totalHits" (int).
     # When totalHits > 0, 0x5b5500 is called to trigger the HUD notification popup/badge!
-    accounts = ACCOUNT_STORE.list_friend_requests(_account_for_request(), incoming=True)
-    results = [{"characterUuid": item["characterUuid"], "characterName": item.get("name", "Explorer")} for item in accounts]
+    req_account = _account_for_request()
+    accounts = ACCOUNT_STORE.list_friend_requests(req_account, incoming=True)
+    results = [_build_online_data(item) for item in accounts]
     values = [item["characterUuid"] for item in accounts]
     response = {
         "results": results,
@@ -863,14 +880,16 @@ def alpha10_friend_requests_incoming():
         "friendRequests": values,
         "requests": values,
     }
+    print(f"=== friendrequest/incoming for {req_account['name']}: {len(results)} requests ===", flush=True)
     return jsonify({"result": response, **response}), 200
 
 
 @app.route("/api/social-graph/friendrequest/outgoing", methods=["POST"])
 def alpha10_friend_requests_outgoing():
     # SkySaga.exe 0x910ab0 expects "results" and "totalHits" parsed via 0x9111d0.
-    accounts = ACCOUNT_STORE.list_friend_requests(_account_for_request(), incoming=False)
-    results = [{"characterUuid": item["characterUuid"], "characterName": item.get("name", "Explorer")} for item in accounts]
+    req_account = _account_for_request()
+    accounts = ACCOUNT_STORE.list_friend_requests(req_account, incoming=False)
+    results = [_build_online_data(item) for item in accounts]
     values = [item["characterUuid"] for item in accounts]
     response = {
         "results": results,
@@ -880,6 +899,7 @@ def alpha10_friend_requests_outgoing():
         "friendRequests": values,
         "requests": values,
     }
+    print(f"=== friendrequest/outgoing for {req_account['name']}: {len(results)} requests ===", flush=True)
     return jsonify({"result": response, **response}), 200
 
 
@@ -1019,7 +1039,7 @@ def alpha10_unfollow():
     return _social_action_ok()
 
 
-@app.route("/api/persistent-record/groups/info", methods=["POST"])
+@app.route("/api/persistent-record/groups/info", methods=["GET", "POST"])
 def alpha10_groups_info():
     """Return a typed empty group collection until the UDP group protocol is complete.
 
@@ -1187,22 +1207,37 @@ def alpha10_binary_storage_cooler():
     return jsonify({"result": {"results": []}}), 200
 
 
+@app.route("/api/persistent-record/worlds/homeworldforowner/<owner>", methods=["GET"])
+def alpha10_worlds_homeworld_for_owner(owner):
+    print("=== worlds/homeworldforowner", owner, "===")
+    try:
+        requested_owner = str(uuid.UUID(owner))
+    except (TypeError, ValueError, AttributeError):
+        return jsonify({}), 404
+    owner_account = ACCOUNT_STORE.get_by_character_uuid(requested_owner)
+    if not owner_account:
+        owner_account = _account_for_request()
+    world = ACCOUNT_STORE.get_or_create_home_world(owner_account)
+    hw = _home_world(world)
+    return jsonify({"result": hw, **hw}), 200
+
+
 @app.route("/api/persistent-record/worlds/listforowner/<owner>", methods=["GET"])
 def alpha10_worlds_list_for_owner(owner):
     print("=== worlds/listforowner", owner, "===")
-    # My Islands is an account-owned list.  Resolve it through the signed-in
-    # proxy identity as well as the URL so one client cannot substitute another
-    # character UUID and make that island appear as its own.
-    account = _account_for_request()
     try:
         requested_owner = str(uuid.UUID(owner))
     except (TypeError, ValueError, AttributeError):
         return jsonify([]), 200
-    if requested_owner != account["characterUuid"]:
-        print(f"[my-islands] Ignored owner mismatch for {account['name']}: {requested_owner}")
-        return jsonify([]), 200
-    world = ACCOUNT_STORE.get_or_create_home_world(account)
-    print(f"[my-islands] Listed {account['name']}'s home island {world['uuid']}")
+    owner_account = ACCOUNT_STORE.get_by_character_uuid(requested_owner)
+    if not owner_account:
+        req = _account_for_request()
+        if req and str(req.get("characterUuid", "")).lower() == requested_owner.lower():
+            owner_account = req
+        else:
+            owner_account = req
+    world = ACCOUNT_STORE.get_or_create_home_world(owner_account)
+    print(f"[islands] Listed {owner_account['name']}'s home island {world['uuid']} for owner={owner}")
     return jsonify([_home_world(world)]), 200
 
 
