@@ -121,7 +121,7 @@ public static class Crafting
         var deviceId = player.TryGetComponent<ClientUseEntityComponent>(out var use) ? use.UsingEntityId : 0;
 
         if (!connection.WorldManager.EntityManager.TryGetEntity(deviceId, out var device)
-            || !device.Name.Equals(recipe.Device, StringComparison.OrdinalIgnoreCase))
+            || !RecipeTable.SupportsDevice(recipe.Device, device.Name))
             return $"{recipe.Name} needs {recipe.Device}, using entity {deviceId}";
 
         return null;

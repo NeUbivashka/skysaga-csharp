@@ -25,6 +25,17 @@ public static class RecipeTable
 {
     public const string HandCrafting = "Hand_Crafting";
 
+    // Alpha 10 recipes use Crafting_Device for the consolidated crafting UI,
+    // while the client still ships the legacy station entity templates. Keep
+    // those stations usable as equivalent entry points for that UI.
+    private static readonly HashSet<string> UnifiedCraftingStations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Anvil", "Armoury", "Bellows", "Cauldron", "Cold_Weather_Survival_Kit",
+        "Compressor", "Crafting_Device", "Desert_Survival_Kit", "Farming_Kit",
+        "Forge", "Generator", "Hunters_Pack", "Husbandry_Kit", "Incubator", "Kiln",
+        "Magical_Symbol", "Oven", "Potting_Table", "Workbench", "Writing_Desk"
+    };
+
     private static readonly Lazy<(List<RecipeInfo> Recipes, uint VariantCount, CraftingXp Xp)> Data = new(Load);
 
     private static (List<RecipeInfo>, uint, CraftingXp) Load()
@@ -98,6 +109,11 @@ public static class RecipeTable
     public static uint RecipeTableCount => (uint)Data.Value.Recipes.Count + 1;
 
     public static uint VariantTableCount => Data.Value.VariantCount + 1;
+
+    public static bool SupportsDevice(string requiredDevice, string actualDevice) =>
+        actualDevice.Equals(requiredDevice, StringComparison.OrdinalIgnoreCase)
+        || (requiredDevice.Equals("Crafting_Device", StringComparison.OrdinalIgnoreCase)
+            && UnifiedCraftingStations.Contains(actualDevice));
 
     public static bool TryGetByWireIndex(ushort wireIndex, [NotNullWhen(true)] out RecipeInfo? recipe)
     {

@@ -77,6 +77,10 @@ public static class WorldMapLoader
 
         int placed = 0;
         int skippedOutOfBounds = 0;
+        byte? terrainBlockOverride = byte.TryParse(
+            Environment.GetEnvironmentVariable("SKYSAGA_TERRAIN_BLOCK"), out var configuredTerrainBlock)
+            ? configuredTerrainBlock
+            : null;
 
         foreach (var voxel in data.Voxels)
         {
@@ -101,10 +105,12 @@ public static class WorldMapLoader
             var block = voxel.Block;
 
             // TestZoo's flat terrain is stored as explicit Forest grass rather
-            // than a palette-relative terrain voxel.  Keep the shared template
-            // unchanged and recolour only a server instance explicitly started
-            // with the Jungle Parma Violet palette.
-            if (Environment.GetEnvironmentVariable("SKYSAGA_PALETTE") == "34" && block == 1)
+            // than a palette-relative terrain voxel. Keep the shared template
+            // unchanged and recolour only an island with an explicit terrain
+            // override. Preserve the existing Jungle Parma Violet behaviour.
+            if (block == 1 && terrainBlockOverride is byte replacementBlock)
+                block = replacementBlock;
+            else if (Environment.GetEnvironmentVariable("SKYSAGA_PALETTE") == "34" && block == 1)
                 block = 78; // Grass_Cyan
 
             chunk.SetVoxel(localX, localY, localZ, block, voxel.Meta);

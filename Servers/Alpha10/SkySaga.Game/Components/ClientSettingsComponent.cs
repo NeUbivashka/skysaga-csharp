@@ -65,6 +65,11 @@ public class ClientSettingsComponent : Component
 
         if (parameterName.Equals("CurrentGameplayCameraState", StringComparison.OrdinalIgnoreCase))
         {
+            // Camera mode is local UI state. Sending one player's setting to a
+            // different client makes that client switch perspective too.
+            if (!SyncingForOwner)
+                return false;
+
             bitStream.Write(ThirdPersonCamera);
             bitStream.WriteRanged(CameraState, CameraStateMax);
 

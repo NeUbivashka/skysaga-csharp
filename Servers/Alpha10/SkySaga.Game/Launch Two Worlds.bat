@@ -23,7 +23,7 @@ echo Starting the City of Last Light prototype on UDP 42070...
 start "SkySaga City of Last Light (prototype)" /d "%BIN%" cmd /k "set SKYSAGA_WORLD=social&&set SKYSAGA_MAP=SocialHub.json&&set SKYSAGA_ADVENTURE=home&&set SKYSAGA_GAME_PORT=42070&&set SKYSAGA_HOME_PORT=42069&&set SKYSAGA_COMPLETE_CHALLENGES=1&&set SKYSAGA_DATA2_UNIFORM=fd&&SkySaga.Game.exe"
 
 echo Starting the home world on UDP 42069...
-start "SkySaga Game" /d "%BIN%" cmd /k "set SKYSAGA_COMPLETE_CHALLENGES=1&&set SKYSAGA_DATA2_UNIFORM=fd&&set SKYSAGA_SOCIAL_HUB_PORT=42070&&set SKYSAGA_BIOME_INDEX=3&&set SKYSAGA_REGION_INDEX=23&&set SKYSAGA_ADVENTURE_INDEX=88&&set SKYSAGA_PALETTE=34&&SkySaga.Game.exe"
+start "SkySaga Game" /d "%BIN%" cmd /k "set SKYSAGA_COMPLETE_CHALLENGES=1&&set SKYSAGA_DATA2_UNIFORM=fd&&set SKYSAGA_SOCIAL_HUB_PORT=42070&&set SKYSAGA_CRAFTING_TEST_ROW=1&&set SKYSAGA_BIOME_INDEX=3&&set SKYSAGA_REGION_INDEX=23&&set SKYSAGA_ADVENTURE_INDEX=88&&set SKYSAGA_PALETTE=34&&SkySaga.Game.exe"
 
 echo Both game worlds are starting in separate windows.
 timeout /t 5

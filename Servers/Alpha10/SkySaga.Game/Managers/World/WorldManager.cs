@@ -803,6 +803,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
         var ownerUuid = Environment.GetEnvironmentVariable("SKYSAGA_HOME_OWNER_UUID") ?? Util.CharacterUuid();
         var isSocialWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
 
+        if (Environment.GetEnvironmentVariable("SKYSAGA_CRAFTING_TEST_ROW") == "1")
+        {
+            entities = [.. entities, .. CraftingStationTestRow()];
+            Console.WriteLine("[WorldManager] Added the Alpha 10 crafting-station test row.");
+        }
+
         int spawned = 0;
 
         foreach (var spec in entities)
@@ -869,6 +875,29 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
+    }
+
+    private static IEnumerable<WorldMapEntityData> CraftingStationTestRow()
+    {
+        string[] stations =
+        [
+            "Anvil", "Armoury", "Bellows", "Cauldron", "Cold_Weather_Survival_Kit",
+            "Compressor", "Crafting_Device", "Desert_Survival_Kit", "Farming_Kit",
+            "Fireworks_Device", "Forge", "Generator", "Hunters_Pack", "Husbandry_Kit", "Incubator", "Kiln",
+            "Magical_Symbol", "Oven", "Potting_Table", "Workbench", "Writing_Desk"
+        ];
+
+        // TestZoo has a flat floor at y=28 and its player marker is at x=96,
+        // z=22. Place the row on the same island, five voxels apart, at z=34.
+        for (var index = 0; index < stations.Length; index++)
+            yield return new WorldMapEntityData
+            {
+                Name = stations[index],
+                X = 48 + index * 5,
+                Y = 32,
+                Z = 34,
+                Yaw = 180
+            };
     }
 
     private static void ConfigureWritableStorage(Entity entity)
@@ -1050,6 +1079,18 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             connection.Send(entityAdd);
         }
+
+        // ClientSettingsComponent camera state is owner-only. Send the saved
+        // value after the owner's Player entity exists, without marking the
+        // entire entity as local early in the join sequence.
+        connection.Send(new EntitySync
+        {
+            Id = player.Id,
+            SyncData = player.GetSyncData(
+                newEntity: false,
+                forOwner: true,
+                onlyParameter: "CurrentGameplayCameraState")
+        });
 
         connection.Send(new ClientEntitiesSyncFinished());
     }

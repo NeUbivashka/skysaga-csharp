@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 class AccountStore:
-    SCHEMA_VERSION = 4
+    SCHEMA_VERSION = 5
     MAX_HOME_WORLDS = 8
     HOME_WORLD_UUID = "6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25"
     HOME_SERVER_UUID = "b3e94c07-2a15-4d68-8f31-7c05a9be4610"
@@ -109,6 +109,11 @@ class AccountStore:
                            is_primary INTEGER NOT NULL CHECK (is_primary IN (0, 1)),
                            name TEXT,
                            published INTEGER NOT NULL DEFAULT 1 CHECK (published IN (0, 1)),
+                           biome_index INTEGER,
+                           region_index INTEGER,
+                           adventure_index INTEGER,
+                           palette_index INTEGER,
+                           terrain_block INTEGER,
                            created_at INTEGER NOT NULL,
                            UNIQUE (account_id, slot_index)
                         )"""
@@ -136,10 +141,25 @@ class AccountStore:
                            is_primary INTEGER NOT NULL CHECK (is_primary IN (0, 1)),
                            name TEXT,
                            published INTEGER NOT NULL DEFAULT 1 CHECK (published IN (0, 1)),
+                           biome_index INTEGER,
+                           region_index INTEGER,
+                           adventure_index INTEGER,
+                           palette_index INTEGER,
+                           terrain_block INTEGER,
                            created_at INTEGER NOT NULL,
                            UNIQUE (account_id, slot_index)
                         )"""
                     )
+                if version < 5:
+                    columns = {
+                        row["name"] for row in connection.execute("PRAGMA table_info(home_worlds)")
+                    }
+                    for column in (
+                        "biome_index", "region_index", "adventure_index",
+                        "palette_index", "terrain_block",
+                    ):
+                        if column not in columns:
+                            connection.execute(f"ALTER TABLE home_worlds ADD COLUMN {column} INTEGER")
                 connection.execute(
                     """CREATE UNIQUE INDEX IF NOT EXISTS one_primary_home_world_per_account
                        ON home_worlds(account_id) WHERE is_primary = 1"""
@@ -379,6 +399,11 @@ class AccountStore:
             "primary": bool(row["is_primary"]),
             "name": row["name"],
             "published": bool(row["published"]),
+            "biomeIndex": row["biome_index"],
+            "regionIndex": row["region_index"],
+            "adventureIndex": row["adventure_index"],
+            "paletteIndex": row["palette_index"],
+            "terrainBlock": row["terrain_block"],
             "created_at": row["created_at"],
         }
 

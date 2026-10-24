@@ -81,6 +81,16 @@ class HomeIslandManager:
                 "SKYSAGA_COMPLETE_CHALLENGES": "1",
                 "SKYSAGA_DATA2_UNIFORM": "fd",
             })
+            for variable, field in (
+                ("SKYSAGA_BIOME_INDEX", "biomeIndex"),
+                ("SKYSAGA_REGION_INDEX", "regionIndex"),
+                ("SKYSAGA_ADVENTURE_INDEX", "adventureIndex"),
+                ("SKYSAGA_PALETTE", "paletteIndex"),
+                ("SKYSAGA_TERRAIN_BLOCK", "terrainBlock"),
+            ):
+                value = world.get(field)
+                if value is not None:
+                    environment[variable] = str(value)
 
             error_log = self.bin_dir / f"server-home-{world_uuid}.stderr.log"
             log_path = self.bin_dir / environment["SKYSAGA_INSTANCE_LOG"]
