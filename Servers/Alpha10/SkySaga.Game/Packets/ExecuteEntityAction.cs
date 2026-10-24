@@ -19,6 +19,7 @@ public static class ExecuteEntityAction
         { Util.ComputeCrc32("LearnEmoteAction"), "LearnEmoteAction" },
         { Util.ComputeCrc32("LearnRecipeAction"), "LearnRecipeAction" },
         { Util.ComputeCrc32("LearnHomeIslandTitleAction"), "LearnHomeIslandTitleAction" },
+        { Util.ComputeCrc32("CreateHomeIslandAction"), "CreateHomeIslandAction" },
         { Util.ComputeCrc32("UnlockJobChallengeAction"), "UnlockJobChallengeAction" },
         { Util.ComputeCrc32("BlockAction"), "BlockAction" },
         { Util.ComputeCrc32("BlastRadiusAction"), "BlastRadiusAction" },
@@ -41,6 +42,17 @@ public static class ExecuteEntityAction
         _actions.TryGetValue(actionCrc, out var actionName);
 
         Console.WriteLine($"[ExecuteEntityAction] entity {srcEntityId} target {targetEntityId} action {actionName ?? $"0x{actionCrc:X8}"}");
+
+        if (actionName == "CreateHomeIslandAction" && srcEntityId == connection.PlayerEntity.Id)
+        {
+            if (connection.CharacterId is Guid characterUuid
+                && Util.TryCreateExtraHomeWorld(characterUuid, out var worldUuid))
+            {
+                connection.Send(new ExtraHomeIslandCreated { IslandUuid = worldUuid });
+                Console.WriteLine($"[home-island] Created extra island {worldUuid:D} for {characterUuid:D}.");
+            }
+            return true;
+        }
 
         if (actionName == "ResourcePickupAction" && srcEntityId == connection.PlayerEntity.Id)
             ResourcePickups.Assign(connection, (int)targetEntityId);

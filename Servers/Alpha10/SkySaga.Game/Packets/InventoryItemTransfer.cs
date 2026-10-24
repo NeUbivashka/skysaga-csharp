@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SkySaga.Game.Packets;
 
 public static class InventoryItemTransfer
@@ -57,6 +59,36 @@ public static class InventoryItemTransfer
         var materials = ResourcePickups.MaterialsOf(item);
         var name = itemComponent.InventorySlotData.Name;
 
+        if (targetSlot >= 0)
+        {
+            if (targetSlot >= to.InventoryEntityList.Count)
+            {
+                Console.WriteLine($"[Transfer] {target.Name}#{target.Id} target slot {targetSlot} is out of range");
+                return;
+            }
+
+            if (ReferenceEquals(from, to) && slot == targetSlot)
+                return;
+
+            var targetItemId = to.InventoryEntityList[targetSlot];
+
+            if (targetItemId != 0)
+            {
+                if (TryStackIntoOccupiedSlot(connection, from, slot, item, itemComponent, moved,
+                        targetItemId, name, materials))
+                    return;
+
+                if (moved < count)
+                {
+                    Console.WriteLine($"[Transfer] cannot swap partial stack x{moved}/{count} into occupied slot {targetSlot}");
+                    return;
+                }
+
+                SwapOccupiedSlots(source, target, from, to, slot, targetSlot, item.Id, targetItemId);
+                return;
+            }
+        }
+
         if (targetSlot < 0 && ResourcePickups.TryFindStack(entityManager, to, name, materials, moved, out var stack))
         {
             stack.InventorySlotData = stack.InventorySlotData.WithCount(stack.InventorySlotData.Count + moved);
@@ -104,6 +136,55 @@ public static class InventoryItemTransfer
         to.InventoryEntityList = targetList;
 
         Console.WriteLine($"[Transfer] {placed.Name}#{placed.Id} -> {target.Name}#{target.Id} slot {free}");
+    }
+
+    private static bool TryStackIntoOccupiedSlot(PlayerConnection connection, InventoryComponent from, int sourceSlot,
+        Entity sourceItem, InventoryItemComponent sourceComponent, int moved, int targetItemId, uint? sourceName,
+        uint?[] sourceMaterials)
+    {
+        var entityManager = connection.WorldManager.EntityManager;
+
+        if (!entityManager.TryGetEntity(targetItemId, out var targetItem)
+            || !targetItem.TryGetComponent<InventoryItemComponent>(out var targetComponent)
+            || targetComponent.InventorySlotData.Name != sourceName
+            || !ResourcePickups.MaterialsOf(targetItem).SequenceEqual(sourceMaterials))
+            return false;
+
+        var available = StackLimitTable.Get(sourceName) - targetComponent.InventorySlotData.Count;
+
+        if (available <= 0)
+            return false;
+
+        var stacked = Math.Min(moved, available);
+        targetComponent.InventorySlotData = targetComponent.InventorySlotData.WithCount(
+            targetComponent.InventorySlotData.Count + stacked);
+        TakeFromSource(connection, from, sourceSlot, sourceItem, sourceComponent, stacked);
+
+        Console.WriteLine($"[Transfer] stacked x{stacked} into {targetItem.Name}#{targetItem.Id}, now {targetComponent.InventorySlotData.Count}");
+        return true;
+    }
+
+    private static void SwapOccupiedSlots(Entity source, Entity target, InventoryComponent from, InventoryComponent to,
+        int sourceSlot, int targetSlot, int sourceItemId, int targetItemId)
+    {
+        if (ReferenceEquals(from, to))
+        {
+            List<int> list = [.. from.InventoryEntityList];
+            (list[sourceSlot], list[targetSlot]) = (list[targetSlot], list[sourceSlot]);
+            from.InventoryEntityList = list;
+        }
+        else
+        {
+            List<int> sourceList = [.. from.InventoryEntityList];
+            List<int> targetList = [.. to.InventoryEntityList];
+            sourceList[sourceSlot] = targetItemId;
+            targetList[targetSlot] = sourceItemId;
+            from.InventoryEntityList = sourceList;
+            to.InventoryEntityList = targetList;
+        }
+
+        Console.WriteLine($"[Transfer] swapped {sourceItemId} in {source.Name}#{source.Id} slot {sourceSlot} "
+            + $"with {targetItemId} in {target.Name}#{target.Id} slot {targetSlot}");
     }
 
     private static void TakeFromSource(PlayerConnection connection, InventoryComponent from, int slot, Entity item, InventoryItemComponent itemComponent, int moved)

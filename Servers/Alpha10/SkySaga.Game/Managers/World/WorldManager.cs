@@ -40,8 +40,33 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private readonly object _devicesLock = new();
 
     private readonly Dictionary<int, (Vector3 Position, float? Yaw, string? SpawnParams)> _mapCreatureSpawns = [];
+    private readonly Dictionary<int, List<TreePartPlacement>> _generatedTreeParts = [];
 
     private const int LandingSearchRadius = 16;
+
+    private const byte TreeVoxel = 19;
+    private const byte BarkBrownVoxel = 13;
+    private const byte BarkPurpleVoxel = 109;
+    private const uint ForestTreeType = 0x1ECED691;
+    private const uint JungleParmaVioletPalette = 34;
+
+    // TestZoo and the per-player home maps copied from it contain a flat,
+    // unused forest area where the generated grove does not cover map content.
+    private static readonly Vector3Int[] DefaultTreeGrove =
+    [
+        new(92, 32, 92),
+        new(108, 32, 88),
+        new(124, 32, 94),
+        new(140, 32, 90),
+        new(88, 32, 112),
+        new(104, 32, 110),
+        new(122, 32, 114),
+        new(142, 32, 108),
+        new(94, 32, 132),
+        new(112, 32, 128),
+        new(130, 32, 134),
+        new(146, 32, 126),
+    ];
 
     public WorldManager(PlayerConnectionManager playerConnectionManager)
     {
@@ -135,6 +160,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             SpawnEntitiesFromMap(loadedEntities, out var mapAirshipPosition);
 
             SpawnAirship(mapAirshipPosition);
+            AddDefaultTrees();
         }
         else
         {
@@ -157,6 +183,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         ChunkManager.LoadSavedEdits();
+        ReconcileGeneratedTreeParts();
         LoadDevices();
 
         foreach (var entity in EntityManager.Entities.ToList())
@@ -164,6 +191,234 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         SpawnTimeOfDay();
         SpawnWorldComposition();
+    }
+
+    private void AddDefaultTrees()
+    {
+        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social"
+            || Definition.MapSizeChunks != new Vector3Int(6, 4, 6))
+            return;
+
+        var mapName = Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName);
+        if (!mapName.Equals(Path.GetFileNameWithoutExtension(WorldMapLoader.DefaultMap), StringComparison.OrdinalIgnoreCase)
+            && !mapName.StartsWith("home_", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        int placed = 0;
+
+        for (int treeIndex = 0; treeIndex < DefaultTreeGrove.Length; treeIndex++)
+        {
+            var root = DefaultTreeGrove[treeIndex];
+
+            if (GetWorldVoxel(root) != WorldChunk.Air
+                || GetWorldVoxel(root + new Vector3Int(0, -1, 0)) == WorldChunk.Air)
+                continue;
+
+            bool hasClearance = true;
+            for (int y = 0; y <= 17 && hasClearance; y++)
+                for (int z = -4; z <= 4 && hasClearance; z++)
+                    for (int x = -4; x <= 4; x++)
+                        if (GetWorldVoxel(root + new Vector3Int(x, y, z)) != WorldChunk.Air)
+                        {
+                            hasClearance = false;
+                            break;
+                        }
+
+            if (!hasClearance)
+                continue;
+
+            if (PlaceProceduralTree(root, treeIndex))
+                placed++;
+        }
+
+        Console.WriteLine($"[WorldManager] Added {placed} procedural tree(s) to the default forest grove.");
+    }
+
+    private readonly record struct TreePartPlacement(TreePart Part, Vector3Int Block);
+
+    private bool PlaceProceduralTree(Vector3Int root, int treeIndex)
+    {
+        List<TreePartPlacement> placements = [];
+        bool parmaViolet = Definition.Spec.Palette == JungleParmaVioletPalette;
+
+        int AddPart(byte partType, byte direction, int parentIndex, bool decoration = false)
+        {
+            var block = parentIndex < 0
+                ? root
+                : placements[parentIndex].Block + TreeDirectionOffset(direction);
+
+            placements.Add(new TreePartPlacement(
+                new TreePart(partType, direction, parentIndex, 0, decoration, TreeVoxel),
+                block));
+
+            return placements.Count - 1;
+        }
+
+        int trunkParent = AddPart(0, 0, -1);
+        int trunkHeight = 10 + treeIndex % 3;
+
+        for (int level = 1; level <= trunkHeight; level++)
+        {
+            bool branchTier = level >= 4 && level <= trunkHeight - 2 && (level - 4) % 3 == 0;
+            int trunk = AddPart(branchTier ? (byte)17 : (byte)2, 4, trunkParent);
+
+            if (branchTier)
+            {
+                for (byte direction = 0; direction < 4; direction++)
+                {
+                    int branchParent = trunk;
+
+                    // The lowest tier extends two blocks; higher tiers use a
+                    // one-block tip so the crown narrows towards the top.
+                    if (level == 4)
+                        branchParent = AddPart((byte)(19 + direction), direction, branchParent);
+
+                    int branchEnd = AddPart((byte)(25 + direction), direction, branchParent);
+                    AddPart((byte)(50 + direction), 6, branchEnd, decoration: true);
+                }
+            }
+            else if (level >= 3)
+            {
+                AddPart((byte)(((level + treeIndex) & 1) == 0 ? 43 : 49), 6, trunk, decoration: true);
+            }
+
+            trunkParent = trunk;
+        }
+
+        int top = AddPart(18, 4, trunkParent);
+        AddPart(37, 4, top, decoration: true);
+
+        if (placements.Count >= 0x7F || !EntityManager.TryCreateEntity("Tree", out var tree))
+            return false;
+
+        if (!tree.TryGetComponent<ClientTreeComponent>(out var treeComponent)
+            || !tree.TryGetComponent<TransformComponent>(out var transform)
+            || !tree.TryGetComponent<MaterialCompositionComponent>(out var composition))
+        {
+            EntityManager.RemoveEntity(tree);
+            return false;
+        }
+
+        foreach (var block in placements.Select(placement => placement.Block).Distinct())
+            SetWorldVoxelRaw(block, TreeVoxel);
+
+        treeComponent.Description = [.. placements.Select(placement => placement.Part)];
+        treeComponent.PartsDestroyed = [.. Enumerable.Repeat(false, placements.Count)];
+        treeComponent.TreeType = ForestTreeType;
+
+        composition.MaterialList =
+        [
+            Util.ComputeCrc32(parmaViolet ? "Wood_Purple" : "Wood_Brown"),
+            Util.ComputeCrc32(parmaViolet ? "Plant_Pink" : "Plant_Green")
+        ];
+
+        // Tree roots are rounded with floor(position + 0.5) by the client.
+        // Integer coordinates therefore identify the intended root block.
+        transform.Position = new Vector3(root.X, root.Y, root.Z);
+        _generatedTreeParts[tree.Id] = placements;
+
+        return true;
+    }
+
+    public bool MarkTreePartDestroyed(int entityId, Vector3Int worldVoxel, out byte originalVoxelType)
+    {
+        originalVoxelType = WorldChunk.Air;
+
+        if (!_generatedTreeParts.TryGetValue(entityId, out var placements)
+            || !EntityManager.TryGetEntity(entityId, out var tree)
+            || !tree.TryGetComponent<ClientTreeComponent>(out var treeComponent))
+            return false;
+
+        List<bool> destroyed = [.. treeComponent.PartsDestroyed];
+        bool changed = false;
+
+        for (int index = 0; index < placements.Count; index++)
+        {
+            if (placements[index].Block != worldVoxel || destroyed[index])
+                continue;
+
+            destroyed[index] = true;
+            changed = true;
+
+            // Voxel 19 is required in the tree description for the client to
+            // construct the model, but it has no pickup mapping. Resolve its
+            // harvested log material here without altering the description.
+            originalVoxelType = Definition.Spec.Palette == JungleParmaVioletPalette
+                ? BarkPurpleVoxel
+                : BarkBrownVoxel;
+        }
+
+        if (!changed)
+            return false;
+
+        treeComponent.PartsDestroyed = destroyed;
+        Console.WriteLine($"[Tree] entity {entityId} destroyed part(s) at {worldVoxel}");
+        return true;
+    }
+
+    private void ReconcileGeneratedTreeParts()
+    {
+        foreach (var (entityId, placements) in _generatedTreeParts)
+        {
+            if (!EntityManager.TryGetEntity(entityId, out var tree)
+                || !tree.TryGetComponent<ClientTreeComponent>(out var treeComponent))
+                continue;
+
+            List<bool> destroyed = [.. treeComponent.PartsDestroyed];
+            bool changed = false;
+
+            for (int index = 0; index < placements.Count; index++)
+            {
+                if (GetWorldVoxel(placements[index].Block) != WorldChunk.Air || destroyed[index])
+                    continue;
+
+                destroyed[index] = true;
+                changed = true;
+            }
+
+            if (changed)
+                treeComponent.PartsDestroyed = destroyed;
+        }
+    }
+
+    private static Vector3Int TreeDirectionOffset(byte direction) => direction switch
+    {
+        0 => new Vector3Int(1, 0, 0),
+        1 => new Vector3Int(-1, 0, 0),
+        2 => new Vector3Int(0, 0, 1),
+        3 => new Vector3Int(0, 0, -1),
+        4 or 7 => new Vector3Int(0, 1, 0),
+        5 => new Vector3Int(0, -1, 0),
+        6 => new Vector3Int(0, 0, 0),
+        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null),
+    };
+
+    private byte GetWorldVoxel(Vector3Int world)
+    {
+        var chunk = new Vector3Int(
+            FloorDiv(world.X, ChunkSize),
+            FloorDiv(world.Y, ChunkSize),
+            FloorDiv(world.Z, ChunkSize));
+        var local = new Vector3Int(
+            world.X - chunk.X * ChunkSize,
+            world.Y - chunk.Y * ChunkSize,
+            world.Z - chunk.Z * ChunkSize);
+
+        return ChunkManager.GetVoxel(chunk, local);
+    }
+
+    private void SetWorldVoxelRaw(Vector3Int world, byte voxelType)
+    {
+        var chunk = new Vector3Int(
+            FloorDiv(world.X, ChunkSize),
+            FloorDiv(world.Y, ChunkSize),
+            FloorDiv(world.Z, ChunkSize));
+        var local = new Vector3Int(
+            world.X - chunk.X * ChunkSize,
+            world.Y - chunk.Y * ChunkSize,
+            world.Z - chunk.Z * ChunkSize);
+
+        ChunkManager.GetOrCreateChunk(chunk).SetVoxel(local, voxelType);
     }
 
     private void SpawnAirship(Vector3? mapPosition)
@@ -621,6 +876,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (!entity.TryGetComponent<ClientPerUserInventoryStoreComponent>(out var store))
             return;
 
+        // Adventure, end-game, keyed and PvP reward chests deliberately expose
+        // a take-only loot flow. Regular owner chests use this same component,
+        // but advertise islootchest=false and are writable storage.
+        if (entity.BoolParameter("islootchest") == true)
+            return;
+
         store.IsLootFountain = false;
 
         if (entity.TryGetComponent<ClientInventoryComponent>(out var inventory))
@@ -825,6 +1086,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     {
         ((EntityManager)EntityManager).Clear();
         _mapCreatureSpawns.Clear();
+        _generatedTreeParts.Clear();
         ChunkManager.ClearAll();
         InitializeWorld();
     }

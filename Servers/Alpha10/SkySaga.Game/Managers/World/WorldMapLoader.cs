@@ -98,7 +98,16 @@ public static class WorldMapLoader
             int localZ = Mod(voxel.Z, 32);
 
             var chunk = chunkManager.GetOrCreateChunk(chunkPos);
-            chunk.SetVoxel(localX, localY, localZ, voxel.Block, voxel.Meta);
+            var block = voxel.Block;
+
+            // TestZoo's flat terrain is stored as explicit Forest grass rather
+            // than a palette-relative terrain voxel.  Keep the shared template
+            // unchanged and recolour only a server instance explicitly started
+            // with the Jungle Parma Violet palette.
+            if (Environment.GetEnvironmentVariable("SKYSAGA_PALETTE") == "34" && block == 1)
+                block = 78; // Grass_Cyan
+
+            chunk.SetVoxel(localX, localY, localZ, block, voxel.Meta);
             placed++;
         }
 

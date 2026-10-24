@@ -172,6 +172,31 @@ public static class Util
         }
     }
 
+    public static bool TryCreateExtraHomeWorld(Guid characterUuid, out Guid worldUuid)
+    {
+        worldUuid = default;
+        var webUrl = Environment.GetEnvironmentVariable("SKYSAGA_WEB_URL") ?? "http://127.0.0.1:5001";
+        try
+        {
+            using var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            using var content = new System.Net.Http.StringContent("{}", Encoding.UTF8, "application/json");
+            using var response = client.PostAsync(
+                $"{webUrl}/internal/home-island/create?characterUuid={characterUuid:D}", content).Result;
+            var json = response.Content.ReadAsStringAsync().Result;
+            response.EnsureSuccessStatusCode();
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var result = document.RootElement.GetProperty("result");
+            if (!Guid.TryParse(result.GetProperty("WorldUUID").GetString(), out worldUuid))
+                throw new InvalidDataException("Invalid extra home-island response");
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"[home-island] could not create an extra island for {characterUuid:D}: {exception.Message}");
+            return false;
+        }
+    }
+
     public static bool TryResolveWorld(Guid worldUuid, out HomeWorldDestination destination)
     {
         destination = default;

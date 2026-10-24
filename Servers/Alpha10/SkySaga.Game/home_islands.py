@@ -19,7 +19,7 @@ class HomeIslandManager:
         atexit.register(self.stop)
 
     def start_in_background(self, world):
-        if world["kind"] == "host":
+        if world["kind"] == "host" and world.get("primary", False):
             return
         world_uuid = world["uuid"]
         with self._lock:
@@ -38,7 +38,7 @@ class HomeIslandManager:
                 self._pending.discard(world["uuid"])
 
     def ensure_running(self, world):
-        if world["kind"] == "host":
+        if world["kind"] == "host" and world.get("primary", False):
             return world["port"]
 
         with self._lock:
@@ -77,12 +77,12 @@ class HomeIslandManager:
                 "SKYSAGA_HOME_SERVER_UUID": world["serverUuid"],
                 "SKYSAGA_HOME_OWNER_UUID": world["owner"],
                 "SKYSAGA_HOME_OWNER_NAME": world["ownerName"],
-                "SKYSAGA_INSTANCE_LOG": f"server-home-{world['owner']}.log",
+                "SKYSAGA_INSTANCE_LOG": f"server-home-{world_uuid}.log",
                 "SKYSAGA_COMPLETE_CHALLENGES": "1",
                 "SKYSAGA_DATA2_UNIFORM": "fd",
             })
 
-            error_log = self.bin_dir / f"server-home-{world['owner']}.stderr.log"
+            error_log = self.bin_dir / f"server-home-{world_uuid}.stderr.log"
             log_path = self.bin_dir / environment["SKYSAGA_INSTANCE_LOG"]
             previous_log_time = log_path.stat().st_mtime_ns if log_path.exists() else None
             with error_log.open("ab") as errors:

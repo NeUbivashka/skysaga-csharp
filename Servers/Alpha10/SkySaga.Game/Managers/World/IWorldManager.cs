@@ -18,5 +18,6 @@ public interface IWorldManager
     List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Guid? owner, uint?[] materials);
     List<Entity> RespawnMapCreature(Entity creature);
     (Vector3 Position, string? SpawnParams)? MapSpawnOf(int entityId);
+    bool MarkTreePartDestroyed(int entityId, Vector3Int worldVoxel, out byte originalVoxelType);
     void Reset();
 }

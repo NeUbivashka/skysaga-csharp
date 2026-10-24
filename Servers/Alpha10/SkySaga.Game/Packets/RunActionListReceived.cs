@@ -52,7 +52,13 @@ public static class RunActionListReceived
             return true;
         }
 
-        if (targetEntityId != 0)
+        var targetsTreeVoxel = targetEntityId != 0
+            && hasVoxel == 1
+            && ActionListVoxelActionTable.Has(actionListId, "DigAction")
+            && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var targetEntity)
+            && targetEntity.TryGetComponent<ClientTreeComponent>(out _);
+
+        if (targetEntityId != 0 && !targetsTreeVoxel)
         {
             Combat.PlayerAttack(connection, actionListId, (int)targetEntityId, usedItemCrc);
             return true;
@@ -161,7 +167,11 @@ public static class RunActionListReceived
             connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
         VoxelDamage.TryRemove(voxel, out _);
         SetWorldVoxel(connection, voxel, Air);
-        ResourcePickups.SpawnFromVoxel(connection, voxel, voxelType);
+        var pickupVoxelType = voxelType;
+        if (targetsTreeVoxel
+            && connection.WorldManager.MarkTreePartDestroyed((int)targetEntityId, voxel, out var originalVoxelType))
+            pickupVoxelType = originalVoxelType;
+        ResourcePickups.SpawnFromVoxel(connection, voxel, pickupVoxelType);
 
         Console.WriteLine($"[Voxel] removed {voxel}");
         return true;

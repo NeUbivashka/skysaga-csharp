@@ -29,6 +29,12 @@ public class Entity
             ? parameter.Value.GetString()
             : null;
 
+    public bool? BoolParameter(string name)
+        => _entityData.Parameters.Find(parameter => parameter.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } parameter
+           && parameter.Value.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False
+            ? parameter.Value.GetBoolean()
+            : null;
+
     private static readonly bool SyncTrace = Environment.GetEnvironmentVariable("SKYSAGA_SYNC_TRACE") == "1";
 
     public Entity(int id, EntityData entityData, IReadOnlyCollection<Component> components)

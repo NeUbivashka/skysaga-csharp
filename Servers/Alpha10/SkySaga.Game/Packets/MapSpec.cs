@@ -58,8 +58,19 @@ public class MapSpec
         };
 
         spec.Searchable[PaletteSlot] = HomeIslandPaletteIndex;
+        ApplyEnvironmentOverride(spec, "SKYSAGA_BIOME_INDEX", BiomeSlot);
+        ApplyEnvironmentOverride(spec, "SKYSAGA_REGION_INDEX", RegionSlot);
+        ApplyEnvironmentOverride(spec, "SKYSAGA_ADVENTURE_INDEX", AdventureSlot);
+        ApplyEnvironmentOverride(spec, "SKYSAGA_PALETTE", PaletteSlot);
 
         return spec;
+    }
+
+    private static void ApplyEnvironmentOverride(MapSpec spec, string variable, int slot)
+    {
+        if (uint.TryParse(Environment.GetEnvironmentVariable(variable), out var value)
+            && value < SearchableCounts[slot])
+            spec.Searchable[slot] = value;
     }
 
     public static MapSpec SocialHub(uint seed)
@@ -104,6 +115,10 @@ public class MapSpec
             _ => PlayerSaveStore.Load()?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
         }
         };
+
+    private const int BiomeSlot = 0;
+
+    private const int RegionSlot = 1;
 
     private const int AdventureSlot = 2;
 

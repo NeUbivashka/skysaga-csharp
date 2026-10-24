@@ -485,6 +485,30 @@ def home_island_destination():
     }}), 200
 
 
+@app.route("/internal/home-island/create", methods=["POST"])
+def create_extra_home_island():
+    """Create an extra island for the game action and return its stable identity."""
+    if not _is_local_peer(_peer_ip()):
+        return jsonify({"error": "local server only"}), 403
+    body = request.get_json(silent=True) or {}
+    character_uuid = request.args.get("characterUuid") or body.get("characterUuid")
+    account = ACCOUNT_STORE.get_by_character_uuid(character_uuid)
+    if account is None:
+        return jsonify({"error": "unknown character"}), 404
+    try:
+        world = ACCOUNT_STORE.create_extra_home_world(account, body.get("name"))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 409
+    HOME_ISLANDS.start_in_background(world)
+    print(f"[home-island] Created island slot={world['slot']} uuid={world['uuid']} "
+          f"for {account['name']}", flush=True)
+    return jsonify({"result": {
+        "WorldUUID": world["uuid"],
+        "ServerUUID": world["serverUuid"],
+        "Port": world["port"],
+    }}), 200
+
+
 @app.route("/internal/world-island", methods=["GET"])
 def world_island_destination():
     """Resolve and start a published island selected in the world browser."""
@@ -624,14 +648,15 @@ def alpha10_character_relationship_info():
     if not isinstance(params, dict):
         params = {}
 
-    req_account = None
-    for src in (body, params):
-        if isinstance(src, dict):
-            c_val = src.get("character")
-            if c_val and isinstance(c_val, str):
-                req_account = ACCOUNT_STORE.get_by_character_uuid(c_val)
-                if req_account:
-                    break
+    req_account = _account_for_peer(_peer_ip())
+    if not req_account:
+        for src in (body, params):
+            if isinstance(src, dict):
+                c_val = src.get("character")
+                if c_val and isinstance(c_val, str):
+                    req_account = ACCOUNT_STORE.get_by_character_uuid(c_val)
+                    if req_account:
+                        break
     if not req_account:
         req_account = _account_for_request()
 
@@ -676,7 +701,7 @@ def alpha10_character_relationship_info():
 def alpha10_character_friends_info():
     # SkySaga.exe 0x90fed0 looks for "characterOnlineData" (array of objects with "characterUuid")
     # and "total" (integer count), triggering 0x5b5500 to update the online notification badge.
-    req_account = _account_for_request()
+    req_account = _social_actor()
     friends = ACCOUNT_STORE.list_friends(req_account)
     online_data = [_build_online_data(item) for item in friends]
     values = [item["characterUuid"] for item in friends]
@@ -695,7 +720,7 @@ def alpha10_character_friends_info():
 @app.route("/api/social-graph/character/follows/info", methods=["POST"])
 def alpha10_character_follows_info():
     # SkySaga.exe 0x90fcc0 checks "characterOnlineData" + "total"; 0x910d10 checks "characters" + "count".
-    req_account = _account_for_request()
+    req_account = _social_actor()
     follows = ACCOUNT_STORE.list_follows(req_account)
     char_list = [_build_online_data(item) for item in follows]
     values = [item["characterUuid"] for item in follows]
@@ -713,7 +738,7 @@ def alpha10_character_follows_info():
 @app.route("/api/social-graph/character/followedby/info", methods=["POST"])
 def alpha10_character_followedby_info():
     # SkySaga.exe 0x910d10 checks "characters" + "count".
-    req_account = _account_for_request()
+    req_account = _social_actor()
     followed_by = ACCOUNT_STORE.list_followed_by(req_account)
     char_list = [_build_online_data(item) for item in followed_by]
     values = [item["characterUuid"] for item in followed_by]
@@ -760,7 +785,7 @@ def alpha10_characters_find_with_online_info():
     include_friends = params.get("includeFriends", True)
     name_starts_with = (params.get("nameStartsWith") or "").strip().lower()
 
-    req_account = _account_for_request()
+    req_account = _social_actor()
     friend_ids = set()
     if req_account:
         friends = ACCOUNT_STORE.list_friends(req_account)
@@ -807,12 +832,23 @@ def _social_request_params():
     return ({"_rawTarget": raw} if raw else {}), {}
 
 
-def _social_target(body, params):
+def _social_actor():
+    """Resolve the signed-in caller before looking at recipient fields.
+
+    Social mutation payloads often call their target ``character``.  Treating
+    that field as the caller made the target appear to be a self-action and was
+    why friend/follow buttons could return success without changing anything.
+    """
+    account = _account_for_peer(_peer_ip())
+    return account or _account_for_request()
+
+
+def _social_target(body, params, request_account=None):
     """Resolve an action recipient by UUID or display name."""
     candidates = ("recipient", "character", "characterUuid", "characterUUID", "characterId",
                   "target", "targetCharacterUuid", "friendUuid", "friendUUID", "requester",
                   "sender", "player", "id", "name", "characterName", "playerName", "username")
-    request_account = _account_for_request()
+    request_account = request_account or _social_actor()
 
     for values in (params, body):
         for key in candidates:
@@ -868,7 +904,7 @@ def _social_action_ok():
 def alpha10_friend_requests_incoming():
     # SkySaga.exe 0x9104c0 expects "results" (array of {"characterUuid": ...}) and "totalHits" (int).
     # When totalHits > 0, 0x5b5500 is called to trigger the HUD notification popup/badge!
-    req_account = _account_for_request()
+    req_account = _social_actor()
     accounts = ACCOUNT_STORE.list_friend_requests(req_account, incoming=True)
     results = [_build_online_data(item) for item in accounts]
     values = [item["characterUuid"] for item in accounts]
@@ -887,7 +923,7 @@ def alpha10_friend_requests_incoming():
 @app.route("/api/social-graph/friendrequest/outgoing", methods=["POST"])
 def alpha10_friend_requests_outgoing():
     # SkySaga.exe 0x910ab0 expects "results" and "totalHits" parsed via 0x9111d0.
-    req_account = _account_for_request()
+    req_account = _social_actor()
     accounts = ACCOUNT_STORE.list_friend_requests(req_account, incoming=False)
     results = [_build_online_data(item) for item in accounts]
     values = [item["characterUuid"] for item in accounts]
@@ -906,16 +942,8 @@ def alpha10_friend_requests_outgoing():
 @app.route("/api/social-graph/friendrequest/create", methods=["POST"])
 def alpha10_friend_request_create():
     body, params = _social_request_params()
-    sender = None
-    target = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            sender = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            target = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if sender is None:
-        sender = _account_for_request()
-    if target is None:
-        target = _social_target(body, params)
+    sender = _social_actor()
+    target = _social_target(body, params, sender)
     if target is None or sender is None:
         return _social_action_error("Unknown friend request recipient", 404)
     if sender["accountId"] == target["accountId"]:
@@ -924,21 +952,15 @@ def alpha10_friend_request_create():
         ACCOUNT_STORE.create_friend_request(sender, target)
     except ValueError as exc:
         return _social_action_error(str(exc))
+    print(f"[social] friend request {sender['name']} -> {target['name']}", flush=True)
     return _social_action_ok()
 
 
 @app.route("/api/social-graph/friendrequest/cancel", methods=["POST"])
 def alpha10_friend_request_cancel():
     body, params = _social_request_params()
-    acc1 = None
-    acc2 = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if not acc1 or not acc2:
-        acc1 = _account_for_request()
-        acc2 = _social_target(body, params)
+    acc1 = _social_actor()
+    acc2 = _social_target(body, params, acc1)
     if acc1 and acc2:
         ACCOUNT_STORE.cancel_friend_request(acc1, acc2)
     return _social_action_ok()
@@ -947,34 +969,21 @@ def alpha10_friend_request_cancel():
 @app.route("/api/social-graph/friendrequest/accept", methods=["POST"])
 def alpha10_friend_request_accept():
     body, params = _social_request_params()
-    acc1 = None
-    acc2 = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if not acc1 or not acc2:
-        acc1 = _account_for_request()
-        acc2 = _social_target(body, params)
+    acc1 = _social_actor()
+    acc2 = _social_target(body, params, acc1)
     if acc1 is None or acc2 is None:
         return _social_action_error("Unknown friend request sender", 404)
     if not ACCOUNT_STORE.accept_friend_request(acc1, acc2):
         return _social_action_error("Friend request was not pending", 409)
+    print(f"[social] friendship accepted between {acc1['name']} and {acc2['name']}", flush=True)
     return _social_action_ok()
 
 
 @app.route("/api/social-graph/friendrequest/reject", methods=["POST"])
 def alpha10_friend_request_reject():
     body, params = _social_request_params()
-    acc1 = None
-    acc2 = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if not acc1 or not acc2:
-        acc1 = _account_for_request()
-        acc2 = _social_target(body, params)
+    acc1 = _social_actor()
+    acc2 = _social_target(body, params, acc1)
     if acc1 and acc2:
         ACCOUNT_STORE.reject_friend_request(acc1, acc2)
     return _social_action_ok()
@@ -983,15 +992,8 @@ def alpha10_friend_request_reject():
 @app.route("/api/social-graph/character/unfriend", methods=["POST"])
 def alpha10_unfriend():
     body, params = _social_request_params()
-    acc1 = None
-    acc2 = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            acc1 = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            acc2 = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if not acc1 or not acc2:
-        acc1 = _account_for_request()
-        acc2 = _social_target(body, params)
+    acc1 = _social_actor()
+    acc2 = _social_target(body, params, acc1)
     if acc1 and acc2:
         ACCOUNT_STORE.remove_friend(acc1, acc2)
     return _social_action_ok()
@@ -1000,16 +1002,8 @@ def alpha10_unfriend():
 @app.route("/api/social-graph/character/follow", methods=["POST"])
 def alpha10_follow():
     body, params = _social_request_params()
-    follower = None
-    followed = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            follower = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            followed = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if follower is None:
-        follower = _account_for_request()
-    if followed is None:
-        followed = _social_target(body, params)
+    follower = _social_actor()
+    followed = _social_target(body, params, follower)
     if follower is None or followed is None:
         return _social_action_error("Unknown player to follow", 404)
     if follower["accountId"] == followed["accountId"]:
@@ -1018,22 +1012,15 @@ def alpha10_follow():
         ACCOUNT_STORE.follow(follower, followed)
     except ValueError as exc:
         return _social_action_error(str(exc))
+    print(f"[social] follow {follower['name']} -> {followed['name']}", flush=True)
     return _social_action_ok()
 
 
 @app.route("/api/social-graph/character/unfollow", methods=["POST"])
 def alpha10_unfollow():
     body, params = _social_request_params()
-    follower = None
-    followed = None
-    if isinstance(body, dict):
-        if "requester" in body and "recipient" in body:
-            follower = ACCOUNT_STORE.get_by_character_uuid(body["requester"])
-            followed = ACCOUNT_STORE.get_by_character_uuid(body["recipient"])
-    if follower is None:
-        follower = _account_for_request()
-    if followed is None:
-        followed = _social_target(body, params)
+    follower = _social_actor()
+    followed = _social_target(body, params, follower)
     if follower and followed:
         ACCOUNT_STORE.unfollow(follower, followed)
     return _social_action_ok()
@@ -1235,10 +1222,11 @@ def alpha10_worlds_list_for_owner(owner):
         if req and str(req.get("characterUuid", "")).lower() == requested_owner.lower():
             owner_account = req
         else:
-            owner_account = req
-    world = ACCOUNT_STORE.get_or_create_home_world(owner_account)
-    print(f"[islands] Listed {owner_account['name']}'s home island {world['uuid']} for owner={owner}")
-    return jsonify([_home_world(world)]), 200
+            return jsonify([]), 200
+    ACCOUNT_STORE.get_or_create_home_world(owner_account)
+    worlds = ACCOUNT_STORE.list_home_worlds_for_account(owner_account)
+    print(f"[islands] Listed {len(worlds)} island(s) for {owner_account['name']} owner={owner}")
+    return jsonify([_home_world(world) for world in worlds]), 200
 
 
 @app.route("/api/persistent-record/curatedcontent/ugcbrowserworldcontent/_search", methods=["POST"])
@@ -1680,6 +1668,29 @@ HOME_ISLAND_MAP_SPEC = [
     "",
 ]
 
+JUNGLE_REGION_5_PARMA_VIOLET_MAP_SPEC = [
+    [
+        "Jungle",
+        "JungleRegion5",
+        "Home_Island_Flat_Adventure",
+        "Easy",
+        "",
+        1337,
+        "BiomePalette_Jungle_Parma_Violet",
+        0, 0, 0,
+        "Home_Island",
+        0,
+        "Special",
+        "HomeIsland_6x4x6",
+        0,
+        "Home_Island_World",
+        "NoEvent",
+    ],
+    ["", 0],
+    [],
+    "",
+]
+
 # The client calls worlds/getSpecific after a transfer has already connected to
 # the City server.  This record must agree with the live social-hub handshake;
 # returning a player's home record here makes the client replace the City title
@@ -1727,15 +1738,18 @@ def alpha10_worlds_get_specific():
 def _home_world(world_record):
     owner_name = world_record.get("ownerName") or world_record.get("name") or "Player"
     world_name = world_record.get("name") or f"{owner_name}'s Ruins"
+    biome = str(world_record.get("ownerBiome") or "").strip().casefold()
+    map_spec = (JUNGLE_REGION_5_PARMA_VIOLET_MAP_SPEC
+                if biome == "jungle" else HOME_ISLAND_MAP_SPEC)
     return {
         "uuid": world_record["uuid"],
-        "mapSpec": HOME_ISLAND_MAP_SPEC,
+        "mapSpec": map_spec,
         "owner": world_record["owner"],
         "ownerName": owner_name,
         "ownerType": "C",
         "name": world_name,
         "homeWorld": True,
-        "published": True,
+        "published": bool(world_record.get("published", True)),
         "deleted": False,
         "blueprint": False,
         "created": int(world_record.get("created_at") or 0),
