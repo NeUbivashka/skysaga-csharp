@@ -5,7 +5,7 @@ namespace SkySaga.Game.Managers.World;
 public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : IMapChunkManager
 {
     private const int ChunkSize = 32;
-    private static readonly string MapSuffix = $"_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}";
+    private static readonly string MapSuffix = BuildMapSuffix();
     private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"voxel_edits{MapSuffix}.json");
     private static readonly string LegacyEditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"world_edits{MapSuffix}.json");
     private const byte LegacyAir = 0;
@@ -14,6 +14,13 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
     private readonly Dictionary<Vector3Int, byte> _edits = [];
     private readonly Lock _editsLock = new();
     private readonly PlayerConnectionManager _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
+
+    private static string BuildMapSuffix()
+    {
+        var mapName = Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName);
+        var instanceName = Environment.GetEnvironmentVariable("SKYSAGA_INSTANCE_ID");
+        return string.IsNullOrWhiteSpace(instanceName) ? $"_{mapName}" : $"_{mapName}_{instanceName}";
+    }
 
     public bool TryGetChunk(Vector3Int chunkPosition, [NotNullWhen(true)] out WorldChunk? chunk)
     {

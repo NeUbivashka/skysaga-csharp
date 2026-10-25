@@ -1,8 +1,10 @@
 ﻿
 var isSocialWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
+var isAdventureWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "adventure"
+    || Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.Equals("ftue", StringComparison.OrdinalIgnoreCase) == true;
 var isHomeIslandInstance = Environment.GetEnvironmentVariable("SKYSAGA_HOME_OWNER_UUID") is { Length: > 0 };
 var logName = Environment.GetEnvironmentVariable("SKYSAGA_INSTANCE_LOG")
-    ?? (isSocialWorld ? "server-socialhub.log" : "server.log");
+    ?? (isSocialWorld ? "server-socialhub.log" : isAdventureWorld ? "server-adventure.log" : "server.log");
 Console.SetOut(TextWriter.Synchronized(new TimestampedTextWriter(Console.Out,
     new StreamWriter(Path.Combine(AppContext.BaseDirectory, logName), append: false) { AutoFlush = true })));
 

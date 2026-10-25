@@ -37,20 +37,22 @@ public static class ClientConnected
         }
 
         var isSocialWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social";
-        // A social hub is not a character-owned island.  Sending the local
-        // player's UUID here makes the client label the City as that player's
-        // "Ruins", even when ServerOwnerName says City of Last Light.
-        Guid? serverOwnerGuid = isSocialWorld
+        var isAdventureWorld = WorldTransfer.CurrentWorldKind == "adventure";
+        var adventure = RequestAdventureStart.CurrentDestination();
+        // Neither social hubs nor adventures are character-owned islands.
+        // Sending the local player's UUID here makes the client label either
+        // one as that player's "Ruins", regardless of ServerOwnerName.
+        Guid? serverOwnerGuid = isSocialWorld || isAdventureWorld
             ? null
             : Guid.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_HOME_OWNER_UUID"), out var islandOwner)
                 ? islandOwner
                 : Guid.TryParse(Util.CharacterUuid(), out var parsedOwnerGuid) ? parsedOwnerGuid : null;
 
-        var worldUuid = isSocialWorld ? SocialWorldUuid : HomeWorldUuid;
-        var serverUuid = isSocialWorld ? SocialServerUuid : HomeServerUuid;
-        if (!isSocialWorld && Guid.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_HOME_WORLD_UUID"), out var islandWorld))
+        var worldUuid = adventure?.WorldUuid ?? (isSocialWorld ? SocialWorldUuid : HomeWorldUuid);
+        var serverUuid = adventure?.ServerUuid ?? (isSocialWorld ? SocialServerUuid : HomeServerUuid);
+        if (!isSocialWorld && !isAdventureWorld && Guid.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_HOME_WORLD_UUID"), out var islandWorld))
             worldUuid = islandWorld;
-        if (!isSocialWorld && Guid.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_HOME_SERVER_UUID"), out var islandServer))
+        if (!isSocialWorld && !isAdventureWorld && Guid.TryParse(Environment.GetEnvironmentVariable("SKYSAGA_HOME_SERVER_UUID"), out var islandServer))
             serverUuid = islandServer;
 
         var serverInfo = new ServerInfo
@@ -59,7 +61,9 @@ public static class ClientConnected
             WorldUuid = worldUuid,
             ServerUuid = serverUuid,
 
-            ServerOwnerName = !isSocialWorld
+            ServerOwnerName = isAdventureWorld
+                ? adventure?.DisplayName ?? "Adventure"
+                : !isSocialWorld
                 ? Environment.GetEnvironmentVariable("SKYSAGA_HOME_OWNER_NAME") ?? Util.CharacterName()
                 : "The City of Last Light",
 

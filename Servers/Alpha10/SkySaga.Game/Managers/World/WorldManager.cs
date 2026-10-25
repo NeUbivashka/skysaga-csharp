@@ -874,7 +874,61 @@ public sealed class WorldManager : IWorldManager, IDisposable
             spawned++;
         }
 
+        AddAdventureSuppliesChests();
+
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
+    }
+
+    private void AddAdventureSuppliesChests()
+    {
+        // These are opt-in test supplies for the three Mastery cards.  They
+        // are generated at startup rather than written into a player's island
+        // save, so they do not alter an existing chest or player inventory.
+        if (Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE_SUPPLIES_CHESTS") != "1")
+            return;
+
+        var supplies = new[]
+        {
+            (Biome: "Forest", Position: new Vector3(90.5f, 32f, 22.5f)),
+            (Biome: "Desert", Position: new Vector3(94.5f, 32f, 22.5f)),
+            (Biome: "Jungle", Position: new Vector3(98.5f, 32f, 22.5f)),
+        };
+
+        var chests = 0;
+        foreach (var supply in supplies)
+        {
+            var spawned = SpawnCreature("Chest_Generic_Major", supply.Position);
+            if (spawned.Count == 0)
+                continue;
+
+            FillAdventureSupplies(spawned[^1], supply.Biome);
+            chests++;
+        }
+
+        Console.WriteLine($"[WorldManager] Added {chests} Mastery adventure-supplies chest(s) near the home spawn.");
+    }
+
+    private void FillAdventureSupplies(Entity chest, string biome)
+    {
+        if (!chest.TryGetComponent<ClientInventoryComponent>(out var inventory))
+            return;
+
+        const int fragmentCount = 25;
+        const int travelObjectCount = 10;
+        var firstSlot = (int)ClientEquippedItemComponent.SlotCount;
+        var fragmentMaterials = new uint?[] { Util.ComputeCrc32(biome) };
+
+        var itemIds = new List<int>
+        {
+            PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32("Keystone_Fragment"), fragmentCount,
+                materialOverrides: fragmentMaterials)?.Id ?? 0,
+            PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32("Realm_Travelling_Object"), travelObjectCount)?.Id ?? 0,
+        };
+
+        var slots = new List<int>(Enumerable.Repeat(0, firstSlot));
+        slots.AddRange(itemIds.Take(Math.Max(0, inventory.MaxInventorySlots - slots.Count)));
+        slots.AddRange(Enumerable.Repeat(0, Math.Max(0, inventory.MaxInventorySlots - slots.Count)));
+        inventory.InventoryEntityList = slots;
     }
 
     private static IEnumerable<WorldMapEntityData> CraftingStationTestRow()

@@ -21,7 +21,7 @@ public class RequestWorldTeleport : ISerializablePacket
 
         Console.WriteLine($"[RequestWorldTeleport] {connection.Identity.Name} selected world "
             + $"{worldUuid:D} from entity {triggeringEntityId}.");
-        var currentWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social" ? "social" : "home";
+        var currentWorld = WorldTransfer.CurrentWorldKind;
         return WorldTransfer.Transfer(connection, triggeringEntityId, destination.Port,
             destination.WorldUuid, destination.ServerUuid, MapSpec.HomeIsland(seed: 1337),
             expectedSourceWorld: currentWorld);
