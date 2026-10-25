@@ -68,6 +68,16 @@ public sealed class WorldManager : IWorldManager, IDisposable
         new(146, 32, 126),
     ];
 
+    // Small authored groves for the recreated Forest and Jungle mastery maps;
+    // these are not a reconstruction of the original Alpha 10 layouts.
+    private static readonly Vector3Int[] AdventureTreeGrove =
+    [
+        new(72, 32, 72), new(94, 32, 86), new(118, 32, 70),
+        new(148, 32, 100), new(88, 32, 122), new(126, 32, 132),
+        new(168, 32, 142), new(202, 32, 118), new(224, 32, 78),
+        new(188, 32, 62), new(250, 32, 96), new(274, 32, 140),
+    ];
+
     public WorldManager(PlayerConnectionManager playerConnectionManager)
     {
         ArgumentNullException.ThrowIfNull(playerConnectionManager);
@@ -191,24 +201,29 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         SpawnTimeOfDay();
         SpawnWorldComposition();
+        SpawnAdventureName();
     }
 
     private void AddDefaultTrees()
     {
-        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social"
-            || Definition.MapSizeChunks != new Vector3Int(6, 4, 6))
+        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social")
             return;
 
         var mapName = Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName);
-        if (!mapName.Equals(Path.GetFileNameWithoutExtension(WorldMapLoader.DefaultMap), StringComparison.OrdinalIgnoreCase)
-            && !mapName.StartsWith("home_", StringComparison.OrdinalIgnoreCase))
+        var adventureGrove = mapName.Equals("AdventureForest01", StringComparison.OrdinalIgnoreCase)
+            || mapName.Equals("AdventureJungle01", StringComparison.OrdinalIgnoreCase);
+
+        if (!adventureGrove
+            && (!mapName.Equals(Path.GetFileNameWithoutExtension(WorldMapLoader.DefaultMap), StringComparison.OrdinalIgnoreCase)
+                && !mapName.StartsWith("home_", StringComparison.OrdinalIgnoreCase)))
             return;
 
         int placed = 0;
 
-        for (int treeIndex = 0; treeIndex < DefaultTreeGrove.Length; treeIndex++)
+        var grove = adventureGrove ? AdventureTreeGrove : DefaultTreeGrove;
+        for (int treeIndex = 0; treeIndex < grove.Length; treeIndex++)
         {
-            var root = DefaultTreeGrove[treeIndex];
+            var root = grove[treeIndex];
 
             if (GetWorldVoxel(root) != WorldChunk.Air
                 || GetWorldVoxel(root + new Vector3Int(0, -1, 0)) == WorldChunk.Air)
@@ -465,6 +480,28 @@ public sealed class WorldManager : IWorldManager, IDisposable
             composition.TerrainType = TerrainType.Sky;
             composition.MinWalkableYPosition = 0;
         }
+    }
+
+    private void SpawnAdventureName()
+    {
+        // The client creates the adventure title from this entity. Normal player
+        // islands and the social hub do not send it, so leave their title flow alone.
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")))
+        {
+            return;
+        }
+
+        if (!EntityManager.TryCreateEntity("AdventureName", out var adventureName) ||
+            !adventureName.TryGetComponent<ClientAdventureNameComponent>(out var component))
+        {
+            Console.WriteLine("[WorldManager] Could not create the AdventureName entity.");
+            return;
+        }
+
+        component.RandomSeed = Definition.Spec.Seed;
+        // Mastery maps currently do not specify a primary creature set. The client
+        // represents that as table index zero (not a literal CRC value).
+        component.PrimaryFeatureCreatureSetCrc = 0;
     }
 
     private const int StartTimeOfDay = 10 * TimeOfDayComponent.DayLength / 24;

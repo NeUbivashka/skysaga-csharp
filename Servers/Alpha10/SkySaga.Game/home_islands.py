@@ -11,8 +11,9 @@ from pathlib import Path
 
 
 class HomeIslandManager:
-    def __init__(self, project_dir: Path):
+    def __init__(self, project_dir: Path, account_store=None):
         self.bin_dir = project_dir / "bin" / "Debug" / "net10.0"
+        self.account_store = account_store
         self._lock = threading.Lock()
         self._processes = {}
         self._pending = set()
@@ -59,12 +60,26 @@ class HomeIslandManager:
                 shutil.copyfile(template, temporary_map)
                 os.replace(temporary_map, island_map)
 
-            # A busy port from an unknown process must never be mistaken for this island.
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-                try:
-                    probe.bind(("0.0.0.0", world["port"]))
-                except OSError as exc:
-                    raise RuntimeError(f"UDP port {world['port']} is already occupied") from exc
+            # Keep saved world ports unique in SQLite, and also account for
+            # unrelated local processes that may already own a reserved port.
+            # The replacement is persisted before its endpoint is returned to
+            # the caller, so the transfer packet and listener use one port.
+            port_attempts = 0
+            while True:
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+                    try:
+                        probe.bind(("0.0.0.0", world["port"]))
+                        break
+                    except OSError as exc:
+                        if self.account_store is None or port_attempts >= 199:
+                            raise RuntimeError(
+                                f"UDP port {world['port']} is already occupied and no replacement was found"
+                            ) from exc
+                        previous_port = world["port"]
+                        world["port"] = self.account_store.move_home_world_to_next_port(world_uuid)
+                        port_attempts += 1
+                        print(f"[home-island] UDP {previous_port} is busy; retrying world {world_uuid} "
+                              f"on UDP {world['port']}", flush=True)
 
             environment = os.environ.copy()
             environment.update({
@@ -73,6 +88,10 @@ class HomeIslandManager:
                 "SKYSAGA_ADVENTURE": "home",
                 "SKYSAGA_GAME_PORT": str(world["port"]),
                 "SKYSAGA_SOCIAL_HUB_PORT": os.environ.get("SKYSAGA_SOCIAL_HUB_PORT", "42070"),
+                "SKYSAGA_FTUE_PORT": os.environ.get("SKYSAGA_FTUE_PORT", "42071"),
+                "SKYSAGA_MASTERY_FOREST_PORT": os.environ.get("SKYSAGA_MASTERY_FOREST_PORT", "42072"),
+                "SKYSAGA_MASTERY_DESERT_PORT": os.environ.get("SKYSAGA_MASTERY_DESERT_PORT", "42073"),
+                "SKYSAGA_MASTERY_JUNGLE_PORT": os.environ.get("SKYSAGA_MASTERY_JUNGLE_PORT", "42074"),
                 "SKYSAGA_HOME_WORLD_UUID": world_uuid,
                 "SKYSAGA_HOME_SERVER_UUID": world["serverUuid"],
                 "SKYSAGA_HOME_OWNER_UUID": world["owner"],

@@ -1,0 +1,12 @@
+{
+  "mapSizeChunks": { "x": 12, "y": 4, "z": 12 },
+  "biomeName": "Desert",
+  "gameMode": 1,
+  "voxels": [{ "x": 0, "y": 31, "z": 0, "block": 1, "meta": 0 }],
+  "entities": [
+    { "name": "Airship", "x": 96, "y": 32, "z": 96 },
+    { "name": "Rock_A", "x": 132, "y": 32, "z": 114 },
+    { "name": "Rock_B", "x": 168, "y": 32, "z": 84 },
+    { "name": "Rock_Pile_A", "x": 210, "y": 32, "z": 142 }
+  ]
+}

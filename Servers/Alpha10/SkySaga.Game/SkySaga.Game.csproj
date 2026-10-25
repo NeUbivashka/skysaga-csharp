@@ -104,6 +104,15 @@
     <None Update="Data\SocialHub.json" Condition="Exists('Data\SocialHub.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\AdventureForest01.json" Condition="Exists('Data\AdventureForest01.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\AdventureDesert01.json" Condition="Exists('Data\AdventureDesert01.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\AdventureJungle01.json" Condition="Exists('Data\AdventureJungle01.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\WorldMap.json" Condition="Exists('Data\WorldMap.json')">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

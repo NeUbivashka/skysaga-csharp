@@ -40,9 +40,10 @@ public class RequestAdventureStart : ISerializablePacket
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        if (WorldTransfer.CurrentWorldKind != "home")
+        var sourceWorld = WorldTransfer.CurrentWorldKind;
+        if (sourceWorld is not ("home" or "adventure" or "social"))
         {
-            Console.WriteLine($"[RequestAdventureStart] Ignored request from {connection.Identity.Name} in {WorldTransfer.CurrentWorldKind}.");
+            Console.WriteLine($"[RequestAdventureStart] Ignored request from {connection.Identity.Name} in {sourceWorld}.");
             return true;
         }
 
@@ -70,7 +71,7 @@ public class RequestAdventureStart : ISerializablePacket
         Console.WriteLine($"[RequestAdventureStart] {connection.Identity.Name} selected {destination.DisplayName} (wire index {adventureWireIndex}).");
         return WorldTransfer.Transfer(connection, (uint)connection.PlayerEntity.Id,
             destination.PortVariable, destination.WorldUuid, destination.ServerUuid,
-            destination.CreateSpec(), expectedSourceWorld: "home");
+            destination.CreateSpec(), expectedSourceWorld: sourceWorld);
     }
 
     internal static AdventureDestination? CurrentDestination()

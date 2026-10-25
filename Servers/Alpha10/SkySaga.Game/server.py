@@ -88,7 +88,7 @@ ACCOUNT_STORE.initialize(_load_account, ACCOUNT_FILE, ACCOUNTS_DIR)
 ACCOUNT = ACCOUNT_STORE.get_host()
 PLAYER_NAME = ACCOUNT["name"]
 ACCOUNT_CREATED = ACCOUNT["createdAt"]
-HOME_ISLANDS = HomeIslandManager(Path(__file__).resolve().parent)
+HOME_ISLANDS = HomeIslandManager(Path(__file__).resolve().parent, ACCOUNT_STORE)
 PHOTO_DB_FILE = ACCOUNT_FILE.parent / "photos.sqlite3"
 PHOTOS_DIR = ACCOUNT_FILE.parent / "photos"
 PHOTO_STORE = PhotoStore(PHOTO_DB_FILE, PHOTOS_DIR)
