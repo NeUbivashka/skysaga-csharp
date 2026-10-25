@@ -970,13 +970,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     private static IEnumerable<WorldMapEntityData> CraftingStationTestRow()
     {
-        string[] stations =
-        [
-            "Anvil", "Armoury", "Bellows", "Cauldron", "Cold_Weather_Survival_Kit",
-            "Compressor", "Crafting_Device", "Desert_Survival_Kit", "Farming_Kit",
-            "Fireworks_Device", "Forge", "Generator", "Hunters_Pack", "Husbandry_Kit", "Incubator", "Kiln",
-            "Magical_Symbol", "Oven", "Potting_Table", "Workbench", "Writing_Desk"
-        ];
+        // Alpha 10 only has complete item and device definitions for these
+        // three entries. The old station names are client templates without a
+        // placeable item/device definition, so the client renders its generic
+        // device-placeholder model for them.
+        string[] stations = ["Anvil_2x1x1", "Crafting_Device", "Fireworks_Device"];
 
         // TestZoo has a flat floor at y=28 and its player marker is at x=96,
         // z=22. Place the row on the same island, five voxels apart, at z=34.
