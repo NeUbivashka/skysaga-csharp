@@ -193,20 +193,19 @@ public class MapSpec
 
     /// <summary>
     /// Creates one of the first-region mastery-adventure specifications from
-    /// Alpha 10 GeoData.  The client resolves its title, coloured keystone
-    /// fragments, and entry requirements from these identifiers.
+    /// Alpha 10 GeoData. The client resolves its title and biome from these
+    /// identifiers; the matching Generic_Easy cost record has no requirements.
     /// </summary>
     public static MapSpec MasteryAdventure(uint seed, AdventureBiome biome)
     {
         var (region, adventure, palette, timeOfDay, cost) = biome switch
         {
             // AdventureCosts is a separate, non-searchable MapSpec field.
-            // These one-based values are the three Alpha 10
-            // Adv_Cost_Mastery_<Biome>_Progression_Easy records, not the
-            // generic free-entry records.
-            AdventureBiome.Forest => (7u, 31u, 26u, 12u, 22u),
-            AdventureBiome.Desert => (1u, 21u, 16u, 10u, 19u),
-            AdventureBiome.Jungle => (19u, 41u, 37u, 12u, 25u),
+            // The one-based wire indices point to each biome's Generic_Easy
+            // record, whose GeoData cost list is empty.
+            AdventureBiome.Forest => (7u, 31u, 26u, 12u, 10u),
+            AdventureBiome.Desert => (1u, 21u, 16u, 10u, 6u),
+            AdventureBiome.Jungle => (19u, 41u, 37u, 12u, 13u),
             _ => throw new ArgumentOutOfRangeException(nameof(biome), biome, null),
         };
 
