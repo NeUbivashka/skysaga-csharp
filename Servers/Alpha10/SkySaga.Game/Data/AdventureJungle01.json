@@ -1,0 +1,11 @@
+{
+  "mapSizeChunks": { "x": 12, "y": 4, "z": 12 },
+  "biomeName": "Jungle",
+  "gameMode": 1,
+  "voxels": [{ "x": 0, "y": 31, "z": 0, "block": 1, "meta": 0 }],
+  "entities": [
+    { "name": "Airship", "x": 96, "y": 32, "z": 96 },
+    { "name": "Vine_Jungle_A", "x": 130, "y": 32, "z": 96 },
+    { "name": "Vine_Jungle_B", "x": 160, "y": 32, "z": 122 }
+  ]
+}

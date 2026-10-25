@@ -88,7 +88,7 @@ ACCOUNT_STORE.initialize(_load_account, ACCOUNT_FILE, ACCOUNTS_DIR)
 ACCOUNT = ACCOUNT_STORE.get_host()
 PLAYER_NAME = ACCOUNT["name"]
 ACCOUNT_CREATED = ACCOUNT["createdAt"]
-HOME_ISLANDS = HomeIslandManager(Path(__file__).resolve().parent)
+HOME_ISLANDS = HomeIslandManager(Path(__file__).resolve().parent, ACCOUNT_STORE)
 PHOTO_DB_FILE = ACCOUNT_FILE.parent / "photos.sqlite3"
 PHOTOS_DIR = ACCOUNT_FILE.parent / "photos"
 PHOTO_STORE = PhotoStore(PHOTO_DB_FILE, PHOTOS_DIR)
@@ -1092,6 +1092,28 @@ def alpha10_loadingscreen_suggest():
     print("=== alpha10 loading screen content suggest ===")
     print("Body:", request.get_data(as_text=True))
 
+    # The client recognizes photoBattle directly from this response.  Its
+    # reader requires two photo records containing UUIDs in "results" and an
+    # opaque battleToken;
+    # it then downloads the two public photos itself before showing the vote.
+    # Do not advertise the activity unless both pictures actually exist: an
+    # empty/partial result makes the client retry the loading-content request.
+    public_photos = PHOTO_STORE.list_public_photos()
+    if len(public_photos) >= 2:
+        selected = public_photos[:2]
+        battle = {
+            "photoBattle": {
+                # Each result must be an object. The client looks up its
+                # "uuid" child before scheduling the image download; sending
+                # bare UUID strings leaves the cards empty and makes voting
+                # dereference an incomplete photo entry.
+                "results": [{"uuid": selected[0]["uuid"]}, {"uuid": selected[1]["uuid"]}],
+                "battleToken": str(uuid.uuid4()),
+            }
+        }
+        print(f"[photo-battle] offering {selected[0]['uuid']} vs {selected[1]['uuid']}")
+        return jsonify({"result": battle}), 200
+
     return jsonify({
         "result": {
             "tip": {
@@ -1187,7 +1209,7 @@ def alpha10_binary_storage_cooler():
     if len(photos) >= 2:
         return jsonify({
             "result": {
-                "results": [photos[0]["uuid"], photos[1]["uuid"]],
+                "results": [{"uuid": photos[0]["uuid"]}, {"uuid": photos[1]["uuid"]}],
                 "battleToken": "battle_token_1"
             }
         }), 200

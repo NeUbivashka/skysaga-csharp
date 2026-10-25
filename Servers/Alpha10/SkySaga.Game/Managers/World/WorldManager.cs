@@ -68,6 +68,16 @@ public sealed class WorldManager : IWorldManager, IDisposable
         new(146, 32, 126),
     ];
 
+    // Small authored groves for the recreated Forest and Jungle mastery maps;
+    // these are not a reconstruction of the original Alpha 10 layouts.
+    private static readonly Vector3Int[] AdventureTreeGrove =
+    [
+        new(72, 32, 72), new(94, 32, 86), new(118, 32, 70),
+        new(148, 32, 100), new(88, 32, 122), new(126, 32, 132),
+        new(168, 32, 142), new(202, 32, 118), new(224, 32, 78),
+        new(188, 32, 62), new(250, 32, 96), new(274, 32, 140),
+    ];
+
     public WorldManager(PlayerConnectionManager playerConnectionManager)
     {
         ArgumentNullException.ThrowIfNull(playerConnectionManager);
@@ -191,24 +201,29 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         SpawnTimeOfDay();
         SpawnWorldComposition();
+        SpawnAdventureName();
     }
 
     private void AddDefaultTrees()
     {
-        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social"
-            || Definition.MapSizeChunks != new Vector3Int(6, 4, 6))
+        if (Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social")
             return;
 
         var mapName = Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName);
-        if (!mapName.Equals(Path.GetFileNameWithoutExtension(WorldMapLoader.DefaultMap), StringComparison.OrdinalIgnoreCase)
-            && !mapName.StartsWith("home_", StringComparison.OrdinalIgnoreCase))
+        var adventureGrove = mapName.Equals("AdventureForest01", StringComparison.OrdinalIgnoreCase)
+            || mapName.Equals("AdventureJungle01", StringComparison.OrdinalIgnoreCase);
+
+        if (!adventureGrove
+            && (!mapName.Equals(Path.GetFileNameWithoutExtension(WorldMapLoader.DefaultMap), StringComparison.OrdinalIgnoreCase)
+                && !mapName.StartsWith("home_", StringComparison.OrdinalIgnoreCase)))
             return;
 
         int placed = 0;
 
-        for (int treeIndex = 0; treeIndex < DefaultTreeGrove.Length; treeIndex++)
+        var grove = adventureGrove ? AdventureTreeGrove : DefaultTreeGrove;
+        for (int treeIndex = 0; treeIndex < grove.Length; treeIndex++)
         {
-            var root = DefaultTreeGrove[treeIndex];
+            var root = grove[treeIndex];
 
             if (GetWorldVoxel(root) != WorldChunk.Air
                 || GetWorldVoxel(root + new Vector3Int(0, -1, 0)) == WorldChunk.Air)
@@ -465,6 +480,28 @@ public sealed class WorldManager : IWorldManager, IDisposable
             composition.TerrainType = TerrainType.Sky;
             composition.MinWalkableYPosition = 0;
         }
+    }
+
+    private void SpawnAdventureName()
+    {
+        // The client creates the adventure title from this entity. Normal player
+        // islands and the social hub do not send it, so leave their title flow alone.
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")))
+        {
+            return;
+        }
+
+        if (!EntityManager.TryCreateEntity("AdventureName", out var adventureName) ||
+            !adventureName.TryGetComponent<ClientAdventureNameComponent>(out var component))
+        {
+            Console.WriteLine("[WorldManager] Could not create the AdventureName entity.");
+            return;
+        }
+
+        component.RandomSeed = Definition.Spec.Seed;
+        // Mastery maps currently do not specify a primary creature set. The client
+        // represents that as table index zero (not a literal CRC value).
+        component.PrimaryFeatureCreatureSetCrc = 0;
     }
 
     private const int StartTimeOfDay = 10 * TimeOfDayComponent.DayLength / 24;
@@ -874,18 +911,70 @@ public sealed class WorldManager : IWorldManager, IDisposable
             spawned++;
         }
 
+        AddAdventureSuppliesChests();
+
         Console.WriteLine($"[WorldManager] Spawned {spawned}/{entities.Count} entities from WorldMap.json.");
+    }
+
+    private void AddAdventureSuppliesChests()
+    {
+        // These are opt-in test supplies for the three Mastery cards.  They
+        // are generated at startup rather than written into a player's island
+        // save, so they do not alter an existing chest or player inventory.
+        if (Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE_SUPPLIES_CHESTS") != "1")
+            return;
+
+        var supplies = new[]
+        {
+            (Biome: "Forest", Position: new Vector3(90.5f, 32f, 22.5f)),
+            (Biome: "Desert", Position: new Vector3(94.5f, 32f, 22.5f)),
+            (Biome: "Jungle", Position: new Vector3(98.5f, 32f, 22.5f)),
+        };
+
+        var chests = 0;
+        foreach (var supply in supplies)
+        {
+            var spawned = SpawnCreature("Chest_Generic_Major", supply.Position);
+            if (spawned.Count == 0)
+                continue;
+
+            FillAdventureSupplies(spawned[^1], supply.Biome);
+            chests++;
+        }
+
+        Console.WriteLine($"[WorldManager] Added {chests} Mastery adventure-supplies chest(s) near the home spawn.");
+    }
+
+    private void FillAdventureSupplies(Entity chest, string biome)
+    {
+        if (!chest.TryGetComponent<ClientInventoryComponent>(out var inventory))
+            return;
+
+        const int fragmentCount = 25;
+        const int travelObjectCount = 10;
+        var firstSlot = (int)ClientEquippedItemComponent.SlotCount;
+        var fragmentMaterials = new uint?[] { Util.ComputeCrc32(biome) };
+
+        var itemIds = new List<int>
+        {
+            PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32("Keystone_Fragment"), fragmentCount,
+                materialOverrides: fragmentMaterials)?.Id ?? 0,
+            PlayerInitializer.CreateInventoryItem(EntityManager, Util.ComputeCrc32("Realm_Travelling_Object"), travelObjectCount)?.Id ?? 0,
+        };
+
+        var slots = new List<int>(Enumerable.Repeat(0, firstSlot));
+        slots.AddRange(itemIds.Take(Math.Max(0, inventory.MaxInventorySlots - slots.Count)));
+        slots.AddRange(Enumerable.Repeat(0, Math.Max(0, inventory.MaxInventorySlots - slots.Count)));
+        inventory.InventoryEntityList = slots;
     }
 
     private static IEnumerable<WorldMapEntityData> CraftingStationTestRow()
     {
-        string[] stations =
-        [
-            "Anvil", "Armoury", "Bellows", "Cauldron", "Cold_Weather_Survival_Kit",
-            "Compressor", "Crafting_Device", "Desert_Survival_Kit", "Farming_Kit",
-            "Fireworks_Device", "Forge", "Generator", "Hunters_Pack", "Husbandry_Kit", "Incubator", "Kiln",
-            "Magical_Symbol", "Oven", "Potting_Table", "Workbench", "Writing_Desk"
-        ];
+        // Alpha 10 only has complete item and device definitions for these
+        // three entries. The old station names are client templates without a
+        // placeable item/device definition, so the client renders its generic
+        // device-placeholder model for them.
+        string[] stations = ["Anvil_2x1x1", "Crafting_Device", "Fireworks_Device"];
 
         // TestZoo has a flat floor at y=28 and its player marker is at x=96,
         // z=22. Place the row on the same island, five voxels apart, at z=34.

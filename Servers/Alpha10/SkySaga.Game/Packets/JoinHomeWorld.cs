@@ -17,6 +17,13 @@ public class JoinHomeWorld : ISerializablePacket
 
     public static bool Transfer(PlayerConnection connection, uint triggeringEntityId)
     {
+        var sourceWorld = WorldTransfer.CurrentWorldKind;
+        if (sourceWorld is not ("social" or "adventure"))
+        {
+            Console.WriteLine($"[JoinHomeWorld] Ignored request from {connection.Identity.Name} in {sourceWorld}.");
+            return true;
+        }
+
         if (!Util.TryResolveHomeWorld(connection.Identity.CharacterUuid, out var destination))
         {
             Console.WriteLine($"[JoinHomeWorld] Home island unavailable for {connection.Identity.CharacterUuid:D}.");
@@ -27,7 +34,7 @@ public class JoinHomeWorld : ISerializablePacket
             + $"as {destination.WorldUuid:D} on UDP {destination.Port}.");
         return WorldTransfer.Transfer(connection, triggeringEntityId, destination.Port,
             destination.WorldUuid, destination.ServerUuid, MapSpec.HomeIsland(seed: 1337),
-            expectedSourceWorld: "social");
+            expectedSourceWorld: sourceWorld);
     }
 
     public BitStream Serialize()

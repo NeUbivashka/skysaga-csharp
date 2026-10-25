@@ -14,8 +14,13 @@ from pathlib import Path
 
 
 class AccountStore:
-    SCHEMA_VERSION = 5
+    SCHEMA_VERSION = 6
     MAX_HOME_WORLDS = 8
+    # 42069 is the primary home world and 42070-42074 are the fixed City and
+    # adventure listeners from Launch Two Worlds.bat.  Player-owned islands
+    # must never claim those ports.
+    HOME_WORLD_PORT_MIN = 42100
+    HOME_WORLD_PORT_MAX = 42299
     HOME_WORLD_UUID = "6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25"
     HOME_SERVER_UUID = "b3e94c07-2a15-4d68-8f31-7c05a9be4610"
     WORLD_NAMESPACE = uuid.UUID("eef872a9-4785-42c4-83b4-4e1ce956998f")
@@ -61,9 +66,17 @@ class AccountStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with closing(self._connect()) as connection:
             connection.execute("PRAGMA journal_mode=WAL")
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+            if version and version < self.SCHEMA_VERSION:
+                backup_path = self.path.with_name(
+                    f"{self.path.stem}.pre-port-reservation-v{version}.sqlite3"
+                )
+                if not backup_path.exists():
+                    with sqlite3.connect(backup_path) as backup:
+                        connection.backup(backup)
+                    print(f"[home-island] Backed up account database to {backup_path.name}")
             with connection:
                 connection.execute("BEGIN IMMEDIATE")
-                version = connection.execute("PRAGMA user_version").fetchone()[0]
                 if version > self.SCHEMA_VERSION:
                     raise RuntimeError(f"Account database version {version} is newer than this server")
                 connection.execute(
@@ -204,6 +217,8 @@ class AccountStore:
                     (self.HOME_WORLD_UUID, host["account_id"], self.HOME_SERVER_UUID,
                      int(time.time())),
                 )
+                if version < 6:
+                    self._migrate_reserved_home_world_ports(connection)
                 connection.execute(f"PRAGMA user_version={self.SCHEMA_VERSION}")
 
     def get_host(self):
@@ -301,8 +316,7 @@ class AccountStore:
                     used_ports = {item[0] for item in connection.execute(
                         "SELECT game_port FROM home_worlds"
                     )}
-                    port = next((candidate for candidate in range(42071, 42171)
-                                 if candidate not in used_ports), None)
+                    port = self._next_home_world_port(connection)
                     if port is None:
                         raise RuntimeError("No home-island game ports remain")
                     character_uuid = account["characterUuid"]
@@ -322,11 +336,51 @@ class AccountStore:
                     ).fetchone()
         return self._world(row, account)
 
-    @staticmethod
-    def _next_home_world_port(connection):
+    @classmethod
+    def _next_home_world_port(cls, connection):
         used_ports = {item[0] for item in connection.execute("SELECT game_port FROM home_worlds")}
-        return next((candidate for candidate in range(42071, 42171)
+        return next((candidate for candidate in range(cls.HOME_WORLD_PORT_MIN, cls.HOME_WORLD_PORT_MAX + 1)
                      if candidate not in used_ports), None)
+
+    def move_home_world_to_next_port(self, world_uuid):
+        """Atomically reserve a different home-world port after an OS-level collision."""
+        with closing(self._connect()) as connection:
+            with connection:
+                connection.execute("BEGIN IMMEDIATE")
+                row = connection.execute(
+                    "SELECT game_port FROM home_worlds WHERE world_uuid = ?",
+                    (str(world_uuid),),
+                ).fetchone()
+                if row is None:
+                    raise RuntimeError(f"Home world {world_uuid} is not registered")
+
+                port = self._next_home_world_port(connection)
+                if port is None:
+                    raise RuntimeError("No safe home-island game ports remain")
+                connection.execute(
+                    "UPDATE home_worlds SET game_port = ? WHERE world_uuid = ?",
+                    (port, str(world_uuid)),
+                )
+        print(f"[home-island] Reassigned {world_uuid} from UDP {row['game_port']} to UDP {port}")
+        return port
+
+    @classmethod
+    def _migrate_reserved_home_world_ports(cls, connection):
+        """Move persisted non-host islands away from the fixed world listeners."""
+        rows = connection.execute(
+            """SELECT world_uuid, game_port FROM home_worlds
+               WHERE game_port BETWEEN 42070 AND 42074
+               ORDER BY created_at, world_uuid"""
+        ).fetchall()
+        for row in rows:
+            replacement = cls._next_home_world_port(connection)
+            if replacement is None:
+                raise RuntimeError("No safe home-island game ports remain")
+            connection.execute(
+                "UPDATE home_worlds SET game_port = ? WHERE world_uuid = ?",
+                (replacement, row["world_uuid"]),
+            )
+            print(f"[home-island] Moved {row['world_uuid']} from UDP {row['game_port']} to UDP {replacement}")
 
     def create_extra_home_world(self, account, name=None):
         """Create an additional island without changing the account's primary island."""

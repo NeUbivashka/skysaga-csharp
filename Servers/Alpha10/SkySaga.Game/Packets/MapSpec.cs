@@ -112,6 +112,9 @@ public class MapSpec
             "home" => HomeIsland(seed),
             "airship" => DestinationSelection(seed),
             "ftue" => Ftue(seed),
+            "mastery-forest" => MasteryAdventure(seed, AdventureBiome.Forest),
+            "mastery-desert" => MasteryAdventure(seed, AdventureBiome.Desert),
+            "mastery-jungle" => MasteryAdventure(seed, AdventureBiome.Jungle),
             _ => PlayerSaveStore.Load()?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
         }
         };
@@ -186,6 +189,85 @@ public class MapSpec
             FeatureName = "FeatureGroup_Overground_FTUE_The_Old_City",
             AdventureType = "Adventure",
         };
+    }
+
+    /// <summary>
+    /// Creates one of the first-region mastery-adventure specifications from
+    /// Alpha 10 GeoData. The client resolves its title and biome from these
+    /// identifiers; the matching Generic_Easy cost record has no requirements.
+    /// </summary>
+    public static MapSpec MasteryAdventure(uint seed, AdventureBiome biome)
+    {
+        var (region, adventure, palette, timeOfDay, cost) = biome switch
+        {
+            // AdventureCosts is a separate, non-searchable MapSpec field.
+            // The one-based wire indices point to each biome's Generic_Easy
+            // record, whose GeoData cost list is empty.
+            AdventureBiome.Forest => (7u, 31u, 26u, 12u, 10u),
+            AdventureBiome.Desert => (1u, 21u, 16u, 10u, 6u),
+            AdventureBiome.Jungle => (19u, 41u, 37u, 12u, 13u),
+            _ => throw new ArgumentOutOfRangeException(nameof(biome), biome, null),
+        };
+
+        // GeoData table indices are one-based on the wire.  These values map
+        // to AQ_<Biome>_Mastery_01, Region 1, its normal palette, Easy
+        // difficulty, and MapSize_12x4x12.
+        return new MapSpec
+        {
+            Searchable =
+            [
+                (uint)biome,
+                region,
+                adventure,
+                0,
+                palette,
+                0,
+                0,
+                0,
+                timeOfDay,
+                0,
+                5,
+                10,
+                0,
+                3,
+            ],
+            AdventureType = "Adventure",
+            Seed = seed,
+            FeatureName = "Adventure_Terrain",
+            NonSearchableIndex = cost,
+        };
+    }
+
+    /// <summary>
+    /// Reads only the immutable MapSpec prefix that the client places first in
+    /// RequestAdventureStart.  The server needs just this reference to choose
+    /// an approved destination; it deliberately does not trust client-supplied
+    /// ports, UUIDs, or the rest of the action payload.
+    /// </summary>
+    public static bool TryReadAdventureWireIndex(BitStream bitStream, out uint adventureWireIndex)
+    {
+        adventureWireIndex = 0;
+
+        return TryReadRangedIndex(bitStream, SearchableCounts[BiomeSlot], out _)
+            && TryReadRangedIndex(bitStream, SearchableCounts[RegionSlot], out _)
+            && TryReadRangedIndex(bitStream, SearchableCounts[AdventureSlot], out adventureWireIndex);
+    }
+
+    private static bool TryReadRangedIndex(BitStream bitStream, uint tableCount, out uint value)
+    {
+        value = 0;
+        if (tableCount == 0 || !bitStream.ReadInt32(tableCount - 1, out var readValue) || readValue < 0)
+            return false;
+
+        value = (uint)readValue;
+        return value < tableCount;
+    }
+
+    public enum AdventureBiome : uint
+    {
+        Desert = 1,
+        Forest = 2,
+        Jungle = 3,
     }
 
     public void Encode(BitStream bitStream)

@@ -2,6 +2,15 @@ namespace SkySaga.Game.Packets;
 
 internal static class WorldTransfer
 {
+    internal static string CurrentWorldKind => Environment.GetEnvironmentVariable("SKYSAGA_WORLD")?.ToLowerInvariant() switch
+    {
+        "social" => "social",
+        "adventure" => "adventure",
+        _ when Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.StartsWith("mastery-", StringComparison.OrdinalIgnoreCase) == true => "adventure",
+        _ when Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.Equals("ftue", StringComparison.OrdinalIgnoreCase) == true => "adventure",
+        _ => "home",
+    };
+
     public static bool Handle(PlayerConnection connection, BitStream bitStream, string destinationPortVariable,
         Guid destinationWorld, Guid destinationServer, MapSpec destinationSpec, string expectedSourceWorld)
     {
@@ -14,6 +23,20 @@ internal static class WorldTransfer
 
         return Handle(connection, bitStream, port, destinationWorld, destinationServer, destinationSpec,
             expectedSourceWorld);
+    }
+
+    public static bool Transfer(PlayerConnection connection, uint triggeringEntityId, string destinationPortVariable,
+        Guid destinationWorld, Guid destinationServer, MapSpec destinationSpec, string expectedSourceWorld)
+    {
+        if (!ushort.TryParse(Environment.GetEnvironmentVariable(destinationPortVariable), out var port) ||
+            port == 0)
+        {
+            Console.WriteLine($"[WorldTransfer] Destination unavailable: {destinationPortVariable} is unset.");
+            return true;
+        }
+
+        return Transfer(connection, triggeringEntityId, port, destinationWorld, destinationServer,
+            destinationSpec, expectedSourceWorld);
     }
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream, ushort destinationPort,
@@ -29,7 +52,7 @@ internal static class WorldTransfer
     public static bool Transfer(PlayerConnection connection, uint triggeringEntityId, ushort destinationPort,
         Guid destinationWorld, Guid destinationServer, MapSpec destinationSpec, string expectedSourceWorld)
     {
-        var currentWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social" ? "social" : "home";
+        var currentWorld = CurrentWorldKind;
         if (currentWorld != expectedSourceWorld || !connection.IsPlayerInitialized ||
             triggeringEntityId != (uint)connection.PlayerEntity.Id)
         {

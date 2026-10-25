@@ -156,6 +156,7 @@ public class PlayerConnection
             PacketId.JoinSocialHub => JoinSocialHub.Handle(this, bitStream),
             PacketId.JoinHomeWorld => JoinHomeWorld.Handle(this, bitStream),
             PacketId.RequestWorldTeleport => RequestWorldTeleport.Handle(this, bitStream),
+            PacketId.RequestAdventureStart => RequestAdventureStart.Handle(this, bitStream),
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
             PacketId.UISettingsSetGameplayCameraState => UISettingsSetGameplayCameraState.Handle(this, bitStream),

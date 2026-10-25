@@ -32,6 +32,11 @@ public static class InventoryItemTransfer
 
         Move(connection, (int)sourceId, (int)targetId, slot, quantity, targetSlot);
 
+        // Requirement badges on Adventure cards are evaluated from the
+        // rotation-list snapshot. Refresh it after a chest/player transfer so
+        // coloured Keystone fragments and Realm Travelling Objects are counted.
+        ClientReadyToPlay.SendAdventureRotation(connection, flushPlayerInventory: true);
+
         foreach (var id in new[] { (int)sourceId, (int)targetId })
             if (connection.WorldManager.EntityManager.TryGetEntity(id, out var entity))
                 connection.WorldManager.DeviceInventoryChanged(entity);

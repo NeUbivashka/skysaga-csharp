@@ -12,6 +12,14 @@ public class RequestWorldTeleport : ISerializablePacket
             || !bitStream.ReadFullWidthUInt32(out var triggeringEntityId))
             return false;
 
+        // The City is a fixed server, not a player-owned world-island record.
+        // Adventure instances route it through their configured City listener.
+        if (worldUuid == ClientConnected.SocialWorldUuid)
+        {
+            Console.WriteLine($"[RequestWorldTeleport] {connection.Identity.Name} selected the City from entity {triggeringEntityId}.");
+            return JoinSocialHub.Transfer(connection, triggeringEntityId);
+        }
+
         if (!Util.TryResolveWorld(worldUuid, out var destination))
         {
             Console.WriteLine($"[RequestWorldTeleport] World {worldUuid:D} is unavailable for "
@@ -21,7 +29,7 @@ public class RequestWorldTeleport : ISerializablePacket
 
         Console.WriteLine($"[RequestWorldTeleport] {connection.Identity.Name} selected world "
             + $"{worldUuid:D} from entity {triggeringEntityId}.");
-        var currentWorld = Environment.GetEnvironmentVariable("SKYSAGA_WORLD") == "social" ? "social" : "home";
+        var currentWorld = WorldTransfer.CurrentWorldKind;
         return WorldTransfer.Transfer(connection, triggeringEntityId, destination.Port,
             destination.WorldUuid, destination.ServerUuid, MapSpec.HomeIsland(seed: 1337),
             expectedSourceWorld: currentWorld);
