@@ -1,10 +1,12 @@
 using System.Text;
+using System.Text.Json;
 
 namespace SkySaga.Admin.Services;
 
 public class GameNames
 {
     private readonly Dictionary<uint, string> _items = [];
+    private readonly Dictionary<uint, string> _materials = [];
 
     public GameNames(GameDataDirectory directory)
     {
@@ -22,7 +24,21 @@ public class GameNames
 
             _items.TryAdd(Crc32(name), name);
         }
+
+        var geoData = Path.GetFullPath(Path.Combine(directory.Path, "..", "..", "..", "..", "Bundled", "36731", "GeoData.json"));
+
+        if (!File.Exists(geoData))
+            return;
+
+        using var stream = File.OpenRead(geoData);
+        using var document = JsonDocument.Parse(stream);
+
+        foreach (var material in document.RootElement.GetProperty("Materials").EnumerateArray())
+            if (material.GetProperty("Name").GetString() is { } name)
+                _materials.TryAdd(Crc32(name), name);
     }
+
+    public string Material(long nameHash) => _materials.TryGetValue((uint)nameHash, out var name) ? name : $"0x{nameHash:X8}";
 
     public string Item(long nameHash) => _items.TryGetValue((uint)nameHash, out var name) ? name : $"0x{nameHash:X8}";
 

@@ -12,6 +12,10 @@ public class AiManager
     private const byte StateRun = 4;
     private const byte StateSprint = 5;
     private const byte StateSwim = 6;
+    private const byte StateDodge = 7;
+    private const uint DodgeRight = 2;
+    private const uint DodgeBack = 4;
+    private const uint DodgeLeft = 6;
     private const byte MentalNormal = 0;
     private const byte MentalSleep = 3;
     private const float DirectionScale = 64f;
@@ -24,6 +28,9 @@ public class AiManager
     private const string AlertTag = "EmoteAlert";
     private const string LostTag = "EmoteLost";
     private const string VictoryTag = "EmoteVictory";
+    private const string TauntTag = "EmoteTaunt";
+    private const string CombatIdleTag = "EmoteCombatIdle";
+    private const string BroadcastTag = "EmoteBroadcast";
 
     private static readonly Dictionary<byte, string> Footsteps = new()
     {
@@ -65,6 +72,17 @@ public class AiManager
         public DateTime NextWander;
         public Vector3? WanderTarget;
         public bool ReturningHome;
+        public bool JustHeard;
+        public DateTime? TauntEndsAt;
+        public int IgnoredTargetId;
+        public DateTime IgnoreUntil;
+        public bool CombatIdleDone;
+        public CreatureAbility? Planned;
+        public Vector3 DodgeDirection;
+        public DateTime DodgeEndsAt;
+        public DateTime NextDodge;
+        public bool BroadcastPending;
+        public DateTime NextBroadcast;
     }
 
     private sealed class Attack
@@ -93,8 +111,46 @@ public class AiManager
             return;
 
         brain.TargetId = attacker.Id;
+        brain.IgnoredTargetId = 0;
         brain.Mode = ai.OnHit;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
+    }
+
+    public static bool TryDodge(PlayerConnectionManager connections, Entity creature, Entity attacker)
+    {
+        var now = DateTime.UtcNow;
+
+        if (!Brains.TryGetValue(creature.Id, out var brain) || !CreatureAiTable.TryGet(creature.Name, out var ai) || !ai.CanDodge
+            || brain.AsleepUntil is not null || brain.Current is not null || now < brain.NextDodge
+            || Random.Shared.NextDouble() * 100 >= ai.DodgeProbability
+            || !creature.TryGetComponent<SmoothedTransformComponent>(out var transform) || Combat.PositionOf(attacker) is not Vector3 from)
+            return false;
+
+        var toAttacker = Horizontal(from - transform.Position);
+
+        if (toAttacker.LengthSquared() > 0.0001f)
+            Face(transform, Vector3.Normalize(toAttacker));
+
+        var forward = Forward(transform.YawDegrees);
+        var right = new Vector3(forward.Z, 0f, -forward.X);
+        var kind = !ai.PrioritiseSideDodge ? DodgeBack : Random.Shared.Next(2) == 0 ? DodgeRight : DodgeLeft;
+
+        brain.DodgeDirection = kind switch
+        {
+            DodgeRight => right,
+            DodgeLeft => -right,
+            _ => -forward
+        };
+        brain.DodgeEndsAt = now.AddSeconds(ai.DodgeDistance / ai.DodgeSpeed);
+        brain.NextDodge = brain.DodgeEndsAt.AddSeconds(ai.MinTimeBetweenDodges);
+        brain.Planned = null;
+
+        Hit(creature, attacker);
+
+        connections.BroadcastToAll(new EntityDodged { EntityId = creature.Id, DodgeKind = kind });
+
+        Console.WriteLine($"[AiManager] {creature.Name}#{creature.Id} dodges {(kind == DodgeRight ? "right" : kind == DodgeLeft ? "left" : "back")} from {attacker.Id}");
+        return true;
     }
 
     public static void Hear(Entity source, string sensoryEvent)
@@ -159,6 +215,12 @@ public class AiManager
             if (Fall(transform, brain, delta))
             {
                 Stop(entity);
+                continue;
+            }
+
+            if (now < brain.DodgeEndsAt)
+            {
+                Dodge(entity, transform, ai, brain, delta);
                 continue;
             }
 
@@ -291,8 +353,22 @@ public class AiManager
         {
             Face(transform, toTarget);
 
+            brain.BroadcastPending = true;
+
             if (Emote(entity, transform, ai, brain, AlertTag, ai.AlertTime, now))
                 return;
+        }
+
+        if (brain.BroadcastPending)
+        {
+            brain.BroadcastPending = false;
+
+            if (now >= brain.NextBroadcast && Emote(entity, transform, ai, brain, BroadcastTag, ai.BroadcastTime, now))
+            {
+                brain.NextBroadcast = now.AddSeconds(ai.BroadcastDelay);
+                CallAllies(entity, transform, ai, target, now);
+                return;
+            }
         }
 
         if (brain.Mode == AiReaction.Scared)
@@ -318,52 +394,103 @@ public class AiManager
             brain.BackOffDirection = null;
         }
 
-        var melee = ai.Tagged(MeleeTag).ToList();
-
-        if (melee.Count == 0)
-        {
-            Stop(entity);
-            Face(transform, toTarget);
-            return;
-        }
-
         var reach = Vector3.Distance(targetPosition, transform.Position);
-        var inRange = melee.Where(ability => reach <= ability.Reach).ToList();
 
-        if (inRange.Count == 0 && melee.Any(ability => distance <= ability.Reach))
+        if (ai.Tagged(MeleeTag).Any(ability => distance <= ability.Reach && reach > ability.Reach))
             brain.Blocked = true;
 
-        if (inRange.Count == 0 && brain.Blocked)
-        {
-            var projectiles = ai.Tagged(ProjectileTag).Where(ability => reach <= ability.Reach).ToList();
+        var behaviour = brain.JustHeard ? AiBehaviour.SensoryEventResponse
+            : ai.IsRangedFighter ? AiBehaviour.Ranged
+            : brain.Blocked ? AiBehaviour.Taunt
+            : AiBehaviour.Melee;
 
+        brain.JustHeard = false;
+
+        if (brain.TauntEndsAt is DateTime tauntEnd && now >= tauntEnd)
+        {
+            Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} cannot reach {brain.TargetId}, ignores it for {ai.IgnoreAfterTauntTime:0.#} s");
+            brain.IgnoredTargetId = brain.TargetId;
+            brain.IgnoreUntil = now.AddSeconds(ai.IgnoreAfterTauntTime);
+            brain.Blocked = false;
+            Forget(component, brain, now);
+            Emote(entity, transform, ai, brain, LostTag, ai.LostTime, now);
+            return;
+        }
+
+        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, false, false));
+
+        if (ready && (brain.Planned is not CreatureAbility planned || !selected.Contains(planned)))
+            brain.Planned = selected.Count > 0 ? selected[_random.Next(selected.Count)] : null;
+
+        var inReach = brain.Planned is CreatureAbility plan
+            ? !IsAttack(plan) || reach <= plan.Reach
+            : selected.Any(ability => IsAttack(ability) && reach <= ability.Reach);
+
+        if (inReach)
+        {
             Stop(entity);
             Face(transform, toTarget);
 
-            if (ready && projectiles.Count > 0)
+            if (ready && brain.Planned is CreatureAbility chosen)
             {
-                brain.Blocked = false;
-                Perform(entity, transform, brain, projectiles[_random.Next(projectiles.Count)], toTarget, 0, now);
+                brain.Planned = null;
+                brain.CombatIdleDone = false;
+                Perform(entity, transform, brain, chosen, toTarget, 0, now);
+
+                if (behaviour == AiBehaviour.Taunt)
+                    brain.TauntEndsAt = now.AddSeconds(chosen.Duration);
+                else
+                    brain.Blocked = false;
             }
-            else if (ready)
-                brain.Blocked = false;
+            else
+                CombatIdle(entity, transform, ai, brain, now);
 
             return;
         }
 
-        if (inRange.Count == 0)
+        if (behaviour == AiBehaviour.Taunt)
         {
-            var movement = ready ? ai.ToAttack : ai.ToTarget;
-            Move(entity, transform, ai, brain, toTarget, ai.Speed(movement), State(movement), delta);
+            Stop(entity);
+            Face(transform, toTarget);
+            Taunt(entity, transform, ai, brain, ready, now);
             return;
         }
 
-        Stop(entity);
-        Face(transform, toTarget);
+        if (!selected.Any(IsAttack))
+        {
+            Stop(entity);
+            Face(transform, toTarget);
+            return;
+        }
 
-        if (ready)
-            Perform(entity, transform, brain, inRange[_random.Next(inRange.Count)], toTarget, 0, now);
+        var movement = ready ? ai.ToAttack : ai.ToTarget;
+        Move(entity, transform, ai, brain, toTarget, ai.Speed(movement), State(movement), delta);
     }
+
+    private void Taunt(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, bool ready, DateTime now)
+    {
+        if (!ready || brain.TauntEndsAt is not null)
+            return;
+
+        brain.TauntEndsAt = now.AddSeconds(ai.TauntTime);
+        Emote(entity, transform, ai, brain, TauntTag, ai.TauntTime, now);
+    }
+
+    private void CombatIdle(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, DateTime now)
+    {
+        if (brain.CombatIdleDone)
+            return;
+
+        brain.CombatIdleDone = true;
+
+        var idles = ai.Tagged(CombatIdleTag).ToList();
+        var wait = (float)(brain.NextAttack - now).TotalSeconds;
+
+        if (idles.Count > 0 && wait > 0)
+            Perform(entity, transform, brain, idles[_random.Next(idles.Count)], Forward(transform.YawDegrees), wait, now);
+    }
+
+    private static bool IsAttack(CreatureAbility ability) => ability.HasTag(MeleeTag) || ability.HasTag(ProjectileTag);
 
     private void Rest(Entity entity, CreatureAi ai, Brain brain, float timeOfDay, DateTime now)
     {
@@ -445,13 +572,15 @@ public class AiManager
                 || !CreatureAiTable.TryGetLoudness(sound.Event, out var loudness)
                 || Vector3.Distance(sound.Position, transform.Position) > ranges[(int)loudness]
                 || !_worldManager.EntityManager.TryGetEntity(sound.SourceId, out var source)
-                || !source.TryGetComponent<ClientPlayerAspectsComponent>(out _))
+                || !source.TryGetComponent<ClientPlayerAspectsComponent>(out _)
+                || source.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
                 continue;
 
             brain.TargetId = source.Id;
             brain.Mode = ai.OnHearing;
             brain.HuntUntil = now;
             brain.KeepRange = ranges[(int)loudness];
+            brain.JustHeard = true;
 
             Console.WriteLine($"[AiManager] {ai.Name} hears {sound.Event} ({loudness}) of {source.Id} at {Vector3.Distance(sound.Position, transform.Position):0.#} m: {ai.OnHearing}");
 
@@ -459,6 +588,41 @@ public class AiManager
         }
 
         return null;
+    }
+
+    private void CallAllies(Entity caller, TransformComponent from, CreatureAi ai, Entity target, DateTime now)
+    {
+        if (ai.EntityFamily is not string family)
+            return;
+
+        foreach (var entity in _worldManager.EntityManager.Entities)
+        {
+            if (entity.Id == caller.Id
+                || !Brains.TryGetValue(entity.Id, out var brain) || brain.TargetId != 0 || brain.ReturningHome
+                || !CreatureAiTable.TryGet(entity.Name, out var ally) || ally.EntityFamily != family
+                || ally.OnHearing is not (AiReaction.Aggressive or AiReaction.Scared)
+                || !entity.TryGetComponent<SmoothedTransformComponent>(out var transform)
+                || entity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead
+                || target.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
+                continue;
+
+            var range = (brain.AsleepUntil is null ? ally.HearingRanges : ally.SleepHearingRanges)[(int)AiLoudness.Loud];
+            var distance = Vector3.Distance(transform.Position, from.Position);
+
+            if (distance > range)
+                continue;
+
+            Wake(entity, brain, now);
+            brain.TargetId = target.Id;
+            brain.Mode = ally.OnHearing;
+            brain.HuntUntil = now;
+            brain.KeepRange = Combat.PositionOf(target) is Vector3 targetPosition
+                ? MathF.Max(range, Vector3.Distance(targetPosition, transform.Position))
+                : range;
+            brain.JustHeard = true;
+
+            Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} answers the call of {caller.Name}#{caller.Id} at {distance:0.#} m: {ally.OnHearing} on {target.Id}");
+        }
     }
 
     private Vector3 BackOffDirection(CreatureAi ai, Vector3 away)
@@ -502,6 +666,8 @@ public class AiManager
         brain.Mode = AiReaction.Ignore;
         brain.BackOffDirection = null;
         brain.WanderTarget = null;
+        brain.Planned = null;
+        brain.TauntEndsAt = null;
         brain.IdleSince = now;
         component.TargetEntityId = 0;
     }
@@ -529,6 +695,9 @@ public class AiManager
 
         foreach (var player in players)
         {
+            if (player.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
+                continue;
+
             var offset = Combat.PositionOf(player)!.Value - transform.Position;
             var distance = offset.Length();
             offset.Y = 0f;
@@ -601,6 +770,22 @@ public class AiManager
         transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
 
         SetMovement(entity, direction, speed, state);
+    }
+
+    private void Dodge(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, float delta)
+    {
+        var next = transform.Position + brain.DodgeDirection * ai.DodgeSpeed * delta;
+        var ground = SpawnFinder.GroundBelow(_worldManager.ChunkManager, next, ai.JumpHeight);
+
+        if (ground is not float groundY || groundY - transform.Position.Y > ai.JumpHeight)
+        {
+            brain.DodgeEndsAt = DateTime.MinValue;
+            Stop(entity);
+            return;
+        }
+
+        transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
+        SetMovement(entity, brain.DodgeDirection, ai.DodgeSpeed, StateDodge);
     }
 
     private static void Stop(Entity entity) => SetMovement(entity, Vector3.Zero, 0f, StateIdle);

@@ -30,6 +30,12 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
 
 public readonly record struct SpawnParams(float HomeRange, float Roam);
 
+public sealed record SelectionTableRule(string List, string Condition);
+
+public sealed record SelectionListRule(string[] Tags, string Condition, bool SelectIfTrue);
+
+public sealed record AiCondition(bool Invert, string Kind, string Argument);
+
 public sealed record ProjectileLaunch(string Entity, uint DataIndex, uint DataCount, float Speed, float GravityFactor,
     float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel);
 
@@ -76,6 +82,18 @@ public sealed class CreatureAi
         SleepHearingRanges = [Number("sleepquiet"), Number("sleepnormal"), Number("sleeploud")];
         AlertTime = Number("alert");
         LostTime = Number("lost");
+        TauntTime = Number("taunt");
+        EntityType = _fields["type"] == "-" ? null : _fields["type"];
+        BroadcastTime = Number("broadcast");
+        BroadcastDelay = Number("broadcastdelay");
+        IgnoreAfterTauntTime = Number("ignoretaunt");
+        Selection = _fields["selection"] == "-" ? null : _fields["selection"];
+        IsRangedFighter = _fields["ranged"] == "1";
+        DodgeProbability = Number("dodge");
+        DodgeDistance = Number("dodgedistance");
+        DodgeSpeed = Number("dodgespeed");
+        MinTimeBetweenDodges = Number("dodgegap");
+        PrioritiseSideDodge = _fields["dodgeside"] == "1";
         RunFromHealth = Number("runfromhealth");
         ToAttack = _fields["toattack"];
         ToTarget = _fields["totarget"];
@@ -122,6 +140,20 @@ public sealed class CreatureAi
     public float[] SleepHearingRanges { get; }
     public float AlertTime { get; }
     public float LostTime { get; }
+    public float TauntTime { get; }
+    public string? EntityType { get; }
+    public string? EntityFamily => EntityType?.Split('-')[0];
+    public float BroadcastTime { get; }
+    public float BroadcastDelay { get; }
+    public float IgnoreAfterTauntTime { get; }
+    public string? Selection { get; }
+    public bool IsRangedFighter { get; }
+    public float DodgeProbability { get; }
+    public float DodgeDistance { get; }
+    public float DodgeSpeed { get; }
+    public float MinTimeBetweenDodges { get; }
+    public bool PrioritiseSideDodge { get; }
+    public bool CanDodge => DodgeProbability > 0 && DodgeDistance > 0 && DodgeSpeed > 0;
     public float RunFromHealth { get; }
     public string ToAttack { get; }
     public string ToTarget { get; }
@@ -157,13 +189,16 @@ public sealed class CreatureAi
 public static class CreatureAiTable
 {
     private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness,
-        Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut);
+        Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut,
+        Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
+        Dictionary<string, AiCondition> Conditions);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
-        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), []);
+        var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), [],
+            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
@@ -192,6 +227,16 @@ public static class CreatureAiTable
                         Number(f["speed"]), Number(f["gravity"]), Number(f["inaccmin"]), Number(f["inaccmax"]),
                         new Vector3(Number(f["offx"]), Number(f["offy"]), Number(f["offz"])), Number(f["pitch"]), Number(f["yaw"]),
                         Number(f["lifetime"]), Number(f["impactlevel"]));
+                    break;
+                case ["selectiontable", var tableName, ..]:
+                    data.SelectionTables[tableName] = [.. parts[2..].Select(rule => rule.Split(':')).Select(rule => new SelectionTableRule(rule[0], rule[1]))];
+                    break;
+                case ["selectionlist", var listName, ..]:
+                    data.SelectionLists[listName] = [.. parts[2..].Select(rule => rule.Split(':'))
+                        .Select(rule => new SelectionListRule(rule[0].Split(','), rule[1], rule[2] == "1"))];
+                    break;
+                case ["condition", var conditionName, var invert, var kind, ..]:
+                    data.Conditions[conditionName] = new AiCondition(invert == "1", kind, parts.Length > 4 ? parts[4] : "");
                     break;
                 case ["loudness", var sensoryEvent, var loudness]:
                     data.Loudness[sensoryEvent] = Enum.Parse<AiLoudness>(loudness);
@@ -225,4 +270,10 @@ public static class CreatureAiTable
     public static bool TryGetSpawnParams(string name, out SpawnParams spawn) => Table.Value.Spawns.TryGetValue(name, out spawn);
 
     public static (float Input, float Output)[] DamageLut => Table.Value.DamageLut;
+
+    public static bool TryGetSelectionTable(string name, out SelectionTableRule[] rules) => Table.Value.SelectionTables.TryGetValue(name, out rules!);
+
+    public static bool TryGetSelectionList(string name, out SelectionListRule[] rules) => Table.Value.SelectionLists.TryGetValue(name, out rules!);
+
+    public static bool TryGetCondition(string name, out AiCondition condition) => Table.Value.Conditions.TryGetValue(name, out condition!);
 }
