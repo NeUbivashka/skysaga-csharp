@@ -24,12 +24,34 @@ def player_relationship(tables, name):
         if not table:
             break
         for row in table["Relationships"]:
+            if (row.get("Condition") or {}).get("Condition"):
+                continue
             if row.get("BlueprintName") == PLAYER_BLUEPRINT:
                 return row["RelationshipDescription"]
             if fallback is None and not row.get("BlueprintName") and not row.get("EntityTypes"):
                 fallback = row["RelationshipDescription"]
         name = table.get("BaseTable")
     return fallback or "Ignore"
+
+
+def relation_rows(geo):
+    tables = by_name(geo["AIEntityRelationshipTables"])
+    descriptions = by_name(geo["AIRelationshipDescriptions"])
+    rows = []
+    for table in geo["AIEntityRelationshipTables"]:
+        name, seen = table["Name"], set()
+        current = table
+        while current and current["Name"].lower() not in seen:
+            seen.add(current["Name"].lower())
+            for row in current["Relationships"]:
+                if (row.get("Condition") or {}).get("Condition") or row.get("BlueprintName") == PLAYER_BLUEPRINT:
+                    continue
+                matcher = (f"bp:{row['BlueprintName']}" if row.get("BlueprintName")
+                           else f"type:{row['EntityTypes']}" if row.get("EntityTypes") else "*")
+                properties = descriptions[row["RelationshipDescription"].lower()]["RelationshipProperty"]
+                rows.append(" ".join(["relation", name, matcher] + [properties[r]["Relationship"] for r in REACTIONS]))
+            current = tables.get((current.get("BaseTable") or "").lower())
+    return rows
 
 
 AI_TESTS = ("Ai_IsInBehaviour", "Ai_HasActionInRange", "Ai_CanPathToTarget", "Ai_IsEntityUsingAbilityTag",
@@ -126,6 +148,8 @@ def main():
     dodge_control = geo["GlobalConstants"][0]["Control"]["Dodge"]
 
     rows = ["damage " + ",".join(f"{p['Input']:g}:{p['Output']:g}" for p in lut)]
+    rows.append("damagecreature " + ",".join(f"{p['Input']:g}:{p['Output']:g}"
+                                             for p in geo["GlobalConstantsCombat"][0]["CreatureVersusCreatureDamage"]["ValueLookup"]))
     rows += [f"spawnparams {spawn['Name']} home={spawn['HomeRange']:g} roam={spawn['MaxDistanceFromSpawnPosition']:g}"
              for spawn in geo["SpawnParams"]]
     rows += [f"loudness {event} {value['Loudness']}" for event, value in loudness.items() if value.get("Loudness")]
@@ -197,6 +221,7 @@ def main():
             "dodgeside": int(bool(dodge_control["PrioritiseSideDodge"])),
             "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
             "avoidance": capability.get("AvoidanceRange", 0),
+            "relations": profile["RelationshipTable"] or "-",
             "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
             "totarget": movement.get("ToTarget", {}).get("MovementType", "Run"),
             "backoff": back_off["MovementType"] if back_off else "-",
@@ -229,6 +254,7 @@ def main():
             ]))
 
     rows += selection_rows(geo)
+    rows += relation_rows(geo)
 
     for action in geo["EquippedActions"]:
         for entry in (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []:

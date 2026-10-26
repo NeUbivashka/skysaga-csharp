@@ -16,6 +16,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
     {
         public required Entity Projectile;
         public required Entity Owner;
+        public required Entity? Target;
         public required CreatureAbility Ability;
         public required ProjectileLaunch Launch;
         public required Vector3 Position;
@@ -23,7 +24,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
         public required DateTime Expires;
     }
 
-    public void Launch(Entity owner, Vector3 from, float yawDegrees, Vector3 target, CreatureAbility ability, ProjectileLaunch launch, DateTime now)
+    public void Launch(Entity owner, Entity? victim, Vector3 from, float yawDegrees, Vector3 target, CreatureAbility ability, ProjectileLaunch launch, DateTime now)
     {
         if (!worldManager.EntityManager.TryCreateEntity(launch.Entity, out var projectile))
             return;
@@ -76,6 +77,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
         {
             Projectile = projectile,
             Owner = owner,
+            Target = victim is not null && victim.TryGetComponent<ClientEnemyAiComponent>(out _) ? victim : null,
             Ability = ability,
             Launch = launch,
             Position = start,
@@ -111,7 +113,9 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                 flight.Velocity += Vector3.UnitY * -WorldGravity * flight.Launch.GravityFactor * step;
                 flight.Position += flight.Velocity * step;
 
-                if (players.FirstOrDefault(player => Inside(flight.Position, Combat.PositionOf(player)!.Value)) is { } victim)
+                if (players.Append(flight.Target)
+                        .FirstOrDefault(entity => entity is not null && entity.TryGetComponent<ClientHealthComponent>(out var health) && !health.IsDead
+                            && Combat.PositionOf(entity) is Vector3 position && Inside(flight.Position, position)) is { } victim)
                 {
                     Combat.CreatureProjectileHit(playerConnectionManager, worldManager.EntityManager, flight.Owner, victim, flight.Ability, flight.Launch);
                     Remove(flight, flight.Position);

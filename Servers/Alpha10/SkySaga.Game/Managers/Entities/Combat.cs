@@ -120,9 +120,14 @@ public static class Combat
         if (!player.TryGetComponent<ClientHealthComponent>(out var health) || health.IsDead)
             return;
 
+        var creatureVictim = player.TryGetComponent<ClientEnemyAiComponent>(out _);
+
+        if (creatureVictim && (AiManager.TryDodge(connections, player, creature) || AiManager.TryBlock(player, creature)))
+            return;
+
         var weaponLevel = CharacterStats(creature).WeaponLevel + (weaponLevelModifier ?? ActionStatTable.Get(ability.Action).WeaponLevelModifier);
         var armourLevel = CharacterStats(player).ArmourLevel + EquipmentStats(entityManager, player).ArmourLevel;
-        var damage = (int)MathF.Round(Lookup(CreatureAiTable.DamageLut, weaponLevel - armourLevel));
+        var damage = (int)MathF.Round(Lookup(creatureVictim ? CreatureAiTable.CreatureDamageLut : CreatureAiTable.DamageLut, weaponLevel - armourLevel));
 
         health.Damage(damage);
 
@@ -141,7 +146,24 @@ public static class Combat
             Damage = (uint)damage
         });
 
-        Console.WriteLine($"[Combat] {creature.Name}#{creature.Id} hit player {player.Id} with {ability.Action}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
+        Console.WriteLine($"[Combat] {creature.Name}#{creature.Id} hit {(creatureVictim ? $"{player.Name}#{player.Id}" : $"player {player.Id}")} with {ability.Action}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
+
+        if (!creatureVictim)
+            return;
+
+        if (!health.IsDead)
+        {
+            AiManager.Hit(player, creature);
+            return;
+        }
+
+        connections.BroadcastToAll(new KillOccurred
+        {
+            SourceEntityId = creature.Id,
+            TargetEntityId = player.Id
+        });
+
+        Console.WriteLine($"[Combat] {player.Name}#{player.Id} killed by {creature.Name}#{creature.Id}");
     }
 
     private static void KnockBack(PlayerConnection connection, Entity player, Entity target, IReadOnlyList<ListAttack> attacks, uint? usedItemCrc)

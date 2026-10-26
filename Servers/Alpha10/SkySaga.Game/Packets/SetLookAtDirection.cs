@@ -10,8 +10,8 @@ public static class SetLookAtDirection
         if (!bitStream.ReadInt32(AngleMax, out var rawPitch)) return false;
         if (!bitStream.ReadInt32(AngleMax, out var rawYaw)) return false;
 
-        connection.LookPitch = (rawPitch - AngleBias) / 32f;
-        connection.LookYaw = (rawYaw - AngleBias) / 32f;
+        connection.LookPitch = (rawPitch - AngleBias) / 32f * 180f / MathF.PI;
+        connection.LookYaw = (rawYaw - AngleBias) / 32f * 180f / MathF.PI;
 
         return true;
     }

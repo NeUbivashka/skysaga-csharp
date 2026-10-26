@@ -53,6 +53,8 @@ public class AiManager
 
     private DateTime _lastUpdate = DateTime.UtcNow;
     private readonly Dictionary<int, Vector3> _bodies = [];
+    private readonly Dictionary<int, Entity> _targets = [];
+    private readonly List<(Entity Entity, CreatureAi Ai, Vector3 Position)> _creatures = [];
 
     private enum SquadZone
     {
@@ -123,14 +125,18 @@ public class AiManager
 
         Wake(creature, brain, DateTime.UtcNow);
 
-        if (ai.OnHit is not (AiReaction.Aggressive or AiReaction.Scared))
+        var reaction = attacker.TryGetComponent<ClientEnemyAiComponent>(out _) && CreatureAiTable.TryGet(attacker.Name, out var attackerAi)
+            ? ai.RelationTo(attackerAi)?.OnHit ?? AiReaction.Ignore
+            : ai.OnHit;
+
+        if (reaction is not (AiReaction.Aggressive or AiReaction.Scared))
             return;
 
         brain.TargetId = attacker.Id;
         brain.HitAt = DateTime.UtcNow;
         brain.ReturningHome = false;
         brain.IgnoredTargetId = 0;
-        brain.Mode = ai.OnHit;
+        brain.Mode = reaction;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
     }
 
@@ -181,7 +187,9 @@ public class AiManager
     }
 
     private static string[] TargetTags(int targetId, DateTime now)
-        => PlayerActions.TryGetValue(targetId, out var current) && now < current.Until ? current.Action.Tags : [];
+        => PlayerActions.TryGetValue(targetId, out var current) && now < current.Until ? current.Action.Tags
+            : Brains.TryGetValue(targetId, out var other) && other.Current is { } attack && now < attack.EndsAt ? attack.Ability.Tags
+            : [];
 
     public static bool TryBlock(Entity creature, Entity attacker)
     {
@@ -243,12 +251,23 @@ public class AiManager
         AssignSquads(now);
 
         _bodies.Clear();
+        _targets.Clear();
+        _creatures.Clear();
+
+        foreach (var player in players)
+            _targets[player.Id] = player;
 
         foreach (var entity in _worldManager.EntityManager.Entities)
             if (entity.TryGetComponent<ClientEnemyAiComponent>(out _)
                 && entity.TryGetComponent<SmoothedTransformComponent>(out var body)
                 && !(entity.TryGetComponent<ClientHealthComponent>(out var bodyHealth) && bodyHealth.IsDead))
+            {
                 _bodies[entity.Id] = body.Position;
+                _targets[entity.Id] = entity;
+
+                if (CreatureAiTable.TryGet(entity.Name, out var bodyAi))
+                    _creatures.Add((entity, bodyAi, body.Position));
+            }
 
         foreach (var entity in _worldManager.EntityManager.Entities.ToList())
         {
@@ -301,22 +320,22 @@ public class AiManager
         {
             Stop(entity);
 
-            if (TargetPosition(brain, players) is Vector3 position)
+            if (TargetPosition(brain) is Vector3 position)
                 Face(transform, Horizontal(position - transform.Position));
 
             if (attack.Ability.HasTag(ProjectileTag) && !attack.Resolved && now >= attack.HitAt)
             {
                 attack.Resolved = true;
 
-                if (CreatureAiTable.TryGetProjectile(attack.Ability.Action, out var launch) && TargetPosition(brain, players) is Vector3 aim)
-                    _projectiles.Launch(entity, transform.Position, transform.YawDegrees, aim + Vector3.UnitY * ProjectileAimHeight, attack.Ability, launch, now);
+                if (CreatureAiTable.TryGetProjectile(attack.Ability.Action, out var launch) && TargetPosition(brain) is Vector3 aim)
+                    _projectiles.Launch(entity, _targets.GetValueOrDefault(brain.TargetId), transform.Position, transform.YawDegrees, aim + Vector3.UnitY * ProjectileAimHeight, attack.Ability, launch, now);
             }
 
             if (attack.Ability.HasTag(MeleeTag) && !attack.Resolved && now >= attack.HitAt)
             {
                 attack.Resolved = true;
 
-                if (players.FirstOrDefault(player => player.Id == brain.TargetId) is { } victim
+                if (_targets.GetValueOrDefault(brain.TargetId) is { } victim
                     && Vector3.Distance(Combat.PositionOf(victim)!.Value, transform.Position) <= attack.Ability.Reach)
                     Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
             }
@@ -332,13 +351,13 @@ public class AiManager
                 brain.NextAttack = now.AddSeconds((ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime))
                     * (1 + ai.AttackTimeModifier * crowd));
                 brain.CircleSide = _random.Next(2) == 0 ? -1f : 1f;
-                brain.BackOffDirection = ai.BackOff is null || TargetPosition(brain, players) is not Vector3 from
+                brain.BackOffDirection = ai.BackOff is null || TargetPosition(brain) is not Vector3 from
                     ? null
                     : BackOffDirection(ai, Horizontal(transform.Position - from));
             }
         }
 
-        if (brain.TargetId != 0 && !players.Any(player => player.Id == brain.TargetId)
+        if (brain.TargetId != 0 && !_targets.ContainsKey(brain.TargetId)
             && _worldManager.EntityManager.TryGetEntity(brain.TargetId, out var fallen)
             && fallen.TryGetComponent<ClientHealthComponent>(out var fallenHealth) && fallenHealth.IsDead)
         {
@@ -383,7 +402,7 @@ public class AiManager
         }
 
         var hadTarget = brain.TargetId != 0;
-        var target = Target(transform, ai, brain, players, now) ?? Heard(transform, ai, brain, sounds, ai.HearingRanges, now);
+        var target = Target(entity, transform, ai, brain, players, now) ?? Heard(transform, ai, brain, sounds, ai.HearingRanges, now);
 
         component.TargetEntityId = target?.Id ?? 0;
 
@@ -878,16 +897,16 @@ public class AiManager
         component.TargetEntityId = 0;
     }
 
-    private static Vector3? TargetPosition(Brain brain, List<Entity> players)
-        => players.FirstOrDefault(player => player.Id == brain.TargetId) is { } target ? Combat.PositionOf(target) : null;
+    private Vector3? TargetPosition(Brain brain)
+        => _targets.GetValueOrDefault(brain.TargetId) is { } target ? Combat.PositionOf(target) : null;
 
     private static Vector3 Horizontal(Vector3 value) => new(value.X, 0f, value.Z);
 
-    private static Entity? Target(TransformComponent transform, CreatureAi ai, Brain brain, List<Entity> players, DateTime now)
+    private Entity? Target(Entity self, TransformComponent transform, CreatureAi ai, Brain brain, List<Entity> players, DateTime now)
     {
         if (brain.Mode != AiReaction.Ignore)
         {
-            var current = players.FirstOrDefault(player => player.Id == brain.TargetId);
+            var current = _targets.GetValueOrDefault(brain.TargetId);
 
             if (current is not null && Combat.PositionOf(current) is Vector3 position
                 && (now < brain.HuntUntil || Vector3.Distance(position, transform.Position) <= MathF.Max(ai.SeenDistance, brain.KeepRange)))
@@ -904,32 +923,53 @@ public class AiManager
             if (player.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
                 continue;
 
-            var offset = Combat.PositionOf(player)!.Value - transform.Position;
-            var distance = offset.Length();
-            offset.Y = 0f;
+            if (Notice(transform, ai, brain, player, Combat.PositionOf(player)!.Value, ai.OnCloseRange, ai.OnSight, now))
+                return player;
+        }
 
-            var angle = offset.LengthSquared() > 0.0001f
-                ? MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(offset), Forward(transform.YawDegrees)), -1f, 1f)) * 180f / MathF.PI
-                : 0f;
+        var sight = MathF.Max(ai.SeenDistance, ai.CloseDistance);
 
-            var reaction = distance <= ai.CloseDistance && angle <= ai.CloseAngle / 2 ? ai.OnCloseRange
-                : distance <= ai.SeenDistance && angle <= ai.SeenAngle / 2 ? ai.OnSight
-                : AiReaction.Ignore;
-
-            if (reaction is not (AiReaction.Aggressive or AiReaction.Scared))
+        foreach (var (other, otherAi, position) in _creatures)
+        {
+            if (other.Id == self.Id || other.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil
+                || Vector3.DistanceSquared(position, transform.Position) > sight * sight
+                || ai.RelationTo(otherAi) is not RelationRule relation)
                 continue;
 
-            brain.TargetId = player.Id;
-            brain.Mode = reaction;
-            brain.HuntUntil = now;
-            brain.KeepRange = 0;
-
-            Console.WriteLine($"[AiManager] {ai.Name} {(distance <= ai.CloseDistance && angle <= ai.CloseAngle / 2 ? "notices close" : "sees")} {player.Id} at {distance:0.#} m, {angle:0} deg: {reaction}");
-
-            return player;
+            if (Notice(transform, ai, brain, other, position, relation.OnCloseRange, relation.OnSight, now))
+                return other;
         }
 
         return null;
+    }
+
+    private static bool Notice(TransformComponent transform, CreatureAi ai, Brain brain, Entity other, Vector3 position,
+        AiReaction onCloseRange, AiReaction onSight, DateTime now)
+    {
+        var offset = position - transform.Position;
+        var distance = offset.Length();
+        offset.Y = 0f;
+
+        var angle = offset.LengthSquared() > 0.0001f
+            ? MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(offset), Forward(transform.YawDegrees)), -1f, 1f)) * 180f / MathF.PI
+            : 0f;
+
+        var close = distance <= ai.CloseDistance && angle <= ai.CloseAngle / 2;
+        var reaction = close ? onCloseRange
+            : distance <= ai.SeenDistance && angle <= ai.SeenAngle / 2 ? onSight
+            : AiReaction.Ignore;
+
+        if (reaction is not (AiReaction.Aggressive or AiReaction.Scared))
+            return false;
+
+        brain.TargetId = other.Id;
+        brain.Mode = reaction;
+        brain.HuntUntil = now;
+        brain.KeepRange = 0;
+
+        Console.WriteLine($"[AiManager] {ai.Name} {(close ? "notices close" : "sees")} {other.Name}#{other.Id} at {distance:0.#} m, {angle:0} deg: {reaction}");
+
+        return true;
     }
 
     private void Perform(Entity entity, TransformComponent transform, Brain brain, CreatureAbility ability, Vector3 direction, float time, DateTime now)
@@ -959,7 +999,7 @@ public class AiManager
 
     private void Move(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 direction, float speed, byte state, float delta)
     {
-        if (Avoid(entity.Id, transform.Position, ai, direction) is not Vector3 free)
+        if (Avoid(entity.Id, brain.TargetId, transform.Position, ai, direction) is not Vector3 free)
         {
             Stop(entity);
             return;
@@ -985,7 +1025,7 @@ public class AiManager
         SetMovement(entity, direction, speed, state);
     }
 
-    private Vector3? Avoid(int id, Vector3 position, CreatureAi ai, Vector3 direction)
+    private Vector3? Avoid(int id, int targetId, Vector3 position, CreatureAi ai, Vector3 direction)
     {
         if (ai.AvoidanceRange <= 0)
             return direction;
@@ -997,7 +1037,7 @@ public class AiManager
             var toOther = Horizontal(other - position);
             var distance = toOther.Length();
 
-            if (otherId == id || distance > ai.AvoidanceRange || distance < 0.0001f)
+            if (otherId == id || otherId == targetId || distance > ai.AvoidanceRange || distance < 0.0001f)
                 continue;
 
             var away = toOther / distance;
@@ -1017,7 +1057,7 @@ public class AiManager
             var toOther = Horizontal(other - position);
             var distance = toOther.Length();
 
-            if (otherId != id && distance <= ai.AvoidanceRange && distance > 0.0001f && Vector3.Dot(steered, toOther / distance) > 0.0001f)
+            if (otherId != id && otherId != targetId && distance <= ai.AvoidanceRange && distance > 0.0001f && Vector3.Dot(steered, toOther / distance) > 0.0001f)
                 return null;
         }
 

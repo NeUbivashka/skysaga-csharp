@@ -38,6 +38,18 @@ public sealed record SelectionTableRule(string List, string Condition);
 
 public sealed record SelectionListRule(string[] Tags, string Condition, bool SelectIfTrue);
 
+public sealed record RelationRule(string Matcher, AiReaction OnSight, AiReaction OnCloseRange, AiReaction OnHit)
+{
+    public bool Matches(CreatureAi other) => Matcher switch
+    {
+        "*" => true,
+        _ when Matcher.StartsWith("type:") => other.EntityType is { } type
+            && (type.Equals(Matcher[5..], StringComparison.OrdinalIgnoreCase) || type.StartsWith(Matcher[5..] + "-", StringComparison.OrdinalIgnoreCase)),
+        _ when Matcher.StartsWith("bp:") => other.Name.Equals(Matcher[3..], StringComparison.OrdinalIgnoreCase),
+        _ => false
+    };
+}
+
 public sealed record AiCondition(bool Invert, string Kind, string Argument);
 
 public sealed record ProjectileLaunch(string Entity, uint DataIndex, uint DataCount, float Speed, float GravityFactor,
@@ -111,6 +123,7 @@ public sealed class CreatureAi
         PrioritiseSideDodge = _fields["dodgeside"] == "1";
         RunFromHealth = Number("runfromhealth");
         AvoidanceRange = Number("avoidance");
+        RelationsTable = _fields["relations"] == "-" ? null : _fields["relations"];
         ToAttack = _fields["toattack"];
         ToTarget = _fields["totarget"];
         BackOff = _fields["backoff"] == "-" ? null : _fields["backoff"];
@@ -182,6 +195,10 @@ public sealed class CreatureAi
     public bool CanDodge => DodgeProbability > 0 && DodgeDistance > 0 && DodgeSpeed > 0;
     public float RunFromHealth { get; }
     public float AvoidanceRange { get; }
+    public string? RelationsTable { get; }
+
+    public RelationRule? RelationTo(CreatureAi other)
+        => RelationsTable is { } table && CreatureAiTable.TryGetRelations(table, out var rules) ? rules.FirstOrDefault(rule => rule.Matches(other)) : null;
     public string ToAttack { get; }
     public string ToTarget { get; }
     public string? BackOff { get; }
@@ -217,6 +234,7 @@ public static class CreatureAiTable
 {
     private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness,
         Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut,
+        (float Input, float Output)[] CreatureDamageLut, Dictionary<string, List<RelationRule>> Relations,
         Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
         Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles);
 
@@ -225,6 +243,7 @@ public static class CreatureAiTable
     private static Data Load()
     {
         var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), [],
+            [], new(StringComparer.OrdinalIgnoreCase),
             new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
             new(StringComparer.OrdinalIgnoreCase));
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
@@ -234,6 +253,8 @@ public static class CreatureAiTable
 
         static float Number(string value) => float.Parse(value, CultureInfo.InvariantCulture);
 
+        static (float, float)[] Lut(string lut) => lut.Split(',').Select(point => point.Split(':')).Select(point => (Number(point[0]), Number(point[1]))).ToArray();
+
         foreach (var line in File.ReadLines(path))
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -241,10 +262,15 @@ public static class CreatureAiTable
             switch (parts)
             {
                 case ["damage", var lut]:
-                    data = data with
-                    {
-                        DamageLut = lut.Split(',').Select(point => point.Split(':')).Select(point => (Number(point[0]), Number(point[1]))).ToArray()
-                    };
+                    data = data with { DamageLut = Lut(lut) };
+                    break;
+                case ["damagecreature", var creatureLut]:
+                    data = data with { CreatureDamageLut = Lut(creatureLut) };
+                    break;
+                case ["relation", var relationTable, var matcher, var sight, var close, var hit]:
+                    if (!data.Relations.TryGetValue(relationTable, out var relationRules))
+                        data.Relations[relationTable] = relationRules = [];
+                    relationRules.Add(new RelationRule(matcher, Enum.Parse<AiReaction>(sight), Enum.Parse<AiReaction>(close), Enum.Parse<AiReaction>(hit)));
                     break;
                 case ["spawnparams", var spawnName, var home, var roam]:
                     data.Spawns[spawnName] = new SpawnParams(Number(home.Split('=')[1]), Number(roam.Split('=')[1]));
@@ -301,6 +327,10 @@ public static class CreatureAiTable
     public static bool TryGetSpawnParams(string name, out SpawnParams spawn) => Table.Value.Spawns.TryGetValue(name, out spawn);
 
     public static (float Input, float Output)[] DamageLut => Table.Value.DamageLut;
+
+    public static (float Input, float Output)[] CreatureDamageLut => Table.Value.CreatureDamageLut;
+
+    public static bool TryGetRelations(string table, out List<RelationRule> rules) => Table.Value.Relations.TryGetValue(table, out rules!);
 
     public static bool TryGetSelectionTable(string name, out SelectionTableRule[] rules) => Table.Value.SelectionTables.TryGetValue(name, out rules!);
 

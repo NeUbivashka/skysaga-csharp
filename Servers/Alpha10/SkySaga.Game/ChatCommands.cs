@@ -230,7 +230,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
 
         var yaw = connection.LookYaw * MathF.PI / 180f;
         var pitch = connection.LookPitch * MathF.PI / 180f;
-        var direction = new Vector3(MathF.Cos(pitch) * MathF.Sin(yaw), MathF.Sin(pitch), MathF.Cos(pitch) * MathF.Cos(yaw));
+        var direction = new Vector3(MathF.Cos(pitch) * MathF.Sin(yaw), -MathF.Sin(pitch), MathF.Cos(pitch) * MathF.Cos(yaw));
 
         for (var distance = LookStep; distance <= LookRange; distance += LookStep)
         {
