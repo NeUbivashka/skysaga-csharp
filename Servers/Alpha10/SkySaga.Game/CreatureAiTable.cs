@@ -30,6 +30,48 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
     public float HitTime => ChargeTime + ActiveTime * BeginFactor;
 
     public float Duration => ChargeTime + ActiveTime + RecoverTime;
+
+    public AttackMotion Motion => CreatureAiTable.TryGetMotion(Action, out var motion) ? motion : AttackMotion.None;
+
+    public float HitReach => Reach - Motion.OffsetZ;
+
+    public float AttackRange => CreatureAiTable.TryGetProjectile(Action, out var launch) ? launch.Range : HitReach + Motion.Lunge;
+
+    public ChargeStage StageAt(float elapsed)
+    {
+        var motion = Motion;
+
+        if (elapsed < ChargeTime)
+            return motion.Charge;
+
+        if (elapsed < ChargeTime + ActiveTime)
+        {
+            var window = (elapsed - ChargeTime) / ActiveTime;
+            return !motion.ActiveWindowOnly || window >= BeginFactor && window <= EndFactor ? motion.Active : motion.Active with { Distance = 0 };
+        }
+
+        return motion.Recover;
+    }
+
+    public float StageTime(float elapsed)
+    {
+        if (elapsed < ChargeTime)
+            return ChargeTime;
+
+        if (elapsed < ChargeTime + ActiveTime)
+            return Motion.ActiveWindowOnly ? ActiveTime * (EndFactor - BeginFactor) : ActiveTime;
+
+        return RecoverTime;
+    }
+}
+
+public readonly record struct ChargeStage(float Distance, bool Move, bool Rotate, bool StopWhenInRange);
+
+public sealed record AttackMotion(float OffsetZ, float Arc, bool ActiveWindowOnly, ChargeStage Charge, ChargeStage Active, ChargeStage Recover)
+{
+    public static readonly AttackMotion None = new(0, 360, false, new(0, false, true, true), new(0, false, true, true), new(0, false, true, true));
+
+    public float Lunge => (Charge.Move ? MathF.Max(Charge.Distance, 0) : 0) + (Active.Move ? MathF.Max(Active.Distance, 0) : 0);
 }
 
 public readonly record struct SpawnParams(float HomeRange, float Roam);
@@ -54,7 +96,10 @@ public sealed record AiCondition(bool Invert, string Kind, string Argument);
 
 public sealed record ProjectileLaunch(string Entity, uint DataIndex, uint DataCount, float Speed, float GravityFactor,
     float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel,
-    float HomingMaxAngle);
+    float HomingMaxAngle, float SplashRadius)
+{
+    public float Range => GravityFactor > 0 ? Speed * Speed / (CreatureAiTable.WorldGravity * GravityFactor) : Speed * Lifetime;
+}
 
 public readonly record struct SleepTimes(float IdleMin, float IdleMax, float SleepMin, float SleepMax)
 {
@@ -124,6 +169,7 @@ public sealed class CreatureAi
         PrioritiseSideDodge = _fields["dodgeside"] == "1";
         RunFromHealth = Number("runfromhealth");
         AvoidanceRange = Number("avoidance");
+        IsTerritorial = _fields["territorial"] == "Territorial";
         RelationsTable = _fields["relations"] == "-" ? null : _fields["relations"];
         ToAttack = _fields["toattack"];
         ToTarget = _fields["totarget"];
@@ -196,6 +242,7 @@ public sealed class CreatureAi
     public bool CanDodge => DodgeProbability > 0 && DodgeDistance > 0 && DodgeSpeed > 0;
     public float RunFromHealth { get; }
     public float AvoidanceRange { get; }
+    public bool IsTerritorial { get; }
     public string? RelationsTable { get; }
 
     public RelationRule? RelationTo(CreatureAi other)
@@ -237,7 +284,7 @@ public static class CreatureAiTable
         Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut,
         (float Input, float Output)[] CreatureDamageLut, Dictionary<string, List<RelationRule>> Relations, (float Spawn, float Respawn) Invisibility,
         Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
-        Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles);
+        Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles, Dictionary<string, AttackMotion> Motions);
 
     private static readonly Lazy<Data> Table = new(Load);
 
@@ -246,13 +293,19 @@ public static class CreatureAiTable
         var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), [],
             [], new(StringComparer.OrdinalIgnoreCase), default,
             new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
-            new(StringComparer.OrdinalIgnoreCase));
+            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
             return data;
 
         static float Number(string value) => float.Parse(value, CultureInfo.InvariantCulture);
+
+        static ChargeStage Stage(string field)
+        {
+            var parts = field.Split('=')[1].Split(':');
+            return new ChargeStage(Number(parts[0]), parts[1] == "1", parts[2] == "1", parts[3] == "1");
+        }
 
         static (float, float)[] Lut(string lut) => lut.Split(',').Select(point => point.Split(':')).Select(point => (Number(point[0]), Number(point[1]))).ToArray();
 
@@ -284,7 +337,7 @@ public static class CreatureAiTable
                     data.Projectiles[launchAction] = new ProjectileLaunch(f["entity"], uint.Parse(f["dataindex"]), uint.Parse(f["datacount"]),
                         Number(f["speed"]), Number(f["gravity"]), Number(f["inaccmin"]), Number(f["inaccmax"]),
                         new Vector3(Number(f["offx"]), Number(f["offy"]), Number(f["offz"])), Number(f["pitch"]), Number(f["yaw"]),
-                        Number(f["lifetime"]), Number(f["impactlevel"]), Number(f["homing"]));
+                        Number(f["lifetime"]), Number(f["impactlevel"]), Number(f["homing"]), Number(f["splash"]));
                     break;
                 case ["selectiontable", var tableName, ..]:
                     data.SelectionTables[tableName] = [.. parts[2..].Select(rule => rule.Split(':')).Select(rule => new SelectionTableRule(rule[0], rule[1]))];
@@ -295,6 +348,10 @@ public static class CreatureAiTable
                     break;
                 case ["condition", var conditionName, var invert, var kind, ..]:
                     data.Conditions[conditionName] = new AiCondition(invert == "1", kind, parts.Length > 4 ? parts[4] : "");
+                    break;
+                case ["attackmotion", var motionAction, var offz, var arc, var activeOnly, var chargeStage, var activeStage, var recoverStage]:
+                    data.Motions[motionAction] = new AttackMotion(Number(offz.Split('=')[1]), Number(arc.Split('=')[1]), activeOnly.EndsWith("=1"),
+                        Stage(chargeStage), Stage(activeStage), Stage(recoverStage));
                     break;
                 case ["block", var blockAction, var angle]:
                     data.BlockAngles[blockAction] = Number(angle);
@@ -330,6 +387,8 @@ public static class CreatureAiTable
 
     public static bool TryGetSpawnParams(string name, out SpawnParams spawn) => Table.Value.Spawns.TryGetValue(name, out spawn);
 
+    public const float WorldGravity = 20f;
+
     public static (float Input, float Output)[] DamageLut => Table.Value.DamageLut;
 
     public static (float Input, float Output)[] CreatureDamageLut => Table.Value.CreatureDamageLut;
@@ -341,6 +400,8 @@ public static class CreatureAiTable
     public static bool TryGetSelectionTable(string name, out SelectionTableRule[] rules) => Table.Value.SelectionTables.TryGetValue(name, out rules!);
 
     public static bool TryGetSelectionList(string name, out SelectionListRule[] rules) => Table.Value.SelectionLists.TryGetValue(name, out rules!);
+
+    public static bool TryGetMotion(string action, out AttackMotion motion) => Table.Value.Motions.TryGetValue(action, out motion!);
 
     public static bool TryGetBlockAngle(string action, out float angle) => Table.Value.BlockAngles.TryGetValue(action, out angle);
 

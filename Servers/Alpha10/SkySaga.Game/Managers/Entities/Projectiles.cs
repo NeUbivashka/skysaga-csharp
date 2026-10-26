@@ -4,7 +4,7 @@ namespace SkySaga.Game.Managers.Entities;
 
 public class Projectiles(IWorldManager worldManager, PlayerConnectionManager playerConnectionManager)
 {
-    private const float WorldGravity = 20f;
+    private const float WorldGravity = CreatureAiTable.WorldGravity;
     private const float StepSeconds = 0.02f;
     private const float PlayerHalfWidth = 0.5f;
     private const float PlayerHeight = 2f;
@@ -62,7 +62,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
         {
             component.ProjectileDataCount = launch.DataCount;
             component.ProjectileDataIndex = launch.DataIndex;
-            component.Gravity = launch.GravityFactor;
+            component.Gravity = -WorldGravity * launch.GravityFactor;
             component.OwningEntityId = owner.Id;
             component.LauncherEntityId = owner.Id;
             component.HomingProjectileMaxAngle = launch.HomingMaxAngle;
@@ -114,19 +114,22 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
 
                 Home(flight);
                 flight.Velocity += Vector3.UnitY * -WorldGravity * flight.Launch.GravityFactor * step;
+                var from = flight.Position;
                 flight.Position += flight.Velocity * step;
 
                 if (players.Append(flight.Target)
                         .FirstOrDefault(entity => entity is not null && entity.TryGetComponent<ClientHealthComponent>(out var health) && !health.IsDead
-                            && Combat.PositionOf(entity) is Vector3 position && Inside(flight.Position, position)) is { } victim)
+                            && Combat.PositionOf(entity) is Vector3 position && Crosses(from, flight.Position, position)) is { } victim)
                 {
                     Combat.CreatureProjectileHit(playerConnectionManager, worldManager.EntityManager, flight.Owner, victim, flight.Ability, flight.Launch);
+                    Splash(flight, players, victim);
                     Remove(flight, flight.Position);
                     break;
                 }
 
                 if (SpawnFinder.IsSolidAt(worldManager.ChunkManager, flight.Position) || flight.Position.Y < 0f)
                 {
+                    Splash(flight, players, null);
                     Remove(flight, flight.Position);
                     break;
                 }
@@ -167,10 +170,70 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
         flight.Velocity = new Vector3(velocity.X * cos + velocity.Z * sin, velocity.Y, velocity.Z * cos - velocity.X * sin);
     }
 
-    private static bool Inside(Vector3 point, Vector3 player)
-        => MathF.Abs(point.X - player.X) <= PlayerHalfWidth
-           && MathF.Abs(point.Z - player.Z) <= PlayerHalfWidth
-           && point.Y >= player.Y && point.Y <= player.Y + PlayerHeight;
+    private void Splash(Flight flight, List<Entity> players, Entity? struck)
+    {
+        if (flight.Launch.SplashRadius <= 0)
+            return;
+
+        var creatures = worldManager.EntityManager.Entities.Where(entity => entity.TryGetComponent<ClientEnemyAiComponent>(out _));
+
+        foreach (var entity in players.Concat(creatures).Distinct())
+        {
+            if (entity == struck || entity == flight.Owner
+                || !entity.TryGetComponent<ClientHealthComponent>(out var health) || health.IsDead
+                || Combat.PositionOf(entity) is not Vector3 position)
+                continue;
+
+            var nearest = new Vector3(
+                Math.Clamp(flight.Position.X, position.X - PlayerHalfWidth, position.X + PlayerHalfWidth),
+                Math.Clamp(flight.Position.Y, position.Y, position.Y + PlayerHeight),
+                Math.Clamp(flight.Position.Z, position.Z - PlayerHalfWidth, position.Z + PlayerHalfWidth));
+
+            if (Vector3.Distance(nearest, flight.Position) > flight.Launch.SplashRadius)
+                continue;
+
+            Console.WriteLine($"[Projectiles] {flight.Projectile.Name}#{flight.Projectile.Id} splashes {entity.Id} at {Vector3.Distance(nearest, flight.Position):0.##} m");
+            Combat.CreatureProjectileHit(playerConnectionManager, worldManager.EntityManager, flight.Owner, entity, flight.Ability, flight.Launch);
+        }
+    }
+
+    private static bool Crosses(Vector3 from, Vector3 to, Vector3 player)
+    {
+        var min = new Vector3(player.X - PlayerHalfWidth, player.Y, player.Z - PlayerHalfWidth);
+        var max = new Vector3(player.X + PlayerHalfWidth, player.Y + PlayerHeight, player.Z + PlayerHalfWidth);
+        var delta = to - from;
+        float enter = 0f, exit = 1f;
+
+        for (var axis = 0; axis < 3; axis++)
+        {
+            var start = axis == 0 ? from.X : axis == 1 ? from.Y : from.Z;
+            var step = axis == 0 ? delta.X : axis == 1 ? delta.Y : delta.Z;
+            var low = axis == 0 ? min.X : axis == 1 ? min.Y : min.Z;
+            var high = axis == 0 ? max.X : axis == 1 ? max.Y : max.Z;
+
+            if (MathF.Abs(step) < 1e-6f)
+            {
+                if (start < low || start > high)
+                    return false;
+
+                continue;
+            }
+
+            var t0 = (low - start) / step;
+            var t1 = (high - start) / step;
+
+            if (t0 > t1)
+                (t0, t1) = (t1, t0);
+
+            enter = MathF.Max(enter, t0);
+            exit = MathF.Min(exit, t1);
+
+            if (enter > exit)
+                return false;
+        }
+
+        return true;
+    }
 
     private void Remove(Flight flight, Vector3? impact)
     {

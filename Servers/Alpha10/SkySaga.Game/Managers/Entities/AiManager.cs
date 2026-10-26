@@ -21,6 +21,8 @@ public class AiManager
     private const float DirectionScale = 64f;
     private const float InputSpeedScale = 8f;
     private const string MeleeTag = "ActionMelee";
+    private const string ShieldBreakerTag = "ActionShieldBreaker";
+    private const string KickTag = "ActionKick";
     private const string DefaultSpawnParams = "GenericFeatureSpawner";
     private const float ProjectileAimHeight = 1f;
     private const float Gravity = 20f;
@@ -109,6 +111,7 @@ public class AiManager
     {
         public required CreatureAbility Ability;
         public required DateTime HitAt;
+        public required DateTime StartedAt;
         public required DateTime EndsAt;
         public bool Resolved;
     }
@@ -331,10 +334,7 @@ public class AiManager
     {
         if (brain.Current is Attack attack)
         {
-            Stop(entity);
-
-            if (TargetPosition(brain) is Vector3 position)
-                Face(transform, Horizontal(position - transform.Position));
+            Lunge(entity, transform, ai, brain, attack, now, delta);
 
             if (attack.Ability.HasTag(ProjectileTag) && !attack.Resolved && now >= attack.HitAt)
             {
@@ -344,13 +344,14 @@ public class AiManager
                     _projectiles.Launch(entity, _targets.GetValueOrDefault(brain.TargetId), transform.Position, transform.YawDegrees, aim + Vector3.UnitY * ProjectileAimHeight, attack.Ability, launch, now);
             }
 
-            if (attack.Ability.HasTag(MeleeTag) && !attack.Resolved && now >= attack.HitAt)
+            if (IsMelee(attack.Ability) && !attack.Resolved && now >= attack.HitAt)
             {
                 attack.Resolved = true;
 
-                if (_targets.GetValueOrDefault(brain.TargetId) is { } victim
-                    && Vector3.Distance(Combat.PositionOf(victim)!.Value, transform.Position) <= attack.Ability.Reach)
+                if (_targets.GetValueOrDefault(brain.TargetId) is { } victim && InHitArea(transform, attack.Ability, Combat.PositionOf(victim)!.Value))
                     Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
+                else
+                    Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} misses {brain.TargetId} with {attack.Ability.Action}");
             }
 
             if (now < attack.EndsAt)
@@ -358,7 +359,7 @@ public class AiManager
 
             brain.Current = null;
 
-            if (attack.Ability.HasTag(MeleeTag) || attack.Ability.HasTag(ProjectileTag))
+            if (IsAttack(attack.Ability))
             {
                 var crowd = Math.Max(0, brain.SquadNear - ai.MinNumForAttackTimeModification);
                 brain.NextAttack = now.AddSeconds((ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime))
@@ -493,12 +494,14 @@ public class AiManager
 
         var reach = Vector3.Distance(targetPosition, transform.Position);
 
-        if (ai.Tagged(MeleeTag).Any(ability => distance <= ability.Reach && reach > ability.Reach))
+        if (ai.Abilities.Where(IsMelee).Any(ability => distance <= ability.HitReach && reach > ability.HitReach))
             brain.Blocked = true;
 
+        var outsideTerritory = ai.IsTerritorial && brain.Spawn.HomeRange > 0
+            && Horizontal(targetPosition - brain.Home).Length() > brain.Spawn.HomeRange;
         var behaviour = brain.JustHeard ? AiBehaviour.SensoryEventResponse
-            : ai.IsRangedFighter ? AiBehaviour.Ranged
-            : brain.Blocked ? AiBehaviour.Taunt
+            : brain.Blocked || outsideTerritory ? AiBehaviour.Taunt
+            : ai.IsRangedFighter || brain.Zone != SquadZone.Near ? AiBehaviour.Ranged
             : AiBehaviour.Melee;
 
         brain.JustHeard = false;
@@ -518,7 +521,7 @@ public class AiManager
         var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, targetTags));
 
         if (brain.Zone != SquadZone.Near)
-            selected = [.. selected.Where(ability => !ability.HasTag(MeleeTag))];
+            selected = [.. selected.Where(ability => !IsMelee(ability))];
 
         var wait = (float)(brain.NextAttack - now).TotalSeconds;
 
@@ -535,8 +538,8 @@ public class AiManager
             brain.Planned = selected.Count > 0 ? selected[_random.Next(selected.Count)] : null;
 
         var inReach = brain.Planned is CreatureAbility plan
-            ? !IsAttack(plan) || reach <= plan.Reach
-            : selected.Any(ability => IsAttack(ability) && reach <= ability.Reach);
+            ? !IsAttack(plan) || reach <= plan.AttackRange
+            : selected.Any(ability => IsAttack(ability) && reach <= ability.AttackRange);
 
         if (inReach)
         {
@@ -559,7 +562,6 @@ public class AiManager
                 if (ai.CircleTarget && brain.Zone == SquadZone.Near)
                 {
                     Move(entity, transform, ai, brain, new Vector3(toTarget.Z, 0f, -toTarget.X) * brain.CircleSide, ai.WalkSpeed, StateWalk, delta);
-                    Face(transform, toTarget);
                 }
                 else
                     CombatIdle(entity, transform, ai, brain, now);
@@ -576,16 +578,9 @@ public class AiManager
             return;
         }
 
-        if (brain.Zone != SquadZone.Near)
+        if (brain.Zone != SquadZone.Near && !(ready && brain.Planned is CreatureAbility approach && IsAttack(approach)))
         {
             Hold(entity, transform, ai, brain, targetPosition, toTarget, distance, delta);
-            return;
-        }
-
-        if (!selected.Any(IsAttack))
-        {
-            Stop(entity);
-            Face(transform, toTarget);
             return;
         }
 
@@ -728,7 +723,56 @@ public class AiManager
             Perform(entity, transform, brain, idles[_random.Next(idles.Count)], Forward(transform.YawDegrees), wait, now);
     }
 
-    private static bool IsAttack(CreatureAbility ability) => ability.HasTag(MeleeTag) || ability.HasTag(ProjectileTag);
+    private void Lunge(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Attack attack, DateTime now, float delta)
+    {
+        var elapsed = (float)(now - attack.StartedAt).TotalSeconds;
+        var stage = IsMelee(attack.Ability) ? attack.Ability.StageAt(elapsed) : AttackMotion.None.Charge;
+        var target = TargetPosition(brain);
+
+        if (stage.Rotate && target is Vector3 facing)
+            Face(transform, Horizontal(facing - transform.Position));
+
+        var time = attack.Ability.StageTime(elapsed);
+
+        if (!stage.Move || stage.Distance == 0 || time <= 0
+            || stage.StopWhenInRange && stage.Distance > 0 && target is Vector3 aim && Vector3.Distance(aim, transform.Position) <= attack.Ability.HitReach)
+        {
+            Stop(entity);
+            return;
+        }
+
+        var direction = Forward(transform.YawDegrees) * MathF.Sign(stage.Distance);
+        var speed = MathF.Abs(stage.Distance) / time;
+        var next = transform.Position + direction * speed * delta;
+        var ground = SpawnFinder.GroundBelow(_worldManager.ChunkManager, next, ai.JumpHeight);
+
+        if (ground is not float groundY || groundY - transform.Position.Y > ai.JumpHeight)
+        {
+            Stop(entity);
+            return;
+        }
+
+        transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
+        SetMovement(entity, direction, speed, StateRun);
+    }
+
+    private static bool InHitArea(TransformComponent transform, CreatureAbility ability, Vector3 target)
+    {
+        if (Vector3.Distance(target, transform.Position) > ability.HitReach)
+            return false;
+
+        var offset = Horizontal(target - transform.Position);
+
+        if (offset.LengthSquared() < 0.0001f)
+            return true;
+
+        var angle = MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(offset), Forward(transform.YawDegrees)), -1f, 1f)) * 180f / MathF.PI;
+        return angle <= ability.Motion.Arc / 2;
+    }
+
+    private static bool IsMelee(CreatureAbility ability) => ability.HasTag(MeleeTag) || ability.HasTag(ShieldBreakerTag) || ability.HasTag(KickTag);
+
+    private static bool IsAttack(CreatureAbility ability) => IsMelee(ability) || ability.HasTag(ProjectileTag);
 
     private void Rest(Entity entity, CreatureAi ai, Brain brain, float timeOfDay, DateTime now)
     {
@@ -991,6 +1035,7 @@ public class AiManager
         brain.Current = new Attack
         {
             Ability = ability,
+            StartedAt = now,
             HitAt = now.AddSeconds(ability.HitTime),
             EndsAt = now.AddSeconds(time > 0 ? time : ability.Duration)
         };

@@ -51,7 +51,7 @@ public static class AbilitySelection
         var value = condition.Kind switch
         {
             "behaviour" => Enum.TryParse<AiBehaviour>(condition.Argument, out var behaviour) && behaviour == context.Behaviour,
-            "inrange" => WithAnyTag(ai, condition.Argument.Split(',')).Any(ability => context.Distance <= ability.Reach),
+            "inrange" => WithAnyTag(ai, condition.Argument.Split(',')).Any(ability => context.Distance <= ability.AttackRange),
             "canpath" => context.CanPath,
             "targetusing:TargetEntity" => condition.Argument.Split(',').Any(tag => context.TargetTags.Contains(tag, StringComparer.OrdinalIgnoreCase)),
             "constant" => condition.Argument == "True",

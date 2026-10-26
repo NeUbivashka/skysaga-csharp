@@ -223,6 +223,7 @@ def main():
             "dodgeside": int(bool(dodge_control["PrioritiseSideDodge"])),
             "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
             "avoidance": capability.get("AvoidanceRange", 0),
+            "territorial": capability.get("TerritorialType") or "-",
             "relations": profile["RelationshipTable"] or "-",
             "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
             "totarget": movement.get("ToTarget", {}).get("MovementType", "Run"),
@@ -258,6 +259,29 @@ def main():
     rows += selection_rows(geo)
     rows += relation_rows(geo)
 
+    charges = by_name(geo["Charges"])
+    charge_groups = by_name(geo["ChargeGroups"])
+    areas = by_name(geo["AreaOfEffects"])
+
+    def charge(name):
+        record = charges.get((name or "").lower())
+        if not record:
+            return "0:0:1:1"
+        return f"{record['Charge']:g}:{int(record['AllowMovement'])}:{int(record['AllowRotation'])}:{int(record['StopWhenInRange'])}"
+
+    for action in geo["EquippedActions"]:
+        group = charge_groups.get((action.get("ChargeGroup") or "").lower())
+        params = (action.get("AreaOfEffect") or {}).get("ContextCollectionParams") or {}
+        area = areas.get((params.get("AreaOfEffect") or "").lower())
+        if not group and not area:
+            continue
+        transform = params.get("Transform") or {}
+        offset = float(transform.get("OffsetZ", 0)) if transform.get("UsePositionOffset") else 0.0
+        stages = [charge(group.get(stage)) if group else "0:0:1:1" for stage in ("Charge", "Active", "Recover")]
+        rows.append(f"attackmotion {action['Name']} offz={offset:g} arc={float((area or {}).get('ArcDegreesHorizontal', 360)):g} "
+                    f"activeonly={int(bool((group or {}).get('OnlyApplyDuringActiveWindow')))} "
+                    f"charge={stages[0]} active={stages[1]} recover={stages[2]}")
+
     for action in geo["EquippedActions"]:
         for entry in (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []:
             block = always.get(entry.get("ActionAlways", "").lower(), {}).get("BlockAction")
@@ -280,6 +304,11 @@ def main():
             offset = transform.get("UseOffset")
             position = transform.get("UsePositionOffset")
             impact = properties.get(data.get("OnImpactPhysicalProperties", "").lower())
+            areas_on_impact = [always.get(entry.get("ActionAlways", "").lower(), {}).get("TriggerAreaOfEffect")
+                               for entry in (data.get("OnImpactActions") or {}).get("AlwaysActions") or []]
+            item = by_name(geo["Resources"]).get(blueprint["Name"].lower(), {})
+            item_reach = stat(properties.get((item.get("PhysicalProperties") or "").lower()), "Reach")
+            splash = max((area.get("Range", 0) * stat(impact, "Reach") * item_reach for area in areas_on_impact if area), default=0.0)
             fields = {
                 "entity": blueprint["Name"],
                 "dataindex": data["Index"], "datacount": len(geo["ProjectileComponentData"]),
@@ -293,6 +322,7 @@ def main():
                 "lifetime": float(data.get("Lifetime", 0)),
                 "impactlevel": stat(impact, "WeaponLevelModifier"),
                 "homing": float(launch.get("HomingMaxAngle", 0)),
+                "splash": float(splash),
             }
             rows.append(" ".join(["projectile", action["Name"]] + [f"{k}={v:g}" if isinstance(v, float) else f"{k}={v}" for k, v in fields.items()]))
 
