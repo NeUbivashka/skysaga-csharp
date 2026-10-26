@@ -68,7 +68,9 @@ public class AiManager
         public Vector3? WanderTarget;
         public bool ReturningHome;
         public bool JustHeard;
-        public DateTime? TauntingSince;
+        public DateTime? TauntEndsAt;
+        public int IgnoredTargetId;
+        public DateTime IgnoreUntil;
         public bool CombatIdleDone;
         public CreatureAbility? Planned;
     }
@@ -99,6 +101,7 @@ public class AiManager
             return;
 
         brain.TargetId = attacker.Id;
+        brain.IgnoredTargetId = 0;
         brain.Mode = ai.OnHit;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
     }
@@ -336,10 +339,18 @@ public class AiManager
 
         brain.JustHeard = false;
 
-        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, false, false));
+        if (brain.TauntEndsAt is DateTime tauntEnd && now >= tauntEnd)
+        {
+            Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} cannot reach {brain.TargetId}, ignores it for {ai.IgnoreAfterTauntTime:0.#} s");
+            brain.IgnoredTargetId = brain.TargetId;
+            brain.IgnoreUntil = now.AddSeconds(ai.IgnoreAfterTauntTime);
+            brain.Blocked = false;
+            Forget(component, brain, now);
+            Emote(entity, transform, ai, brain, LostTag, ai.LostTime, now);
+            return;
+        }
 
-        if (behaviour != AiBehaviour.Taunt)
-            brain.TauntingSince = null;
+        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, false, false));
 
         if (ready && (brain.Planned is not CreatureAbility planned || !selected.Contains(planned)))
             brain.Planned = selected.Count > 0 ? selected[_random.Next(selected.Count)] : null;
@@ -356,9 +367,13 @@ public class AiManager
             if (ready && brain.Planned is CreatureAbility chosen)
             {
                 brain.Planned = null;
-                brain.Blocked = false;
                 brain.CombatIdleDone = false;
                 Perform(entity, transform, brain, chosen, toTarget, 0, now);
+
+                if (behaviour == AiBehaviour.Taunt)
+                    brain.TauntEndsAt = now.AddSeconds(chosen.Duration);
+                else
+                    brain.Blocked = false;
             }
             else
                 CombatIdle(entity, transform, ai, brain, now);
@@ -370,7 +385,7 @@ public class AiManager
         {
             Stop(entity);
             Face(transform, toTarget);
-            Taunt(entity, component, transform, ai, brain, ready, now);
+            Taunt(entity, transform, ai, brain, ready, now);
             return;
         }
 
@@ -385,25 +400,12 @@ public class AiManager
         Move(entity, transform, ai, brain, toTarget, ai.Speed(movement), State(movement), delta);
     }
 
-    private void Taunt(Entity entity, ClientEnemyAiComponent component, TransformComponent transform, CreatureAi ai, Brain brain, bool ready, DateTime now)
+    private void Taunt(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, bool ready, DateTime now)
     {
-        brain.TauntingSince ??= now;
-
-        if (ai.IgnoreAfterTauntTime > 0 && (now - brain.TauntingSince.Value).TotalSeconds >= ai.TauntTime + ai.IgnoreAfterTauntTime)
-        {
-            Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} cannot reach {brain.TargetId}, gives up");
-            brain.TauntingSince = null;
-            brain.Blocked = false;
-            Forget(component, brain, now);
-            Emote(entity, transform, ai, brain, LostTag, ai.LostTime, now);
-            return;
-        }
-
-        if (!ready)
+        if (!ready || brain.TauntEndsAt is not null)
             return;
 
-        brain.Blocked = false;
-        brain.NextAttack = now.AddSeconds(ai.TauntTime + Between(ai.NextAttackMinTime, ai.NextAttackMaxTime));
+        brain.TauntEndsAt = now.AddSeconds(ai.TauntTime);
         Emote(entity, transform, ai, brain, TauntTag, ai.TauntTime, now);
     }
 
@@ -414,10 +416,11 @@ public class AiManager
 
         brain.CombatIdleDone = true;
 
-        var idles = ai.Tagged(CombatIdleTag).Where(ability => now.AddSeconds(ability.Duration) <= brain.NextAttack).ToList();
+        var idles = ai.Tagged(CombatIdleTag).ToList();
+        var wait = (float)(brain.NextAttack - now).TotalSeconds;
 
-        if (idles.Count > 0)
-            Perform(entity, transform, brain, idles[_random.Next(idles.Count)], Forward(transform.YawDegrees), 0, now);
+        if (idles.Count > 0 && wait > 0)
+            Perform(entity, transform, brain, idles[_random.Next(idles.Count)], Forward(transform.YawDegrees), wait, now);
     }
 
     private static bool IsAttack(CreatureAbility ability) => ability.HasTag(MeleeTag) || ability.HasTag(ProjectileTag);
@@ -502,7 +505,8 @@ public class AiManager
                 || !CreatureAiTable.TryGetLoudness(sound.Event, out var loudness)
                 || Vector3.Distance(sound.Position, transform.Position) > ranges[(int)loudness]
                 || !_worldManager.EntityManager.TryGetEntity(sound.SourceId, out var source)
-                || !source.TryGetComponent<ClientPlayerAspectsComponent>(out _))
+                || !source.TryGetComponent<ClientPlayerAspectsComponent>(out _)
+                || source.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
                 continue;
 
             brain.TargetId = source.Id;
@@ -561,7 +565,7 @@ public class AiManager
         brain.BackOffDirection = null;
         brain.WanderTarget = null;
         brain.Planned = null;
-        brain.TauntingSince = null;
+        brain.TauntEndsAt = null;
         brain.IdleSince = now;
         component.TargetEntityId = 0;
     }
@@ -589,6 +593,9 @@ public class AiManager
 
         foreach (var player in players)
         {
+            if (player.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
+                continue;
+
             var offset = Combat.PositionOf(player)!.Value - transform.Position;
             var distance = offset.Length();
             offset.Y = 0f;
