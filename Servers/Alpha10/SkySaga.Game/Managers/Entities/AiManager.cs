@@ -105,6 +105,8 @@ public class AiManager
         public DateTime HitAt;
         public int SquadNear;
         public float CircleSide = 1f;
+        public DateTime LastSummon = DateTime.MinValue;
+        public int SummonerId;
     }
 
     private sealed class Attack
@@ -344,6 +346,12 @@ public class AiManager
                     _projectiles.Launch(entity, _targets.GetValueOrDefault(brain.TargetId), transform.Position, transform.YawDegrees, aim + Vector3.UnitY * ProjectileAimHeight, attack.Ability, launch, now);
             }
 
+            if (CreatureAiTable.TryGetSummon(attack.Ability.Action, out var summon) && !attack.Resolved && now >= attack.HitAt)
+            {
+                attack.Resolved = true;
+                Summon(entity, transform, ai, brain, summon, now);
+            }
+
             if (IsMelee(attack.Ability) && !attack.Resolved && now >= attack.HitAt)
             {
                 attack.Resolved = true;
@@ -518,7 +526,11 @@ public class AiManager
         }
 
         var targetTags = TargetTags(target.Id, now);
-        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, targetTags));
+        var healthFraction = entity.TryGetComponent<ClientHealthComponent>(out var ownHealth) && ownHealth.MaxHP > 0
+            ? (ownHealth.SyncedFullHPValues ?? ownHealth.MaxHP) / (float)ownHealth.MaxHP
+            : 1f;
+        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, targetTags,
+            healthFraction, HasSpawnBudget(entity, ai, brain, now), (float)(now - brain.LastSummon).TotalSeconds));
 
         if (brain.Zone != SquadZone.Near)
             selected = [.. selected.Where(ability => !IsMelee(ability))];
@@ -722,6 +734,126 @@ public class AiManager
         if (idles.Count > 0 && wait > 0)
             Perform(entity, transform, brain, idles[_random.Next(idles.Count)], Forward(transform.YawDegrees), wait, now);
     }
+
+    private int LiveMinions(int summonerId)
+        => Brains.Count(pair => pair.Value.SummonerId == summonerId && _bodies.ContainsKey(pair.Key));
+
+    private bool HasSpawnBudget(Entity entity, CreatureAi ai, Brain brain, DateTime now)
+    {
+        if ((now - brain.LastSummon).TotalSeconds < ai.SummonCooldown)
+            return false;
+
+        var limit = ai.Abilities
+            .Select(ability => CreatureAiTable.TryGetSummon(ability.Action, out var summon)
+                && CreatureAiTable.TryGetMinionSpawn(summon.SpawnParams, out var spawn) ? spawn.MaxCount : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return LiveMinions(entity.Id) < limit;
+    }
+
+    private void Summon(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Summon summon, DateTime now)
+    {
+        if (!CreatureAiTable.TryGetMinionSpawn(summon.SpawnParams, out var spawn)
+            || !CreatureAiTable.TryGetCreatureList(summon.List, out var list))
+            return;
+
+        var (difficulty, worldType) = Tier(entity.Name);
+        var count = Math.Min(_random.Next(spawn.MinCount, spawn.MaxCount + 1), spawn.MaxCount - LiveMinions(entity.Id));
+        var source = list;
+        string? single = null;
+
+        if (list.Category == "Random" && Pick(list, difficulty, worldType) is CreatureListEntry squad)
+        {
+            if (squad.IsList)
+                CreatureAiTable.TryGetCreatureList(squad.Name, out source!);
+            else
+                single = squad.Name;
+        }
+
+        brain.LastSummon = now;
+
+        for (var i = 0; i < count; i++)
+        {
+            var name = single ?? Draw(source, difficulty, worldType);
+
+            if (name is null)
+                continue;
+
+            var angle = Between(spawn.MinAngle, spawn.MaxAngle) * (_random.Next(2) == 0 ? -1 : 1) + transform.YawDegrees;
+            var place = transform.Position + Forward(angle) * Between(spawn.MinRadius, spawn.MaxRadius);
+
+            if (SpawnFinder.GroundBelow(_worldManager.ChunkManager, place, spawn.MaxRadius) is not float ground)
+                continue;
+
+            foreach (var minion in _worldManager.SpawnCreature(name, place with { Y = ground }))
+            {
+                _playerConnectionManager.BroadcastToAll(new EntityAdd
+                {
+                    Id = minion.Id,
+                    NameHash = Util.ComputeCrc32(minion.Name),
+                    SyncData = minion.GetSyncData(newEntity: true)
+                });
+
+                if (!CreatureAiTable.TryGet(minion.Name, out var minionAi))
+                    continue;
+
+                Brains[minion.Id] = new Brain
+                {
+                    Home = place with { Y = ground },
+                    Spawn = new SpawnParams(spawn.HomeRange, spawn.Roam),
+                    NextWander = now.AddSeconds(Between(minionAi.IdleMin, minionAi.IdleMax)),
+                    Free = true,
+                    IdleSince = now,
+                    SummonerId = entity.Id,
+                    TargetId = brain.TargetId,
+                    Mode = brain.TargetId != 0 ? AiReaction.Aggressive : AiReaction.Ignore,
+                    HuntUntil = now.AddSeconds(minionAi.HuntTimeAfterHit),
+                    JustHeard = brain.TargetId != 0
+                };
+
+                Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} summons {minion.Name}#{minion.Id} ({summon.Type}, {summon.List}, {difficulty}) for {brain.TargetId}");
+            }
+        }
+    }
+
+    private static (string Difficulty, string WorldType) Tier(string name)
+    {
+        var digits = name[(name.LastIndexOf('_') + 1)..];
+
+        return int.TryParse(digits, out var tier)
+            ? (tier switch { 0 => "Easy", 1 => "Medium", _ => "Hard" }, tier >= 3 ? "EndGame" : "-")
+            : ("Medium", "-");
+    }
+
+    private CreatureListEntry? Pick(CreatureList list, string difficulty, string worldType)
+    {
+        var entries = list.Entries.Where(entry => entry.Matches(difficulty, worldType)).ToList();
+        var total = entries.Sum(entry => entry.Weight);
+
+        if (total <= 0)
+            return null;
+
+        var roll = (float)_random.NextDouble() * total;
+
+        foreach (var entry in entries)
+        {
+            roll -= entry.Weight;
+
+            if (roll <= 0)
+                return entry;
+        }
+
+        return entries[^1];
+    }
+
+    private string? Draw(CreatureList list, string difficulty, string worldType)
+        => Pick(list, difficulty, worldType) switch
+        {
+            { IsList: true } entry => CreatureAiTable.TryGetCreatureList(entry.Name, out var sub) ? Draw(sub, difficulty, worldType) : null,
+            { } entry => entry.Name,
+            null => null
+        };
 
     private void Lunge(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Attack attack, DateTime now, float delta)
     {

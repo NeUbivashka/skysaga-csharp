@@ -55,7 +55,18 @@ def relation_rows(geo):
 
 
 AI_TESTS = ("Ai_IsInBehaviour", "Ai_HasActionInRange", "Ai_CanPathToTarget", "Ai_IsEntityUsingAbilityTag",
-            "Ai_HasImmobilisedPlayer", "Constant")
+            "Ai_HasImmobilisedPlayer", "Ai_HasEnoughSpawnBudget", "Ai_TimeSinceLastSummonIs", "CompareValue", "Constant")
+
+
+def health_fraction_limit(body):
+    first = body.get("Value1", {}).get("Terms", [])
+    second = body.get("Value2", {}).get("Terms", [])
+    if (body.get("Operator") == "LessThanOrEqual" and len(first) == 1 and len(second) == 1
+            and first[0]["Value"].get("EntityType") == "SourceEntity"
+            and first[0]["Value"].get("EntityValue", {}).get("EntityValueType") == "HealthFraction"
+            and second[0]["Value"].get("ValueType") == "Number"):
+        return second[0]["Value"]["Number"]
+    return None
 
 
 def condition_ref(name, invert):
@@ -84,6 +95,15 @@ def condition_row(condition):
         return f"condition {name} {invert} canpath"
     if test == "Ai_HasImmobilisedPlayer":
         return f"condition {name} {invert} immobilised"
+    if test == "Ai_HasEnoughSpawnBudget":
+        return f"condition {name} {invert} spawnbudget"
+    if test == "Ai_TimeSinceLastSummonIs":
+        return f"condition {name} {invert} sincesummon {body['Seconds']:g}"
+    if test == "CompareValue":
+        limit = health_fraction_limit(body)
+        if limit is None:
+            return f"condition {name} {invert} unsupported CompareValue"
+        return f"condition {name} {invert} healthbelow {limit:g}"
     return f"condition {name} {invert} constant {body.get('Value', 'False')}"
 
 
@@ -223,6 +243,7 @@ def main():
             "dodgeside": int(bool(dodge_control["PrioritiseSideDodge"])),
             "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
             "avoidance": capability.get("AvoidanceRange", 0),
+            "summoncooldown": capability.get("SpawnMinionCooldownInSeconds", 0),
             "territorial": capability.get("TerritorialType") or "-",
             "relations": profile["RelationshipTable"] or "-",
             "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
@@ -258,6 +279,37 @@ def main():
 
     rows += selection_rows(geo)
     rows += relation_rows(geo)
+
+    def filters(entry):
+        fields = entry.get("Filter", {})
+        difficulties = fields.get("ValidDifficulties", {})
+        world_types = fields.get("ValidWorldTypes", {})
+        names = ",".join(v["Difficulty"] for v in difficulties.get("Values", [])) or "*"
+        worlds = ",".join(v["WorldType"] for v in world_types.get("Values", [])) or "*"
+        return f"{'!' if difficulties.get('Invert') and names != '*' else ''}{names}:{'!' if world_types.get('Invert') and worlds != '*' else ''}{worlds}"
+
+    for creature_list in geo["CreatureLists"]:
+        entries = [f"{e.get('SpawnFrequency', 1):g}:{'list' if e.get('SubList') else 'bp'}:{e.get('SubList') or e.get('Name')}:{filters(e)}"
+                   for e in creature_list.get("CreatureListEntries", []) if e.get("SubList") or e.get("Name")]
+        rows.append(" ".join(["creaturelist", creature_list["Name"], creature_list["Category"]] + entries))
+
+    for spawn in geo["SpawnParams"]:
+        count = (spawn.get("NumberToSpawn") or {}).get("MinMax")
+        offset = ((spawn.get("SpawnLocationParams") or {}).get("OffsetParams") or {})
+        if not count or (spawn.get("SpawnLocationParams") or {}).get("Type") != "OffsetFromSpawner":
+            continue
+        radius = offset.get("Radius", {}).get("MinMax", {"Min": 0, "Max": 0})
+        angle = offset.get("Angle", {}).get("MinMax", {"Min": 0, "Max": 0})
+        rows.append(f"minionspawn {spawn['Name']} count={count['Min']:g}:{count['Max']:g} radius={radius['Min']:g}:{radius['Max']:g} "
+                    f"angle={angle['Min']:g}:{angle['Max']:g} home={spawn['HomeRange']:g} roam={spawn['MaxDistanceFromSpawnPosition']:g}")
+
+    for action in geo["EquippedActions"]:
+        for entry in (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []:
+            spawn_action = always.get(entry.get("ActionAlways", "").lower(), {}).get("SpawnEntityAction")
+            target = ((spawn_action or {}).get("CreaturesToSpawn") or {}).get("CreatureOrCreatureList") or {}
+            if not spawn_action or target.get("Type") != "CreatureList":
+                continue
+            rows.append(f"summon {action['Name']} list={target['CreatureList']} params={spawn_action['SpawnParams']} type={spawn_action.get('SpawningType', '-')}")
 
     charges = by_name(geo["Charges"])
     charge_groups = by_name(geo["ChargeGroups"])

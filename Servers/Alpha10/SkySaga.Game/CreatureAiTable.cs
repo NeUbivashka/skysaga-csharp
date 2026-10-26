@@ -65,6 +65,22 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
     }
 }
 
+public sealed record CreatureListEntry(float Weight, bool IsList, string Name, string[] Difficulties, bool InvertDifficulties,
+    string[] WorldTypes, bool InvertWorldTypes)
+{
+    public bool Matches(string difficulty, string worldType)
+        => Allows(Difficulties, InvertDifficulties, difficulty) && Allows(WorldTypes, InvertWorldTypes, worldType);
+
+    private static bool Allows(string[] values, bool invert, string value)
+        => values.Length == 0 || values.Contains(value, StringComparer.OrdinalIgnoreCase) != invert;
+}
+
+public sealed record CreatureList(string Category, CreatureListEntry[] Entries);
+
+public sealed record MinionSpawn(int MinCount, int MaxCount, float MinRadius, float MaxRadius, float MinAngle, float MaxAngle, float HomeRange, float Roam);
+
+public sealed record Summon(string List, string SpawnParams, string Type);
+
 public readonly record struct ChargeStage(float Distance, bool Move, bool Rotate, bool StopWhenInRange);
 
 public sealed record AttackMotion(float OffsetZ, float Arc, bool ActiveWindowOnly, ChargeStage Charge, ChargeStage Active, ChargeStage Recover)
@@ -170,6 +186,7 @@ public sealed class CreatureAi
         RunFromHealth = Number("runfromhealth");
         AvoidanceRange = Number("avoidance");
         IsTerritorial = _fields["territorial"] == "Territorial";
+        SummonCooldown = Number("summoncooldown");
         RelationsTable = _fields["relations"] == "-" ? null : _fields["relations"];
         ToAttack = _fields["toattack"];
         ToTarget = _fields["totarget"];
@@ -243,6 +260,7 @@ public sealed class CreatureAi
     public float RunFromHealth { get; }
     public float AvoidanceRange { get; }
     public bool IsTerritorial { get; }
+    public float SummonCooldown { get; }
     public string? RelationsTable { get; }
 
     public RelationRule? RelationTo(CreatureAi other)
@@ -284,7 +302,8 @@ public static class CreatureAiTable
         Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut,
         (float Input, float Output)[] CreatureDamageLut, Dictionary<string, List<RelationRule>> Relations, (float Spawn, float Respawn) Invisibility,
         Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
-        Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles, Dictionary<string, AttackMotion> Motions);
+        Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles, Dictionary<string, AttackMotion> Motions,
+        Dictionary<string, CreatureList> CreatureLists, Dictionary<string, MinionSpawn> MinionSpawns, Dictionary<string, Summon> Summons);
 
     private static readonly Lazy<Data> Table = new(Load);
 
@@ -293,13 +312,32 @@ public static class CreatureAiTable
         var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), [],
             [], new(StringComparer.OrdinalIgnoreCase), default,
             new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
-            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
+            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
+            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
             return data;
 
         static float Number(string value) => float.Parse(value, CultureInfo.InvariantCulture);
+
+        static (float Min, float Max) Range(string field)
+        {
+            var bounds = field.Split('=')[1].Split(':');
+            return (Number(bounds[0]), Number(bounds[1]));
+        }
+
+        static (string[] Values, bool Invert) Filter(string field)
+            => field == "*" ? ([], false) : (field.TrimStart('!').Split(','), field.StartsWith('!'));
+
+        static CreatureListEntry ListEntry(string field)
+        {
+            var entry = field.Split(':');
+            var difficulties = Filter(entry[3]);
+            var worldTypes = Filter(entry[4]);
+            return new CreatureListEntry(Number(entry[0]), entry[1] == "list", entry[2], difficulties.Values, difficulties.Invert,
+                worldTypes.Values, worldTypes.Invert);
+        }
 
         static ChargeStage Stage(string field)
         {
@@ -348,6 +386,19 @@ public static class CreatureAiTable
                     break;
                 case ["condition", var conditionName, var invert, var kind, ..]:
                     data.Conditions[conditionName] = new AiCondition(invert == "1", kind, parts.Length > 4 ? parts[4] : "");
+                    break;
+                case ["creaturelist", var listName2, var category, ..]:
+                    data.CreatureLists[listName2] = new CreatureList(category, [.. parts[3..].Select(ListEntry)]);
+                    break;
+                case ["minionspawn", var minionName, var count, var radius, var spawnAngle, var minionHome, var minionRoam]:
+                    var counts = Range(count);
+                    var radii = Range(radius);
+                    var angles = Range(spawnAngle);
+                    data.MinionSpawns[minionName] = new MinionSpawn((int)counts.Min, (int)counts.Max, radii.Min, radii.Max, angles.Min, angles.Max,
+                        Number(minionHome.Split('=')[1]), Number(minionRoam.Split('=')[1]));
+                    break;
+                case ["summon", var summonAction, var summonList, var summonParams, var summonType]:
+                    data.Summons[summonAction] = new Summon(summonList.Split('=')[1], summonParams.Split('=')[1], summonType.Split('=')[1]);
                     break;
                 case ["attackmotion", var motionAction, var offz, var arc, var activeOnly, var chargeStage, var activeStage, var recoverStage]:
                     data.Motions[motionAction] = new AttackMotion(Number(offz.Split('=')[1]), Number(arc.Split('=')[1]), activeOnly.EndsWith("=1"),
@@ -400,6 +451,12 @@ public static class CreatureAiTable
     public static bool TryGetSelectionTable(string name, out SelectionTableRule[] rules) => Table.Value.SelectionTables.TryGetValue(name, out rules!);
 
     public static bool TryGetSelectionList(string name, out SelectionListRule[] rules) => Table.Value.SelectionLists.TryGetValue(name, out rules!);
+
+    public static bool TryGetSummon(string action, out Summon summon) => Table.Value.Summons.TryGetValue(action, out summon!);
+
+    public static bool TryGetMinionSpawn(string name, out MinionSpawn spawn) => Table.Value.MinionSpawns.TryGetValue(name, out spawn!);
+
+    public static bool TryGetCreatureList(string name, out CreatureList list) => Table.Value.CreatureLists.TryGetValue(name, out list!);
 
     public static bool TryGetMotion(string action, out AttackMotion motion) => Table.Value.Motions.TryGetValue(action, out motion!);
 

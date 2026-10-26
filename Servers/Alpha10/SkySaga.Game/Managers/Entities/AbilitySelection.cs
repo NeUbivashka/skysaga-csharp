@@ -14,7 +14,8 @@ public enum AiBehaviour
     Spawn
 }
 
-public readonly record struct SelectionContext(AiBehaviour Behaviour, float Distance, bool CanPath, string[] TargetTags);
+public readonly record struct SelectionContext(AiBehaviour Behaviour, float Distance, bool CanPath, string[] TargetTags,
+    float HealthFraction = 1f, bool HasSpawnBudget = false, float SecondsSinceSummon = float.MaxValue);
 
 public static class AbilitySelection
 {
@@ -53,6 +54,9 @@ public static class AbilitySelection
             "behaviour" => Enum.TryParse<AiBehaviour>(condition.Argument, out var behaviour) && behaviour == context.Behaviour,
             "inrange" => WithAnyTag(ai, condition.Argument.Split(',')).Any(ability => context.Distance <= ability.AttackRange),
             "canpath" => context.CanPath,
+            "healthbelow" => context.HealthFraction <= float.Parse(condition.Argument, System.Globalization.CultureInfo.InvariantCulture),
+            "spawnbudget" => context.HasSpawnBudget,
+            "sincesummon" => context.SecondsSinceSummon > float.Parse(condition.Argument, System.Globalization.CultureInfo.InvariantCulture),
             "targetusing:TargetEntity" => condition.Argument.Split(',').Any(tag => context.TargetTags.Contains(tag, StringComparer.OrdinalIgnoreCase)),
             "constant" => condition.Argument == "True",
             "and" => condition.Argument.Split(',').All(part => Evaluate(ai, context, part)),
