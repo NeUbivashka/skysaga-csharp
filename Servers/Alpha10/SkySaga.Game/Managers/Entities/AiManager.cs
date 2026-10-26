@@ -45,6 +45,7 @@ public class AiManager
     private static readonly Dictionary<int, Brain> Brains = [];
     private static readonly List<Sound> Sounds = [];
     private static readonly Dictionary<int, (ActionStats Action, DateTime Until)> PlayerActions = [];
+    private static readonly Dictionary<int, DateTime> InvisibleUntil = [];
 
     private readonly IWorldManager _worldManager;
     private readonly PlayerConnectionManager _playerConnectionManager;
@@ -177,6 +178,16 @@ public class AiManager
         return true;
     }
 
+    public static void PlayerSpawned(Entity player, bool respawn)
+    {
+        var seconds = respawn ? CreatureAiTable.Invisibility.Respawn : CreatureAiTable.Invisibility.Spawn;
+        InvisibleUntil[player.Id] = DateTime.UtcNow.AddSeconds(seconds);
+
+        Console.WriteLine($"[AiManager] player {player.Id} is invisible to creatures for {seconds:0.#} s after {(respawn ? "respawning" : "spawning")}");
+    }
+
+    private static bool IsInvisible(int id, DateTime now) => InvisibleUntil.TryGetValue(id, out var until) && now < until;
+
     public static void PlayerActionStarted(Entity player, ActionStats action)
         => PlayerActions[player.Id] = (action, DateTime.UtcNow.AddSeconds(action.Duration));
 
@@ -236,7 +247,8 @@ public class AiManager
 
         var players = _playerConnectionManager.GetAllConnections()
             .Select(connection => connection.PlayerEntity)
-            .Where(player => player.TryGetComponent<ClientHealthComponent>(out var health) && !health.IsDead && Combat.PositionOf(player) is not null)
+            .Where(player => player.TryGetComponent<ClientHealthComponent>(out var health) && !health.IsDead && Combat.PositionOf(player) is not null
+                && !IsInvisible(player.Id, now))
             .ToList();
 
         foreach (var player in players)
@@ -798,6 +810,7 @@ public class AiManager
                 || Vector3.Distance(sound.Position, transform.Position) > ranges[(int)loudness]
                 || !_worldManager.EntityManager.TryGetEntity(sound.SourceId, out var source)
                 || !source.TryGetComponent<ClientPlayerAspectsComponent>(out _)
+                || IsInvisible(source.Id, now)
                 || source.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
                 continue;
 

@@ -234,7 +234,7 @@ public static class CreatureAiTable
 {
     private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness,
         Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut,
-        (float Input, float Output)[] CreatureDamageLut, Dictionary<string, List<RelationRule>> Relations,
+        (float Input, float Output)[] CreatureDamageLut, Dictionary<string, List<RelationRule>> Relations, (float Spawn, float Respawn) Invisibility,
         Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
         Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles);
 
@@ -243,7 +243,7 @@ public static class CreatureAiTable
     private static Data Load()
     {
         var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), [],
-            [], new(StringComparer.OrdinalIgnoreCase),
+            [], new(StringComparer.OrdinalIgnoreCase), default,
             new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
             new(StringComparer.OrdinalIgnoreCase));
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
@@ -263,6 +263,9 @@ public static class CreatureAiTable
             {
                 case ["damage", var lut]:
                     data = data with { DamageLut = Lut(lut) };
+                    break;
+                case ["invisibility", var onSpawn, var onRespawn]:
+                    data = data with { Invisibility = (Number(onSpawn.Split('=')[1]), Number(onRespawn.Split('=')[1])) };
                     break;
                 case ["damagecreature", var creatureLut]:
                     data = data with { CreatureDamageLut = Lut(creatureLut) };
@@ -329,6 +332,8 @@ public static class CreatureAiTable
     public static (float Input, float Output)[] DamageLut => Table.Value.DamageLut;
 
     public static (float Input, float Output)[] CreatureDamageLut => Table.Value.CreatureDamageLut;
+
+    public static (float Spawn, float Respawn) Invisibility => Table.Value.Invisibility;
 
     public static bool TryGetRelations(string table, out List<RelationRule> rules) => Table.Value.Relations.TryGetValue(table, out rules!);
 

@@ -1,5 +1,6 @@
 damage -100:5,-40:50,-10:80,0:125,10:290,20:1050
 damagecreature -20:65,-10:80,0:125,10:290,20:1050
+invisibility spawn=10 respawn=5
 spawnparams CustomSpawner_Cage home=20 roam=2
 spawnparams DebugAIFightingSpawner home=20 roam=5
 spawnparams DefaultHomeIsland_Spawner home=100 roam=0

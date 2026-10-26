@@ -150,6 +150,8 @@ def main():
     rows = ["damage " + ",".join(f"{p['Input']:g}:{p['Output']:g}" for p in lut)]
     rows.append("damagecreature " + ",".join(f"{p['Input']:g}:{p['Output']:g}"
                                              for p in geo["GlobalConstantsCombat"][0]["CreatureVersusCreatureDamage"]["ValueLookup"]))
+    constants = geo["GlobalConstants"][0]
+    rows.append(f"invisibility spawn={constants['AIInvisibilityOnSpawnTime']:g} respawn={constants['AIInvisibilityOnRespawnTime']:g}")
     rows += [f"spawnparams {spawn['Name']} home={spawn['HomeRange']:g} roam={spawn['MaxDistanceFromSpawnPosition']:g}"
              for spawn in geo["SpawnParams"]]
     rows += [f"loudness {event} {value['Loudness']}" for event, value in loudness.items() if value.get("Loudness")]

@@ -221,6 +221,7 @@ public class PlayerConnection
         var (position, yawDegrees) = WorldManager.GetRespawnPoint(CharacterId);
 
         Teleport(position, yawDegrees);
+        AiManager.PlayerSpawned(PlayerEntity, respawn: true);
 
         Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {position}.");
     }
