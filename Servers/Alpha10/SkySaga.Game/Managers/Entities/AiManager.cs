@@ -30,6 +30,7 @@ public class AiManager
     private const string VictoryTag = "EmoteVictory";
     private const string TauntTag = "EmoteTaunt";
     private const string CombatIdleTag = "EmoteCombatIdle";
+    private const string BroadcastTag = "EmoteBroadcast";
 
     private static readonly Dictionary<byte, string> Footsteps = new()
     {
@@ -80,6 +81,8 @@ public class AiManager
         public Vector3 DodgeDirection;
         public DateTime DodgeEndsAt;
         public DateTime NextDodge;
+        public bool BroadcastPending;
+        public DateTime NextBroadcast;
     }
 
     private sealed class Attack
@@ -350,8 +353,22 @@ public class AiManager
         {
             Face(transform, toTarget);
 
+            brain.BroadcastPending = true;
+
             if (Emote(entity, transform, ai, brain, AlertTag, ai.AlertTime, now))
                 return;
+        }
+
+        if (brain.BroadcastPending)
+        {
+            brain.BroadcastPending = false;
+
+            if (now >= brain.NextBroadcast && Emote(entity, transform, ai, brain, BroadcastTag, ai.BroadcastTime, now))
+            {
+                brain.NextBroadcast = now.AddSeconds(ai.BroadcastDelay);
+                CallAllies(entity, transform, ai, target, now);
+                return;
+            }
         }
 
         if (brain.Mode == AiReaction.Scared)
@@ -571,6 +588,39 @@ public class AiManager
         }
 
         return null;
+    }
+
+    private void CallAllies(Entity caller, TransformComponent from, CreatureAi ai, Entity target, DateTime now)
+    {
+        if (ai.EntityFamily is not string family)
+            return;
+
+        foreach (var entity in _worldManager.EntityManager.Entities)
+        {
+            if (entity.Id == caller.Id
+                || !Brains.TryGetValue(entity.Id, out var brain) || brain.TargetId != 0 || brain.ReturningHome
+                || !CreatureAiTable.TryGet(entity.Name, out var ally) || ally.EntityFamily != family
+                || ally.OnHearing is not (AiReaction.Aggressive or AiReaction.Scared)
+                || !entity.TryGetComponent<SmoothedTransformComponent>(out var transform)
+                || entity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead
+                || target.Id == brain.IgnoredTargetId && now < brain.IgnoreUntil)
+                continue;
+
+            var range = (brain.AsleepUntil is null ? ally.HearingRanges : ally.SleepHearingRanges)[(int)AiLoudness.Loud];
+            var distance = Vector3.Distance(transform.Position, from.Position);
+
+            if (distance > range)
+                continue;
+
+            Wake(entity, brain, now);
+            brain.TargetId = target.Id;
+            brain.Mode = ally.OnHearing;
+            brain.HuntUntil = now;
+            brain.KeepRange = range;
+            brain.JustHeard = true;
+
+            Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} answers the call of {caller.Name}#{caller.Id} at {distance:0.#} m: {ally.OnHearing} on {target.Id}");
+        }
     }
 
     private Vector3 BackOffDirection(CreatureAi ai, Vector3 away)

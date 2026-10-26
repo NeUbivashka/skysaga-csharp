@@ -179,6 +179,8 @@ def main():
             "quiet": hearing.get("Awake1QuietRange", 0), "normal": hearing.get("Awake2NormalRange", 0), "loud": hearing.get("Awake3LoudRange", 0),
             "sleepquiet": hearing.get("Sleep1QuietRange", 0), "sleepnormal": hearing.get("Sleep2NormalRange", 0), "sleeploud": hearing.get("Sleep3LoudRange", 0),
             "alert": anim.get("AlertTime", 0), "lost": anim.get("LostTime", 0),
+            "type": profile.get("EntityTypes") or "-",
+            "broadcast": anim.get("BroadcastTime", 0), "broadcastdelay": anim.get("BroadcastDelay", 0),
             "taunt": anim.get("TauntTime", 0), "ignoretaunt": persist.get("IgnoreAfterTauntTime", 0),
             "selection": fight.get("AbilitySelectionTable") or "-", "ranged": int(bool(fight.get("IsRangedFighter"))),
             "dodge": fight.get("DodgeProbability", 0), "dodgedistance": stat(creature, "DodgeDistance"),

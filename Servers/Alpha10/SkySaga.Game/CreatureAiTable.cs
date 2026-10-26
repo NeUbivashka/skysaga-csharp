@@ -83,6 +83,9 @@ public sealed class CreatureAi
         AlertTime = Number("alert");
         LostTime = Number("lost");
         TauntTime = Number("taunt");
+        EntityType = _fields["type"] == "-" ? null : _fields["type"];
+        BroadcastTime = Number("broadcast");
+        BroadcastDelay = Number("broadcastdelay");
         IgnoreAfterTauntTime = Number("ignoretaunt");
         Selection = _fields["selection"] == "-" ? null : _fields["selection"];
         IsRangedFighter = _fields["ranged"] == "1";
@@ -138,6 +141,10 @@ public sealed class CreatureAi
     public float AlertTime { get; }
     public float LostTime { get; }
     public float TauntTime { get; }
+    public string? EntityType { get; }
+    public string? EntityFamily => EntityType?.Split('-')[0];
+    public float BroadcastTime { get; }
+    public float BroadcastDelay { get; }
     public float IgnoreAfterTauntTime { get; }
     public string? Selection { get; }
     public bool IsRangedFighter { get; }
