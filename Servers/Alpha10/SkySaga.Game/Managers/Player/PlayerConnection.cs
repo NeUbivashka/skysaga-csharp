@@ -1,4 +1,5 @@
-﻿using SkySaga.Game.Packets;
+using SkySaga.Game.Database;
+using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
 
@@ -48,6 +49,9 @@ public class PlayerConnection
     public void OnDisconnected()
     {
         SaveState();
+
+        if (IsPlayerInitialized)
+            GameEvents.Record("player.leave", PlayerSaveStore.CharacterId);
 
         var removedItems = 0;
 
@@ -182,7 +186,10 @@ public class PlayerConnection
         if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
         {
             if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= RespawnDelaySeconds)
+            {
+                GameEvents.Record("player.death", PlayerSaveStore.CharacterId);
                 Respawn();
+            }
 
             health.Regenerate(DateTime.UtcNow);
         }

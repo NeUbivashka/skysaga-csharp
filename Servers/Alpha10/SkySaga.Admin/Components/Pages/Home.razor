@@ -1,0 +1,161 @@
+@page "/"
+@inject IDbContextFactory<SkySagaDbContext> Db
+@inject GameNames Names
+
+<PageTitle>Overview · SkySaga Control</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h4">Overview</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+</MudStack>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Database: @_error</MudAlert>
+}
+
+<MudGrid Spacing="3">
+    @foreach (var stat in _stats)
+    {
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <MudPaper Class="pa-4 stat-card" Elevation="0">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@stat.Icon" Style="@($"color:{stat.Color}")" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@stat.Label</MudText>
+                </MudStack>
+                <div class="stat-value mt-2">@stat.Value.ToString("N0")</div>
+            </MudPaper>
+        </MudItem>
+    }
+
+    <MudItem xs="12" lg="8">
+        <MudPaper Class="pa-4 section" Elevation="0">
+            <MudText Typo="Typo.h6">Activity, last 24 hours</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Game events per hour</MudText>
+            <MudChart T="double" ChartType="ChartType.Line" ChartSeries="_activity" ChartLabels="_hours" Width="100%" Height="280px" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" lg="4">
+        <MudPaper Class="pa-4 section" Elevation="0" Style="height:100%">
+            <MudText Typo="Typo.h6" Class="mb-2">Most held items</MudText>
+            @if (_topItems.Count == 0)
+            {
+                <MudText Class="mud-text-secondary">No items yet.</MudText>
+            }
+            @foreach (var item in _topItems)
+            {
+                <MudStack Row="true" Class="mt-2">
+                    <MudText Typo="Typo.body2">@item.Name</MudText>
+                    <MudSpacer />
+                    <MudText Typo="Typo.body2" Class="mono">@item.Count.ToString("N0")</MudText>
+                </MudStack>
+                <MudProgressLinear Color="Color.Primary" Rounded="true" Value="@(100.0 * item.Count / _topItems[0].Count)" />
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Class="pa-4 section" Elevation="0">
+            <MudText Typo="Typo.h6" Class="mb-2">Recently seen</MudText>
+            <MudTable Items="_recent" Dense="true" Hover="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Character</MudTh>
+                    <MudTh>Account</MudTh>
+                    <MudTh>Map</MudTh>
+                    <MudTh>Rank</MudTh>
+                    <MudTh>Last seen</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd><MudLink Href="@($"/players/{context.Id}")">@context.Name</MudLink></MudTd>
+                    <MudTd>@context.Account</MudTd>
+                    <MudTd>@(context.Map ?? "—")</MudTd>
+                    <MudTd>@context.Rank</MudTd>
+                    <MudTd>@Ago(context.LastSeen)</MudTd>
+                </RowTemplate>
+                <NoRecordsContent><MudText Class="mud-text-secondary">No characters yet.</MudText></NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private record Stat(string Label, string Icon, string Color, long Value);
+    private record TopItem(string Name, long Count);
+    private record RecentRow(Guid Id, string Name, string Account, string? Map, int Rank, DateTimeOffset? LastSeen);
+
+    private List<Stat> _stats = [];
+    private List<TopItem> _topItems = [];
+    private List<RecentRow> _recent = [];
+    private List<ChartSeries<double>> _activity = [];
+    private string[] _hours = [];
+    private string? _error;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            await using var db = await Db.CreateDbContextAsync();
+            var since = DateTimeOffset.UtcNow.AddHours(-24);
+
+            _stats =
+            [
+                new("Accounts", Icons.Material.Filled.Badge, "#7dd3fc", await db.Accounts.LongCountAsync()),
+                new("Characters", Icons.Material.Filled.Person, "#a78bfa", await db.Characters.LongCountAsync()),
+                new("Worlds", Icons.Material.Filled.Public, "#34d399", await db.Worlds.LongCountAsync()),
+                new("Voxel edits", Icons.Material.Filled.ViewInAr, "#fbbf24", await db.VoxelEdits.LongCountAsync()),
+                new("Devices", Icons.Material.Filled.Inventory2, "#f472b6", await db.PlacedDevices.LongCountAsync()),
+                new("Events, 24 h", Icons.Material.Filled.Bolt, "#f87171", await db.GameEvents.LongCountAsync(e => e.Time >= since))
+            ];
+
+            var perHour = await db.GameEvents.Where(e => e.Time >= since)
+                .GroupBy(e => new { e.Time.Year, e.Time.Month, e.Time.Day, e.Time.Hour })
+                .Select(g => new { g.Key.Year, g.Key.Month, g.Key.Day, g.Key.Hour, Count = g.Count() })
+                .ToListAsync();
+
+            var start = DateTimeOffset.UtcNow.AddHours(-23);
+            var buckets = Enumerable.Range(0, 24).Select(i => start.AddHours(i)).ToList();
+            _hours = [.. buckets.Select((b, i) => i % 3 == 0 ? b.ToLocalTime().ToString("HH:00") : "")];
+            _activity =
+            [
+                new ChartSeries<double>
+                {
+                    Name = "Events",
+                    Data = new ChartData<double>([.. buckets.Select(b => (double)(perHour.FirstOrDefault(p => p.Year == b.Year && p.Month == b.Month && p.Day == b.Day && p.Hour == b.Hour)?.Count ?? 0))])
+                }
+            ];
+
+            var items = await db.InventoryItems.GroupBy(i => i.NameHash)
+                .Select(g => new { NameHash = g.Key, Count = g.Sum(i => (long)i.Count) })
+                .OrderByDescending(g => g.Count).Take(8).ToListAsync();
+            _topItems = [.. items.Select(i => new TopItem(Names.Item(i.NameHash), i.Count))];
+
+            _recent = [.. await db.Characters.OrderByDescending(c => c.LastSeenAt).Take(10)
+                .Select(c => new RecentRow(c.Id, c.Name, c.Account!.Username, c.PositionMap,
+                    c.Jobs.Where(j => j.Name == "Unified").Select(j => (int)j.Rank).FirstOrDefault(), c.LastSeenAt))
+                .ToListAsync()];
+
+            _error = null;
+        }
+        catch (Exception exception)
+        {
+            _error = exception.GetBaseException().Message;
+        }
+    }
+
+    private static string Ago(DateTimeOffset? time)
+    {
+        if (time is not DateTimeOffset value)
+            return "never";
+
+        var span = DateTimeOffset.UtcNow - value;
+
+        return span.TotalMinutes < 1 ? "just now"
+            : span.TotalHours < 1 ? $"{(int)span.TotalMinutes} min ago"
+            : span.TotalDays < 1 ? $"{(int)span.TotalHours} h ago"
+            : $"{(int)span.TotalDays} d ago";
+    }
+}

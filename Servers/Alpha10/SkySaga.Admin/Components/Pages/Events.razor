@@ -1,0 +1,68 @@
+@page "/events"
+@inject IDbContextFactory<SkySagaDbContext> Db
+
+<PageTitle>Events · SkySaga Control</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h4">Events</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+</MudStack>
+
+<MudPaper Class="pa-4 section" Elevation="0">
+    <MudDataGrid T="EventRow" Items="_rows" QuickFilter="Matches" Dense="true" Hover="true" Elevation="0">
+        <ToolBarContent>
+            <MudTextField @bind-Value="_search" Placeholder="Filter by kind, character or data" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.FilterList" Immediate="true" Clearable="true" Class="mt-0" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Time" Title="Time" Format="yyyy-MM-dd HH:mm:ss" />
+            <TemplateColumn Title="Kind" SortBy="x => x.Kind">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@KindColor(context.Item.Kind)">@context.Item.Kind</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Character" Title="Character" />
+            <TemplateColumn Title="Data">
+                <CellTemplate><span class="mono">@context.Item.Data</span></CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent><MudText Class="mud-text-secondary">No events recorded yet.</MudText></NoRecordsContent>
+        <PagerContent><MudDataGridPager T="EventRow" /></PagerContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private record EventRow(DateTimeOffset Time, string Kind, string? Character, string? Data);
+
+    private List<EventRow> _rows = [];
+    private string _search = "";
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Db.CreateDbContextAsync();
+
+        var names = await db.Characters.ToDictionaryAsync(c => c.Id, c => c.Name);
+        var events = await db.GameEvents.AsNoTracking().OrderByDescending(e => e.Time).Take(2000).ToListAsync();
+
+        _rows = [.. events.Select(e => new EventRow(e.Time.ToLocalTime(), e.Kind,
+            e.CharacterId is Guid id && names.TryGetValue(id, out var name) ? name : null, e.Data))];
+    }
+
+    private bool Matches(EventRow row)
+        => string.IsNullOrWhiteSpace(_search)
+           || row.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
+           || (row.Character?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false)
+           || (row.Data?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private static Color KindColor(string kind) => kind.Split('.')[0] switch
+    {
+        "admin" => Color.Secondary,
+        "player" => Color.Info,
+        "combat" => Color.Error,
+        "world" => Color.Success,
+        _ => Color.Default
+    };
+}

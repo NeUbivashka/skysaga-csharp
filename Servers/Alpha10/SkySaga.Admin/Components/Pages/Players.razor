@@ -1,0 +1,68 @@
+@page "/players"
+@inject IDbContextFactory<SkySagaDbContext> Db
+@inject NavigationManager Navigation
+
+<PageTitle>Players · SkySaga Control</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Players</MudText>
+
+<MudPaper Class="pa-4 section" Elevation="0">
+    <MudDataGrid T="PlayerRow" Items="_rows" QuickFilter="Matches" Hover="true" Dense="true" Elevation="0"
+                 RowClick="@(args => Navigation.NavigateTo($"/players/{args.Item.Id}"))" RowStyle="cursor:pointer">
+        <ToolBarContent>
+            <MudTextField @bind-Value="_search" Placeholder="Search by character or account" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Class="mt-0" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="Character" />
+            <PropertyColumn Property="x => x.Account" Title="Account" />
+            <TemplateColumn Title="Role" SortBy="x => x.Role">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(context.Item.Role == AccountRole.Player ? Color.Default : Color.Secondary)">@context.Item.Role</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Rank" Title="Rank" />
+            <PropertyColumn Property="x => x.Map" Title="Map" />
+            <PropertyColumn Property="x => x.Items" Title="Items" />
+            <TemplateColumn Title="Status" SortBy="x => x.Banned">
+                <CellTemplate>
+                    @if (context.Item.Banned)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Block">Banned</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Active</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.LastSeen" Title="Last seen" Format="yyyy-MM-dd HH:mm" />
+        </Columns>
+        <NoRecordsContent><MudText Class="mud-text-secondary">No characters yet.</MudText></NoRecordsContent>
+        <PagerContent><MudDataGridPager T="PlayerRow" /></PagerContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private record PlayerRow(Guid Id, string Name, string Account, AccountRole Role, int Rank, string? Map, int Items, bool Banned, DateTimeOffset? LastSeen);
+
+    private List<PlayerRow> _rows = [];
+    private string _search = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+
+        _rows = await db.Characters.OrderBy(c => c.Name)
+            .Select(c => new PlayerRow(c.Id, c.Name, c.Account!.Username, c.Account.Role,
+                c.Jobs.Where(j => j.Name == "Unified").Select(j => (int)j.Rank).FirstOrDefault(),
+                c.PositionMap, c.Inventory.Count, c.Account.BannedUntil > now, c.LastSeenAt))
+            .ToListAsync();
+    }
+
+    private bool Matches(PlayerRow row)
+        => string.IsNullOrWhiteSpace(_search)
+           || row.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
+           || row.Account.Contains(_search, StringComparison.OrdinalIgnoreCase);
+}

@@ -1,0 +1,83 @@
+@page "/worlds"
+@inject IDbContextFactory<SkySagaDbContext> Db
+@inject GameNames Names
+
+<PageTitle>Worlds · SkySaga Control</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Worlds</MudText>
+
+<MudGrid Spacing="3">
+    @foreach (var world in _worlds)
+    {
+        <MudItem xs="12" md="6" lg="4">
+            <MudPaper Class="pa-4 stat-card" Elevation="0" Style="cursor:pointer" @onclick="() => SelectAsync(world.Id)">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Public" Style="color:#34d399" />
+                    <MudText Typo="Typo.h6">@world.MapName</MudText>
+                </MudStack>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary mono">@world.Id</MudText>
+                <MudStack Row="true" Class="mt-3" Spacing="4">
+                    <div><div class="stat-value">@world.Edits.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">voxel edits</MudText></div>
+                    <div><div class="stat-value">@world.Devices.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">devices</MudText></div>
+                    <div><div class="stat-value">@world.Checkpoints.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">checkpoints</MudText></div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    }
+    @if (_worlds.Count == 0)
+    {
+        <MudItem xs="12"><MudText Class="mud-text-secondary">No worlds yet. A world appears when the game server loads its map.</MudText></MudItem>
+    }
+
+    @if (_devices is not null)
+    {
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 section" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-2">Placed devices</MudText>
+                <MudTable Items="_devices" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Device</MudTh>
+                        <MudTh>Position</MudTh>
+                        <MudTh>Owner</MudTh>
+                        <MudTh>Contents</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@Names.Item(context.ItemCrc)</MudTd>
+                        <MudTd Class="mono">@context.X, @context.Y, @context.Z</MudTd>
+                        <MudTd>@(context.OwnerCharacterId is Guid owner && _owners.TryGetValue(owner, out var name) ? name : "—")</MudTd>
+                        <MudTd Class="mono">@(context.Items == "[]" ? "empty" : $"{context.Items.Length} bytes")</MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent><MudText Class="mud-text-secondary">No devices placed.</MudText></NoRecordsContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private record WorldRow(Guid Id, string MapName, int Edits, int Devices, int Checkpoints);
+
+    private List<WorldRow> _worlds = [];
+    private List<PlacedDevice>? _devices;
+    private Dictionary<Guid, string> _owners = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Db.CreateDbContextAsync();
+
+        _worlds = await db.Worlds.OrderBy(w => w.MapName)
+            .Select(w => new WorldRow(w.Id, w.MapName,
+                db.VoxelEdits.Count(e => e.WorldId == w.Id),
+                db.PlacedDevices.Count(d => d.WorldId == w.Id),
+                db.Checkpoints.Count(c => c.WorldId == w.Id)))
+            .ToListAsync();
+
+        _owners = await db.Characters.ToDictionaryAsync(c => c.Id, c => c.Name);
+    }
+
+    private async Task SelectAsync(Guid worldId)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        _devices = await db.PlacedDevices.AsNoTracking().Where(d => d.WorldId == worldId).OrderBy(d => d.Id).ToListAsync();
+    }
+}
