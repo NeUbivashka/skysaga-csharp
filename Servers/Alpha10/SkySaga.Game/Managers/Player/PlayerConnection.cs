@@ -1,4 +1,5 @@
 using SkySaga.Game.Components;
+using SkySaga.Game.Database;
 using SkySaga.Game.Packets;
 
 namespace SkySaga.Game.Managers.Player;
@@ -60,6 +61,9 @@ public class PlayerConnection
     {
         SaveState();
 
+        if (IsPlayerInitialized)
+            GameEvents.Record("player.leave", Identity.CharacterUuid);
+
         var removedItems = 0;
 
         if (PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
@@ -110,7 +114,7 @@ public class PlayerConnection
         data.LookPitch = LookPitch;
         data.CompletedNarrativeIndices = [.. CompletedNarrativeIndices];
 
-        PlayerSaveStore.Save(data, saveFileName);
+        PlayerSaveStore.Save(data, Identity.CharacterUuid, Identity.Name, saveFileName);
     }
 
     public bool ProcessPacket(PacketId packetId, BitStream bitStream)
@@ -201,7 +205,10 @@ public class PlayerConnection
         if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
         {
             if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= RespawnDelaySeconds)
+            {
+                GameEvents.Record("player.death", Identity.CharacterUuid);
                 Respawn();
+            }
 
             health.Regenerate(DateTime.UtcNow);
         }

@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SkySaga.RakNet\SkySaga.RakNet.csproj" />
     <ProjectReference Include="..\SkySaga.ChatCommunication\SkySaga.ChatCommunication.csproj" />
+    <ProjectReference Include="..\SkySaga.Data\SkySaga.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -111,6 +112,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\AdventureJungle01.json" Condition="Exists('Data\AdventureJungle01.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\database.local.json" Condition="Exists('Data\database.local.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\WorldMap.json" Condition="Exists('Data\WorldMap.json')">

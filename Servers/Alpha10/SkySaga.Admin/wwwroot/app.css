@@ -1,0 +1,32 @@
+html, body {
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.85rem;
+}
+
+.brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: linear-gradient(90deg, #7dd3fc, #fbbf24);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.stat-card {
+    border: 1px solid rgba(125, 211, 252, 0.12);
+    background: linear-gradient(160deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0) 60%);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.section {
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}

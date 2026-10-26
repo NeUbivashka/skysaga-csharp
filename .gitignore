@@ -414,3 +414,6 @@ Servers/*.rar
 *.rar
 *.zip
 *.7z
+
+Servers/*/SkySaga.Game/Data/database.local.json
+Servers/*/Database/*.local.sql

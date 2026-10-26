@@ -1,3 +1,4 @@
+using SkySaga.Game.Database;
 using System.Linq;
 
 namespace SkySaga.Game.Managers.Entities;
@@ -99,6 +100,7 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
+        GameEvents.Record("combat.kill", connection.Identity.CharacterUuid, new { creature = target.Name });
 
         JobChallengeProgress.Killed(connection, target, usedItemCrc, wasUnhurt);
         JobExperience.Grinder(connection, "Grinder_Kill", targetCrc: Util.ComputeCrc32(target.Name));

@@ -37,6 +37,22 @@ catch
     return;
 }
 
+try
+{
+    SkySaga.Game.Database.GameDatabase.Initialize();
+}
+catch (Exception exception)
+{
+    Console.WriteLine($"""
+        The database is not available: {exception.GetBaseException().Message}
+        Press any key to continue . . .
+        """);
+
+    Console.ReadKey();
+
+    return;
+}
+
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
@@ -63,6 +79,8 @@ var builder = Host.CreateDefaultBuilder(args)
 var host = builder.Build();
 
 await host.RunAsync();
+
+await SkySaga.Game.Database.GameDatabase.FlushAsync();
 
 Console.WriteLine("""
         Server has stopped.

@@ -39,6 +39,41 @@ cd Servers/Alpha10
 dotnet build Servers.sln
 ```
 
+### Database
+
+The game server keeps accounts, characters, inventories, worlds, voxel edits, placed devices and an event log in
+PostgreSQL (EF Core, schema in `Servers/Alpha10/SkySaga.Data`). It applies migrations itself on start and will not start
+without a database.
+
+1. Install PostgreSQL (the Windows installer from postgresql.org is fine).
+2. Create a role and a database for the server, for example:
+
+   ```sql
+   CREATE ROLE skysaga LOGIN PASSWORD '<password>';
+   CREATE DATABASE skysaga OWNER skysaga ENCODING 'UTF8' TEMPLATE template0;
+   ```
+
+3. Give the server the connection string, either in the `SKYSAGA_DB` environment variable or in
+   `Servers/Alpha10/SkySaga.Game/Data/database.local.json` (ignored by git):
+
+   ```json
+   { "ConnectionString": "Host=127.0.0.1;Port=5432;Database=skysaga;Username=skysaga;Password=<password>" }
+   ```
+
+On the first start the old JSON saves (`Data/Saves/player.json`, `voxel_edits_*`, `devices_*`, `checkpoints_*`) are
+imported and renamed to `*.imported`.
+
+### Admin panel
+
+`Servers/Alpha10/SkySaga.Admin` is a Blazor web panel over the same database: overview with charts, players (profile,
+inventory, jobs, bans), worlds and devices, event log. It reads the connection the same way as the game server.
+
+```bash
+dotnet run --project Servers/Alpha10/SkySaga.Admin
+```
+
+It listens on http://127.0.0.1:5280 only; it has no login yet.
+
 - `SkySaga.Game` P/Invokes `RakNet.dll` (Windows PE), so the game server currently runs on **Windows only**.
 - `SkySaga.Web` and `SmilegateAuth` also run on Linux; a container stack is provided:
 

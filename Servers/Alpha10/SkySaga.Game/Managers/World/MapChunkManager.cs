@@ -1,4 +1,5 @@
 using System.Linq;
+using SkySaga.Game.Database;
 
 namespace SkySaga.Game.Managers.World;
 
@@ -71,51 +72,48 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
     public void LoadSavedEdits()
     {
+        ImportLegacyEdits();
+
+        var edits = WorldStore.LoadVoxelEdits();
+
+        lock (_editsLock)
+        {
+            foreach (var (x, y, z, block) in edits)
+            {
+                if (x < 0 || y < 0 || z < 0)
+                    continue;
+
+                var world = new Vector3Int(x, y, z);
+                var chunkPosition = new Vector3Int(world.X / ChunkSize, world.Y / ChunkSize, world.Z / ChunkSize);
+
+                if (!_chunks.TryGetValue(chunkPosition, out var chunk))
+                    continue;
+
+                chunk.SetVoxel(new Vector3Int(world.X % ChunkSize, world.Y % ChunkSize, world.Z % ChunkSize), block);
+                _edits[world] = block;
+            }
+        }
+
+        Console.WriteLine($"[World] Applied {_edits.Count} saved voxel edits");
+    }
+
+    private static void ImportLegacyEdits()
+    {
         var legacy = !File.Exists(EditsPath);
         var path = legacy ? LegacyEditsPath : EditsPath;
 
         if (!File.Exists(path))
             return;
 
-        int[][]? entries;
-
-        try
-        {
-            entries = JsonSerializer.Deserialize<int[][]>(File.ReadAllText(path));
-        }
-        catch (Exception ex) when (ex is JsonException or IOException)
-        {
-            Console.WriteLine($"[World] Failed to read '{path}': {ex.Message}");
-            return;
-        }
-
-        if (entries is null)
-            return;
+        var entries = JsonSerializer.Deserialize<int[][]>(File.ReadAllText(path)) ?? [];
 
         if (legacy)
             foreach (var entry in entries)
                 if (entry.Length == 4 && entry[3] == LegacyAir)
                     entry[3] = WorldChunk.Air;
 
-        lock (_editsLock)
-        {
-            foreach (var entry in entries)
-            {
-                if (entry.Length != 4 || entry[0] < 0 || entry[1] < 0 || entry[2] < 0)
-                    continue;
-
-                var world = new Vector3Int(entry[0], entry[1], entry[2]);
-                var chunkPosition = new Vector3Int(world.X / ChunkSize, world.Y / ChunkSize, world.Z / ChunkSize);
-
-                if (!_chunks.TryGetValue(chunkPosition, out var chunk))
-                    continue;
-
-                chunk.SetVoxel(new Vector3Int(world.X % ChunkSize, world.Y % ChunkSize, world.Z % ChunkSize), (byte)entry[3]);
-                _edits[world] = (byte)entry[3];
-            }
-        }
-
-        Console.WriteLine($"[World] Applied {_edits.Count} saved voxel edits");
+        WorldStore.ImportVoxelEdits(entries.Where(e => e.Length == 4).Select(e => (e[0], e[1], e[2], (byte)e[3])));
+        WorldStore.MarkImported(path);
     }
 
     private void RecordEdit(Vector3Int chunkPosition, Vector3Int voxelPosition, byte blockType)
@@ -126,21 +124,9 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
             chunkPosition.Z * ChunkSize + voxelPosition.Z);
 
         lock (_editsLock)
-        {
             _edits[world] = blockType;
 
-            var entries = _edits.Select(e => new[] { e.Key.X, e.Key.Y, e.Key.Z, e.Value }).ToArray();
-
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(EditsPath)!);
-                File.WriteAllText(EditsPath, JsonSerializer.Serialize(entries));
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"[World] Failed to save voxel edits: {ex.Message}");
-            }
-        }
+        WorldStore.SaveVoxelEdit(world.X, world.Y, world.Z, blockType);
     }
 
     public static PartialChunkEditsSync GetPartialChunkEditSync(Vector3Int chunkPosition, Vector3Int voxelPosition, byte oldBlockType, byte newBlockType)

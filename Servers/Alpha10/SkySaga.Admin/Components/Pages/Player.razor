@@ -1,0 +1,170 @@
+@page "/players/{Id:guid}"
+@inject IDbContextFactory<SkySagaDbContext> Db
+@inject GameNames Names
+@inject ISnackbar Snackbar
+
+<PageTitle>@(_character?.Name ?? "Player") · SkySaga Control</PageTitle>
+
+@if (_character is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="3">
+    <MudAvatar Color="Color.Primary" Size="Size.Large">@_character.Name[..1]</MudAvatar>
+    <div>
+        <MudText Typo="Typo.h4">@_character.Name</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mono">@_character.Id</MudText>
+    </div>
+    <MudSpacer />
+    @if (_account!.BannedUntil > DateTimeOffset.UtcNow)
+    {
+        <MudChip T="string" Color="Color.Error" Icon="@Icons.Material.Filled.Block">Banned until @_account.BannedUntil?.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudChip>
+        <MudButton Variant="Variant.Outlined" Color="Color.Success" OnClick="UnbanAsync">Lift ban</MudButton>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block" OnClick="BanAsync">Ban 7 days</MudButton>
+    }
+</MudStack>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4 section" Elevation="0">
+            <MudText Typo="Typo.h6" Class="mb-3">Profile</MudText>
+            <MudSimpleTable Dense="true" Elevation="0">
+                <tbody>
+                    <tr><td>Account</td><td>@_account.Username</td></tr>
+                    <tr><td>Role</td><td>@_account.Role</td></tr>
+                    <tr><td>Created</td><td>@_character.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td></tr>
+                    <tr><td>Last seen</td><td>@(_character.LastSeenAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "never")</td></tr>
+                    <tr><td>Health</td><td>@_character.WholeHearts hearts</td></tr>
+                    <tr><td>Map</td><td>@(_character.PositionMap ?? "—")</td></tr>
+                    <tr><td>Position</td><td class="mono">@($"{_character.PositionX:0.#}, {_character.PositionY:0.#}, {_character.PositionZ:0.#}")</td></tr>
+                    <tr><td>Recipes</td><td>@(_character.KnownRecipes?.Count ?? 0)</td></tr>
+                    <tr><td>Emotes</td><td>@(_character.AvailableEmotes?.Count ?? 0)</td></tr>
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 mt-3 section" Elevation="0">
+            <MudText Typo="Typo.h6" Class="mb-3">Jobs</MudText>
+            @foreach (var job in _character.Jobs.OrderBy(j => j.Name))
+            {
+                <MudStack Row="true" Class="mt-2">
+                    <MudText Typo="Typo.body2">@job.Name</MudText>
+                    <MudSpacer />
+                    <MudText Typo="Typo.body2">Rank @job.Rank</MudText>
+                </MudStack>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary mono">@job.Experience.ToString("N0") XP</MudText>
+            }
+        </MudPaper>
+
+        <MudPaper Class="pa-4 mt-3 section" Elevation="0">
+            <MudText Typo="Typo.h6" Class="mb-3">Wallet</MudText>
+            @foreach (var currency in _character.Currencies)
+            {
+                <MudStack Row="true">
+                    <MudText Typo="Typo.body2">@Names.Item(currency.NameHash)</MudText>
+                    <MudSpacer />
+                    <MudText Typo="Typo.body2" Class="mono">@currency.Value.ToString("N0")</MudText>
+                </MudStack>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4 section" Elevation="0">
+            <MudText Typo="Typo.h6" Class="mb-3">Inventory</MudText>
+            <MudTable Items="_character.Inventory.OrderBy(i => i.Slot)" Dense="true" Hover="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Slot</MudTh>
+                    <MudTh>Item</MudTh>
+                    <MudTh>Count</MudTh>
+                    <MudTh>Materials</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(context.Slot < 9 ? Color.Secondary : Color.Default)">@(context.Slot < 9 ? $"Equip {context.Slot}" : $"{context.Slot}")</MudChip>
+                    </MudTd>
+                    <MudTd>@Names.Item(context.NameHash)</MudTd>
+                    <MudTd Class="mono">@context.Count</MudTd>
+                    <MudTd>
+                        @foreach (var material in context.Materials ?? [])
+                        {
+                            if (material is long value)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@Names.Item(value)</MudChip>
+                            }
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent><MudText Class="mud-text-secondary">Empty.</MudText></NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 mt-3 section" Elevation="0">
+            <MudText Typo="Typo.h6" Class="mb-3">Active challenges</MudText>
+            @if (_character.ActiveChallenges.Count == 0)
+            {
+                <MudText Class="mud-text-secondary">None.</MudText>
+            }
+            @foreach (var challenge in _character.ActiveChallenges)
+            {
+                <MudStack Row="true">
+                    <MudText Typo="Typo.body2">@challenge.Name</MudText>
+                    <MudSpacer />
+                    <MudText Typo="Typo.body2" Class="mono">@challenge.Progress</MudText>
+                </MudStack>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Character? _character;
+    private Account? _account;
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Db.CreateDbContextAsync();
+
+        _character = await db.Characters.AsNoTracking()
+            .Include(c => c.Account)
+            .Include(c => c.Inventory)
+            .Include(c => c.Jobs)
+            .Include(c => c.Currencies)
+            .Include(c => c.ActiveChallenges)
+            .AsSplitQuery()
+            .SingleOrDefaultAsync(c => c.Id == Id);
+
+        _account = _character?.Account;
+    }
+
+    private Task BanAsync() => SetBanAsync(DateTimeOffset.UtcNow.AddDays(7), "Banned from the admin panel");
+
+    private Task UnbanAsync() => SetBanAsync(null, null);
+
+    private async Task SetBanAsync(DateTimeOffset? until, string? reason)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        await db.Accounts.Where(a => a.Id == _account!.Id)
+            .ExecuteUpdateAsync(set => set.SetProperty(a => a.BannedUntil, until).SetProperty(a => a.BanReason, reason));
+
+        db.GameEvents.Add(new GameEvent
+        {
+            Time = DateTimeOffset.UtcNow,
+            Kind = until is null ? "admin.unban" : "admin.ban",
+            CharacterId = _character!.Id
+        });
+        await db.SaveChangesAsync();
+
+        Snackbar.Add(until is null ? "Ban lifted" : "Account banned for 7 days", until is null ? Severity.Success : Severity.Warning);
+        await LoadAsync();
+    }
+}

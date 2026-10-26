@@ -18,7 +18,9 @@ public class PlayerInitializer(IWorldManager worldManager)
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(connection);
 
-        var save = connection.SaveFileName is { } saveFileName ? PlayerSaveStore.Load(saveFileName) : null;
+        var save = connection.SaveFileName is { } saveFileName
+            ? PlayerSaveStore.Load(connection.Identity.CharacterUuid, connection.Identity.Name, saveFileName)
+            : null;
         if (save?.CompletedNarrativeIndices is { } completedNarratives)
             connection.CompletedNarrativeIndices.UnionWith(completedNarratives);
 
@@ -320,7 +322,8 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
 
         if (save is null && connection.SaveFileName is { } newSaveFileName)
-            PlayerSaveStore.Save(CaptureSaveData(player), newSaveFileName);
+            PlayerSaveStore.Save(CaptureSaveData(player), connection.Identity.CharacterUuid,
+                connection.Identity.Name, newSaveFileName);
     }
 
     public PlayerSaveData CaptureSaveData(Entity player)

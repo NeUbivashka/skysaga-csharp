@@ -1,3 +1,4 @@
+using SkySaga.Game.Database;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -727,18 +728,14 @@ public sealed class WorldManager : IWorldManager, IDisposable
             _devices.Clear();
             _deviceEntities.Clear();
 
-            if (!File.Exists(DevicesPath))
-                return;
+            if (File.Exists(DevicesPath))
+            {
+                var legacy = JsonSerializer.Deserialize<List<PlacedDevice>>(File.ReadAllText(DevicesPath)) ?? [];
+                WorldStore.SaveDevices(legacy.Select(ToRecord), wait: true);
+                WorldStore.MarkImported(DevicesPath);
+            }
 
-            try
-            {
-                _devices.AddRange(System.Text.Json.JsonSerializer.Deserialize<List<PlacedDevice>>(File.ReadAllText(DevicesPath)) ?? []);
-            }
-            catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
-            {
-                Console.WriteLine($"[WorldManager] Failed to read '{DevicesPath}': {ex.Message}");
-                return;
-            }
+            _devices.AddRange(WorldStore.LoadDevices().Select(FromRecord));
 
             foreach (var placed in _devices)
                 if (DeviceTable.TryGet(placed.ItemCrc, out var device))
@@ -748,18 +745,24 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
     }
 
-    private void SaveDevices()
+    private void SaveDevices() => WorldStore.SaveDevices(_devices.Select(ToRecord));
+
+    private static Data.Entities.PlacedDevice ToRecord(PlacedDevice device) => new()
     {
-        try
+        ItemCrc = device.ItemCrc,
+        X = device.X,
+        Y = device.Y,
+        Z = device.Z,
+        OwnerCharacterId = device.Owner,
+        Materials = [.. device.Materials.Select(m => (long?)m)],
+        Items = JsonSerializer.Serialize(device.Items)
+    };
+
+    private static PlacedDevice FromRecord(Data.Entities.PlacedDevice record)
+        => new((uint)record.ItemCrc, record.X, record.Y, record.Z, record.OwnerCharacterId, [.. record.Materials.Select(m => (uint?)m)])
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(DevicesPath)!);
-            File.WriteAllText(DevicesPath, System.Text.Json.JsonSerializer.Serialize(_devices));
-        }
-        catch (IOException ex)
-        {
-            Console.WriteLine($"[WorldManager] Failed to save '{DevicesPath}': {ex.Message}");
-        }
-    }
+            Items = JsonSerializer.Deserialize<List<StoredItem?>>(record.Items) ?? []
+        };
 
     private const int ChunkSize = 32;
 
@@ -802,36 +805,22 @@ public sealed class WorldManager : IWorldManager, IDisposable
             return;
 
         lock (_checkpoints)
-        {
             _checkpoints[character] = [transform.Position.X, transform.Position.Y, transform.Position.Z];
 
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(CheckpointsPath)!);
-                File.WriteAllText(CheckpointsPath, System.Text.Json.JsonSerializer.Serialize(_checkpoints));
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"[WorldManager] Failed to save '{CheckpointsPath}': {ex.Message}");
-            }
-        }
+        WorldStore.SaveCheckpoint(character, transform.Position.X, transform.Position.Y, transform.Position.Z);
 
         Console.WriteLine($"[Checkpoint] {character} -> {checkpoint.Name}#{checkpoint.Id} at {transform.Position}");
     }
 
     private static Dictionary<Guid, float[]> LoadCheckpoints()
     {
-        try
+        if (File.Exists(CheckpointsPath))
         {
-            if (File.Exists(CheckpointsPath))
-                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<Guid, float[]>>(File.ReadAllText(CheckpointsPath)) ?? [];
-        }
-        catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
-        {
-            Console.WriteLine($"[WorldManager] Failed to read '{CheckpointsPath}': {ex.Message}");
+            WorldStore.ImportCheckpoints(JsonSerializer.Deserialize<Dictionary<Guid, float[]>>(File.ReadAllText(CheckpointsPath)) ?? []);
+            WorldStore.MarkImported(CheckpointsPath);
         }
 
-        return [];
+        return WorldStore.LoadCheckpoints();
     }
 
     private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition)
@@ -1145,9 +1134,13 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (player.TryGetComponent<SmoothedTransformComponent>(out var transform))
             connection.LookYaw = transform.YawDegrees;
 
-        connection.LookPitch = connection.SaveFileName is { } saveFileName ? PlayerSaveStore.Load(saveFileName)?.LookPitch ?? 0f : 0f;
+        connection.LookPitch = connection.SaveFileName is { } saveFileName
+            ? PlayerSaveStore.Load(connection.Identity.CharacterUuid, connection.Identity.Name, saveFileName)?.LookPitch ?? 0f
+            : 0f;
 
         connection.IsPlayerInitialized = true;
+
+        GameEvents.Record("player.join", connection.Identity.CharacterUuid, new { map = WorldStore.MapName });
 
         foreach (var entity in InventoryFirst(EntityManager.Entities))
         {
