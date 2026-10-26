@@ -132,6 +132,7 @@ public class PlayerConnection
             PacketId.TodoListTaskRemove => TodoListTaskRemove.Handle(this, bitStream),
             PacketId.InventoryArrange => InventoryArrange.Handle(this, bitStream),
             PacketId.InventorySort => InventorySort.Handle(this, bitStream),
+            PacketId.InventoryCompact => InventoryCompact.Handle(this, bitStream),
             PacketId.UISettingsSetMiniMapSettings => UISettingsSetMiniMapSettings.Handle(this, bitStream),
             PacketId.SetEmoteBinding => SetEmoteBinding.Handle(this, bitStream),
             PacketId.SetCurrentEmote => SetCurrentEmote.Handle(this, bitStream),

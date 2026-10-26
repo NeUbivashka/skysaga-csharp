@@ -5,20 +5,30 @@ body:
   - type: input
     id: build
     attributes:
-      label: Client build
-      placeholder: 38328 (Beta1)
+      label: Client build and server commit
+      placeholder: 36731, server commit abc1234
     validations:
       required: true
+  - type: input
+    id: map
+    attributes:
+      label: Map
+      placeholder: TestZoo / Forest island / ...
   - type: textarea
     id: what
     attributes:
       label: What happened
-      description: Steps to reproduce, expected vs actual behaviour.
+      description: Exact steps to reproduce, expected result, actual result.
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Logs
-      description: Relevant server.log / console output. Remove IPs and account data.
+      label: Server log
+      description: Game server console output around the problem. Remove IPs and account data.
       render: text
+  - type: textarea
+    id: crash
+    attributes:
+      label: Client crash
+      description: For a crash, the error text, the crash address and the minidump from %LOCALAPPDATA%\CrashDumps (SkySaga*.dmp).

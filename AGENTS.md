@@ -12,8 +12,8 @@ This server is the **wire oracle** — it speaks the protocol the real client ex
 
 ```
 Servers/
-  Alpha10/                    Emulator for Alpha 10 build 36731 (frozen)
-  Beta1/                      Emulator for Beta 1 build 38328 (active), same layout as Alpha10:
+  Alpha10/                    Emulator for Alpha 10 build 36731 (active, all current work)
+  Beta1/                      Emulator for Beta 1 build 38328 (dropped, not maintained), same layout as Alpha10:
   Servers.sln                 Solution file
   SkySaga.Game/               Game server logic (packets, entities, components, managers)
   SkySaga.Web/                HTTP API (login, auth endpoints)
@@ -29,21 +29,21 @@ Bundled/                      Game data bundles (builds 10414, 20015, 25516, 270
 ## Build
 
 ```bash
-cd Servers/Beta1
+cd Servers/Alpha10
 dotnet build Servers.sln
 ```
 
 Individual projects:
 
 ```bash
-dotnet build Servers/Beta1/SkySaga.Game/SkySaga.Game.csproj
-dotnet build Servers/Beta1/SkySaga.Web/SkySaga.Web.csproj
+dotnet build Servers/Alpha10/SkySaga.Game/SkySaga.Game.csproj
+dotnet build Servers/Alpha10/SkySaga.Web/SkySaga.Web.csproj
 ```
 
 ## Run
 
 ```bash
-cd Servers/Beta1/SkySaga.Web
+cd Servers/Alpha10/SkySaga.Web
 dotnet run
 ```
 
@@ -65,10 +65,10 @@ dotnet run
 
 ## Key files
 
-- `Servers/Beta1/SkySaga.Game/PacketId.cs` — packet ordinal definitions
-- `Servers/Beta1/SkySaga.Game/Packets/` — packet handlers (encoders/decoders)
-- `Servers/Beta1/SkySaga.RakNet/BitStream.cs` — RakNet bitstream (wire primitives)
-- `Servers/Beta1/SkySaga.Game/Server.cs` — main game server loop
+- `Servers/Alpha10/SkySaga.Game/PacketId.cs` — packet ordinal definitions
+- `Servers/Alpha10/SkySaga.Game/Packets/` — packet handlers (encoders/decoders)
+- `Servers/Alpha10/SkySaga.RakNet/BitStream.cs` — RakNet bitstream (wire primitives)
+- `Servers/Alpha10/SkySaga.Game/Server.cs` — main game server loop
 - `Bundled/36731/` — game data for the target client build
 
 ## Relationship to other repos
@@ -79,4 +79,4 @@ dotnet run
 
 ## Client version note
 
-README mentions client 10414; the actual target is **36731** (alpha 10.6.6). Bundled/36731 has the correct game data. The README is from upstream EDITzDev and hasn't been updated.
+The target is client **36731** (alpha 10.6.6); `Bundled/36731` has its game data. Work on Beta 1 (38328) was dropped. Protocol and client documentation is in the GitHub wiki.
