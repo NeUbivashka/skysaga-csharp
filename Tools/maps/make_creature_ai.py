@@ -32,6 +32,68 @@ def player_relationship(tables, name):
     return fallback or "Ignore"
 
 
+AI_TESTS = ("Ai_IsInBehaviour", "Ai_HasActionInRange", "Ai_CanPathToTarget", "Ai_IsEntityUsingAbilityTag",
+            "Ai_HasImmobilisedPlayer", "Constant")
+
+
+def condition_ref(name, invert):
+    return f"{'!' if invert else ''}{name}"
+
+
+def condition_row(condition):
+    test = condition.get("Test")
+    name = condition["Name"]
+    invert = "1" if condition.get("Invert") else "0"
+    if test in ("ConditionAndList", "ConditionOrList") or condition.get("ConditionAndList") or condition.get("ConditionOrList"):
+        kind = "and" if condition.get("ConditionAndList") else "or"
+        refs = (condition.get("ConditionAndList") or condition.get("ConditionOrList"))["ConditionList"]["ConditionReferences"]
+        return f"condition {name} {invert} {kind} " + ",".join(
+            condition_ref(r["ConditionReference"]["Condition"], r["ConditionReference"].get("Invert")) for r in refs)
+    if test not in AI_TESTS:
+        return f"condition {name} {invert} unsupported {test}"
+    body = condition.get(test) or {}
+    if test == "Ai_IsInBehaviour":
+        return f"condition {name} {invert} behaviour {body['Behaviour']}"
+    if test in ("Ai_HasActionInRange", "Ai_IsEntityUsingAbilityTag"):
+        tags = ",".join(v["Value"] for v in body["ActionTagList"]["Values"])
+        kind = "inrange" if test == "Ai_HasActionInRange" else f"targetusing:{condition.get('EntityType', 'TargetEntity')}"
+        return f"condition {name} {invert} {kind} {tags}"
+    if test == "Ai_CanPathToTarget":
+        return f"condition {name} {invert} canpath"
+    if test == "Ai_HasImmobilisedPlayer":
+        return f"condition {name} {invert} immobilised"
+    return f"condition {name} {invert} constant {body.get('Value', 'False')}"
+
+
+def selection_rows(geo):
+    conditions = by_name(geo["Conditions"])
+    rows = []
+    needed = []
+    for table in geo["AbilitySelectionTable"]:
+        rules = [f"{r['AbilitySelectionList']}:{condition_ref(r['Condition']['Condition'], r['Condition'].get('Invert'))}"
+                 for r in table["AbilityTableSelectionRule"]]
+        needed += [r["Condition"]["Condition"] for r in table["AbilityTableSelectionRule"]]
+        rows.append(f"selectiontable {table['Name']} " + " ".join(rules))
+    for selection in geo["AbilitySelectionList"]:
+        rules = [",".join(v["Value"] for v in r["ActionTagList"]["Values"])
+                 + f":{condition_ref(r['Condition']['Condition'], r['Condition'].get('Invert'))}:{int(bool(r.get('SelectIfTrue', True)))}"
+                 for r in selection["AbilitySelectionRule"]]
+        needed += [r["Condition"]["Condition"] for r in selection["AbilitySelectionRule"]]
+        rows.append(f"selectionlist {selection['Name']} " + " ".join(rules))
+    done = set()
+    while needed:
+        name = needed.pop()
+        if name.lower() in done or name.lower() not in conditions:
+            continue
+        done.add(name.lower())
+        condition = conditions[name.lower()]
+        row = condition_row(condition)
+        rows.append(row)
+        if " and " in row or " or " in row:
+            needed += [ref.lstrip("!") for ref in row.split(" ")[-1].split(",")]
+    return rows
+
+
 def main():
     with open(GEODATA, encoding="utf-8") as f:
         geo = json.load(f)
@@ -116,6 +178,8 @@ def main():
             "quiet": hearing.get("Awake1QuietRange", 0), "normal": hearing.get("Awake2NormalRange", 0), "loud": hearing.get("Awake3LoudRange", 0),
             "sleepquiet": hearing.get("Sleep1QuietRange", 0), "sleepnormal": hearing.get("Sleep2NormalRange", 0), "sleeploud": hearing.get("Sleep3LoudRange", 0),
             "alert": anim.get("AlertTime", 0), "lost": anim.get("LostTime", 0),
+            "taunt": anim.get("TauntTime", 0), "ignoretaunt": persist.get("IgnoreAfterTauntTime", 0),
+            "selection": fight.get("AbilitySelectionTable") or "-", "ranged": int(bool(fight.get("IsRangedFighter"))),
             "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
             "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
             "totarget": movement.get("ToTarget", {}).get("MovementType", "Run"),
@@ -147,6 +211,8 @@ def main():
                 f"{window['BeginFactor']:g}", f"{window['EndFactor']:g}",
                 ",".join(tags) or "-",
             ]))
+
+    rows += selection_rows(geo)
 
     launched = set()
     for action in geo["EquippedActions"]:
