@@ -52,6 +52,7 @@ public class AiManager
     private readonly Projectiles _projectiles;
 
     private DateTime _lastUpdate = DateTime.UtcNow;
+    private readonly Dictionary<int, Vector3> _bodies = [];
 
     private enum SquadZone
     {
@@ -96,6 +97,8 @@ public class AiManager
         public SquadZone Zone;
         public float HoldBearing;
         public DateTime HitAt;
+        public int SquadNear;
+        public float CircleSide = 1f;
     }
 
     private sealed class Attack
@@ -125,6 +128,7 @@ public class AiManager
 
         brain.TargetId = attacker.Id;
         brain.HitAt = DateTime.UtcNow;
+        brain.ReturningHome = false;
         brain.IgnoredTargetId = 0;
         brain.Mode = ai.OnHit;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
@@ -238,6 +242,14 @@ public class AiManager
 
         AssignSquads(now);
 
+        _bodies.Clear();
+
+        foreach (var entity in _worldManager.EntityManager.Entities)
+            if (entity.TryGetComponent<ClientEnemyAiComponent>(out _)
+                && entity.TryGetComponent<SmoothedTransformComponent>(out var body)
+                && !(entity.TryGetComponent<ClientHealthComponent>(out var bodyHealth) && bodyHealth.IsDead))
+                _bodies[entity.Id] = body.Position;
+
         foreach (var entity in _worldManager.EntityManager.Entities.ToList())
         {
             if (!entity.TryGetComponent<ClientEnemyAiComponent>(out var component)
@@ -316,7 +328,10 @@ public class AiManager
 
             if (attack.Ability.HasTag(MeleeTag) || attack.Ability.HasTag(ProjectileTag))
             {
-                brain.NextAttack = now.AddSeconds(ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime));
+                var crowd = Math.Max(0, brain.SquadNear - ai.MinNumForAttackTimeModification);
+                brain.NextAttack = now.AddSeconds((ai.NextAttackMinTime + _random.NextDouble() * (ai.NextAttackMaxTime - ai.NextAttackMinTime))
+                    * (1 + ai.AttackTimeModifier * crowd));
+                brain.CircleSide = _random.Next(2) == 0 ? -1f : 1f;
                 brain.BackOffDirection = ai.BackOff is null || TargetPosition(brain, players) is not Vector3 from
                     ? null
                     : BackOffDirection(ai, Horizontal(transform.Position - from));
@@ -344,7 +359,7 @@ public class AiManager
                 Wake(entity, brain, now);
         }
 
-        if (brain.TargetId != 0 && brain.Spawn.HomeRange > 0 && Horizontal(transform.Position - brain.Home).Length() > brain.Spawn.HomeRange)
+        if (brain.TargetId != 0 && now >= brain.HuntUntil && brain.Spawn.HomeRange > 0 && Horizontal(transform.Position - brain.Home).Length() > brain.Spawn.HomeRange)
         {
             Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} is {Horizontal(transform.Position - brain.Home).Length():0.#} m from home, returning");
             Forget(component, brain, now);
@@ -476,7 +491,7 @@ public class AiManager
         var wait = (float)(brain.NextAttack - now).TotalSeconds;
 
         if (!ready && brain.Zone == SquadZone.Near && targetTags.Any(tag => AttackTags.Contains(tag))
-            && selected.FirstOrDefault(ability => ability.HasTag(BlockTag)) is CreatureAbility shield)
+            && selected.Where(ability => ability.HasTag(BlockTag)).Select(ability => (CreatureAbility?)ability).FirstOrDefault() is CreatureAbility shield)
         {
             Stop(entity);
             Face(transform, toTarget);
@@ -508,7 +523,15 @@ public class AiManager
                     brain.Blocked = false;
             }
             else
-                CombatIdle(entity, transform, ai, brain, now);
+            {
+                if (ai.CircleTarget && brain.Zone == SquadZone.Near)
+                {
+                    Move(entity, transform, ai, brain, new Vector3(toTarget.Z, 0f, -toTarget.X) * brain.CircleSide, ai.WalkSpeed, StateWalk, delta);
+                    Face(transform, toTarget);
+                }
+                else
+                    CombatIdle(entity, transform, ai, brain, now);
+            }
 
             return;
         }
@@ -550,6 +573,7 @@ public class AiManager
                 || !entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
             {
                 brain.Zone = SquadZone.Near;
+                brain.SquadNear = 0;
                 continue;
             }
 
@@ -613,6 +637,9 @@ public class AiManager
                     holders.Add((brain, MathF.Atan2(offset.X, offset.Z)));
                 }
             }
+
+            foreach (var member in squad)
+                member.Brain.SquadNear = near;
 
             var spread = leader.MinAngleToNextAi * MathF.PI / 180f;
             var previous = float.NegativeInfinity;
@@ -932,6 +959,13 @@ public class AiManager
 
     private void Move(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 direction, float speed, byte state, float delta)
     {
+        if (Avoid(entity.Id, transform.Position, ai, direction) is not Vector3 free)
+        {
+            Stop(entity);
+            return;
+        }
+
+        direction = free;
         Face(transform, direction);
 
         var next = transform.Position + direction * speed * delta;
@@ -949,6 +983,45 @@ public class AiManager
         transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
 
         SetMovement(entity, direction, speed, state);
+    }
+
+    private Vector3? Avoid(int id, Vector3 position, CreatureAi ai, Vector3 direction)
+    {
+        if (ai.AvoidanceRange <= 0)
+            return direction;
+
+        var steered = direction;
+
+        foreach (var (otherId, other) in _bodies)
+        {
+            var toOther = Horizontal(other - position);
+            var distance = toOther.Length();
+
+            if (otherId == id || distance > ai.AvoidanceRange || distance < 0.0001f)
+                continue;
+
+            var away = toOther / distance;
+            var closing = Vector3.Dot(steered, away);
+
+            if (closing <= 0)
+                continue;
+
+            steered -= away * closing;
+
+            if (steered.LengthSquared() < 0.01f)
+                steered = new Vector3(away.Z, 0f, -away.X);
+        }
+
+        foreach (var (otherId, other) in _bodies)
+        {
+            var toOther = Horizontal(other - position);
+            var distance = toOther.Length();
+
+            if (otherId != id && distance <= ai.AvoidanceRange && distance > 0.0001f && Vector3.Dot(steered, toOther / distance) > 0.0001f)
+                return null;
+        }
+
+        return Vector3.Normalize(steered);
     }
 
     private void Dodge(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, float delta)

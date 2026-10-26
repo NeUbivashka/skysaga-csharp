@@ -85,6 +85,9 @@ public sealed class CreatureAi
         var leader = _fields["leader"].Split(':').Select(Parse).ToArray();
         Leader = new SquadLeader((int)leader[0], (int)leader[1], leader[2]);
         TimeForHitRecently = Number("hitrecently");
+        CircleTarget = _fields["circle"] == "1";
+        AttackTimeModifier = Number("attackmod");
+        MinNumForAttackTimeModification = (int)Number("attackmodmin");
         OnSight = Enum.Parse<AiReaction>(_fields["onsight"]);
         OnCloseRange = Enum.Parse<AiReaction>(_fields["onclose"]);
         OnHit = Enum.Parse<AiReaction>(_fields["onhit"]);
@@ -107,6 +110,7 @@ public sealed class CreatureAi
         MinTimeBetweenDodges = Number("dodgegap");
         PrioritiseSideDodge = _fields["dodgeside"] == "1";
         RunFromHealth = Number("runfromhealth");
+        AvoidanceRange = Number("avoidance");
         ToAttack = _fields["toattack"];
         ToTarget = _fields["totarget"];
         BackOff = _fields["backoff"] == "-" ? null : _fields["backoff"];
@@ -149,6 +153,9 @@ public sealed class CreatureAi
     public SquadScoring Squad { get; }
     public SquadLeader Leader { get; }
     public float TimeForHitRecently { get; }
+    public bool CircleTarget { get; }
+    public float AttackTimeModifier { get; }
+    public int MinNumForAttackTimeModification { get; }
     public bool HasZones => NearRangeMax > 0 && MathF.Max(FarRangeMin, FarRangeMax) > 0;
     public AiReaction OnSight { get; }
     public AiReaction OnCloseRange { get; }
@@ -174,6 +181,7 @@ public sealed class CreatureAi
     public bool PrioritiseSideDodge { get; }
     public bool CanDodge => DodgeProbability > 0 && DodgeDistance > 0 && DodgeSpeed > 0;
     public float RunFromHealth { get; }
+    public float AvoidanceRange { get; }
     public string ToAttack { get; }
     public string ToTarget { get; }
     public string? BackOff { get; }

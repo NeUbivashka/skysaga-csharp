@@ -180,6 +180,9 @@ def main():
             "leader": ":".join(f"{fight.get('SquadLeaderValues', {}).get(k, 0):g}" for k in (
                 "DesiredNearFighters", "DesiredFarFighters", "MinAngleToNextAI")),
             "hitrecently": capability.get("TimeForHitRecently", 0),
+            "circle": int(bool(fight.get("CircleTarget"))),
+            "attackmod": attack_time.get("AttackTimeModifier", 0),
+            "attackmodmin": attack_time.get("MinNumForAttackTimeModification", 0),
             "onsight": reactions[0], "onclose": reactions[1], "onhit": reactions[2], "onhearing": heard["Relationship"],
             "hearing": ",".join(v["Value"] for v in heard["HearingEventTypes"]["Values"]) or "-",
             "quiet": hearing.get("Awake1QuietRange", 0), "normal": hearing.get("Awake2NormalRange", 0), "loud": hearing.get("Awake3LoudRange", 0),
@@ -193,6 +196,7 @@ def main():
             "dodgespeed": stat(creature, "DodgeSpeed"), "dodgegap": dodge_control["MinTimeBetweenDodges"],
             "dodgeside": int(bool(dodge_control["PrioritiseSideDodge"])),
             "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
+            "avoidance": capability.get("AvoidanceRange", 0),
             "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
             "totarget": movement.get("ToTarget", {}).get("MovementType", "Run"),
             "backoff": back_off["MovementType"] if back_off else "-",
