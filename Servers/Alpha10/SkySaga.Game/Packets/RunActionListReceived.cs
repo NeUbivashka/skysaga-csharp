@@ -42,6 +42,7 @@ public static class RunActionListReceived
         var usedItemCrc = usedItem?.Crc;
 
         Combat.ActionStarted(connection, actionListId);
+        AiManager.PlayerActionEnded(connection.PlayerEntity);
 
         if (ActionListAttackTable.Get(actionListId).Count > 0)
             AiManager.Hear(connection.PlayerEntity, "Attack");
@@ -282,7 +283,7 @@ public static class RunActionListReceived
         connection.WorldManager.ChunkManager.SetVoxel(chunk, local, blockType);
     }
 
-    private static bool ReadOptionalUInt32(BitStream bitStream, out uint? value)
+    internal static bool ReadOptionalUInt32(BitStream bitStream, out uint? value)
     {
         value = null;
 
@@ -294,7 +295,7 @@ public static class RunActionListReceived
         return true;
     }
 
-    private static bool ReadPosition(BitStream bitStream, out Vector3 position)
+    internal static bool ReadPosition(BitStream bitStream, out Vector3 position)
     {
         position = default;
 
@@ -306,7 +307,7 @@ public static class RunActionListReceived
         return true;
     }
 
-    private static bool ReadDirection(BitStream bitStream, out Vector3 direction)
+    internal static bool ReadDirection(BitStream bitStream, out Vector3 direction)
     {
         direction = default;
 

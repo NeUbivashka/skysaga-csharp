@@ -14,12 +14,11 @@ public enum AiBehaviour
     Spawn
 }
 
-public readonly record struct SelectionContext(AiBehaviour Behaviour, float Distance, bool CanPath, bool TargetAttacking, bool TargetBlocking);
+public readonly record struct SelectionContext(AiBehaviour Behaviour, float Distance, bool CanPath, string[] TargetTags);
 
 public static class AbilitySelection
 {
     private const string MeleeTag = "ActionMelee";
-    private const string BlockTag = "ActionBlock";
 
     public static List<CreatureAbility> Select(CreatureAi ai, SelectionContext context)
     {
@@ -54,7 +53,7 @@ public static class AbilitySelection
             "behaviour" => Enum.TryParse<AiBehaviour>(condition.Argument, out var behaviour) && behaviour == context.Behaviour,
             "inrange" => WithAnyTag(ai, condition.Argument.Split(',')).Any(ability => context.Distance <= ability.Reach),
             "canpath" => context.CanPath,
-            "targetusing:TargetEntity" => condition.Argument.Split(',').Contains(BlockTag) ? context.TargetBlocking : context.TargetAttacking,
+            "targetusing:TargetEntity" => condition.Argument.Split(',').Any(tag => context.TargetTags.Contains(tag, StringComparer.OrdinalIgnoreCase)),
             "constant" => condition.Argument == "True",
             "and" => condition.Argument.Split(',').All(part => Evaluate(ai, context, part)),
             "or" => condition.Argument.Split(',').Any(part => Evaluate(ai, context, part)),

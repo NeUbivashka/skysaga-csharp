@@ -226,6 +226,12 @@ def main():
 
     rows += selection_rows(geo)
 
+    for action in geo["EquippedActions"]:
+        for entry in (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []:
+            block = always.get(entry.get("ActionAlways", "").lower(), {}).get("BlockAction")
+            if block:
+                rows.append(f"block {action['Name']} {block['Angle']:g}")
+
     launched = set()
     for action in geo["EquippedActions"]:
         for entry in (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []:

@@ -210,14 +210,15 @@ public static class CreatureAiTable
     private sealed record Data(Dictionary<uint, CreatureAi> Creatures, Dictionary<string, AiLoudness> Loudness,
         Dictionary<string, SpawnParams> Spawns, Dictionary<string, ProjectileLaunch> Projectiles, (float Input, float Output)[] DamageLut,
         Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
-        Dictionary<string, AiCondition> Conditions);
+        Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
         var data = new Data([], new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), [],
-            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
+            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
+            new(StringComparer.OrdinalIgnoreCase));
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "CreatureAi.txt");
 
         if (!File.Exists(path))
@@ -257,6 +258,9 @@ public static class CreatureAiTable
                 case ["condition", var conditionName, var invert, var kind, ..]:
                     data.Conditions[conditionName] = new AiCondition(invert == "1", kind, parts.Length > 4 ? parts[4] : "");
                     break;
+                case ["block", var blockAction, var angle]:
+                    data.BlockAngles[blockAction] = Number(angle);
+                    break;
                 case ["loudness", var sensoryEvent, var loudness]:
                     data.Loudness[sensoryEvent] = Enum.Parse<AiLoudness>(loudness);
                     break;
@@ -293,6 +297,8 @@ public static class CreatureAiTable
     public static bool TryGetSelectionTable(string name, out SelectionTableRule[] rules) => Table.Value.SelectionTables.TryGetValue(name, out rules!);
 
     public static bool TryGetSelectionList(string name, out SelectionListRule[] rules) => Table.Value.SelectionLists.TryGetValue(name, out rules!);
+
+    public static bool TryGetBlockAngle(string action, out float angle) => Table.Value.BlockAngles.TryGetValue(action, out angle);
 
     public static bool TryGetCondition(string name, out AiCondition condition) => Table.Value.Conditions.TryGetValue(name, out condition!);
 }

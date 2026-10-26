@@ -13,6 +13,8 @@ def main():
     with open(GEODATA, encoding="utf-8") as f:
         geo = json.load(f)
     properties = {p["Name"]: p for p in geo["PhysicalProperties"]}
+    player = properties["Creature_Player"]
+    default_time = geo["UseTimes"][0]["Time"]
     consume_all = {a["Name"] for a in geo["AlwaysActions"]
                    if (a.get("ConsumeChargeBarAction") or {}).get("ConsumeAll")}
 
@@ -23,11 +25,14 @@ def main():
         modifier = stat(stats, "WeaponLevelModifier")
         entered = (action.get("OnActiveWindowEntered") or {}).get("AlwaysActions") or []
         consumes = any(a.get("ActionAlways") in consume_all for a in entered)
-        if boost or modifier or consumes:
-            rows.append(f"{action['Name']} {boost:g} {modifier:g} {int(consumes)}")
+        tags = [t["Value"] for t in action.get("TagList", {}).get("Values", [])]
+        duration = sum(stat(stats, f"UseTime{part}") * stat(player, f"UseTime{part}") * default_time[part]["Value"]
+                       for part in ("Charge", "Active", "Recover"))
+        if boost or modifier or consumes or tags:
+            rows.append(f"{action['Name']} {boost:g} {modifier:g} {int(consumes)} {','.join(tags) or '-'} {duration:g}")
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
-        f.write("# EquippedAction ChargeBarBoost WeaponLevelModifier ConsumesChargeBar\n")
+        f.write("# EquippedAction ChargeBarBoost WeaponLevelModifier ConsumesChargeBar Tags PlayerDuration\n")
         f.write("\n".join(rows) + "\n")
     print(f"{len(rows)} actions -> {OUT}")
 

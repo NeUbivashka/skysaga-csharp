@@ -48,7 +48,7 @@ public static class Combat
 
         var player = connection.PlayerEntity;
 
-        if (AiManager.TryDodge(connection.PlayerConnectionManager, target, player))
+        if (AiManager.TryDodge(connection.PlayerConnectionManager, target, player) || AiManager.TryBlock(target, player))
             return;
 
         var weaponLevel = AttackLevel(entityManager, player, usedItemCrc) + attacks.Max(attack => ActionStatTable.Get(attack.EquippedAction).WeaponLevelModifier);

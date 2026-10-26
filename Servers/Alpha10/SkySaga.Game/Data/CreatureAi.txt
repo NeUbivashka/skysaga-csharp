@@ -4893,6 +4893,8 @@ condition Condition_AiCantPathCanShoot 0 and !Condition_AiCanPathToTarget,Condit
 condition Condition_AiHasAnyActionInRange 0 inrange ActionProjectile,ActionMelee
 condition Condition_AiIsInCloseRangeBehaviour 0 behaviour CloseRange
 condition Condition_AiIsInHearingResponseBehaviour 0 behaviour SensoryEventResponse
+block Shield_Block 120
+block Shield_Block_NPC 120
 projectile Ai_MineCritter_Spit entity=Projectile_MineCritterSpit dataindex=2 datacount=22 speed=35 gravity=0.4 inaccmin=0.5 inaccmax=7 offx=0 offy=0 offz=0 pitch=0 yaw=0 lifetime=10 impactlevel=0
 projectile Ai_Raptor_Spit entity=Projectile_RaptorSpit dataindex=3 datacount=22 speed=16 gravity=1 inaccmin=0 inaccmax=2 offx=0 offy=1 offz=0 pitch=0 yaw=0 lifetime=10 impactlevel=0
 projectile Ai_Skitter_Spit entity=Projectile_SkitterSpit dataindex=9 datacount=22 speed=22 gravity=0.2 inaccmin=0.5 inaccmax=4 offx=0 offy=0 offz=0 pitch=0 yaw=0 lifetime=10 impactlevel=0

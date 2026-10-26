@@ -31,6 +31,8 @@ public class AiManager
     private const string TauntTag = "EmoteTaunt";
     private const string CombatIdleTag = "EmoteCombatIdle";
     private const string BroadcastTag = "EmoteBroadcast";
+    private const string BlockTag = "ActionBlock";
+    private static readonly string[] AttackTags = ["ActionMelee", "ActionProjectile", "ActionShieldBreaker"];
 
     private static readonly Dictionary<byte, string> Footsteps = new()
     {
@@ -42,6 +44,7 @@ public class AiManager
 
     private static readonly Dictionary<int, Brain> Brains = [];
     private static readonly List<Sound> Sounds = [];
+    private static readonly Dictionary<int, (ActionStats Action, DateTime Until)> PlayerActions = [];
 
     private readonly IWorldManager _worldManager;
     private readonly PlayerConnectionManager _playerConnectionManager;
@@ -161,6 +164,40 @@ public class AiManager
         connections.BroadcastToAll(new EntityDodged { EntityId = creature.Id, DodgeKind = kind });
 
         Console.WriteLine($"[AiManager] {creature.Name}#{creature.Id} dodges {(kind == DodgeRight ? "right" : kind == DodgeLeft ? "left" : "back")} from {attacker.Id}");
+        return true;
+    }
+
+    public static void PlayerActionStarted(Entity player, ActionStats action)
+        => PlayerActions[player.Id] = (action, DateTime.UtcNow.AddSeconds(action.Duration));
+
+    public static void PlayerActionEnded(Entity player)
+    {
+        if (PlayerActions.TryGetValue(player.Id, out var current) && !current.Action.HasTag(BlockTag))
+            PlayerActions.Remove(player.Id);
+    }
+
+    private static string[] TargetTags(int targetId, DateTime now)
+        => PlayerActions.TryGetValue(targetId, out var current) && now < current.Until ? current.Action.Tags : [];
+
+    public static bool TryBlock(Entity creature, Entity attacker)
+    {
+        if (!Brains.TryGetValue(creature.Id, out var brain) || brain.Current is not { } current || !current.Ability.HasTag(BlockTag)
+            || DateTime.UtcNow >= current.EndsAt
+            || !CreatureAiTable.TryGetBlockAngle(current.Ability.Action, out var angle)
+            || !creature.TryGetComponent<SmoothedTransformComponent>(out var transform) || Combat.PositionOf(attacker) is not Vector3 from)
+            return false;
+
+        var toAttacker = Horizontal(from - transform.Position);
+        var off = toAttacker.LengthSquared() > 0.0001f
+            ? MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(toAttacker), Forward(transform.YawDegrees)), -1f, 1f)) * 180f / MathF.PI
+            : 0f;
+
+        if (off > angle / 2)
+            return false;
+
+        Hit(creature, attacker);
+
+        Console.WriteLine($"[AiManager] {creature.Name}#{creature.Id} blocks {attacker.Id} with {current.Ability.Action} ({off:0} deg off its facing)");
         return true;
     }
 
@@ -430,10 +467,22 @@ public class AiManager
             return;
         }
 
-        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, false, false));
+        var targetTags = TargetTags(target.Id, now);
+        var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, targetTags));
 
         if (brain.Zone != SquadZone.Near)
             selected = [.. selected.Where(ability => !ability.HasTag(MeleeTag))];
+
+        var wait = (float)(brain.NextAttack - now).TotalSeconds;
+
+        if (!ready && brain.Zone == SquadZone.Near && targetTags.Any(tag => AttackTags.Contains(tag))
+            && selected.FirstOrDefault(ability => ability.HasTag(BlockTag)) is CreatureAbility shield)
+        {
+            Stop(entity);
+            Face(transform, toTarget);
+            Perform(entity, transform, brain, shield, toTarget, wait, now);
+            return;
+        }
 
         if (ready && (brain.Planned is not CreatureAbility planned || !selected.Contains(planned)))
             brain.Planned = selected.Count > 0 ? selected[_random.Next(selected.Count)] : null;
