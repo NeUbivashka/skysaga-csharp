@@ -11,6 +11,10 @@ public enum AiReaction
     Scared
 }
 
+public readonly record struct SquadScoring(float AttackPriority, float NearZone, float FarZone, float HitRecently, float OutOfCombatZone);
+
+public readonly record struct SquadLeader(int DesiredNearFighters, int DesiredFarFighters, float MinAngleToNextAi);
+
 public enum AiLoudness
 {
     Quiet,
@@ -73,6 +77,14 @@ public sealed class CreatureAi
         NextAttackMinTime = Number("nextmin");
         NextAttackMaxTime = Number("nextmax");
         NearRangeMin = Number("nearmin");
+        NearRangeMax = Number("nearmax");
+        FarRangeMin = Number("farmin");
+        FarRangeMax = Number("farmax");
+        var squad = _fields["squad"].Split(':').Select(Parse).ToArray();
+        Squad = new SquadScoring(squad[0], squad[1], squad[2], squad[3], squad[4]);
+        var leader = _fields["leader"].Split(':').Select(Parse).ToArray();
+        Leader = new SquadLeader((int)leader[0], (int)leader[1], leader[2]);
+        TimeForHitRecently = Number("hitrecently");
         OnSight = Enum.Parse<AiReaction>(_fields["onsight"]);
         OnCloseRange = Enum.Parse<AiReaction>(_fields["onclose"]);
         OnHit = Enum.Parse<AiReaction>(_fields["onhit"]);
@@ -131,6 +143,13 @@ public sealed class CreatureAi
     public float NextAttackMinTime { get; }
     public float NextAttackMaxTime { get; }
     public float NearRangeMin { get; }
+    public float NearRangeMax { get; }
+    public float FarRangeMin { get; }
+    public float FarRangeMax { get; }
+    public SquadScoring Squad { get; }
+    public SquadLeader Leader { get; }
+    public float TimeForHitRecently { get; }
+    public bool HasZones => NearRangeMax > 0 && MathF.Max(FarRangeMin, FarRangeMax) > 0;
     public AiReaction OnSight { get; }
     public AiReaction OnCloseRange { get; }
     public AiReaction OnHit { get; }

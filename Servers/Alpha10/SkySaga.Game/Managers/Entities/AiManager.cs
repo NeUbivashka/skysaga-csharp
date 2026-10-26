@@ -50,6 +50,13 @@ public class AiManager
 
     private DateTime _lastUpdate = DateTime.UtcNow;
 
+    private enum SquadZone
+    {
+        Near,
+        Far,
+        OutOfCombat
+    }
+
     private readonly record struct Sound(int SourceId, Vector3 Position, string Event);
 
     private sealed class Brain
@@ -83,6 +90,9 @@ public class AiManager
         public DateTime NextDodge;
         public bool BroadcastPending;
         public DateTime NextBroadcast;
+        public SquadZone Zone;
+        public float HoldBearing;
+        public DateTime HitAt;
     }
 
     private sealed class Attack
@@ -111,6 +121,7 @@ public class AiManager
             return;
 
         brain.TargetId = attacker.Id;
+        brain.HitAt = DateTime.UtcNow;
         brain.IgnoredTargetId = 0;
         brain.Mode = ai.OnHit;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
@@ -187,6 +198,8 @@ public class AiManager
         Sounds.Clear();
 
         var timeOfDay = TimeOfDay();
+
+        AssignSquads(now);
 
         foreach (var entity in _worldManager.EntityManager.Entities.ToList())
         {
@@ -419,6 +432,9 @@ public class AiManager
 
         var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, false, false));
 
+        if (brain.Zone != SquadZone.Near)
+            selected = [.. selected.Where(ability => !ability.HasTag(MeleeTag))];
+
         if (ready && (brain.Planned is not CreatureAbility planned || !selected.Contains(planned)))
             brain.Planned = selected.Count > 0 ? selected[_random.Next(selected.Count)] : null;
 
@@ -456,6 +472,12 @@ public class AiManager
             return;
         }
 
+        if (brain.Zone != SquadZone.Near)
+        {
+            Hold(entity, transform, ai, brain, targetPosition, toTarget, distance, delta);
+            return;
+        }
+
         if (!selected.Any(IsAttack))
         {
             Stop(entity);
@@ -465,6 +487,114 @@ public class AiManager
 
         var movement = ready ? ai.ToAttack : ai.ToTarget;
         Move(entity, transform, ai, brain, toTarget, ai.Speed(movement), State(movement), delta);
+    }
+
+    private void AssignSquads(DateTime now)
+    {
+        var squads = new Dictionary<int, List<(Entity Entity, CreatureAi Ai, Brain Brain, Vector3 Position, float Priority)>>();
+
+        foreach (var (id, brain) in Brains)
+        {
+            if (brain.TargetId == 0 || brain.Mode != AiReaction.Aggressive
+                || !_worldManager.EntityManager.TryGetEntity(id, out var entity)
+                || !CreatureAiTable.TryGet(entity.Name, out var ai)
+                || !entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
+            {
+                brain.Zone = SquadZone.Near;
+                continue;
+            }
+
+            var hitRecently = now - brain.HitAt < TimeSpan.FromSeconds(ai.TimeForHitRecently);
+            var priority = ai.Squad.AttackPriority + (hitRecently ? ai.Squad.HitRecently : 0);
+
+            if (!squads.TryGetValue(brain.TargetId, out var squad))
+                squads[brain.TargetId] = squad = [];
+
+            squad.Add((entity, ai, brain, transform.Position, priority));
+        }
+
+        foreach (var (targetId, squad) in squads)
+        {
+            if (!_worldManager.EntityManager.TryGetEntity(targetId, out var target) || Combat.PositionOf(target) is not Vector3 targetPosition)
+                continue;
+
+            var ordered = squad
+                .OrderByDescending(member => member.Priority)
+                .ThenBy(member => member.Brain.Zone)
+                .ThenBy(member => Horizontal(member.Position - targetPosition).Length())
+                .ToList();
+            var leader = ordered[0].Ai.Leader;
+            var near = 0;
+            var far = 0;
+            var holders = new List<(Brain Brain, float Bearing)>();
+
+            foreach (var (entity, ai, brain, position, _) in ordered)
+            {
+                var zone = SquadZone.Near;
+
+                if (ai.HasZones)
+                {
+                    var best = float.MinValue;
+
+                    foreach (var (candidate, score, open) in new[]
+                             {
+                                 (SquadZone.Near, ai.Squad.NearZone, near < leader.DesiredNearFighters),
+                                 (SquadZone.Far, ai.Squad.FarZone, far < leader.DesiredFarFighters),
+                                 (SquadZone.OutOfCombat, ai.Squad.OutOfCombatZone, true)
+                             })
+                    {
+                        if (open && score > best)
+                            (zone, best) = (candidate, score);
+                    }
+                }
+
+                if (zone == SquadZone.Near)
+                    near++;
+                else if (zone == SquadZone.Far)
+                    far++;
+
+                if (zone != brain.Zone)
+                    Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} squad zone {zone} (target {targetId}, near {near}/{leader.DesiredNearFighters}, far {far}/{leader.DesiredFarFighters})");
+
+                brain.Zone = zone;
+
+                if (zone != SquadZone.Near)
+                {
+                    var offset = Horizontal(position - targetPosition);
+                    holders.Add((brain, MathF.Atan2(offset.X, offset.Z)));
+                }
+            }
+
+            var spread = leader.MinAngleToNextAi * MathF.PI / 180f;
+            var previous = float.NegativeInfinity;
+
+            foreach (var (brain, bearing) in holders.OrderBy(holder => holder.Bearing))
+            {
+                brain.HoldBearing = MathF.Max(bearing, previous + spread);
+                previous = brain.HoldBearing;
+            }
+        }
+    }
+
+    private void Hold(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 targetPosition, Vector3 toTarget, float distance, float delta)
+    {
+        var inner = MathF.Min(ai.FarRangeMin, ai.FarRangeMax);
+        var outer = MathF.Max(ai.FarRangeMin, ai.FarRangeMax);
+        var wanted = brain.Zone == SquadZone.Far
+            ? distance < inner || distance > outer ? (inner + outer) / 2 : distance
+            : MathF.Max(distance, outer);
+        var point = targetPosition + new Vector3(MathF.Sin(brain.HoldBearing), 0f, MathF.Cos(brain.HoldBearing)) * wanted;
+        var toPoint = Horizontal(point - transform.Position);
+        var speed = ai.Speed(ai.ToTarget);
+
+        if (toPoint.Length() <= speed * delta)
+        {
+            Stop(entity);
+            Face(transform, toTarget);
+            return;
+        }
+
+        Move(entity, transform, ai, brain, Vector3.Normalize(toPoint), speed, State(ai.ToTarget), delta);
     }
 
     private void Taunt(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, bool ready, DateTime now)

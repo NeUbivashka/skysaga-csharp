@@ -174,6 +174,12 @@ def main():
             "hunt": persist.get("HuntTimeAfterHitInSeconds", 0),
             "nextmin": attack_time.get("NextAttackMinTime", 0), "nextmax": attack_time.get("NextAttackMaxTime", 0),
             "nearmin": fight.get("NearRangeMin", 0), "nearmax": fight.get("NearRangeMax", 0),
+            "farmin": fight.get("FarRangeMin", 0), "farmax": fight.get("FarRangeMax", 0),
+            "squad": ":".join(f"{fight.get('SquadAttackScoring', {}).get(k, 0):g}" for k in (
+                "AttackPriorityScore", "NearRangeZoneScore", "FarRangeZoneScore", "HitRecentlyScore", "OutOfCombatZoneScore")),
+            "leader": ":".join(f"{fight.get('SquadLeaderValues', {}).get(k, 0):g}" for k in (
+                "DesiredNearFighters", "DesiredFarFighters", "MinAngleToNextAI")),
+            "hitrecently": capability.get("TimeForHitRecently", 0),
             "onsight": reactions[0], "onclose": reactions[1], "onhit": reactions[2], "onhearing": heard["Relationship"],
             "hearing": ",".join(v["Value"] for v in heard["HearingEventTypes"]["Values"]) or "-",
             "quiet": hearing.get("Awake1QuietRange", 0), "normal": hearing.get("Awake2NormalRange", 0), "loud": hearing.get("Awake3LoudRange", 0),
