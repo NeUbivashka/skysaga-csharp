@@ -86,6 +86,11 @@ public sealed class CreatureAi
         IgnoreAfterTauntTime = Number("ignoretaunt");
         Selection = _fields["selection"] == "-" ? null : _fields["selection"];
         IsRangedFighter = _fields["ranged"] == "1";
+        DodgeProbability = Number("dodge");
+        DodgeDistance = Number("dodgedistance");
+        DodgeSpeed = Number("dodgespeed");
+        MinTimeBetweenDodges = Number("dodgegap");
+        PrioritiseSideDodge = _fields["dodgeside"] == "1";
         RunFromHealth = Number("runfromhealth");
         ToAttack = _fields["toattack"];
         ToTarget = _fields["totarget"];
@@ -136,6 +141,12 @@ public sealed class CreatureAi
     public float IgnoreAfterTauntTime { get; }
     public string? Selection { get; }
     public bool IsRangedFighter { get; }
+    public float DodgeProbability { get; }
+    public float DodgeDistance { get; }
+    public float DodgeSpeed { get; }
+    public float MinTimeBetweenDodges { get; }
+    public bool PrioritiseSideDodge { get; }
+    public bool CanDodge => DodgeProbability > 0 && DodgeDistance > 0 && DodgeSpeed > 0;
     public float RunFromHealth { get; }
     public string ToAttack { get; }
     public string ToTarget { get; }

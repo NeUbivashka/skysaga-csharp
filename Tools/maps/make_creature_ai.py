@@ -123,6 +123,7 @@ def main():
     loudness = geo["GlobalConstants"][0]["SensoryEventLoudness"]
     default_time = geo["UseTimes"][0]["Time"]
     lut = geo["GlobalConstantsCombat"][0]["CreatureVersusPlayerDamage"]["ValueLookup"]
+    dodge_control = geo["GlobalConstants"][0]["Control"]["Dodge"]
 
     rows = ["damage " + ",".join(f"{p['Input']:g}:{p['Output']:g}" for p in lut)]
     rows += [f"spawnparams {spawn['Name']} home={spawn['HomeRange']:g} roam={spawn['MaxDistanceFromSpawnPosition']:g}"
@@ -180,6 +181,9 @@ def main():
             "alert": anim.get("AlertTime", 0), "lost": anim.get("LostTime", 0),
             "taunt": anim.get("TauntTime", 0), "ignoretaunt": persist.get("IgnoreAfterTauntTime", 0),
             "selection": fight.get("AbilitySelectionTable") or "-", "ranged": int(bool(fight.get("IsRangedFighter"))),
+            "dodge": fight.get("DodgeProbability", 0), "dodgedistance": stat(creature, "DodgeDistance"),
+            "dodgespeed": stat(creature, "DodgeSpeed"), "dodgegap": dodge_control["MinTimeBetweenDodges"],
+            "dodgeside": int(bool(dodge_control["PrioritiseSideDodge"])),
             "runfromhealth": capability.get("RunFromTargetHealthThreshold", 0),
             "toattack": movement.get("ToAttack", {}).get("MovementType", "Run"),
             "totarget": movement.get("ToTarget", {}).get("MovementType", "Run"),

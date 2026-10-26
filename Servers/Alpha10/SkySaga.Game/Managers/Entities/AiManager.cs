@@ -12,6 +12,10 @@ public class AiManager
     private const byte StateRun = 4;
     private const byte StateSprint = 5;
     private const byte StateSwim = 6;
+    private const byte StateDodge = 7;
+    private const uint DodgeRight = 2;
+    private const uint DodgeBack = 4;
+    private const uint DodgeLeft = 6;
     private const byte MentalNormal = 0;
     private const byte MentalSleep = 3;
     private const float DirectionScale = 64f;
@@ -73,6 +77,9 @@ public class AiManager
         public DateTime IgnoreUntil;
         public bool CombatIdleDone;
         public CreatureAbility? Planned;
+        public Vector3 DodgeDirection;
+        public DateTime DodgeEndsAt;
+        public DateTime NextDodge;
     }
 
     private sealed class Attack
@@ -104,6 +111,43 @@ public class AiManager
         brain.IgnoredTargetId = 0;
         brain.Mode = ai.OnHit;
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
+    }
+
+    public static bool TryDodge(PlayerConnectionManager connections, Entity creature, Entity attacker)
+    {
+        var now = DateTime.UtcNow;
+
+        if (!Brains.TryGetValue(creature.Id, out var brain) || !CreatureAiTable.TryGet(creature.Name, out var ai) || !ai.CanDodge
+            || brain.AsleepUntil is not null || brain.Current is not null || now < brain.NextDodge
+            || Random.Shared.NextDouble() * 100 >= ai.DodgeProbability
+            || !creature.TryGetComponent<SmoothedTransformComponent>(out var transform) || Combat.PositionOf(attacker) is not Vector3 from)
+            return false;
+
+        var toAttacker = Horizontal(from - transform.Position);
+
+        if (toAttacker.LengthSquared() > 0.0001f)
+            Face(transform, Vector3.Normalize(toAttacker));
+
+        var forward = Forward(transform.YawDegrees);
+        var right = new Vector3(forward.Z, 0f, -forward.X);
+        var kind = !ai.PrioritiseSideDodge ? DodgeBack : Random.Shared.Next(2) == 0 ? DodgeRight : DodgeLeft;
+
+        brain.DodgeDirection = kind switch
+        {
+            DodgeRight => right,
+            DodgeLeft => -right,
+            _ => -forward
+        };
+        brain.DodgeEndsAt = now.AddSeconds(ai.DodgeDistance / ai.DodgeSpeed);
+        brain.NextDodge = brain.DodgeEndsAt.AddSeconds(ai.MinTimeBetweenDodges);
+        brain.Planned = null;
+
+        Hit(creature, attacker);
+
+        connections.BroadcastToAll(new EntityDodged { EntityId = creature.Id, DodgeKind = kind });
+
+        Console.WriteLine($"[AiManager] {creature.Name}#{creature.Id} dodges {(kind == DodgeRight ? "right" : kind == DodgeLeft ? "left" : "back")} from {attacker.Id}");
+        return true;
     }
 
     public static void Hear(Entity source, string sensoryEvent)
@@ -168,6 +212,12 @@ public class AiManager
             if (Fall(transform, brain, delta))
             {
                 Stop(entity);
+                continue;
+            }
+
+            if (now < brain.DodgeEndsAt)
+            {
+                Dodge(entity, transform, ai, brain, delta);
                 continue;
             }
 
@@ -668,6 +718,22 @@ public class AiManager
         transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
 
         SetMovement(entity, direction, speed, state);
+    }
+
+    private void Dodge(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, float delta)
+    {
+        var next = transform.Position + brain.DodgeDirection * ai.DodgeSpeed * delta;
+        var ground = SpawnFinder.GroundBelow(_worldManager.ChunkManager, next, ai.JumpHeight);
+
+        if (ground is not float groundY || groundY - transform.Position.Y > ai.JumpHeight)
+        {
+            brain.DodgeEndsAt = DateTime.MinValue;
+            Stop(entity);
+            return;
+        }
+
+        transform.Position = new Vector3(next.X, MathF.Max(groundY, transform.Position.Y), next.Z);
+        SetMovement(entity, brain.DodgeDirection, ai.DodgeSpeed, StateDodge);
     }
 
     private static void Stop(Entity entity) => SetMovement(entity, Vector3.Zero, 0f, StateIdle);
