@@ -86,7 +86,7 @@ class PhotoStore:
                 owner_clean = str(owner_uuid).strip().lower()
                 owner_no_hyphen = owner_clean.replace("-", "")
                 conn.execute("""
-                    UPDATE photos SET is_avatar = 0 
+                    UPDATE photos SET is_avatar = 0
                     WHERE LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?
                 """, (owner_clean, owner_no_hyphen))
 
@@ -110,7 +110,7 @@ class PhotoStore:
         photo_no_hyphen = photo_clean.replace("-", "")
         with self._lock, self._connect() as conn:
             row = conn.execute("""
-                SELECT * FROM photos 
+                SELECT * FROM photos
                 WHERE LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?
             """, (photo_clean, photo_no_hyphen)).fetchone()
             return dict(row) if row else None
@@ -120,7 +120,7 @@ class PhotoStore:
         photo_no_hyphen = photo_clean.replace("-", "")
         with self._lock, self._connect() as conn:
             conn.execute("""
-                UPDATE photos SET visible_public = ?, visible_friends = ? 
+                UPDATE photos SET visible_public = ?, visible_friends = ?
                 WHERE LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?
             """, (1 if visible_public else 0, 1 if visible_friends else 0, photo_clean, photo_no_hyphen))
             conn.commit()
@@ -132,11 +132,11 @@ class PhotoStore:
         photo_no_hyphen = photo_clean.replace("-", "")
         with self._lock, self._connect() as conn:
             conn.execute("""
-                UPDATE photos SET is_avatar = 0 
+                UPDATE photos SET is_avatar = 0
                 WHERE LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?
             """, (owner_clean, owner_no_hyphen))
             conn.execute("""
-                UPDATE photos SET is_avatar = 1 
+                UPDATE photos SET is_avatar = 1
                 WHERE LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?
             """, (photo_clean, photo_no_hyphen))
             conn.commit()
@@ -148,15 +148,15 @@ class PhotoStore:
         owner_no_hyphen = owner_clean.replace("-", "")
         with self._lock, self._connect() as conn:
             row = conn.execute("""
-                SELECT * FROM photos 
-                WHERE (LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?) 
-                  AND is_avatar = 1 
+                SELECT * FROM photos
+                WHERE (LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?)
+                  AND is_avatar = 1
                 ORDER BY created_at DESC LIMIT 1
             """, (owner_clean, owner_no_hyphen)).fetchone()
             if not row:
                 # Fallback to the latest photo by this owner if no photo is explicitly marked avatar
                 row = conn.execute("""
-                    SELECT * FROM photos 
+                    SELECT * FROM photos
                     WHERE LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?
                     ORDER BY created_at DESC LIMIT 1
                 """, (owner_clean, owner_no_hyphen)).fetchone()
@@ -233,7 +233,7 @@ class PhotoStore:
         with self._lock, self._connect() as conn:
             # Check owner before deleting
             row = conn.execute("""
-                SELECT owner_uuid, is_avatar FROM photos 
+                SELECT owner_uuid, is_avatar FROM photos
                 WHERE LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?
             """, (photo_uuid, uuid_no_hyphen)).fetchone()
             detected_owner = row["owner_uuid"] if row else owner_uuid
@@ -242,22 +242,22 @@ class PhotoStore:
                 owner_clean = str(owner_uuid).strip().lower()
                 owner_no_hyphen = owner_clean.replace("-", "")
                 res = conn.execute("""
-                    DELETE FROM photos 
+                    DELETE FROM photos
                     WHERE (LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?)
                       AND (LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?)
                 """, (photo_uuid, uuid_no_hyphen, owner_clean, owner_no_hyphen))
                 if res.rowcount == 0:
                     conn.execute("""
-                        DELETE FROM photos 
+                        DELETE FROM photos
                         WHERE LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?
                     """, (photo_uuid, uuid_no_hyphen))
             else:
                 conn.execute("""
-                    DELETE FROM photos 
+                    DELETE FROM photos
                     WHERE LOWER(uuid) = ? OR LOWER(REPLACE(uuid, '-', '')) = ?
                 """, (photo_uuid, uuid_no_hyphen))
             conn.execute("""
-                DELETE FROM photo_likes 
+                DELETE FROM photo_likes
                 WHERE LOWER(photo_uuid) = ? OR LOWER(REPLACE(photo_uuid, '-', '')) = ?
             """, (photo_uuid, uuid_no_hyphen))
 
@@ -266,13 +266,13 @@ class PhotoStore:
                 owner_c = str(detected_owner).strip().lower()
                 owner_nh = owner_c.replace("-", "")
                 has_avatar = conn.execute("""
-                    SELECT 1 FROM photos 
-                    WHERE (LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?) 
+                    SELECT 1 FROM photos
+                    WHERE (LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?)
                       AND is_avatar = 1
                 """, (owner_c, owner_nh)).fetchone()
                 if not has_avatar:
                     latest = conn.execute("""
-                        SELECT uuid FROM photos 
+                        SELECT uuid FROM photos
                         WHERE LOWER(owner_uuid) = ? OR LOWER(REPLACE(owner_uuid, '-', '')) = ?
                         ORDER BY created_at DESC LIMIT 1
                     """, (owner_c, owner_nh)).fetchone()

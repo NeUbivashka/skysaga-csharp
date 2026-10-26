@@ -280,7 +280,7 @@ class AccountStore:
         uuid_no_hyphen = parsed_uuid.replace("-", "")
         with closing(self._connect()) as connection:
             row = connection.execute("""
-                SELECT * FROM accounts 
+                SELECT * FROM accounts
                 WHERE LOWER(character_uuid) = ? OR LOWER(REPLACE(character_uuid, '-', '')) = ?
             """, (parsed_uuid, uuid_no_hyphen)).fetchone()
         return self._account(row)

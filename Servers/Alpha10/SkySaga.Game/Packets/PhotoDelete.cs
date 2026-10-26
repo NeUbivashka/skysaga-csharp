@@ -67,7 +67,7 @@ public class PhotoDelete : ISerializablePacket
 
                 -- If owner has no avatar set among remaining photos, promote the newest one
                 UPDATE photos SET is_avatar = 1 WHERE uuid = (
-                    SELECT uuid FROM photos 
+                    SELECT uuid FROM photos
                     WHERE (LOWER(owner_uuid) = @owner OR LOWER(REPLACE(owner_uuid, '-', '')) = @ownerNoHyphen)
                     ORDER BY created_at DESC LIMIT 1
                 );
