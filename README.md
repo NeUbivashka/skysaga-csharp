@@ -12,8 +12,8 @@ Protocol and gameplay documentation lives in the [Wiki](../../wiki).
 
 | Folder | Build | Status |
 |---|---|---|
-| `Servers/Alpha10` | 36731 (alpha 10.6.6) | frozen |
-| `Servers/Beta1` | 38328 (beta 1) | active |
+| `Servers/Alpha10` | 36731 (alpha 10.6.6) | active: all current work |
+| `Servers/Beta1` | 38328 (beta 1) | dropped: not maintained, kept for reference |
 
 ## Repository layout
 
@@ -35,7 +35,7 @@ docs/                         protocol and client notes
 Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
-cd Servers/Beta1
+cd Servers/Alpha10
 dotnet build Servers.sln
 ```
 

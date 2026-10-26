@@ -6,11 +6,16 @@ body:
     id: what
     attributes:
       label: What
-      description: Which feature / packet / system, and how it behaves in the original game.
+      description: Which feature, packet or system, and how it behaves in the original game.
     validations:
       required: true
+  - type: textarea
+    id: known
+    attributes:
+      label: What is known
+      description: RPC names and ordinals, client functions and addresses, GeoData fields, captured bytes. Mark what is confirmed in client 36731 and what is a guess.
   - type: textarea
     id: refs
     attributes:
       label: References
-      description: Client builds, RPC names, captures, docs/ pages, Discord threads.
+      description: Wiki pages, captures, videos of the original game, Discord threads.
