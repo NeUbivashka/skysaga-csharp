@@ -616,7 +616,9 @@ public class AiManager
             brain.TargetId = target.Id;
             brain.Mode = ally.OnHearing;
             brain.HuntUntil = now;
-            brain.KeepRange = range;
+            brain.KeepRange = Combat.PositionOf(target) is Vector3 targetPosition
+                ? MathF.Max(range, Vector3.Distance(targetPosition, transform.Position))
+                : range;
             brain.JustHeard = true;
 
             Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} answers the call of {caller.Name}#{caller.Id} at {distance:0.#} m: {ally.OnHearing} on {target.Id}");
