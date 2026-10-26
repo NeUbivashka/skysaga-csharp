@@ -8,6 +8,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
     private const float StepSeconds = 0.02f;
     private const float PlayerHalfWidth = 0.5f;
     private const float PlayerHeight = 2f;
+    private const float HomingAlignedDot = 0.95f;
 
     private readonly List<Flight> _flights = [];
     private readonly Random _random = new();
@@ -64,6 +65,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
             component.Gravity = launch.GravityFactor;
             component.OwningEntityId = owner.Id;
             component.LauncherEntityId = owner.Id;
+            component.HomingProjectileMaxAngle = launch.HomingMaxAngle;
         }
 
         playerConnectionManager.BroadcastToAll(new EntityAdd
@@ -110,6 +112,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
             {
                 var step = MathF.Min(StepSeconds, delta - elapsed);
 
+                Home(flight);
                 flight.Velocity += Vector3.UnitY * -WorldGravity * flight.Launch.GravityFactor * step;
                 flight.Position += flight.Velocity * step;
 
@@ -129,6 +132,39 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                 }
             }
         }
+    }
+
+    private void Home(Flight flight)
+    {
+        if (flight.Launch.HomingMaxAngle <= 0
+            || !flight.Owner.TryGetComponent<ClientEnemyAiComponent>(out var ai) || ai.TargetEntityId == 0
+            || !worldManager.EntityManager.TryGetEntity(ai.TargetEntityId, out var target)
+            || Combat.PositionOf(target) is not Vector3 targetPosition)
+            return;
+
+        var toTarget = new Vector3(targetPosition.X - flight.Position.X, 0f, targetPosition.Z - flight.Position.Z);
+        var heading = new Vector3(flight.Velocity.X, 0f, flight.Velocity.Z);
+
+        if (toTarget.LengthSquared() < 0.0001f || heading.LengthSquared() < 0.0001f)
+            return;
+
+        toTarget = Vector3.Normalize(toTarget);
+        heading = Vector3.Normalize(heading);
+
+        var dot = Vector3.Dot(toTarget, heading);
+
+        if (MathF.Abs(dot) >= HomingAlignedDot)
+            return;
+
+        var angle = MathF.Min(MathF.Acos(dot), flight.Launch.HomingMaxAngle * MathF.PI / 180f);
+        var right = new Vector3(heading.Z, 0f, -heading.X);
+
+        if (Vector3.Dot(toTarget, right) < 0)
+            angle = -angle;
+
+        var (sin, cos) = MathF.SinCos(angle);
+        var velocity = flight.Velocity;
+        flight.Velocity = new Vector3(velocity.X * cos + velocity.Z * sin, velocity.Y, velocity.Z * cos - velocity.X * sin);
     }
 
     private static bool Inside(Vector3 point, Vector3 player)

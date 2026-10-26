@@ -53,7 +53,8 @@ public sealed record RelationRule(string Matcher, AiReaction OnSight, AiReaction
 public sealed record AiCondition(bool Invert, string Kind, string Argument);
 
 public sealed record ProjectileLaunch(string Entity, uint DataIndex, uint DataCount, float Speed, float GravityFactor,
-    float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel);
+    float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel,
+    float HomingMaxAngle);
 
 public readonly record struct SleepTimes(float IdleMin, float IdleMax, float SleepMin, float SleepMax)
 {
@@ -283,7 +284,7 @@ public static class CreatureAiTable
                     data.Projectiles[launchAction] = new ProjectileLaunch(f["entity"], uint.Parse(f["dataindex"]), uint.Parse(f["datacount"]),
                         Number(f["speed"]), Number(f["gravity"]), Number(f["inaccmin"]), Number(f["inaccmax"]),
                         new Vector3(Number(f["offx"]), Number(f["offy"]), Number(f["offz"])), Number(f["pitch"]), Number(f["yaw"]),
-                        Number(f["lifetime"]), Number(f["impactlevel"]));
+                        Number(f["lifetime"]), Number(f["impactlevel"]), Number(f["homing"]));
                     break;
                 case ["selectiontable", var tableName, ..]:
                     data.SelectionTables[tableName] = [.. parts[2..].Select(rule => rule.Split(':')).Select(rule => new SelectionTableRule(rule[0], rule[1]))];

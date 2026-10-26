@@ -24,6 +24,7 @@ public class AiManager
     private const string DefaultSpawnParams = "GenericFeatureSpawner";
     private const float ProjectileAimHeight = 1f;
     private const float Gravity = 20f;
+    private const float MinSteer = 0.15f;
     private const string ProjectileTag = "ActionProjectile";
     private const string AlertTag = "EmoteAlert";
     private const string LostTag = "EmoteLost";
@@ -1012,13 +1013,14 @@ public class AiManager
 
     private void Move(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, Vector3 direction, float speed, byte state, float delta)
     {
-        if (Avoid(entity.Id, brain.TargetId, transform.Position, ai, direction) is not Vector3 free)
+        if (Avoid(entity.Id, brain, transform.Position, ai, direction) is not Vector3 free)
         {
             Stop(entity);
             return;
         }
 
-        direction = free;
+        speed *= free.Length();
+        direction = Vector3.Normalize(free);
         Face(transform, direction);
 
         var next = transform.Position + direction * speed * delta;
@@ -1038,7 +1040,7 @@ public class AiManager
         SetMovement(entity, direction, speed, state);
     }
 
-    private Vector3? Avoid(int id, int targetId, Vector3 position, CreatureAi ai, Vector3 direction)
+    private Vector3? Avoid(int id, Brain brain, Vector3 position, CreatureAi ai, Vector3 direction)
     {
         if (ai.AvoidanceRange <= 0)
             return direction;
@@ -1050,31 +1052,28 @@ public class AiManager
             var toOther = Horizontal(other - position);
             var distance = toOther.Length();
 
-            if (otherId == id || otherId == targetId || distance > ai.AvoidanceRange || distance < 0.0001f)
+            if (otherId == id || otherId == brain.TargetId || distance > ai.AvoidanceRange || distance < 0.0001f)
                 continue;
 
             var away = toOther / distance;
-            var closing = Vector3.Dot(steered, away);
+            var push = 1f - distance / ai.AvoidanceRange;
+            var ahead = Vector3.Dot(direction, away);
 
-            if (closing <= 0)
-                continue;
+            steered -= away * push;
 
-            steered -= away * closing;
-
-            if (steered.LengthSquared() < 0.01f)
-                steered = new Vector3(away.Z, 0f, -away.X);
+            if (ahead > 0)
+            {
+                var side = direction.X * away.Z - direction.Z * away.X >= 0 ? -1f : 1f;
+                steered += new Vector3(-away.Z, 0f, away.X) * side * push * ahead;
+            }
         }
 
-        foreach (var (otherId, other) in _bodies)
-        {
-            var toOther = Horizontal(other - position);
-            var distance = toOther.Length();
+        var length = steered.Length();
 
-            if (otherId != id && otherId != targetId && distance <= ai.AvoidanceRange && distance > 0.0001f && Vector3.Dot(steered, toOther / distance) > 0.0001f)
-                return null;
-        }
+        if (length < MinSteer)
+            return null;
 
-        return Vector3.Normalize(steered);
+        return length > 1f ? steered / length : steered;
     }
 
     private void Dodge(Entity entity, TransformComponent transform, CreatureAi ai, Brain brain, float delta)
