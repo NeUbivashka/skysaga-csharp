@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace SkySaga.Game;
 
-public readonly record struct ActionStats(string Name, float ChargeBarBoost, float WeaponLevelModifier, bool ConsumesChargeBar, string[] Tags, float Duration)
+public readonly record struct ActionStats(string Name, float ChargeBarBoost, float WeaponLevelModifier, bool ConsumesChargeBar, string[] Tags, float Duration, float CreatureLevelModifier)
 {
     public bool HasTag(string tag) => Tags?.Contains(tag, StringComparer.OrdinalIgnoreCase) == true;
 }
@@ -25,7 +25,7 @@ public static class ActionStatTable
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (parts.Length != 6 || parts[0][0] == '#')
+            if (parts.Length != 7 || parts[0][0] == '#')
                 continue;
 
             var stats = new ActionStats(
@@ -34,7 +34,8 @@ public static class ActionStatTable
                 float.Parse(parts[2], CultureInfo.InvariantCulture),
                 parts[3] == "1",
                 parts[4] == "-" ? [] : parts[4].Split(','),
-                float.Parse(parts[5], CultureInfo.InvariantCulture));
+                float.Parse(parts[5], CultureInfo.InvariantCulture),
+                float.Parse(parts[6], CultureInfo.InvariantCulture));
 
             data.ByName[parts[0]] = stats;
             data.ByCrc[Util.ComputeCrc32(parts[0])] = stats;

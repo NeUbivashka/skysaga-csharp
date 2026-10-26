@@ -116,6 +116,8 @@ public class AiManager
         public required DateTime StartedAt;
         public required DateTime EndsAt;
         public bool Resolved;
+        public float Travelled;
+        public bool ReachedRange;
     }
 
     public AiManager(IWorldManager worldManager, PlayerConnectionManager playerConnectionManager)
@@ -241,6 +243,7 @@ public class AiManager
         var now = DateTime.UtcNow;
 
         Knockback.Update(_worldManager, now);
+        Perks.Update(now);
 
         if (now - _lastUpdate < UpdateInterval)
             return;
@@ -354,12 +357,24 @@ public class AiManager
 
             if (IsMelee(attack.Ability) && !attack.Resolved && now >= attack.HitAt)
             {
-                attack.Resolved = true;
+                var victim = _targets.GetValueOrDefault(brain.TargetId);
 
-                if (_targets.GetValueOrDefault(brain.TargetId) is { } victim && InHitArea(transform, attack.Ability, Combat.PositionOf(victim)!.Value))
+                if (victim is not null && Combat.PositionOf(victim) is Vector3 victimPosition && InHitArea(transform, attack.Ability, victimPosition, attack.ReachedRange))
+                {
+                    attack.Resolved = true;
                     Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
-                else
-                    Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} misses {brain.TargetId} with {attack.Ability.Action}");
+                }
+                else if (now >= attack.StartedAt.AddSeconds(attack.Ability.HitEndTime))
+                {
+                    attack.Resolved = true;
+                    var aimed = victim is not null && Combat.PositionOf(victim) is Vector3 missed ? missed : transform.Position;
+                    var off = Horizontal(aimed - transform.Position);
+                    var missAngle = off.LengthSquared() < 0.0001f ? 0f
+                        : MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(off), Forward(transform.YawDegrees)), -1f, 1f)) * 180f / MathF.PI;
+                    Console.WriteLine($"[AiManager] {entity.Name}#{entity.Id} misses {brain.TargetId} with {attack.Ability.Action}: "
+                        + $"distance {Vector3.Distance(Combat.NearestBodyPoint(aimed, transform.Position), transform.Position):0.##} (reach {attack.Ability.HitReach:0.##}), "
+                        + $"height {aimed.Y - transform.Position.Y:0.##}, angle {missAngle:0} (arc {attack.Ability.Motion.Arc:0}), lunge {attack.Travelled:0.##}");
+                }
             }
 
             if (now < attack.EndsAt)
@@ -500,9 +515,11 @@ public class AiManager
             brain.BackOffDirection = null;
         }
 
-        var reach = Vector3.Distance(targetPosition, transform.Position);
+        var body = Combat.NearestBodyPoint(targetPosition, transform.Position);
+        var reach = Vector3.Distance(body, transform.Position);
+        var flatReach = Horizontal(body - transform.Position).Length();
 
-        if (ai.Abilities.Where(IsMelee).Any(ability => distance <= ability.HitReach && reach > ability.HitReach))
+        if (ai.Abilities.Where(IsMelee).Any(ability => flatReach <= ability.HitReach && reach > ability.HitReach))
             brain.Blocked = true;
 
         var outsideTerritory = ai.IsTerritorial && brain.Spawn.HomeRange > 0
@@ -864,18 +881,37 @@ public class AiManager
         if (stage.Rotate && target is Vector3 facing)
             Face(transform, Horizontal(facing - transform.Position));
 
-        var time = attack.Ability.StageTime(elapsed);
+        var planned = attack.Ability.PlannedDistance(elapsed);
+        var step = planned - attack.Travelled;
+        attack.Travelled = planned;
 
-        if (!stage.Move || stage.Distance == 0 || time <= 0
-            || stage.StopWhenInRange && stage.Distance > 0 && target is Vector3 aim && Vector3.Distance(aim, transform.Position) <= attack.Ability.HitReach)
+        if (MathF.Abs(step) < 0.0001f)
         {
             Stop(entity);
             return;
         }
 
-        var direction = Forward(transform.YawDegrees) * MathF.Sign(stage.Distance);
-        var speed = MathF.Abs(stage.Distance) / time;
-        var next = transform.Position + direction * speed * delta;
+        if ((stage.StopWhenInRange || attack.Ability.Motion.Active.StopWhenInRange) && step > 0 && target is Vector3 aim)
+        {
+            var room = Vector3.Distance(Combat.NearestBodyPoint(aim, transform.Position), transform.Position) - attack.Ability.HitReach;
+
+            if (room <= 0)
+            {
+                attack.ReachedRange = true;
+                Stop(entity);
+                return;
+            }
+
+            if (step >= room)
+            {
+                attack.ReachedRange = true;
+                step = room;
+            }
+        }
+
+        var direction = Forward(transform.YawDegrees) * MathF.Sign(step);
+        var speed = MathF.Abs(step) / MathF.Max(delta, 0.001f);
+        var next = transform.Position + direction * MathF.Abs(step);
         var ground = SpawnFinder.GroundBelow(_worldManager.ChunkManager, next, ai.JumpHeight);
 
         if (ground is not float groundY || groundY - transform.Position.Y > ai.JumpHeight)
@@ -888,9 +924,9 @@ public class AiManager
         SetMovement(entity, direction, speed, StateRun);
     }
 
-    private static bool InHitArea(TransformComponent transform, CreatureAbility ability, Vector3 target)
+    private static bool InHitArea(TransformComponent transform, CreatureAbility ability, Vector3 target, bool reachedRange)
     {
-        if (Vector3.Distance(target, transform.Position) > ability.HitReach)
+        if (!reachedRange && Vector3.Distance(Combat.NearestBodyPoint(target, transform.Position), transform.Position) > ability.HitReach)
             return false;
 
         var offset = Horizontal(target - transform.Position);

@@ -6,8 +6,8 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
 {
     private const float WorldGravity = CreatureAiTable.WorldGravity;
     private const float StepSeconds = 0.02f;
-    private const float PlayerHalfWidth = 0.5f;
-    private const float PlayerHeight = 2f;
+    private const float PlayerHalfWidth = Combat.BodyHalfWidth;
+    private const float PlayerHeight = Combat.BodyHeight;
     private const float HomingAlignedDot = 0.95f;
 
     private readonly List<Flight> _flights = [];
@@ -122,6 +122,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                             && Combat.PositionOf(entity) is Vector3 position && Crosses(from, flight.Position, position)) is { } victim)
                 {
                     Combat.CreatureProjectileHit(playerConnectionManager, worldManager.EntityManager, flight.Owner, victim, flight.Ability, flight.Launch);
+                    Perks.ApplyImpact(victim, flight.Launch.ImpactActions);
                     Splash(flight, players, victim);
                     Remove(flight, flight.Position);
                     break;
@@ -184,10 +185,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                 || Combat.PositionOf(entity) is not Vector3 position)
                 continue;
 
-            var nearest = new Vector3(
-                Math.Clamp(flight.Position.X, position.X - PlayerHalfWidth, position.X + PlayerHalfWidth),
-                Math.Clamp(flight.Position.Y, position.Y, position.Y + PlayerHeight),
-                Math.Clamp(flight.Position.Z, position.Z - PlayerHalfWidth, position.Z + PlayerHalfWidth));
+            var nearest = Combat.NearestBodyPoint(position, flight.Position);
 
             if (Vector3.Distance(nearest, flight.Position) > flight.Launch.SplashRadius)
                 continue;

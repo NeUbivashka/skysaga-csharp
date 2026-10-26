@@ -52,7 +52,7 @@ public static class Combat
             return;
 
         var weaponLevel = AttackLevel(entityManager, player, usedItemCrc) + attacks.Max(attack => ActionStatTable.Get(attack.EquippedAction).WeaponLevelModifier);
-        var armourLevel = CharacterStats(target).ArmourLevel + EquipmentStats(entityManager, target).ArmourLevel;
+        var armourLevel = CharacterStats(target).ArmourLevel + EquipmentStats(entityManager, target).ArmourLevel + CharacterStats(target).CreatureLevel;
 
         var damage = attacks.Sum(attack => attack.ForceZeroDamage
             ? 0
@@ -81,6 +81,8 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] player {player.Id} hit {target.Name}#{target.Id} with {attacks[0].EquippedAction}/{string.Join("+", attacks.Select(a => a.EntityAction))}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
+
+        Perks.Hit(target);
 
         if (!health.IsDead && target.TryGetComponent<ClientEnemyAiComponent>(out _))
         {
@@ -113,9 +115,10 @@ public static class Combat
     }
 
     public static void CreatureProjectileHit(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability, ProjectileLaunch launch)
-        => CreatureAttack(connections, entityManager, creature, player, ability, launch.ImpactWeaponLevel);
+        => CreatureAttack(connections, entityManager, creature, player, ability, launch.ImpactWeaponLevel, launch.ImpactCreatureLevel);
 
-    public static void CreatureAttack(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability, float? weaponLevelModifier = null)
+    public static void CreatureAttack(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability,
+        float? weaponLevelModifier = null, float? creatureLevelModifier = null)
     {
         if (!player.TryGetComponent<ClientHealthComponent>(out var health) || health.IsDead)
             return;
@@ -125,8 +128,11 @@ public static class Combat
         if (creatureVictim && (AiManager.TryDodge(connections, player, creature) || AiManager.TryBlock(player, creature)))
             return;
 
-        var weaponLevel = CharacterStats(creature).WeaponLevel + (weaponLevelModifier ?? ActionStatTable.Get(ability.Action).WeaponLevelModifier);
-        var armourLevel = CharacterStats(player).ArmourLevel + EquipmentStats(entityManager, player).ArmourLevel;
+        var action = ActionStatTable.Get(ability.Action);
+        var weaponLevel = CharacterStats(creature).WeaponLevel + (weaponLevelModifier ?? action.WeaponLevelModifier)
+            + CharacterStats(creature).CreatureLevel + (creatureLevelModifier ?? action.CreatureLevelModifier);
+        var armourLevel = CharacterStats(player).ArmourLevel + EquipmentStats(entityManager, player).ArmourLevel
+            + (creatureVictim ? CharacterStats(player).CreatureLevel : 0);
         var damage = (int)MathF.Round(Lookup(creatureVictim ? CreatureAiTable.CreatureDamageLut : CreatureAiTable.DamageLut, weaponLevel - armourLevel));
 
         health.Damage(damage);
@@ -147,6 +153,8 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] {creature.Name}#{creature.Id} hit {(creatureVictim ? $"{player.Name}#{player.Id}" : $"player {player.Id}")} with {ability.Action}: weapon {weaponLevel:0.##} armour {armourLevel:0.##} damage {damage}, hp {health.SyncedFullHPValues}/{health.MaxHP}");
+
+        Perks.Hit(player);
 
         if (!creatureVictim)
             return;
@@ -187,6 +195,14 @@ public static class Combat
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} knocked back {travel:0.##} m (distance {distance:0.##}, strength {strength:0.##}, resistance {resistance:0.##}, pitch {attack.KnockbackPitch:0.##})");
     }
+
+    internal const float BodyHalfWidth = 0.5f;
+    internal const float BodyHeight = 2f;
+
+    internal static Vector3 NearestBodyPoint(Vector3 body, Vector3 from)
+        => new(Math.Clamp(from.X, body.X - BodyHalfWidth, body.X + BodyHalfWidth),
+            Math.Clamp(from.Y, body.Y, body.Y + BodyHeight),
+            Math.Clamp(from.Z, body.Z - BodyHalfWidth, body.Z + BodyHalfWidth));
 
     internal static Vector3? PositionOf(Entity entity)
     {

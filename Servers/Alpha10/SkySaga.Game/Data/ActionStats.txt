@@ -1,165 +1,165 @@
-# EquippedAction ChargeBarBoost WeaponLevelModifier ConsumesChargeBar Tags PlayerDuration
-Ai_Bear_Claw 0 0 0 ActionShieldBreaker 2.01
-Ai_Bear_Swipe 0 0 0 ActionMelee,Attack_Basic 1.56
-Ai_BeastExplode 0 0 0 ActionMelee,ActionShieldBreaker 1.1
-Ai_BigCat_Swipe 0 0 0 ActionMelee,Attack_Basic 1.56
-Ai_Boar_Victory 0 0 0 EmoteVictory 3
-Ai_Colossaur_Headbutt 0 0 0 ActionMelee,Attack_Heavy 2.16
-Ai_Colossaur_Stampede 0 0 0 ActionMelee 3.93
-Ai_ExplodingFrog_Pop 0 0 0 ActionMelee,ActionShieldBreaker 1.1
-Ai_Fennec_Bite 0 0 0 ActionMelee,Attack_Quick 1.66
-Ai_FiringCactus_Blast 0 0 0 ActionMelee,ActionShieldBreaker 2.71
-Ai_Goat_Ram 0 0 0 ActionMelee,Attack_Quick 1.49
-Ai_Human_Alert 0 0 0 EmoteAlert 3
-Ai_Human_Alert_Bow 0 0 0 EmoteAlert 3
-Ai_Human_Alert_Hammer 0 0 0 EmoteAlert 3
-Ai_Human_Broadcast 0 0 0 EmoteBroadcast 3
-Ai_Human_Broadcast_Bow 0 0 0 EmoteBroadcast 3
-Ai_Human_Broadcast_Hammer 0 0 0 EmoteBroadcast 3
-Ai_Human_CombatIdle_1 0 0 0 EmoteCombatIdle,EmoteTaunt,EmoteVictory 3
-Ai_Human_CombatIdle_2 0 0 0 EmoteCombatIdle,EmoteTaunt 3
-Ai_Human_CombatIdle_3 0 0 0 EmoteCombatIdle,EmoteTaunt 3
-Ai_Human_Lost 0 0 0 EmoteLost 3
-Ai_Human_Lost_Bow 0 0 0 EmoteLost 3
-Ai_Human_Lost_Hammer 0 0 0 EmoteLost 3
-Ai_MineCritter_Bite 0 0 0 ActionMelee,Attack_Quick 1.66
-Ai_MineCritter_Spit 0 0 0 ActionProjectile 4.18
-Ai_Pig_PigFart 0 0 0 EmotePigFart 3
-Ai_Rabbit_Kick 0 0 0 EmoteRabbitKick 3
-Ai_Raptor_Bite 0 0 0 ActionMelee,Attack_Basic 1.67
-Ai_Raptor_Kick 0 0 0 ActionMelee,Attack_Quick 1.8
-Ai_Raptor_Spit 0 0 0 ActionProjectile 4.18
-Ai_RawboneExplode 0 5 0 ActionMelee,ActionShieldBreaker 1.1
-Ai_Scarab_Swipe 0 0 0 ActionMelee,Attack_Basic 2.7
-Ai_Skitter_Spit 0 0 0 ActionProjectile 3
-Ai_SoldierBug_Flyer_Ram 0 0 0 ActionMelee,Attack_Quick 1.99
-Ai_SoldierBug_Flyer_Spit 0 0 0 ActionProjectile 2.8
-Ai_SoldierBug_Queen_Rodeo 0 0 0 ActionMelee,ActionShieldBreaker 1.99
-Ai_SoldierBug_Queen_Spit 0 0 0 ActionProjectile 1.99
-Ai_SoldierBug_Queen_Stomp 0 2 0 ActionMelee,ActionShieldBreaker 2.83
-Ai_SoldierBug_Queen_Swipe 0 0 0 ActionMelee,ActionShieldBreaker 2.47
-Ai_SoldierBug_Queen_SwipeRight 0 0 0 ActionMelee,ActionShieldBreaker 2.47
-Ai_SoldierBug_Spitter_Spit 0 0 0 ActionProjectile 3.18
-Ai_SoldierBug_Stampede 0 0 0 ActionMelee,ActionShieldBreaker 5.3
-Ai_Spawn_BigCat_Leader_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 4
-Ai_Spawn_BigCat_Leader_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 4
-Ai_Spawn_Biped_Beastmaster_0 0 0 0 ActionSpawn 4
-Ai_Spawn_Biped_Beastmaster_1 0 0 0 ActionSpawn 4
-Ai_Spawn_Biped_Beastmaster_2 0 0 0 ActionSpawn 4
-Ai_Spawn_Biped_Beastmaster_3 0 0 0 ActionSpawn 4
-Ai_Spawn_Biped_Beastmaster_4 0 0 0 ActionSpawn 4
-Ai_Spawn_Raptor_Leader_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 8.87
-Ai_Spawn_Raptor_Leader_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 8.87
-Ai_Spawn_Rawbone_Summoner_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 3
-Ai_Spawn_Rawbone_Summoner_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 3
-Ai_Spawn_Scarab_Queen_Eggs 0 0 0 ActionSpawn_Attack,ActionSpawn 2.62
-Ai_Spawn_Skitterling_Leader_Gen 0 0 0 ActionSpawn 4
-Ai_Spawn_Wolf_Leader_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 4
-Ai_Spawn_Wolf_Leader_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 4
-Ai_Spawn_Yeti_Brute_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 4
-Ai_Spawn_Yeti_Brute_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 4
-Ai_Spider_Bite 0 0 0 ActionMelee,Attack_Quick 0.56
-Ai_Spitterling_Spit 0 0 0 ActionProjectile,ActionImmobilise 3
-Ai_SpittingPlant_Spit 0 0 0 ActionProjectile 2.33
-Ai_SpittingPlant_Swipe 0 0 0 ActionMelee,ActionShieldBreaker 3.16
-Ai_SpittingPlant_Teleport 0 0 0 ActionTeleport 3
-Ai_Wolf_Bite 0 0 0 ActionMelee,Attack_Basic 1.63
-Ai_Wolf_Howl 0 0 0 EmoteHowl 3
-Ai_Wolf_Spit 0 0 0 ActionProjectile 2.57
-Ai_Yeti_Launch_YetiRock 0 0 0 ActionProjectile 1.67
-Ai_Yeti_Slam 0 0 0 ActionMelee,ActionShieldBreaker 1.49
-Ai_Yeti_Swing 0 0 0 ActionMelee,Attack_Heavy 3
-Axe_Basic_1 10 0 0 ActionMelee,Attack_Basic 3
-BombExplode 0 3.5 0 ActionMelee,ActionShieldBreaker 0
-BombExplode_4 0 4.2 0 ActionMelee,ActionShieldBreaker 0
-Dagger_Basic_1 10 0 0 ActionMelee,Attack_Basic 3
-Dagger_Basic_1_Hunter 0 0 0 ActionMelee,Attack_Basic 1.1
-Dagger_Basic_1_Rogue 0 0 0 ActionMelee,Attack_Basic 1.1
-Dagger_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3.2
-Dagger_Basic_2_Hunter 0 -1.5 0 ActionMelee,Attack_Basic 1.2
-Dagger_Basic_2_Rogue 0 -1.5 0 ActionMelee,Attack_Basic 1.2
-Dagger_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 4.09
-Dagger_Quick_Lunge_Rogue 0 -0.5 0 ActionMelee,Attack_Quick 1.29
-Dagger_Super 0 10 1 ActionMelee,Attack_Power,ActionShieldBreaker 8.09
-Dagger_Super_Beastmaster 0 4 0 ActionShieldBreaker 2.16
-Dart_Trap 1 0 0 - 1
-FTUE_SkeletonsMoveToMermesh_equippedAction 0 0 0 Spawner 3
-Kick 0 0 0 ActionKick 0.98
-Launch_Arrow 0 0 0 ActionProjectile 3
-Launch_Arrow_Archer 0 0 0 ActionProjectile 3
-Launch_Arrow_Beastmaster 0 0 0 ActionProjectile 3
-Launch_Arrow_Hunter 0 0 0 ActionProjectile 3
-Launch_Arrow_Peregrine 0 0 0 ActionProjectile 3
-Launch_Bomb_0 0 0 0 ActionProjectile 0.81
-Launch_Bomb_0_Brute 0 0 0 ActionProjectile 1.49
-Launch_Bomb_0_NPC 0 0 0 ActionProjectile 0.99
-Launch_Bomb_1 0 0 0 ActionProjectile 0.81
-Launch_Bomb_1_Brute 0 0 0 ActionProjectile 1.49
-Launch_Bomb_1_NPC 0 0 0 ActionProjectile 0.99
-Launch_Bomb_2 0 0 0 ActionProjectile 0.81
-Launch_Bomb_2_Brute 0 0 0 ActionProjectile 1.49
-Launch_Bomb_2_NPC 0 0 0 ActionProjectile 0.99
-Launch_Bomb_3 0 0 0 ActionProjectile 0.81
-Launch_Bomb_3_Brute 0 0 0 ActionProjectile 1.49
-Launch_Bomb_3_NPC 0 0 0 ActionProjectile 0.99
-Launch_Bomb_4 0 0 0 ActionProjectile 0.81
-Launch_Bomb_4_Brute 0 0 0 ActionProjectile 1.49
-Launch_Bomb_4_NPC 0 0 0 ActionProjectile 0.99
-Launch_Dart_Trap_Arrow 0 0 0 ActionProjectile 3
-Launch_Firecracker 0 0 0 ActionProjectile 0.81
-Launch_Firework 0 0 0 ActionProjectile 5
-Launch_ImmobiliseAttack 0 0 0 ActionImmobilise 6.25
-Launch_Rock 0 0 0 ActionProjectile 1.67
-Launch_Rock_2Handed 0 0 0 ActionProjectile 1.67
-Mace_Basic_1 10 0 0 ActionMelee,Attack_Basic 3
-Mace_Basic_1_Defender 10 0 0 ActionMelee,Attack_Basic 1.29
-Mace_Basic_1_Guardian 10 0 0 ActionMelee,Attack_Basic 1.36
-Mace_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3.3
-Mace_Basic_2_Defender 10 0.2 0 ActionMelee,Attack_Basic 1.59
-Mace_Basic_2_Guardian 10 0.2 0 ActionMelee,Attack_Basic 1.66
-Mace_Heavy_Defender 0 2.3 0 ActionMelee,Attack_Heavy 2.54
-Mace_Heavy_Guardian 0 2.3 0 ActionMelee,Attack_Heavy 2.62
-Mace_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 3.5
-Mace_Super 0 12 1 ActionShieldBreaker,Attack_Power 7
-Mace_Super_Guardian 0 4 0 ActionShieldBreaker,Attack_Power 3.66
-Pick_Basic_1 0 0 0 ActionMelee,Attack_Basic,Attack_Quick,ActionKick 3
-Pick_Settler_BigArc 0 0 0 ActionMelee,ActionKick,Attack_Basic,Attack_Quick 3
-Pick_Settler_FlatteningArc 0 0 0 ActionMelee,ActionKick,Attack_Basic,Attack_Quick 3
-ProjectileAttack_Medium 0 0 0 ActionProjectile 0
-SharpRock_Basic 0 0 0 ActionMelee,ActionKick,Attack_Basic,Attack_Quick 3
-Shield_Block 2 0 0 ActionBlock 3
-Shield_Block_NPC 0 0 0 ActionBlock 3
-Shield_Heavy_Guardian 10 0.25 0 ActionMelee,ActionShieldBreaker 3.3
-Spear_Basic_1 10 0 0 ActionMelee,Attack_Basic 3
-Spear_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3
-Spear_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 2.63
-Spear_Stampede_Pikeman 0 0 0 ActionMelee,Attack_Basic 2.3
-Spear_Super 0 14 1 ActionShieldBreaker,Attack_Power 5.6
-Sword_Basic_1 10 0 0 ActionMelee,Attack_Basic 3
-Sword_Basic_1_Blademaster 0 0 0 ActionMelee,Attack_Basic 1
-Sword_Basic_1_Fighter 10 0 0 ActionMelee,Attack_Quick 0.93
-Sword_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 2.75
-Sword_Basic_2_Blademaster 0 0.2 0 ActionMelee,Attack_Basic 1.01
-Sword_Basic_2_Fighter 0 0.25 0 ActionMelee,Attack_Quick 1.53
-Sword_Heavy_Dual_Blademaster 0 1 0 ActionMelee,Attack_Heavy 1.05
-Sword_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 3.5
-Sword_Quick_Lunge_Blademaster 12 -0.5 0 ActionMelee,Attack_Quick 1.05
-Sword_Super_1 0 6 1 ActionMelee,Attack_Power 2.6
-Sword_Super_1_Blademaster 0 3 0 ActionShieldBreaker,Attack_Power,ActionMelee 0.93
-Sword_Super_2 0 6 0 ActionMelee,Attack_Power 2.3
-Sword_Super_2_Blademaster 0 3 0 ActionShieldBreaker,Attack_Power,ActionMelee 0.93
-Sword_Super_3 0 12 0 ActionMelee,Attack_Power 2.96
-Sword_Super_3_Blademaster 0 7 0 ActionShieldBreaker,Attack_Power,ActionMelee 1.51
-Torch_Basic_1 0 0 0 ActionMelee,Attack_Quick 3.2
-TwoHanded_Basic_1 10 0.25 0 ActionMelee,Attack_Basic 3
-TwoHanded_Basic_1_Brute 10 0 0 ActionMelee,Attack_Heavy 2.11
-TwoHanded_Basic_1_Champion 0 0 0 ActionMelee,Attack_Basic 1.61
-TwoHanded_Basic_1_Mage 0 0 0 ActionMelee,Attack_Basic 2.16
-TwoHanded_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3
-TwoHanded_Basic_2_Brute 10 0 0 ActionMelee,Attack_Heavy 2.16
-TwoHanded_Basic_2_Champion 0 0.25 0 ActionMelee,Attack_Basic 1.43
-TwoHanded_Heavy_Champion 0 2.3 0 ActionMelee,Attack_Heavy 2.43
-TwoHanded_Heavy_Mage 0 1.7 0 ActionMelee,Attack_Heavy 3.08
-TwoHanded_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 2.17
-TwoHanded_Super 0 12 1 ActionShieldBreaker,Attack_Power 7
-TwoHanded_Super_Brute 0 3 0 ActionShieldBreaker,Attack_Power 3.53
+# EquippedAction ChargeBarBoost WeaponLevelModifier ConsumesChargeBar Tags PlayerDuration CreatureLevelModifier
+Ai_Bear_Claw 0 0 0 ActionShieldBreaker 2.01 0.5
+Ai_Bear_Swipe 0 0 0 ActionMelee,Attack_Basic 1.56 -0.5
+Ai_BeastExplode 0 0 0 ActionMelee,ActionShieldBreaker 1.1 5
+Ai_BigCat_Swipe 0 0 0 ActionMelee,Attack_Basic 1.56 0
+Ai_Boar_Victory 0 0 0 EmoteVictory 3 0
+Ai_Colossaur_Headbutt 0 0 0 ActionMelee,Attack_Heavy 2.16 0
+Ai_Colossaur_Stampede 0 0 0 ActionMelee 3.93 0
+Ai_ExplodingFrog_Pop 0 0 0 ActionMelee,ActionShieldBreaker 1.1 5
+Ai_Fennec_Bite 0 0 0 ActionMelee,Attack_Quick 1.66 0
+Ai_FiringCactus_Blast 0 0 0 ActionMelee,ActionShieldBreaker 2.71 0
+Ai_Goat_Ram 0 0 0 ActionMelee,Attack_Quick 1.49 0
+Ai_Human_Alert 0 0 0 EmoteAlert 3 0
+Ai_Human_Alert_Bow 0 0 0 EmoteAlert 3 0
+Ai_Human_Alert_Hammer 0 0 0 EmoteAlert 3 0
+Ai_Human_Broadcast 0 0 0 EmoteBroadcast 3 0
+Ai_Human_Broadcast_Bow 0 0 0 EmoteBroadcast 3 0
+Ai_Human_Broadcast_Hammer 0 0 0 EmoteBroadcast 3 0
+Ai_Human_CombatIdle_1 0 0 0 EmoteCombatIdle,EmoteTaunt,EmoteVictory 3 0
+Ai_Human_CombatIdle_2 0 0 0 EmoteCombatIdle,EmoteTaunt 3 0
+Ai_Human_CombatIdle_3 0 0 0 EmoteCombatIdle,EmoteTaunt 3 0
+Ai_Human_Lost 0 0 0 EmoteLost 3 0
+Ai_Human_Lost_Bow 0 0 0 EmoteLost 3 0
+Ai_Human_Lost_Hammer 0 0 0 EmoteLost 3 0
+Ai_MineCritter_Bite 0 0 0 ActionMelee,Attack_Quick 1.66 3
+Ai_MineCritter_Spit 0 0 0 ActionProjectile 4.18 0
+Ai_Pig_PigFart 0 0 0 EmotePigFart 3 0
+Ai_Rabbit_Kick 0 0 0 EmoteRabbitKick 3 0
+Ai_Raptor_Bite 0 0 0 ActionMelee,Attack_Basic 1.67 0
+Ai_Raptor_Kick 0 0 0 ActionMelee,Attack_Quick 1.8 0
+Ai_Raptor_Spit 0 0 0 ActionProjectile 4.18 0
+Ai_RawboneExplode 0 5 0 ActionMelee,ActionShieldBreaker 1.1 5
+Ai_Scarab_Swipe 0 0 0 ActionMelee,Attack_Basic 2.7 -5
+Ai_Skitter_Spit 0 0 0 ActionProjectile 3 0
+Ai_SoldierBug_Flyer_Ram 0 0 0 ActionMelee,Attack_Quick 1.99 0
+Ai_SoldierBug_Flyer_Spit 0 0 0 ActionProjectile 2.8 0
+Ai_SoldierBug_Queen_Rodeo 0 0 0 ActionMelee,ActionShieldBreaker 1.99 0
+Ai_SoldierBug_Queen_Spit 0 0 0 ActionProjectile 1.99 0
+Ai_SoldierBug_Queen_Stomp 0 2 0 ActionMelee,ActionShieldBreaker 2.83 0
+Ai_SoldierBug_Queen_Swipe 0 0 0 ActionMelee,ActionShieldBreaker 2.47 5
+Ai_SoldierBug_Queen_SwipeRight 0 0 0 ActionMelee,ActionShieldBreaker 2.47 5
+Ai_SoldierBug_Spitter_Spit 0 0 0 ActionProjectile 3.18 0
+Ai_SoldierBug_Stampede 0 0 0 ActionMelee,ActionShieldBreaker 5.3 0
+Ai_Spawn_BigCat_Leader_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 4 0
+Ai_Spawn_BigCat_Leader_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 4 0
+Ai_Spawn_Biped_Beastmaster_0 0 0 0 ActionSpawn 4 0
+Ai_Spawn_Biped_Beastmaster_1 0 0 0 ActionSpawn 4 0
+Ai_Spawn_Biped_Beastmaster_2 0 0 0 ActionSpawn 4 0
+Ai_Spawn_Biped_Beastmaster_3 0 0 0 ActionSpawn 4 0
+Ai_Spawn_Biped_Beastmaster_4 0 0 0 ActionSpawn 4 0
+Ai_Spawn_Raptor_Leader_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 8.87 0
+Ai_Spawn_Raptor_Leader_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 8.87 0
+Ai_Spawn_Rawbone_Summoner_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 3 0
+Ai_Spawn_Rawbone_Summoner_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 3 0
+Ai_Spawn_Scarab_Queen_Eggs 0 0 0 ActionSpawn_Attack,ActionSpawn 2.62 0
+Ai_Spawn_Skitterling_Leader_Gen 0 0 0 ActionSpawn 4 0
+Ai_Spawn_Wolf_Leader_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 4 0
+Ai_Spawn_Wolf_Leader_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 4 0
+Ai_Spawn_Yeti_Brute_Atk 0 0 0 ActionSpawn_Attack,ActionSpawn 4 0
+Ai_Spawn_Yeti_Brute_Def 0 0 0 ActionSpawn_Defence,ActionSpawn 4 0
+Ai_Spider_Bite 0 0 0 ActionMelee,Attack_Quick 0.56 0
+Ai_Spitterling_Spit 0 0 0 ActionProjectile,ActionImmobilise 3 0
+Ai_SpittingPlant_Spit 0 0 0 ActionProjectile 2.33 0
+Ai_SpittingPlant_Swipe 0 0 0 ActionMelee,ActionShieldBreaker 3.16 5
+Ai_SpittingPlant_Teleport 0 0 0 ActionTeleport 3 0
+Ai_Wolf_Bite 0 0 0 ActionMelee,Attack_Basic 1.63 0
+Ai_Wolf_Howl 0 0 0 EmoteHowl 3 0
+Ai_Wolf_Spit 0 0 0 ActionProjectile 2.57 0
+Ai_Yeti_Launch_YetiRock 0 0 0 ActionProjectile 1.67 0
+Ai_Yeti_Slam 0 0 0 ActionMelee,ActionShieldBreaker 1.49 0
+Ai_Yeti_Swing 0 0 0 ActionMelee,Attack_Heavy 3 0
+Axe_Basic_1 10 0 0 ActionMelee,Attack_Basic 3 0
+BombExplode 0 3.5 0 ActionMelee,ActionShieldBreaker 0 0
+BombExplode_4 0 4.2 0 ActionMelee,ActionShieldBreaker 0 0
+Dagger_Basic_1 10 0 0 ActionMelee,Attack_Basic 3 0
+Dagger_Basic_1_Hunter 0 0 0 ActionMelee,Attack_Basic 1.1 0
+Dagger_Basic_1_Rogue 0 0 0 ActionMelee,Attack_Basic 1.1 0
+Dagger_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3.2 0
+Dagger_Basic_2_Hunter 0 -1.5 0 ActionMelee,Attack_Basic 1.2 0
+Dagger_Basic_2_Rogue 0 -1.5 0 ActionMelee,Attack_Basic 1.2 0
+Dagger_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 4.09 0
+Dagger_Quick_Lunge_Rogue 0 -0.5 0 ActionMelee,Attack_Quick 1.29 0
+Dagger_Super 0 10 1 ActionMelee,Attack_Power,ActionShieldBreaker 8.09 0
+Dagger_Super_Beastmaster 0 4 0 ActionShieldBreaker 2.16 0
+Dart_Trap 1 0 0 - 1 0
+FTUE_SkeletonsMoveToMermesh_equippedAction 0 0 0 Spawner 3 0
+Kick 0 0 0 ActionKick 0.98 0
+Launch_Arrow 0 0 0 ActionProjectile 3 0
+Launch_Arrow_Archer 0 0 0 ActionProjectile 3 0
+Launch_Arrow_Beastmaster 0 0 0 ActionProjectile 3 0
+Launch_Arrow_Hunter 0 0 0 ActionProjectile 3 0
+Launch_Arrow_Peregrine 0 0 0 ActionProjectile 3 0
+Launch_Bomb_0 0 0 0 ActionProjectile 0.81 0
+Launch_Bomb_0_Brute 0 0 0 ActionProjectile 1.49 0
+Launch_Bomb_0_NPC 0 0 0 ActionProjectile 0.99 0
+Launch_Bomb_1 0 0 0 ActionProjectile 0.81 0
+Launch_Bomb_1_Brute 0 0 0 ActionProjectile 1.49 0
+Launch_Bomb_1_NPC 0 0 0 ActionProjectile 0.99 0
+Launch_Bomb_2 0 0 0 ActionProjectile 0.81 0
+Launch_Bomb_2_Brute 0 0 0 ActionProjectile 1.49 0
+Launch_Bomb_2_NPC 0 0 0 ActionProjectile 0.99 0
+Launch_Bomb_3 0 0 0 ActionProjectile 0.81 0
+Launch_Bomb_3_Brute 0 0 0 ActionProjectile 1.49 0
+Launch_Bomb_3_NPC 0 0 0 ActionProjectile 0.99 0
+Launch_Bomb_4 0 0 0 ActionProjectile 0.81 0
+Launch_Bomb_4_Brute 0 0 0 ActionProjectile 1.49 0
+Launch_Bomb_4_NPC 0 0 0 ActionProjectile 0.99 0
+Launch_Dart_Trap_Arrow 0 0 0 ActionProjectile 3 0
+Launch_Firecracker 0 0 0 ActionProjectile 0.81 0
+Launch_Firework 0 0 0 ActionProjectile 5 0
+Launch_ImmobiliseAttack 0 0 0 ActionImmobilise 6.25 0
+Launch_Rock 0 0 0 ActionProjectile 1.67 0
+Launch_Rock_2Handed 0 0 0 ActionProjectile 1.67 0
+Mace_Basic_1 10 0 0 ActionMelee,Attack_Basic 3 0
+Mace_Basic_1_Defender 10 0 0 ActionMelee,Attack_Basic 1.29 0
+Mace_Basic_1_Guardian 10 0 0 ActionMelee,Attack_Basic 1.36 0
+Mace_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3.3 0
+Mace_Basic_2_Defender 10 0.2 0 ActionMelee,Attack_Basic 1.59 0
+Mace_Basic_2_Guardian 10 0.2 0 ActionMelee,Attack_Basic 1.66 0
+Mace_Heavy_Defender 0 2.3 0 ActionMelee,Attack_Heavy 2.54 0
+Mace_Heavy_Guardian 0 2.3 0 ActionMelee,Attack_Heavy 2.62 0
+Mace_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 3.5 0
+Mace_Super 0 12 1 ActionShieldBreaker,Attack_Power 7 0
+Mace_Super_Guardian 0 4 0 ActionShieldBreaker,Attack_Power 3.66 0
+Pick_Basic_1 0 0 0 ActionMelee,Attack_Basic,Attack_Quick,ActionKick 3 0
+Pick_Settler_BigArc 0 0 0 ActionMelee,ActionKick,Attack_Basic,Attack_Quick 3 0
+Pick_Settler_FlatteningArc 0 0 0 ActionMelee,ActionKick,Attack_Basic,Attack_Quick 3 0
+ProjectileAttack_Medium 0 0 0 ActionProjectile 0 0
+SharpRock_Basic 0 0 0 ActionMelee,ActionKick,Attack_Basic,Attack_Quick 3 0
+Shield_Block 2 0 0 ActionBlock 3 0
+Shield_Block_NPC 0 0 0 ActionBlock 3 0
+Shield_Heavy_Guardian 10 0.25 0 ActionMelee,ActionShieldBreaker 3.3 0
+Spear_Basic_1 10 0 0 ActionMelee,Attack_Basic 3 0
+Spear_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3 0
+Spear_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 2.63 0
+Spear_Stampede_Pikeman 0 0 0 ActionMelee,Attack_Basic 2.3 0
+Spear_Super 0 14 1 ActionShieldBreaker,Attack_Power 5.6 0
+Sword_Basic_1 10 0 0 ActionMelee,Attack_Basic 3 0
+Sword_Basic_1_Blademaster 0 0 0 ActionMelee,Attack_Basic 1 0
+Sword_Basic_1_Fighter 10 0 0 ActionMelee,Attack_Quick 0.93 0
+Sword_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 2.75 0
+Sword_Basic_2_Blademaster 0 0.2 0 ActionMelee,Attack_Basic 1.01 0
+Sword_Basic_2_Fighter 0 0.25 0 ActionMelee,Attack_Quick 1.53 0
+Sword_Heavy_Dual_Blademaster 0 1 0 ActionMelee,Attack_Heavy 1.05 0
+Sword_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 3.5 0
+Sword_Quick_Lunge_Blademaster 12 -0.5 0 ActionMelee,Attack_Quick 1.05 0
+Sword_Super_1 0 6 1 ActionMelee,Attack_Power 2.6 0
+Sword_Super_1_Blademaster 0 3 0 ActionShieldBreaker,Attack_Power,ActionMelee 0.93 0
+Sword_Super_2 0 6 0 ActionMelee,Attack_Power 2.3 0
+Sword_Super_2_Blademaster 0 3 0 ActionShieldBreaker,Attack_Power,ActionMelee 0.93 0
+Sword_Super_3 0 12 0 ActionMelee,Attack_Power 2.96 0
+Sword_Super_3_Blademaster 0 7 0 ActionShieldBreaker,Attack_Power,ActionMelee 1.51 0
+Torch_Basic_1 0 0 0 ActionMelee,Attack_Quick 3.2 0
+TwoHanded_Basic_1 10 0.25 0 ActionMelee,Attack_Basic 3 0
+TwoHanded_Basic_1_Brute 10 0 0 ActionMelee,Attack_Heavy 2.11 0
+TwoHanded_Basic_1_Champion 0 0 0 ActionMelee,Attack_Basic 1.61 0
+TwoHanded_Basic_1_Mage 0 0 0 ActionMelee,Attack_Basic 2.16 0
+TwoHanded_Basic_2 10 0.25 0 ActionMelee,Attack_Basic 3 0
+TwoHanded_Basic_2_Brute 10 0 0 ActionMelee,Attack_Heavy 2.16 0
+TwoHanded_Basic_2_Champion 0 0.25 0 ActionMelee,Attack_Basic 1.43 0
+TwoHanded_Heavy_Champion 0 2.3 0 ActionMelee,Attack_Heavy 2.43 0
+TwoHanded_Heavy_Mage 0 1.7 0 ActionMelee,Attack_Heavy 3.08 0
+TwoHanded_Quick_Lunge 12 -0.5 0 ActionMelee,Attack_Quick 2.17 0
+TwoHanded_Super 0 12 1 ActionShieldBreaker,Attack_Power 7 0
+TwoHanded_Super_Brute 0 3 0 ActionShieldBreaker,Attack_Power 3.53 0

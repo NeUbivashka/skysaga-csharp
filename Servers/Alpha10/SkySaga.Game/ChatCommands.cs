@@ -33,12 +33,13 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
             "recipe" => LearnRecipe(connection, args),
             "mental" => MentalState(connection, args),
             "charge" => Charge(connection, args),
+            "perk" => Perk(connection, args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>, !perk <entity action | clear>";
 
     private static string LearnRecipe(PlayerConnection connection, string[] args)
     {
@@ -84,6 +85,25 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
         }
 
         return $"{CharacterStateComponent.MentalStates[state]} set on {changed} creatures.";
+    }
+
+    private static string Perk(PlayerConnection connection, string[] args)
+    {
+        if (args.Length < 2)
+            return "Usage: !perk <entity action | clear>";
+
+        if (args[1].Equals("clear", StringComparison.OrdinalIgnoreCase))
+        {
+            Perks.Clear(connection.PlayerEntity);
+            return "Perks cleared.";
+        }
+
+        if (!PerkTable.TryGetAction(args[1], out _))
+            return $"Unknown perk action {args[1]}.";
+
+        Perks.Apply(connection.PlayerEntity, args[1]);
+
+        return $"Applied {args[1]}.";
     }
 
     private static string Charge(PlayerConnection connection, string[] args)

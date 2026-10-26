@@ -31,6 +31,23 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
 
     public float Duration => ChargeTime + ActiveTime + RecoverTime;
 
+    public float HitEndTime => ChargeTime + ActiveTime * EndFactor;
+
+    public float PlannedDistance(float elapsed)
+    {
+        var motion = Motion;
+        var activeStart = motion.ActiveWindowOnly ? ChargeTime + ActiveTime * BeginFactor : ChargeTime;
+        var activeEnd = motion.ActiveWindowOnly ? HitEndTime : ChargeTime + ActiveTime;
+
+        return Part(motion.Charge, 0, ChargeTime) + Part(motion.Active, activeStart, activeEnd)
+            + Part(motion.Recover, ChargeTime + ActiveTime, Duration);
+
+        float Part(ChargeStage stage, float start, float end)
+            => !stage.Move || stage.Distance == 0 ? 0
+                : end <= start ? (elapsed >= end ? stage.Distance : 0)
+                : stage.Distance * Math.Clamp((elapsed - start) / (end - start), 0f, 1f);
+    }
+
     public AttackMotion Motion => CreatureAiTable.TryGetMotion(Action, out var motion) ? motion : AttackMotion.None;
 
     public float HitReach => Reach - Motion.OffsetZ;
@@ -51,17 +68,6 @@ public readonly record struct CreatureAbility(string Action, uint ActionCrc, uin
         }
 
         return motion.Recover;
-    }
-
-    public float StageTime(float elapsed)
-    {
-        if (elapsed < ChargeTime)
-            return ChargeTime;
-
-        if (elapsed < ChargeTime + ActiveTime)
-            return Motion.ActiveWindowOnly ? ActiveTime * (EndFactor - BeginFactor) : ActiveTime;
-
-        return RecoverTime;
     }
 }
 
@@ -111,8 +117,8 @@ public sealed record RelationRule(string Matcher, AiReaction OnSight, AiReaction
 public sealed record AiCondition(bool Invert, string Kind, string Argument);
 
 public sealed record ProjectileLaunch(string Entity, uint DataIndex, uint DataCount, float Speed, float GravityFactor,
-    float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel,
-    float HomingMaxAngle, float SplashRadius)
+    float MinInaccuracy, float MaxInaccuracy, Vector3 Offset, float PitchOffset, float YawOffset, float Lifetime, float ImpactWeaponLevel, float ImpactCreatureLevel,
+    float HomingMaxAngle, float SplashRadius, string[] ImpactActions)
 {
     public float Range => GravityFactor > 0 ? Speed * Speed / (CreatureAiTable.WorldGravity * GravityFactor) : Speed * Lifetime;
 }
@@ -375,7 +381,8 @@ public static class CreatureAiTable
                     data.Projectiles[launchAction] = new ProjectileLaunch(f["entity"], uint.Parse(f["dataindex"]), uint.Parse(f["datacount"]),
                         Number(f["speed"]), Number(f["gravity"]), Number(f["inaccmin"]), Number(f["inaccmax"]),
                         new Vector3(Number(f["offx"]), Number(f["offy"]), Number(f["offz"])), Number(f["pitch"]), Number(f["yaw"]),
-                        Number(f["lifetime"]), Number(f["impactlevel"]), Number(f["homing"]), Number(f["splash"]));
+                        Number(f["lifetime"]), Number(f["impactlevel"]), Number(f["impactcreature"]), Number(f["homing"]), Number(f["splash"]),
+                        f["impact"] == "-" ? [] : f["impact"].Split(','));
                     break;
                 case ["selectiontable", var tableName, ..]:
                     data.SelectionTables[tableName] = [.. parts[2..].Select(rule => rule.Split(':')).Select(rule => new SelectionTableRule(rule[0], rule[1]))];

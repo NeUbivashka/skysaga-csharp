@@ -40,7 +40,8 @@ def knockback(properties):
 def row(kind, name, health, properties):
     weapon, armour = levels(properties)
     distance, strength, resistance = knockback(properties)
-    return f"{kind} {name} {health:g} {weapon:g} {armour:g} {distance:g} {strength:g} {resistance:g}"
+    creature = stat(properties, "CreatureLevel") + stat(properties, "CreatureLevelModifier")
+    return f"{kind} {name} {health:g} {weapon:g} {armour:g} {distance:g} {strength:g} {resistance:g} {creature:g}"
 
 
 def main():

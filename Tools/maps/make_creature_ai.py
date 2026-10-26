@@ -373,8 +373,11 @@ def main():
                 "yaw": float(transform.get("OffsetYaw", 0)) if offset else 0.0,
                 "lifetime": float(data.get("Lifetime", 0)),
                 "impactlevel": stat(impact, "WeaponLevelModifier"),
+                "impactcreature": stat(impact, "CreatureLevelModifier"),
                 "homing": float(launch.get("HomingMaxAngle", 0)),
                 "splash": float(splash),
+                "impact": ",".join(e["ActionEntity"] for e in (data.get("OnImpactActions") or {}).get("EntityActions") or []
+                                   if e.get("ActionEntity")) or "-",
             }
             rows.append(" ".join(["projectile", action["Name"]] + [f"{k}={v:g}" if isinstance(v, float) else f"{k}={v}" for k, v in fields.items()]))
 
