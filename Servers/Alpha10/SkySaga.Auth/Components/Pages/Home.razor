@@ -1,0 +1,31 @@
+@page "/"
+@inject NavigationManager Navigation
+
+<PageTitle>SkySaga Account</PageTitle>
+
+<section class="hero">
+    <h1>Your isles are waiting.</h1>
+    <p class="lead">
+        Create an account to play SkySaga on this server. Sign in to the launcher with the same
+        e-mail and password.
+    </p>
+    <div class="actions">
+        <a class="button primary" href="/register">Create account</a>
+        <a class="button ghost" href="/login">Sign in</a>
+    </div>
+    <ul class="features">
+        <li><strong>Your own character.</strong> Name it and shape its look in the game.</li>
+        <li><strong>Safe password.</strong> Stored only as an Argon2id hash: nobody can read it, admins included.</li>
+        <li><strong>Private e-mail.</strong> Stored encrypted; admins see only a masked form like m***@@mail.com.</li>
+    </ul>
+</section>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is not null && (await AuthenticationState).User.Identity?.IsAuthenticated == true)
+            Navigation.NavigateTo("/account");
+    }
+}

@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+
+<div class="sky" aria-hidden="true">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+    <svg class="isle isle-left" viewBox="0 0 220 140">
+        <path d="M10 46 Q60 20 110 30 T210 44 L172 70 L48 70 Z" fill="#1f6f4a" />
+        <path d="M48 70 L172 70 L128 132 L96 126 Z" fill="#5b3a1e" />
+        <path d="M10 46 Q60 20 110 30 T210 44 L206 52 Q120 40 14 54 Z" fill="#34d399" opacity="0.55" />
+    </svg>
+    <svg class="isle isle-right" viewBox="0 0 220 140">
+        <path d="M14 50 Q80 26 140 34 T206 48 L168 72 L52 72 Z" fill="#1d5c45" />
+        <path d="M52 72 L168 72 L120 128 L92 122 Z" fill="#4a2f18" />
+    </svg>
+</div>
+
+<header class="topbar">
+    <a class="brand" href="/">
+        <svg viewBox="0 0 64 64" class="brand-mark" aria-hidden="true">
+            <path d="M8 30 L32 22 L56 30 L44 40 L20 40 Z" fill="#34d399" />
+            <path d="M20 40 L44 40 L32 56 Z" fill="#a16207" />
+        </svg>
+        <span>SkySaga</span>
+    </a>
+    <nav class="nav">
+        <AuthorizeView>
+            <Authorized>
+                <a href="/account">@context.User.Identity?.Name</a>
+                <form method="post" action="/logout" class="inline">
+                    <AntiforgeryToken />
+                    <button type="submit" class="link-button">Sign out</button>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <a href="/login">Sign in</a>
+                <a href="/register" class="pill">Create account</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</header>
+
+<main class="content">
+    @Body
+</main>
+
+<footer class="footer">SkySaga: Infinite Isles · community server</footer>

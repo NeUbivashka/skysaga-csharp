@@ -1,0 +1,95 @@
+@page "/reset"
+@inject AccountService Accounts
+
+<PageTitle>Reset password · SkySaga</PageTitle>
+
+<section class="card">
+    <h1>Reset password</h1>
+
+    @if (_done)
+    {
+        <div class="alert success">Your password is set. Every old session was signed out.</div>
+        <a class="button primary wide" href="/login">Sign in</a>
+    }
+    else
+    {
+        <p class="muted">Ask a server admin for a reset code, then choose a new password.</p>
+
+        <EditForm Model="Input" FormName="reset" OnValidSubmit="SubmitAsync" method="post" class="form">
+            <DataAnnotationsValidator />
+
+            <label>
+                <span>Reset code</span>
+                <InputText @bind-Value="Input.Code" autocomplete="one-time-code" maxlength="40" class="mono" />
+                <ValidationMessage For="() => Input.Code" />
+                @if (_errors.TryGetValue("code", out var codeError))
+                {
+                    <div class="validation-message">@codeError</div>
+                }
+            </label>
+
+            <label>
+                <span>New password</span>
+                <InputPassword @bind-Value="Input.Password" autocomplete="new-password" maxlength="128" />
+                <small class="hint">At least @AccountService.MinPasswordLength characters.</small>
+                <ValidationMessage For="() => Input.Password" />
+                @if (_errors.TryGetValue("password", out var passwordError))
+                {
+                    <div class="validation-message">@passwordError</div>
+                }
+            </label>
+
+            <label>
+                <span>Repeat new password</span>
+                <InputPassword @bind-Value="Input.Confirm" autocomplete="new-password" maxlength="128" />
+                <ValidationMessage For="() => Input.Confirm" />
+            </label>
+
+            <button type="submit" class="button primary wide">Set password</button>
+        </EditForm>
+    }
+</section>
+
+@code {
+    [SupplyParameterFromForm(FormName = "reset")]
+    private ResetModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "code")] private string? CodeFromLink { get; set; }
+
+    private readonly Dictionary<string, string> _errors = [];
+    private bool _done;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+
+        if (string.IsNullOrEmpty(Input.Code) && !string.IsNullOrEmpty(CodeFromLink))
+            Input.Code = CodeFromLink;
+    }
+
+    private async Task SubmitAsync()
+    {
+        var (field, error) = await Accounts.ResetPasswordAsync(Input.Code, Input.Password);
+
+        if (field is not null)
+        {
+            _errors[field] = error!;
+            return;
+        }
+
+        _done = true;
+    }
+
+    private sealed class ResetModel
+    {
+        [Required(ErrorMessage = "Enter the reset code.")]
+        public string Code { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter a new password.")]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Repeat the new password.")]
+        [Compare(nameof(Password), ErrorMessage = "The passwords do not match.")]
+        public string Confirm { get; set; } = "";
+    }
+}

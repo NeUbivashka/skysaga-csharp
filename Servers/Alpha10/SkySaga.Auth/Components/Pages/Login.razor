@@ -1,0 +1,77 @@
+@page "/login"
+@inject AccountService Accounts
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in · SkySaga</PageTitle>
+
+<section class="card">
+    <h1>Sign in</h1>
+
+    <EditForm Model="Input" FormName="login" OnValidSubmit="SubmitAsync" method="post" class="form">
+        <DataAnnotationsValidator />
+
+        @if (_error is not null)
+        {
+            <div class="alert error">@_error</div>
+        }
+
+        <label>
+            <span>E-mail or username</span>
+            <InputText @bind-Value="Input.Username" autocomplete="username" maxlength="254" autofocus />
+            <ValidationMessage For="() => Input.Username" />
+        </label>
+
+        <label>
+            <span>Password</span>
+            <InputPassword @bind-Value="Input.Password" autocomplete="current-password" maxlength="128" />
+            <ValidationMessage For="() => Input.Password" />
+        </label>
+
+        <button type="submit" class="button primary wide">Sign in</button>
+    </EditForm>
+
+    <p class="switch">No account yet? <a href="/register">Create one</a></p>
+    <p class="switch">Forgot the password? <a href="/reset">Use a reset code</a> from an admin.</p>
+</section>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "login")]
+    private LoginModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+    private string? _error;
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task SubmitAsync()
+    {
+        var (outcome, account) = await Accounts.LoginAsync(Input.Username, Input.Password);
+
+        _error = outcome switch
+        {
+            LoginOutcome.Locked => "Too many wrong passwords. Try again in a few minutes.",
+            LoginOutcome.Banned => $"This account is banned until {account!.BannedUntil?.ToLocalTime():yyyy-MM-dd HH:mm}."
+                                   + (string.IsNullOrWhiteSpace(account.BanReason) ? "" : $" Reason: {account.BanReason}"),
+            LoginOutcome.Invalid => "The e-mail, username or password is wrong.",
+            _ => null
+        };
+
+        if (_error is not null)
+            return;
+
+        await AccountClaims.SignInAsync(HttpContext, account!);
+        Navigation.NavigateTo(ReturnUrl is { Length: > 1 } url && url.StartsWith('/') && !url.StartsWith("//") ? url : "/account");
+    }
+
+    private sealed class LoginModel
+    {
+        [Required(ErrorMessage = "Enter your e-mail or username.")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter your password.")]
+        public string Password { get; set; } = "";
+    }
+}

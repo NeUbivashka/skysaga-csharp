@@ -695,16 +695,23 @@ public sealed class WorldManager : IWorldManager, IDisposable
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(playerInitializer);
 
-        playerInitializer.InitializePlayer(player);
+        if (connection.CharacterId is not { } characterId)
+        {
+            Console.WriteLine($"[Auth] {connection.Guid}: no character for this connection (no valid SetUserToken), sending QuitGame.");
+            connection.Send(new QuitGame());
+            return;
+        }
+
+        playerInitializer.InitializePlayer(player, characterId, connection.CharacterName ?? connection.AccountName ?? "");
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var transform))
             connection.LookYaw = transform.YawDegrees;
 
-        connection.LookPitch = PlayerSaveStore.Load()?.LookPitch ?? 0f;
+        connection.LookPitch = PlayerSaveStore.Load(characterId)?.LookPitch ?? 0f;
 
         connection.IsPlayerInitialized = true;
 
-        GameEvents.Record("player.join", PlayerSaveStore.CharacterId, new { map = WorldStore.MapName });
+        GameEvents.Record("player.join", characterId, new { map = WorldStore.MapName });
 
         foreach (var entity in InventoryFirst(EntityManager.Entities))
         {

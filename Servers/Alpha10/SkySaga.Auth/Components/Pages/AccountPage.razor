@@ -1,0 +1,221 @@
+@page "/account"
+@attribute [Authorize]
+@inject AccountService Accounts
+@inject NavigationManager Navigation
+
+<PageTitle>Account · SkySaga</PageTitle>
+
+@if (_account is not null)
+{
+    @if (Welcome)
+    {
+        <div class="alert success">Welcome to the isles, @_account.Username! Open the launcher and sign in with these details.</div>
+    }
+    @if (_notice is not null)
+    {
+        <div class="alert success">@_notice</div>
+    }
+
+    <section class="card wide">
+        <div class="profile">
+            <div class="avatar">@_displayName[..1].ToUpperInvariant()</div>
+            <div>
+                <h1>@_displayName</h1>
+                <p class="muted">Account <strong>@_account.Username</strong> · @_account.Role</p>
+            </div>
+        </div>
+
+        <dl class="facts">
+            <div>
+                <dt>Character</dt>
+                <dd>@(_character is { IsCustomised: true } ? _character.Name : "created in the game on your first login")</dd>
+            </div>
+            <div>
+                <dt>E-mail</dt>
+                <dd>@(_account.EmailHint ?? "not set")</dd>
+            </div>
+            <div>
+                <dt>Member since</dt>
+                <dd>@_account.CreatedAt.ToLocalTime().ToString("d MMMM yyyy")</dd>
+            </div>
+            <div>
+                <dt>Last sign-in</dt>
+                <dd>@(_account.LastLoginAt?.ToLocalTime().ToString("d MMMM yyyy, HH:mm") ?? "never")</dd>
+            </div>
+            <div>
+                <dt>Last seen in game</dt>
+                <dd>@(_character?.LastSeenAt?.ToLocalTime().ToString("d MMMM yyyy, HH:mm") ?? "not yet")</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card wide">
+        <h2>How to play</h2>
+        <ol class="steps">
+            <li>Start <code>Launcher.exe</code>.</li>
+            <li>Sign in with @(_account.EmailHint is null ? "your username" : "your e-mail") and password. The username <strong>@_account.Username</strong> works too.</li>
+            <li>Press <strong>Play</strong>.</li>
+        </ol>
+    </section>
+
+    <section class="card wide">
+        <h2>@(_account.EmailHint is null ? "Add e-mail" : "Change e-mail")</h2>
+        <EditForm Model="Email" FormName="email" OnValidSubmit="SetEmailAsync" method="post" class="form">
+            <DataAnnotationsValidator />
+
+            @if (_emailError is not null)
+            {
+                <div class="alert error">@_emailError</div>
+            }
+
+            <label>
+                <span>New e-mail</span>
+                <InputText type="email" @bind-Value="Email.Address" autocomplete="email" maxlength="254" />
+                <ValidationMessage For="() => Email.Address" />
+            </label>
+
+            <label>
+                <span>Password</span>
+                <InputPassword @bind-Value="Email.Password" autocomplete="current-password" maxlength="128" />
+                <ValidationMessage For="() => Email.Password" />
+            </label>
+
+            <button type="submit" class="button primary">Save e-mail</button>
+        </EditForm>
+    </section>
+
+    <section class="card wide">
+        <h2>Change password</h2>
+        <EditForm Model="Password" FormName="password" OnValidSubmit="ChangePasswordAsync" method="post" class="form">
+            <DataAnnotationsValidator />
+
+            @if (_passwordError is not null)
+            {
+                <div class="alert error">@_passwordError</div>
+            }
+
+            <input type="text" name="username" value="@_account.Username" autocomplete="username" hidden />
+
+            <label>
+                <span>Current password</span>
+                <InputPassword @bind-Value="Password.Current" autocomplete="current-password" maxlength="128" />
+                <ValidationMessage For="() => Password.Current" />
+            </label>
+
+            <label>
+                <span>New password</span>
+                <InputPassword @bind-Value="Password.Next" autocomplete="new-password" maxlength="128" />
+                <ValidationMessage For="() => Password.Next" />
+            </label>
+
+            <label>
+                <span>Repeat new password</span>
+                <InputPassword @bind-Value="Password.Confirm" autocomplete="new-password" maxlength="128" />
+                <ValidationMessage For="() => Password.Confirm" />
+            </label>
+
+            <button type="submit" class="button primary">Change password</button>
+        </EditForm>
+    </section>
+
+    <section class="card wide danger-zone">
+        <h2>Sign out everywhere</h2>
+        <p class="muted">Ends every session of this account: the launcher, the game and other browsers.</p>
+        <form method="post" @formname="everywhere" @onsubmit="SignOutEverywhereAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="button danger">Sign out everywhere</button>
+        </form>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "welcome")] private int? WelcomeFlag { get; set; }
+
+    [SupplyParameterFromForm(FormName = "password")]
+    private PasswordModel Password { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "email")]
+    private EmailModel Email { get; set; } = default!;
+
+    private bool Welcome => WelcomeFlag == 1;
+    private Account? _account;
+    private Character? _character;
+    private string _displayName = "?";
+    private string? _passwordError;
+    private string? _emailError;
+    private string? _notice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Password ??= new();
+        Email ??= new();
+
+        if (AccountClaims.AccountId(HttpContext.User) is not { } id || await Accounts.GetAccountAsync(id) is not { } account)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        _account = account;
+        _character = await Accounts.GetCharacterAsync(id);
+        _displayName = _character is { IsCustomised: true } ? _character.Name : account.Username;
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        _passwordError = await Accounts.ChangePasswordAsync(_account!.Id, Password.Current, Password.Next);
+
+        if (_passwordError is not null)
+            return;
+
+        await AccountClaims.SignInAsync(HttpContext, (await Accounts.GetAccountAsync(_account.Id))!);
+        _notice = "Password changed. Other sessions were signed out.";
+        Password = new();
+    }
+
+    private async Task SetEmailAsync()
+    {
+        var (_, error) = await Accounts.SetEmailAsync(_account!.Id, Email.Address, Email.Password);
+
+        if (error is not null)
+        {
+            _emailError = error;
+            return;
+        }
+
+        _account = await Accounts.GetAccountAsync(_account.Id);
+        _notice = "E-mail saved.";
+        Email = new();
+    }
+
+    private async Task SignOutEverywhereAsync()
+    {
+        await Accounts.SignOutEverywhereAsync(_account!.Id);
+        await HttpContext.SignOutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    private sealed class EmailModel
+    {
+        [Required(ErrorMessage = "Enter the e-mail.")]
+        public string Address { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter your password.")]
+        public string Password { get; set; } = "";
+    }
+
+    private sealed class PasswordModel
+    {
+        [Required(ErrorMessage = "Enter your current password.")]
+        public string Current { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter a new password.")]
+        public string Next { get; set; } = "";
+
+        [Required(ErrorMessage = "Repeat the new password.")]
+        [Compare(nameof(Next), ErrorMessage = "The passwords do not match.")]
+        public string Confirm { get; set; } = "";
+    }
+}

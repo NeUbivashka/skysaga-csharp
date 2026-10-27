@@ -412,3 +412,5 @@ Servers/*.rar
 
 Servers/*/SkySaga.Game/Data/database.local.json
 Servers/*/Database/*.local.sql
+
+Servers/*/SkySaga.Game/Data/auth-keys/

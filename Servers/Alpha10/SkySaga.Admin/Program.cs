@@ -14,6 +14,7 @@ builder.Services.AddMudServices();
 builder.Services.AddDbContextFactory<SkySagaDbContext>(options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 builder.Services.AddSingleton(new GameDataDirectory(gameData));
 builder.Services.AddSingleton<GameNames>();
+builder.Services.AddSingleton(new AuthLinks((builder.Configuration["AuthUrl"] ?? "http://127.0.0.1:5100").TrimEnd('/')));
 
 var app = builder.Build();
 

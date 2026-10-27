@@ -42,12 +42,34 @@ namespace SkySaga.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("EmailHint")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("email_hint");
+
+                    b.Property<byte[]>("EmailIndex")
+                        .HasColumnType("bytea")
+                        .HasColumnName("email_index");
+
+                    b.Property<string>("EmailProtected")
+                        .HasColumnType("text")
+                        .HasColumnName("email_protected");
+
+                    b.Property<int>("FailedLogins")
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_logins");
+
                     b.Property<DateTimeOffset?>("LastLoginAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_login_at");
 
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until");
+
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("text")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("password_hash");
 
                     b.Property<string>("Role")
@@ -55,6 +77,10 @@ namespace SkySaga.Data.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
                         .HasColumnName("role");
+
+                    b.Property<Guid>("SecurityStamp")
+                        .HasColumnType("uuid")
+                        .HasColumnName("security_stamp");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -64,6 +90,10 @@ namespace SkySaga.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_accounts");
+
+                    b.HasIndex("EmailIndex")
+                        .IsUnique()
+                        .HasDatabaseName("ix_accounts_email_index");
 
                     b.HasIndex("Username")
                         .IsUnique()
@@ -95,6 +125,62 @@ namespace SkySaga.Data.Migrations
                         .HasName("pk_active_challenges");
 
                     b.ToTable("active_challenges", (string)null);
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.AuthSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<byte[]>("RefreshHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("refresh_hash");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_auth_sessions");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("ix_auth_sessions_account_id");
+
+                    b.HasIndex("RefreshHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_auth_sessions_refresh_hash");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_auth_sessions_token_hash");
+
+                    b.ToTable("auth_sessions", (string)null);
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.Character", b =>
@@ -354,6 +440,47 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("inventory_items", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.PasswordReset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<byte[]>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_password_resets");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("ix_password_resets_account_id");
+
+                    b.HasIndex("CodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_password_resets_code_hash");
+
+                    b.ToTable("password_resets", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.PlacedDevice", b =>
                 {
                     b.Property<long>("Id")
@@ -474,6 +601,18 @@ namespace SkySaga.Data.Migrations
                         .HasConstraintName("fk_active_challenges_characters_character_id");
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.AuthSession", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_auth_sessions_accounts_account_id");
+
+                    b.Navigation("Account");
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.Character", b =>
                 {
                     b.HasOne("SkySaga.Data.Entities.Account", "Account")
@@ -591,6 +730,18 @@ namespace SkySaga.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_inventory_items_characters_character_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.PasswordReset", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_password_resets_accounts_account_id");
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.PlacedDevice", b =>

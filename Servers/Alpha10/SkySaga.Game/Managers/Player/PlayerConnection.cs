@@ -26,6 +26,12 @@ public class PlayerConnection
 
     public string? CurrentVideoFileName { get; set; }
 
+    public Guid? ClientCharacterUuid { get; set; }
+
+    public Guid? AccountId { get; set; }
+
+    public string? AccountName { get; set; }
+
     public PlayerConnection(Server server, RakNetGUID guid, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
     {
         _server = server ?? throw new ArgumentNullException(nameof(server));
@@ -51,7 +57,7 @@ public class PlayerConnection
         SaveState();
 
         if (IsPlayerInitialized)
-            GameEvents.Record("player.leave", PlayerSaveStore.CharacterId);
+            GameEvents.Record("player.leave", CharacterId);
 
         var removedItems = 0;
 
@@ -94,7 +100,7 @@ public class PlayerConnection
 
     public void SaveState()
     {
-        if (!IsPlayerInitialized)
+        if (!IsPlayerInitialized || CharacterId is not { } characterId)
             return;
 
         var data = _playerInitializer.CaptureSaveData(PlayerEntity);
@@ -102,7 +108,7 @@ public class PlayerConnection
         data.YawDegrees = LookYaw;
         data.LookPitch = LookPitch;
 
-        PlayerSaveStore.Save(data);
+        PlayerSaveStore.Save(characterId, data);
     }
 
     public bool ProcessPacket(PacketId packetId, BitStream bitStream)
@@ -112,6 +118,7 @@ public class PlayerConnection
             PacketId.QuitGame => QuitGame.Handle(this, bitStream),
             PacketId.ResourceCheck => ResourceCheck.Handle(this, bitStream),
             PacketId.ClientConnected => ClientConnected.Handle(this, bitStream),
+            PacketId.SetUserToken => SetUserToken.Handle(this, bitStream),
             PacketId.ClientReadyToSync => ClientReadyToSync.Handle(this, bitStream),
             PacketId.ClientReadyToPlay => ClientReadyToPlay.Handle(this, bitStream),
             PacketId.ClientInitialSyncFinished => ClientInitialSyncFinished.Handle(this, bitStream),
@@ -187,7 +194,7 @@ public class PlayerConnection
         {
             if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= RespawnDelaySeconds)
             {
-                GameEvents.Record("player.death", PlayerSaveStore.CharacterId);
+                GameEvents.Record("player.death", CharacterId);
                 Respawn();
             }
 
@@ -226,7 +233,9 @@ public class PlayerConnection
         Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {position}.");
     }
 
-    public Guid? CharacterId => PlayerEntity.TryGetComponent<ClientOwnerComponent>(out var owner) ? owner.Owner : null;
+    public Guid? CharacterId { get; set; }
+
+    public string? CharacterName { get; set; }
 
     public void Teleport(Vector3 position, float yawDegrees)
     {

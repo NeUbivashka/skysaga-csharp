@@ -12,17 +12,17 @@ public class PlayerInitializer(IWorldManager worldManager)
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
     private IMapEntityManager _entityManager => _worldManager.EntityManager;
 
-    public void InitializePlayer(Entity player)
+    public void InitializePlayer(Entity player, Guid characterId, string characterName)
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        var save = PlayerSaveStore.Load();
+        var save = PlayerSaveStore.Load(characterId);
 
         if (player.TryGetComponent<ClientPlayernameComponent>(out var clientPlayernameComponent))
         {
             clientPlayernameComponent.Playername = !string.IsNullOrEmpty(save?.Playername)
                 ? save.Playername
-                : Util.CharacterName();
+                : characterName;
 
             var sigilFields = (Environment.GetEnvironmentVariable("SKYSAGA_SIGIL_FIELDS") ?? "0,0").Split(',');
             var sigilA = uint.TryParse(sigilFields[0], out var a) ? a : 0u;
@@ -32,11 +32,11 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
         }
 
-        if (player.TryGetComponent<ClientOwnerComponent>(out var owner) && Guid.TryParse(Util.CharacterUuid(), out var characterUuid))
-            owner.Owner = characterUuid;
+        if (player.TryGetComponent<ClientOwnerComponent>(out var owner))
+            owner.Owner = characterId;
 
-        if (player.TryGetComponent<UserComponent>(out var user) && Guid.TryParse(Util.CharacterUuid(), out var userUuid))
-            user.CharacterUuid = userUuid;
+        if (player.TryGetComponent<UserComponent>(out var user))
+            user.CharacterUuid = characterId;
 
         if (player.TryGetComponent<ClientShopComponent>(out var shop))
             shop.ShopList = [new ClientShopComponent.Shop { Items = GlobalShopItems() }, new ClientShopComponent.Shop()];
@@ -296,7 +296,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         }
 
         if (save is null)
-            PlayerSaveStore.Save(CaptureSaveData(player));
+            PlayerSaveStore.Save(characterId, CaptureSaveData(player));
     }
 
     public PlayerSaveData CaptureSaveData(Entity player)

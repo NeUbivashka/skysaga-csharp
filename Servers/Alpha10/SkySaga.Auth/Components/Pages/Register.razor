@@ -1,0 +1,98 @@
+@page "/register"
+@inject AccountService Accounts
+@inject NavigationManager Navigation
+
+<PageTitle>Create account · SkySaga</PageTitle>
+
+<section class="card">
+    <h1>Create account</h1>
+    <p class="muted">Sign in to the launcher with your e-mail and password. You name and shape your character in the game.</p>
+
+    <EditForm Model="Input" FormName="register" OnValidSubmit="SubmitAsync" method="post" class="form">
+        <DataAnnotationsValidator />
+
+        <label>
+            <span>E-mail</span>
+            <InputText type="email" @bind-Value="Input.Email" autocomplete="email" maxlength="254" autofocus />
+            <small class="hint">Stored encrypted. Admins see only a masked form.</small>
+            <ValidationMessage For="() => Input.Email" />
+            @if (_errors.TryGetValue("email", out var emailError))
+            {
+                <div class="validation-message">@emailError</div>
+            }
+        </label>
+
+        <label>
+            <span>Username</span>
+            <InputText @bind-Value="Input.Username" autocomplete="username" maxlength="32" />
+            <small class="hint">3–32 letters, digits, dots, dashes or underscores.</small>
+            <ValidationMessage For="() => Input.Username" />
+            @if (_errors.TryGetValue("username", out var usernameError))
+            {
+                <div class="validation-message">@usernameError</div>
+            }
+        </label>
+
+        <label>
+            <span>Password</span>
+            <InputPassword @bind-Value="Input.Password" autocomplete="new-password" maxlength="128" />
+            <small class="hint">At least @AccountService.MinPasswordLength characters.</small>
+            <ValidationMessage For="() => Input.Password" />
+            @if (_errors.TryGetValue("password", out var passwordError))
+            {
+                <div class="validation-message">@passwordError</div>
+            }
+        </label>
+
+        <label>
+            <span>Repeat password</span>
+            <InputPassword @bind-Value="Input.Confirm" autocomplete="new-password" maxlength="128" />
+            <ValidationMessage For="() => Input.Confirm" />
+        </label>
+
+        <button type="submit" class="button primary wide">Create account</button>
+    </EditForm>
+
+    <p class="switch">Already have an account? <a href="/login">Sign in</a></p>
+</section>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "register")]
+    private RegisterModel Input { get; set; } = default!;
+
+    private readonly Dictionary<string, string> _errors = [];
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task SubmitAsync()
+    {
+        var (account, field, error) = await Accounts.RegisterAsync(Input.Email, Input.Username.Trim(), Input.Password);
+
+        if (account is null)
+        {
+            _errors[field!] = error!;
+            return;
+        }
+
+        await AccountClaims.SignInAsync(HttpContext, account);
+        Navigation.NavigateTo("/account?welcome=1");
+    }
+
+    private sealed class RegisterModel
+    {
+        [Required(ErrorMessage = "Enter your e-mail.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter a username.")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter a password.")]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Repeat the password.")]
+        [Compare(nameof(Password), ErrorMessage = "The passwords do not match.")]
+        public string Confirm { get; set; } = "";
+    }
+}

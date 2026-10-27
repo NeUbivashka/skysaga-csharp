@@ -7,49 +7,53 @@ namespace SkySaga.Game.Managers.Player;
 
 public static class PlayerSaveStore
 {
-    private static readonly string LegacySavePath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", "player.json");
-
     private static readonly Lock CacheLock = new();
-    private static PlayerSaveData? _cached;
-    private static bool _loaded;
-    private static PlayerSaveData? _pending;
+    private static readonly Dictionary<Guid, PlayerSaveData?> Cached = [];
+    private static readonly Dictionary<Guid, PlayerSaveData> Pending = [];
 
-    public static Guid CharacterId => Guid.Parse(Util.CharacterUuid());
+    public static Guid OwnerId => Guid.Parse(Util.CharacterUuid());
 
-    public static PlayerSaveData? Load()
+    public static PlayerSaveData? Load(Guid characterId)
     {
         lock (CacheLock)
         {
-            if (_loaded)
-                return _cached;
+            if (Cached.TryGetValue(characterId, out var cached))
+                return cached;
 
-            _cached = LoadFromDatabase();
-            _loaded = true;
+            var loaded = LoadFromDatabase(characterId);
+            Cached[characterId] = loaded;
 
-            return _cached;
+            return loaded;
         }
     }
 
-    public static void Save(PlayerSaveData data)
+    public static void Save(Guid characterId, PlayerSaveData data)
     {
         ArgumentNullException.ThrowIfNull(data);
 
         lock (CacheLock)
         {
-            _cached = data;
-            _loaded = true;
+            Cached[characterId] = data;
 
-            var queued = _pending is not null;
-            _pending = data;
+            var queued = Pending.ContainsKey(characterId);
+            Pending[characterId] = data;
 
             if (queued)
                 return;
         }
 
-        GameDatabase.Enqueue(WritePending);
+        GameDatabase.Enqueue(context => WritePending(context, characterId));
     }
 
-    private static PlayerSaveData? LoadFromDatabase()
+    public static bool IsNameTaken(string name, Guid characterId)
+    {
+        using var context = GameDatabase.Context();
+        var lowered = name.ToLowerInvariant();
+
+        return context.Characters.Any(c => c.Name.ToLower() == lowered && c.Id != characterId);
+    }
+
+    private static PlayerSaveData? LoadFromDatabase(Guid characterId)
     {
         using var context = GameDatabase.Context();
 
@@ -59,65 +63,52 @@ public static class PlayerSaveStore
             .Include(c => c.Jobs)
             .Include(c => c.ActiveChallenges)
             .AsSplitQuery()
-            .SingleOrDefault(c => c.Id == CharacterId);
+            .SingleOrDefault(c => c.Id == characterId);
 
-        if (character is not null)
+        if (character is { LastSeenAt: null, IsCustomised: false, Inventory.Count: 0 })
         {
-            Console.WriteLine($"[PlayerSaveStore] Loaded character {character.Name} ({character.Id}) from the database.");
-            return ToSaveData(character);
-        }
-
-        var legacy = ReadLegacySave();
-        CreateCharacter(context, legacy);
-
-        if (legacy is not null)
-        {
-            File.Move(LegacySavePath, LegacySavePath + ".imported", overwrite: true);
-            Console.WriteLine($"[PlayerSaveStore] Imported {LegacySavePath} into the database.");
-        }
-
-        return legacy;
-    }
-
-    private static PlayerSaveData? ReadLegacySave()
-    {
-        if (!File.Exists(LegacySavePath))
+            Console.WriteLine($"[PlayerSaveStore] Character {character.Name} ({character.Id}) has never played: starting fresh.");
             return null;
+        }
 
-        return JsonSerializer.Deserialize<PlayerSaveData>(File.ReadAllText(LegacySavePath));
+        if (character is null)
+        {
+            Console.WriteLine($"[PlayerSaveStore] Character {characterId} is not in the database.");
+            return null;
+        }
+
+        Console.WriteLine($"[PlayerSaveStore] Loaded character {character.Name} ({character.Id}) from the database.");
+        return ToSaveData(character);
     }
 
-    private static void CreateCharacter(Data.SkySagaDbContext context, PlayerSaveData? data)
+    public static (Guid Id, string Name)? FindOwner()
     {
-        var name = Util.CharacterName();
-        var now = DateTimeOffset.UtcNow;
+        using var context = GameDatabase.Context();
 
-        var account = context.Accounts.SingleOrDefault(a => a.Username == name)
-            ?? context.Accounts.Add(new Account { Id = Guid.NewGuid(), Username = name, Role = AccountRole.Admin, CreatedAt = now }).Entity;
+        var owner = context.Characters.AsNoTracking()
+            .Where(c => c.Account!.Role == AccountRole.Admin)
+            .OrderBy(c => c.Account!.CreatedAt).ThenBy(c => c.CreatedAt)
+            .Select(c => new { c.Id, c.Name })
+            .FirstOrDefault();
 
-        var character = new Character { Id = CharacterId, AccountId = account.Id, Name = name, CreatedAt = now };
-
-        if (data is not null)
-            Apply(character, data);
-
-        context.Characters.Add(character);
-        context.SaveChanges();
+        return owner is null ? null : (owner.Id, owner.Name);
     }
 
-    private static async Task WritePending(Data.SkySagaDbContext context)
+    private static async Task WritePending(Data.SkySagaDbContext context, Guid id)
     {
         PlayerSaveData? data;
 
         lock (CacheLock)
         {
-            data = _pending;
-            _pending = null;
+            if (!Pending.Remove(id, out data))
+                return;
         }
 
-        if (data is null)
+        if (!await context.Characters.AnyAsync(c => c.Id == id))
+        {
+            Console.WriteLine($"[PlayerSaveStore] Character {id} is not in the database, nothing saved.");
             return;
-
-        var id = CharacterId;
+        }
 
         await using var transaction = await context.Database.BeginTransactionAsync();
 

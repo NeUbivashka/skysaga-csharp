@@ -106,7 +106,7 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
-        GameEvents.Record("combat.kill", PlayerSaveStore.CharacterId, new { creature = target.Name });
+        GameEvents.Record("combat.kill", connection.CharacterId, new { creature = target.Name });
 
         JobChallengeProgress.Killed(connection, target, usedItemCrc, wasUnhurt);
         JobExperience.Grinder(connection, "Grinder_Kill", targetCrc: Util.ComputeCrc32(target.Name));

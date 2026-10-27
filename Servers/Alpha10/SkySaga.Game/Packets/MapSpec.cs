@@ -84,7 +84,7 @@ public class MapSpec
             "home" => HomeIsland(seed),
             "airship" => DestinationSelection(seed),
             "ftue" => Ftue(seed),
-            _ => PlayerSaveStore.Load()?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
+            _ => PlayerSaveStore.Load(PlayerSaveStore.OwnerId)?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
         };
 
     private const int PaletteSlot = 4;

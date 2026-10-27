@@ -35,6 +35,8 @@ import lzma
 import ssl
 import sys
 import threading
+import urllib.error
+import urllib.request
 import uuid
 from pathlib import Path
 
@@ -159,147 +161,42 @@ def catch_all_get(path):
 
 
 # ---------------------------------------------------------------------------
-# Authentication
+# Accounts, sessions and characters live in SkySaga.Auth. Every request under
+# these prefixes is passed through unchanged, with the X-RWPVT session token.
 # ---------------------------------------------------------------------------
 
-def _token():
-    return {
-        "tokenId": "tokenId",
-        "refreshingTokenId": "refreshingTokenId",
-        "timeout": 999999,
-    }
+AUTH_URL = os.environ.get("SKYSAGA_AUTH_URL", "http://127.0.0.1:5100")
+AUTH_PREFIXES = ("/api/authentication/", "/api/account/", "/api/persistent-record/characters/")
+AUTH_HEADERS = ("Content-Type", "X-RWPVT", "X-RWPVTP")
 
 
-@app.route("/api/authentication/applications/names/login", methods=["POST"])
-def alpha10_login():
-    print("=== alpha10 login request ===")
-    print("Body:", request.get_data(as_text=True))
-    return jsonify({"result": _token()}), 200
+@app.before_request
+def forward_to_auth():
+    if not request.path.startswith(AUTH_PREFIXES):
+        return None
 
+    url = AUTH_URL + request.full_path.rstrip("?")
+    headers = {name: request.headers[name] for name in AUTH_HEADERS if name in request.headers}
+    headers["X-Forwarded-For"] = request.remote_addr or ""
+    body = request.get_data() if request.method not in ("GET", "HEAD") else None
+    forwarded = urllib.request.Request(url, data=body, headers=headers, method=request.method)
 
-@app.route("/api/authentication/sgauth/_login", methods=["POST"])
-def alpha10_sgauth_login():
-    print("=== alpha10 sgauth login request ===")
-    print("Body:", request.get_data(as_text=True))
-    return jsonify({
-        "result": {
-            "sgUser": "",
-            "memberId": "1",
-            "username": PLAYER_NAME,
-            "token": _token(),
-        }
-    }), 200
+    try:
+        with urllib.request.urlopen(forwarded, timeout=15) as response:
+            status, content, content_type = response.status, response.read(), response.headers.get("Content-Type")
+    except urllib.error.HTTPError as error:
+        status, content, content_type = error.code, error.read(), error.headers.get("Content-Type")
+    except urllib.error.URLError as error:
+        print(f"[auth] {request.method} {request.path}: SkySaga.Auth is not reachable at {AUTH_URL} ({error.reason})")
+        return jsonify({"errorCode": 10042}), 503
 
-
-@app.route("/api/authentication/credentials/usernames/autologin", methods=["POST"])
-def alpha10_autologin():
-    print("=== alpha10 autologin request ===")
-    return jsonify({"result": _token()}), 200
-
-
-@app.route("/api/authentication/tokens/refresh", methods=["POST"])
-def alpha10_token_refresh():
-    print("=== alpha10 token refresh ===")
-    return jsonify({"result": _token()}), 200
-
-
-@app.route("/api/authentication/credentials/usernames/logout", methods=["POST"])
-def alpha10_logout():
-    print("=== alpha10 logout request ===")
-    return jsonify({"result": {}}), 200
-
-
-@app.route("/api/authentication/sgauth/_convertLauncherToken", methods=["POST"])
-def alpha10_convert_launcher_token():
-    # The client exchanges the launcher-generated token for a game-session token.
-    # This used to fall through to the generic catch-all ({"result": "ok"}), which
-    # the client rejects - it retried 5x with backoff then failed with 17002
-    # ("Failed to authenticate with login server").
-    print("=== alpha10 convert launcher token ===")
-    print("Body:", request.get_data(as_text=True))
-    return jsonify({"result": _token()}), 200
-
-
-@app.route("/api/authentication/sgauth/credentials/_login", methods=["POST"])
-def login():
-    # Main.LoginResult, matched to what bgwLogin_DoWork expects. acceptedVersion
-    # MUST equal currentVersion or the launcher will not consider the login flow
-    # complete even with a valid token.
-    return jsonify({
-        "token": {
-            "tokenId": str(uuid.uuid4()),
-            "refreshingTokenId": str(uuid.uuid4()),
-            "timeout": 999999,
-        },
-        "principal": PLAYER_NAME,
-        "legals": {
-            "acceptedVersion": 1,
-            "currentVersion": 1,
-            "currentTermsAndConditionsUrl": "http://127.0.0.1:5001/tos",
-        },
-        "accountActions": {
-            "actionRequired": False,
-            "updatePassword": False,
-            "updateCharacterName": False,
-            "ticketId": "",
-        },
-    }), 200
-
-
-@app.route("/api/authentication/sgauth/_acceptLegals", methods=["POST"])
-def accept_legals():
-    return login()
-
-
-# ---------------------------------------------------------------------------
-# Characters and account
-# ---------------------------------------------------------------------------
-
-def _character():
-    return {
-        "uuid": _state["character_uuid"],
-        "name": PLAYER_NAME,
-        "homeBiome": ACCOUNT["homeBiome"],
-        "positionInList": 0,
-    }
+    print(f"[auth] {request.method} {request.path} -> {status}")
+    return Response(content, status=status, content_type=content_type or "application/json")
 
 
 @app.route("/api/persistent-record/profanity/blacklist", methods=["POST"])
 def alpha10_profanity_blacklist():
     return jsonify({"result": []}), 200
-
-
-@app.route("/api/persistent-record/characters/list", methods=["GET"])
-def alpha10_characters_list():
-    if _state["character_uuid"] is None:
-        # No character yet -> explicit error code, which is what prompts the
-        # client to call _create next.
-        return jsonify({"Error": {"code": 11001, "message": "", "detail": ""}}), 200
-    return jsonify({"result": {"characters": [_character()]}}), 200
-
-
-@app.route("/api/persistent-record/characters/_active", methods=["GET"])
-def alpha10_characters_active():
-    # The 2017 builds (Alpha V10 b36731) call this instead of /characters/list
-    # (RPC HTTPRPCDownloadActiveCharacter). With no route it fell through to the
-    # catch-all GET handler, which returns ServiceStatus-shaped JSON with no
-    # "result"/"character" field - and still 200, so it went unnoticed for a long
-    # time.
-    #
-    # The shape is singular "character", not a "characters" array, and the
-    # no-character case must be a SUCCESS with character=null, NOT the 11001 error
-    # /list uses - the client renders that differently here and treating "no
-    # character" as an error blocks it from reaching character creation.
-    if _state["character_uuid"] is None:
-        return jsonify({"result": {"character": None}}), 200
-    return jsonify({"result": {"character": _character(), **_character()}}), 200
-
-
-@app.route("/api/persistent-record/characters/_create", methods=["POST"])
-def alpha10_characters_create():
-    # One account, one character: creation hands back the existing uuid.
-    print("=== alpha10 character create ->", _state["character_uuid"], "===")
-    return jsonify({"result": {"characterUUID": _state["character_uuid"]}}), 200
 
 
 @app.route("/GetGUID", methods=["GET"])
@@ -311,19 +208,6 @@ def get_guid():
     return jsonify({
         "result": {"GUID": _state["character_uuid"], "Name": PLAYER_NAME}
     }), 200
-
-
-@app.route("/api/account/name/checkName", methods=["GET", "POST"])
-def alpha10_account_check_name():
-    # The character creator checks the chosen name here before it sends RPCSaveCharacterName
-    # (GameState_CharacterCreation callback FUN_00810C00). It reads "valid"; otherwise "profane",
-    # "containsNotAllowedCharacters", "alreadyExists" and "suggestion" pick the error text.
-    print("=== checkName", request.get_data(as_text=True)[:200], "===")
-    # FUN_00811360 looks the keys up in the response node at +0x34 and wants JSON bools (node type
-    # 6). Whether that node is the root or "result" is not settled, so both carry them.
-    verdict = {"valid": True, "profane": False, "containsNotAllowedCharacters": False,
-               "alreadyExists": False}
-    return jsonify({"result": dict(verdict), **verdict}), 200
 
 
 @app.route("/api/social-graph/character/profile/batch", methods=["POST"])
@@ -344,11 +228,6 @@ def _character_profile(character_uuid):
         "counts": {"follows": 0, "followedBy": 0, "friends": 0},
         "accountCreated": ACCOUNT_CREATED,
     }
-
-
-@app.route("/api/account/get", methods=["POST"])
-def alpha10_account_get():
-    return jsonify({"result": {"keySubset": {"RESERVED_NAME": PLAYER_NAME}}}), 200
 
 
 # ---------------------------------------------------------------------------

@@ -130,6 +130,14 @@ public static class Util
         if (_characterUuid is not null)
             return _characterUuid;
 
+        if (Managers.Player.PlayerSaveStore.FindOwner() is { } owner)
+        {
+            _characterUuid = owner.Id.ToString();
+            _characterName = owner.Name;
+            Console.WriteLine($"[owner] island owner {owner.Name} ({_characterUuid}), the first character of the oldest Admin account");
+            return _characterUuid;
+        }
+
         var webUrl = Environment.GetEnvironmentVariable("SKYSAGA_WEB_URL") ?? "http://127.0.0.1:5001";
 
         try

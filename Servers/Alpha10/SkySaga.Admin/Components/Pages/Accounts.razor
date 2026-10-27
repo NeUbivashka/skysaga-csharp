@@ -1,0 +1,182 @@
+@page "/accounts"
+@inject IDbContextFactory<SkySagaDbContext> Db
+@inject AuthLinks Links
+@inject ISnackbar Snackbar
+
+<PageTitle>Accounts · SkySaga Control</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h4">Accounts</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@Links.PublicUrl" Target="_blank">Account site</MudButton>
+</MudStack>
+
+@if (_resetLink is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="() => _resetLink = null">
+        Reset link for <b>@_resetFor</b>, valid for @((int)AccountSecurity.ResetLifetime.TotalHours) hours. It is shown only now:
+        <div class="mono mt-1">@_resetLink</div>
+    </MudAlert>
+}
+
+<MudPaper Class="pa-4 section" Elevation="0">
+    <MudDataGrid T="AccountRow" Items="_rows" QuickFilter="Matches" Hover="true" Dense="true" Elevation="0">
+        <ToolBarContent>
+            <MudTextField @bind-Value="_search" Placeholder="Search by account or character" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Class="mt-0" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Username" Title="Account" />
+            <PropertyColumn Property="x => x.Email" Title="E-mail" />
+            <TemplateColumn Title="Character" SortBy="x => x.Character">
+                <CellTemplate>
+                    @if (context.Item.CharacterId is { } characterId)
+                    {
+                        <MudLink Href="@($"/players/{characterId}")">@context.Item.Character</MudLink>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">not created yet</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Role" SortBy="x => x.Role">
+                <CellTemplate>
+                    <MudSelect T="AccountRole" Value="context.Item.Role" ValueChanged="role => SetRoleAsync(context.Item, role)" Dense="true" Margin="Margin.Dense" Variant="Variant.Text">
+                        @foreach (var role in Enum.GetValues<AccountRole>())
+                        {
+                            <MudSelectItem Value="role">@role</MudSelectItem>
+                        }
+                    </MudSelect>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" SortBy="x => x.Status">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(context.Item.Status)">@context.Item.Status</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Sessions" Title="Sessions" />
+            <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.LastLogin" Title="Last sign-in" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <MudMenuItem Icon="@Icons.Material.Filled.Key" OnClick="() => ResetAsync(context.Item)">Password reset link</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="() => SignOutAsync(context.Item)">Sign out everywhere</MudMenuItem>
+                        @if (context.Item.Status == "Banned")
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.LockOpen" OnClick="() => SetBanAsync(context.Item, null)">Lift ban</MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.Block" IconColor="Color.Error" OnClick="() => SetBanAsync(context.Item, DateTimeOffset.UtcNow.AddDays(7))">Ban 7 days</MudMenuItem>
+                        }
+                    </MudMenu>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent><MudText Class="mud-text-secondary">No accounts yet.</MudText></NoRecordsContent>
+        <PagerContent><MudDataGridPager T="AccountRow" /></PagerContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private record AccountRow(Guid Id, string Username, string? Email, Guid? CharacterId, string? Character, AccountRole Role, string Status,
+        int Sessions, DateTimeOffset CreatedAt, DateTimeOffset? LastLogin);
+
+    private List<AccountRow> _rows = [];
+    private string _search = "";
+    private string? _resetLink;
+    private string? _resetFor;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+
+        _rows = await db.Accounts.OrderBy(a => a.Username)
+            .Select(a => new AccountRow(
+                a.Id,
+                a.Username,
+                a.EmailHint,
+                a.Characters.OrderBy(c => c.CreatedAt).Select(c => (Guid?)c.Id).FirstOrDefault(),
+                a.Characters.OrderBy(c => c.CreatedAt).Select(c => c.Name).FirstOrDefault(),
+                a.Role,
+                a.BannedUntil > now ? "Banned" : a.LockedUntil > now ? "Locked" : a.PasswordHash == null ? "No password" : "Active",
+                db.AuthSessions.Count(s => s.AccountId == a.Id && s.ExpiresAt > now),
+                a.CreatedAt,
+                a.LastLoginAt))
+            .ToListAsync();
+    }
+
+    private bool Matches(AccountRow row)
+        => string.IsNullOrWhiteSpace(_search)
+           || row.Username.Contains(_search, StringComparison.OrdinalIgnoreCase)
+           || (row.Email?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false)
+           || (row.Character?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private static Color StatusColor(string status) => status switch
+    {
+        "Active" => Color.Success,
+        "Banned" => Color.Error,
+        _ => Color.Warning
+    };
+
+    private async Task ResetAsync(AccountRow row)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        var code = await AccountSecurity.CreateResetCodeAsync(db, row.Id);
+
+        await RecordAsync(db, "admin.password_reset", row);
+        _resetFor = row.Username;
+        _resetLink = Links.Reset(code);
+    }
+
+    private async Task SignOutAsync(AccountRow row)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        await AccountSecurity.SignOutEverywhereAsync(db, row.Id);
+
+        await RecordAsync(db, "admin.sign_out", row);
+        Snackbar.Add($"{row.Username} was signed out everywhere", Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task SetBanAsync(AccountRow row, DateTimeOffset? until)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        await db.Accounts.Where(a => a.Id == row.Id)
+            .ExecuteUpdateAsync(set => set.SetProperty(a => a.BannedUntil, until).SetProperty(a => a.BanReason, until is null ? null : "Banned from the admin panel"));
+
+        if (until is not null)
+            await AccountSecurity.SignOutEverywhereAsync(db, row.Id);
+
+        await RecordAsync(db, until is null ? "admin.unban" : "admin.ban", row);
+        Snackbar.Add(until is null ? $"Ban of {row.Username} lifted" : $"{row.Username} banned for 7 days", until is null ? Severity.Success : Severity.Warning);
+        await LoadAsync();
+    }
+
+    private async Task SetRoleAsync(AccountRow row, AccountRole role)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        await db.Accounts.Where(a => a.Id == row.Id).ExecuteUpdateAsync(set => set.SetProperty(a => a.Role, role));
+
+        await RecordAsync(db, "admin.role", row, new { role = role.ToString() });
+        Snackbar.Add($"{row.Username} is now {role}", Severity.Success);
+        await LoadAsync();
+    }
+
+    private static async Task RecordAsync(SkySagaDbContext db, string kind, AccountRow row, object? data = null)
+    {
+        db.GameEvents.Add(new GameEvent
+        {
+            Time = DateTimeOffset.UtcNow,
+            Kind = kind,
+            CharacterId = row.CharacterId,
+            Data = System.Text.Json.JsonSerializer.Serialize(new { account = row.Username, details = data })
+        });
+        await db.SaveChangesAsync();
+    }
+}

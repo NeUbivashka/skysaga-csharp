@@ -14,12 +14,12 @@ public static class ClientConnected
 
         var gameHost = bitStream.ReadString();
 
-        var trailingBitBuffer = new byte[1];
-        bitStream.ReadBits(trailingBitBuffer, 1, alignBitsToRight: true);
+        bitStream.ReadClientUuid(out var clientUuid);
+        connection.ClientCharacterUuid = clientUuid;
 
         Console.WriteLine($"[ClientConnected] sessionTicket={sessionTicket} "
             + $"unknownField9bits=0x{unknownFieldBuffer[0]:X2}{unknownFieldBuffer[1]:X2} "
-            + $"gameHost={gameHost} trailingBit=0x{trailingBitBuffer[0]:X2}");
+            + $"gameHost={gameHost} uuid={clientUuid?.ToString() ?? "<none>"}");
 
         bool attachDebuggerBeforeHandshake = false;
         if (attachDebuggerBeforeHandshake)
@@ -89,6 +89,8 @@ public static class ClientConnected
         connection.Send(setConnectionTimeout);
 
         Console.WriteLine("[ClientConnected] Sent SetConnectionTimeout: Millis=30000");
+
+        connection.Send(new GetUserToken());
 
         return true;
     }

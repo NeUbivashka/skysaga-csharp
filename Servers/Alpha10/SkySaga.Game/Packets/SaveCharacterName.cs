@@ -10,6 +10,12 @@ public static class SaveCharacterName
 
         var player = connection.PlayerEntity;
 
+        if (connection.CharacterId is { } characterId && !string.IsNullOrWhiteSpace(name) && PlayerSaveStore.IsNameTaken(name, characterId))
+        {
+            Console.WriteLine($"[CharacterCreation] The name '{name}' belongs to another character; the name is not changed.");
+            name = "";
+        }
+
         if (!string.IsNullOrWhiteSpace(name) && player.TryGetComponent<ClientPlayernameComponent>(out var playername))
             playername.Playername = name;
 

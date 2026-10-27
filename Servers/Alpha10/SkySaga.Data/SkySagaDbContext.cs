@@ -16,6 +16,8 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
     public DbSet<PlacedDevice> PlacedDevices => Set<PlacedDevice>();
     public DbSet<Checkpoint> Checkpoints => Set<Checkpoint>();
     public DbSet<GameEvent> GameEvents => Set<GameEvent>();
+    public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
+    public DbSet<PasswordReset> PasswordResets => Set<PasswordReset>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -24,6 +26,24 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
             account.HasIndex(a => a.Username).IsUnique();
             account.Property(a => a.Username).HasMaxLength(64);
             account.Property(a => a.Role).HasConversion<string>().HasMaxLength(16);
+            account.Property(a => a.PasswordHash).HasMaxLength(256);
+            account.HasIndex(a => a.EmailIndex).IsUnique();
+            account.Property(a => a.EmailHint).HasMaxLength(128);
+        });
+
+        model.Entity<AuthSession>(session =>
+        {
+            session.HasIndex(s => s.TokenHash).IsUnique();
+            session.HasIndex(s => s.RefreshHash).IsUnique();
+            session.HasIndex(s => s.AccountId);
+            session.Property(s => s.Kind).HasConversion<string>().HasMaxLength(16);
+            session.HasOne(s => s.Account).WithMany().HasForeignKey(s => s.AccountId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        model.Entity<PasswordReset>(reset =>
+        {
+            reset.HasIndex(r => r.CodeHash).IsUnique();
+            reset.HasOne(r => r.Account).WithMany().HasForeignKey(r => r.AccountId).OnDelete(DeleteBehavior.Cascade);
         });
 
         model.Entity<Character>(character =>
