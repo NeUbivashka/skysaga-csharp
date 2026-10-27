@@ -50,10 +50,6 @@ catch (Exception exception)
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        services.AddSingleton<PlayerConnectionManager>();
-        services.AddSingleton<IWorldManager, WorldManager>();
-        services.AddSingleton(sp => new PlayerInitializer(sp.GetRequiredService<IWorldManager>()));
-
         services.AddSingleton<Server>();
 
         services.AddSingleton<IrcServer>();

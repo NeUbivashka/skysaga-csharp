@@ -1,4 +1,6 @@
-﻿namespace SkySaga.Game.Packets;
+﻿using SkySaga.Data.Entities;
+
+namespace SkySaga.Game.Packets;
 
 public class MapSpec
 {
@@ -78,14 +80,41 @@ public class MapSpec
         };
     }
 
-    public static MapSpec FromEnvironment(uint seed)
-        => Environment.GetEnvironmentVariable("SKYSAGA_ADVENTURE")?.ToLowerInvariant() switch
-        {
-            "home" => HomeIsland(seed),
-            "airship" => DestinationSelection(seed),
-            "ftue" => Ftue(seed),
-            _ => PlayerSaveStore.Load(PlayerSaveStore.OwnerId)?.IsCharacterCustomised == true ? HomeIsland(seed) : DestinationSelection(seed),
-        };
+    public static MapSpec SocialHub(uint seed)
+    {
+        var spec = HomeIsland(seed);
+
+        spec.Searchable[BiomeSlot] = SocialHubBiomeIndex;
+        spec.Searchable[AdventureSlot] = SocialHubAdventureIndex;
+        spec.Searchable[PaletteSlot] = SocialHubPaletteIndex;
+        spec.Searchable[TimeOfDayPresetSlot] = SocialHubTimeOfDayPresetIndex;
+        spec.FeatureName = "City_Social_Centre_Area";
+
+        return spec;
+    }
+
+    public static MapSpec For(WorldKind kind, uint seed) => kind switch
+    {
+        WorldKind.CharacterCreation => DestinationSelection(seed),
+        WorldKind.Ftue => Ftue(seed),
+        WorldKind.Hub => SocialHub(seed),
+        WorldKind.Island => HomeIsland(seed),
+        _ => throw new NotSupportedException($"{kind} worlds have no map spec yet.")
+    };
+
+    private const int BiomeSlot = 0;
+
+    private const int AdventureSlot = 2;
+
+    private const int TimeOfDayPresetSlot = 8;
+
+    private const uint SocialHubBiomeIndex = 5;
+
+    private const uint SocialHubAdventureIndex = 110;
+
+    private const uint SocialHubPaletteIndex = 43;
+
+    private const uint SocialHubTimeOfDayPresetIndex = 11;
 
     private const int PaletteSlot = 4;
 

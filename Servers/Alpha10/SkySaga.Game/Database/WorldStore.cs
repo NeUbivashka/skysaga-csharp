@@ -1,44 +1,79 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using SkySaga.Data;
 using SkySaga.Data.Entities;
 
 namespace SkySaga.Game.Database;
 
 public static class WorldStore
 {
-    private static readonly Dictionary<string, Guid> WorldIds = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly Lock WorldIdsLock = new();
+    public const uint DefaultSeed = WorldCatalog.DefaultSeed;
 
-    public static string MapName => Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName);
-
-    public static Guid WorldId()
+    public static WorldInfo? Load(Guid worldId)
     {
-        var mapName = MapName;
+        using var context = GameDatabase.Context();
+        var world = context.Worlds.AsNoTracking().SingleOrDefault(w => w.Id == worldId);
 
-        lock (WorldIdsLock)
-        {
-            if (WorldIds.TryGetValue(mapName, out var known))
-                return known;
-
-            using var context = GameDatabase.Context();
-            var world = context.Worlds.FirstOrDefault(w => w.MapName == mapName);
-
-            if (world is null)
-            {
-                world = new World { Id = Guid.NewGuid(), MapName = mapName, CreatedAt = DateTimeOffset.UtcNow };
-                context.Worlds.Add(world);
-                context.SaveChanges();
-                Console.WriteLine($"[WorldStore] Created world {mapName} ({world.Id})");
-            }
-
-            WorldIds[mapName] = world.Id;
-            return world.Id;
-        }
+        return world is null ? null : ToInfo(context, world);
     }
 
-    public static List<(int X, int Y, int Z, byte Block)> LoadVoxelEdits()
+    public static WorldInfo Hub()
     {
-        var worldId = WorldId();
+        using var context = GameDatabase.Context();
+        return ToInfo(context, WorldCatalog.Hub(context, TemplateStore.DataDirectory));
+    }
+
+    public static WorldInfo HomeIsland(Guid characterId)
+    {
+        using var context = GameDatabase.Context();
+        return ToInfo(context, WorldCatalog.HomeIsland(context, TemplateStore.DataDirectory, characterId));
+    }
+
+    public static WorldInfo Instance(WorldKind kind, Guid ownerCharacterId)
+    {
+        using var context = GameDatabase.Context();
+        var ownerName = context.Characters.Where(c => c.Id == ownerCharacterId).Select(c => c.Name).SingleOrDefault();
+
+        return new WorldInfo(Guid.NewGuid(), kind, WorldCatalog.Template(TemplateStore.DataDirectory, kind), null, DefaultSeed, ownerCharacterId, ownerName,
+            WorldAccess.Owner, WorldAccess.Owner);
+    }
+
+    public static (Guid? WorldId, bool Customised)? Character(Guid characterId)
+    {
+        using var context = GameDatabase.Context();
+        var character = context.Characters.AsNoTracking().Where(c => c.Id == characterId)
+            .Select(c => new { c.CurrentWorldId, c.IsCustomised }).SingleOrDefault();
+
+        return character is null ? null : (character.CurrentWorldId, character.IsCustomised);
+    }
+
+    public static void SetCurrentWorld(Guid characterId, Guid worldId)
+    {
+        using var context = GameDatabase.Context();
+        context.Characters.Where(c => c.Id == characterId)
+            .ExecuteUpdate(update => update.SetProperty(c => c.CurrentWorldId, worldId));
+    }
+
+    public static void Visited(Guid worldId)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        GameDatabase.Enqueue(context => context.Worlds.Where(w => w.Id == worldId)
+            .ExecuteUpdateAsync(update => update.SetProperty(w => w.LastVisitedAt, now)));
+    }
+
+    private static WorldInfo ToInfo(Data.SkySagaDbContext context, World world)
+    {
+        var ownerName = world.OwnerCharacterId is { } owner
+            ? context.Characters.Where(c => c.Id == owner).Select(c => c.Name).SingleOrDefault()
+            : null;
+
+        return new WorldInfo(world.Id, world.Kind, world.Template, world.TemplateVersion, (uint)world.Seed,
+            world.OwnerCharacterId, ownerName, world.VisitAccess, world.BuildAccess);
+    }
+
+    public static List<(int X, int Y, int Z, byte Block)> LoadVoxelEdits(Guid worldId)
+    {
         using var context = GameDatabase.Context();
 
         return [.. context.VoxelEdits.AsNoTracking()
@@ -48,37 +83,23 @@ public static class WorldStore
             .Select(e => (e.X, e.Y, e.Z, (byte)e.Block))];
     }
 
-    public static void ImportVoxelEdits(IEnumerable<(int X, int Y, int Z, byte Block)> edits)
+    public static void SaveVoxelEdit(Guid worldId, int x, int y, int z, byte block)
     {
-        var worldId = WorldId();
-        using var context = GameDatabase.Context();
-
-        context.VoxelEdits.Where(e => e.WorldId == worldId).ExecuteDelete();
-        context.VoxelEdits.AddRange(edits.Select(e => new VoxelEdit { WorldId = worldId, X = e.X, Y = e.Y, Z = e.Z, Block = e.Block }));
-        context.SaveChanges();
-    }
-
-    public static void SaveVoxelEdit(int x, int y, int z, byte block)
-    {
-        var worldId = WorldId();
-
         GameDatabase.Enqueue(context => context.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO voxel_edits (world_id, x, y, z, block) VALUES ({worldId}, {x}, {y}, {z}, {(short)block})
             ON CONFLICT (world_id, x, y, z) DO UPDATE SET block = excluded.block
             """));
     }
 
-    public static List<PlacedDevice> LoadDevices()
+    public static List<PlacedDevice> LoadDevices(Guid worldId)
     {
-        var worldId = WorldId();
         using var context = GameDatabase.Context();
 
         return [.. context.PlacedDevices.AsNoTracking().Where(d => d.WorldId == worldId).OrderBy(d => d.Id)];
     }
 
-    public static void SaveDevices(IEnumerable<PlacedDevice> devices, bool wait = false)
+    public static void SaveDevices(Guid worldId, IEnumerable<PlacedDevice> devices)
     {
-        var worldId = WorldId();
         var snapshot = devices.Select(d => new PlacedDevice
         {
             WorldId = worldId,
@@ -91,28 +112,18 @@ public static class WorldStore
             Items = d.Items
         }).ToList();
 
-        async Task Write(Data.SkySagaDbContext context)
+        GameDatabase.Enqueue(async context =>
         {
             await using var transaction = await context.Database.BeginTransactionAsync();
             await context.PlacedDevices.Where(d => d.WorldId == worldId).ExecuteDeleteAsync();
             context.PlacedDevices.AddRange(snapshot);
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
-        }
-
-        if (!wait)
-        {
-            GameDatabase.Enqueue(Write);
-            return;
-        }
-
-        using var context = GameDatabase.Context();
-        Write(context).GetAwaiter().GetResult();
+        });
     }
 
-    public static Dictionary<Guid, float[]> LoadCheckpoints()
+    public static Dictionary<Guid, float[]> LoadCheckpoints(Guid worldId)
     {
-        var worldId = WorldId();
         using var context = GameDatabase.Context();
 
         return context.Checkpoints.AsNoTracking()
@@ -120,32 +131,11 @@ public static class WorldStore
             .ToDictionary(c => c.CharacterId, c => new[] { c.X, c.Y, c.Z });
     }
 
-    public static void SaveCheckpoint(Guid characterId, float x, float y, float z)
+    public static void SaveCheckpoint(Guid worldId, Guid characterId, float x, float y, float z)
     {
-        var worldId = WorldId();
-
         GameDatabase.Enqueue(context => context.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO checkpoints (world_id, character_id, x, y, z) VALUES ({worldId}, {characterId}, {x}, {y}, {z})
             ON CONFLICT (world_id, character_id) DO UPDATE SET x = excluded.x, y = excluded.y, z = excluded.z
             """));
-    }
-
-    public static void ImportCheckpoints(Dictionary<Guid, float[]> checkpoints)
-    {
-        var worldId = WorldId();
-        using var context = GameDatabase.Context();
-
-        foreach (var (characterId, position) in checkpoints)
-            if (position.Length == 3)
-                context.Database.ExecuteSqlInterpolated($"""
-                    INSERT INTO checkpoints (world_id, character_id, x, y, z) VALUES ({worldId}, {characterId}, {position[0]}, {position[1]}, {position[2]})
-                    ON CONFLICT (world_id, character_id) DO UPDATE SET x = excluded.x, y = excluded.y, z = excluded.z
-                    """);
-    }
-
-    public static void MarkImported(string path)
-    {
-        File.Move(path, path + ".imported", overwrite: true);
-        Console.WriteLine($"[WorldStore] Imported {path} into the database.");
     }
 }

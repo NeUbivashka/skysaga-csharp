@@ -1,13 +1,13 @@
+using SkySaga.Game.Database;
+
 namespace SkySaga.Game.Packets;
 
-public class JoinSocialHub : ISerializablePacket
+public static class JoinSocialHub
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var triggeringEntityId)) return false;
 
-        bitStream.WritePacketId(PacketId.JoinSocialHub);
-
-        return bitStream;
+        return WorldTravel.Request(connection, triggeringEntityId, nameof(JoinSocialHub), _ => WorldStore.Hub());
     }
 }

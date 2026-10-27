@@ -12,6 +12,8 @@ public class Character
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastSeenAt { get; set; }
 
+    public Guid? CurrentWorldId { get; set; }
+
     public string? PositionMap { get; set; }
     public float PositionX { get; set; }
     public float PositionY { get; set; }

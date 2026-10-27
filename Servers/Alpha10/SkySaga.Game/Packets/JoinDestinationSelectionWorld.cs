@@ -1,13 +1,13 @@
+using SkySaga.Game.Database;
+
 namespace SkySaga.Game.Packets;
 
 public static class JoinDestinationSelectionWorld
 {
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        if (!bitStream.ReadFullWidthUInt32(out var value)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var triggeringEntityId)) return false;
 
-        Console.WriteLine($"[JoinDestinationSelectionWorld] triggeringEntityID={value}");
-
-        return true;
+        return WorldTravel.Request(connection, triggeringEntityId, nameof(JoinDestinationSelectionWorld), _ => WorldStore.Hub());
     }
 }

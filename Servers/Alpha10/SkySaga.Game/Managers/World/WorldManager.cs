@@ -12,13 +12,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private System.Threading.Timer? _reloadDebounceTimer;
     private readonly object _reloadLock = new();
 
+    public WorldInfo Info { get; }
     public IMapEntityManager EntityManager { get; }
     public IMapChunkManager ChunkManager => _chunkManager;
     public MapDefinition Definition { get; set; }
     public Entity? Airship { get; private set; }
-
-    private static readonly string DevicesPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves",
-        $"devices_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}.json");
 
     public record StoredItem(uint ItemCrc, int Count, uint?[] Materials);
 
@@ -31,25 +29,26 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     private readonly List<PlacedDevice> _devices = [];
 
-    private static readonly string CheckpointsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves",
-        $"checkpoints_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}.json");
-
     private const int CheckpointSearchRadius = 4;
     private const int CheckpointClearance = 2;
 
-    private Dictionary<Guid, float[]> _checkpoints = LoadCheckpoints();
+    private readonly Dictionary<Guid, float[]> _checkpoints;
     private readonly object _devicesLock = new();
 
     private readonly Dictionary<int, (Vector3 Position, float? Yaw, string? SpawnParams)> _mapCreatureSpawns = [];
 
     private const int LandingSearchRadius = 16;
 
-    public WorldManager(PlayerConnectionManager playerConnectionManager)
+    public System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, float> VoxelDamage { get; } = new();
+
+    public WorldManager(WorldInfo info, PlayerConnectionManager playerConnectionManager)
     {
         ArgumentNullException.ThrowIfNull(playerConnectionManager);
 
+        Info = info;
         EntityManager = new EntityManager();
-        _chunkManager = new MapChunkManager(playerConnectionManager);
+        _chunkManager = new MapChunkManager(info, playerConnectionManager);
+        _checkpoints = info.IsPersistent ? WorldStore.LoadCheckpoints(info.Id) : [];
 
         InitializeWorld();
         SetupMapFileWatcher();
@@ -57,9 +56,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     private void SetupMapFileWatcher()
     {
+        if (Info.TemplateVersion is not null)
+            return;
+
         try
         {
-            string fullPath = Path.GetFullPath(WorldMapLoader.MapPath);
+            string fullPath = TemplateStore.FilePath(Info.Template);
             string? dir = Path.GetDirectoryName(fullPath);
             if (string.IsNullOrEmpty(dir))
                 return;
@@ -68,7 +70,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             _mapFileWatcher = new FileSystemWatcher(dir)
             {
-                Filter = WorldMapLoader.MapFileName + "*",
+                Filter = Path.GetFileName(fullPath) + "*",
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
                 EnableRaisingEvents = true
             };
@@ -77,7 +79,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             _mapFileWatcher.Created += OnMapFileChanged;
             _mapFileWatcher.Renamed += OnMapFileChanged;
 
-            Console.WriteLine($"[WorldManager] Watching '{dir}' for WorldMap.json changes - editing the map and saving will auto-reload it without restarting the server.");
+            Console.WriteLine($"[WorldManager] {Info.Kind} {Info.Id} watches {fullPath}: saving the template reloads this world.");
         }
         catch (Exception ex)
         {
@@ -92,7 +94,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         {
             lock (_reloadLock)
             {
-                Console.WriteLine("[WorldManager] WorldMap.json changed on disk - reloading...");
+                Console.WriteLine($"[WorldManager] {Info.Template} changed on disk - reloading {Info.Kind} {Info.Id}...");
                 try
                 {
                     Reset();
@@ -129,7 +131,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             return;
         }
 
-        if (WorldMapLoader.TryLoad(ChunkManager, out var loadedDefinition, out var loadedEntities, WorldMapLoader.MapPath) && loadedDefinition is not null)
+        if (WorldMapLoader.TryLoad(ChunkManager, Info, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
         {
             Definition = loadedDefinition;
 
@@ -139,9 +141,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
         else
         {
-            Console.WriteLine(
-                $"[WorldManager] No map found at '{WorldMapLoader.MapPath}' - starting an empty world. " +
-                "Export a map from the terrain editor and place it there.");
+            Console.WriteLine($"[WorldManager] The template {Info.Template} could not be loaded - starting an empty world.");
 
             Definition = new MapDefinition
             {
@@ -413,14 +413,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
             _devices.Clear();
             _deviceEntities.Clear();
 
-            if (File.Exists(DevicesPath))
-            {
-                var legacy = JsonSerializer.Deserialize<List<PlacedDevice>>(File.ReadAllText(DevicesPath)) ?? [];
-                WorldStore.SaveDevices(legacy.Select(ToRecord), wait: true);
-                WorldStore.MarkImported(DevicesPath);
-            }
-
-            _devices.AddRange(WorldStore.LoadDevices().Select(FromRecord));
+            if (Info.IsPersistent)
+                _devices.AddRange(WorldStore.LoadDevices(Info.Id).Select(FromRecord));
 
             foreach (var placed in _devices)
                 if (DeviceTable.TryGet(placed.ItemCrc, out var device))
@@ -430,7 +424,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
     }
 
-    private void SaveDevices() => WorldStore.SaveDevices(_devices.Select(ToRecord));
+    private void SaveDevices()
+    {
+        if (Info.IsPersistent)
+            WorldStore.SaveDevices(Info.Id, _devices.Select(ToRecord));
+    }
 
     private static Data.Entities.PlacedDevice ToRecord(PlacedDevice device) => new()
     {
@@ -492,20 +490,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
         lock (_checkpoints)
             _checkpoints[character] = [transform.Position.X, transform.Position.Y, transform.Position.Z];
 
-        WorldStore.SaveCheckpoint(character, transform.Position.X, transform.Position.Y, transform.Position.Z);
+        if (Info.IsPersistent)
+            WorldStore.SaveCheckpoint(Info.Id, character, transform.Position.X, transform.Position.Y, transform.Position.Z);
 
         Console.WriteLine($"[Checkpoint] {character} -> {checkpoint.Name}#{checkpoint.Id} at {transform.Position}");
-    }
-
-    private static Dictionary<Guid, float[]> LoadCheckpoints()
-    {
-        if (File.Exists(CheckpointsPath))
-        {
-            WorldStore.ImportCheckpoints(JsonSerializer.Deserialize<Dictionary<Guid, float[]>>(File.ReadAllText(CheckpointsPath)) ?? []);
-            WorldStore.MarkImported(CheckpointsPath);
-        }
-
-        return WorldStore.LoadCheckpoints();
     }
 
     private void SpawnEntitiesFromMap(List<WorldMapEntityData> entities, out Vector3? airshipPosition)
@@ -553,7 +541,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 var nameHash = Util.ComputeCrc32(spec.Name);
                 SetDeviceItemSpec(creature[^1], nameHash, MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
 
-                if (creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Guid.TryParse(Util.CharacterUuid(), out var islandOwner))
+                if (creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Info.OwnerCharacterId is { } islandOwner)
                     mapOwner.Owner = islandOwner;
             }
 
@@ -711,7 +699,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         connection.IsPlayerInitialized = true;
 
-        GameEvents.Record("player.join", characterId, new { map = WorldStore.MapName });
+        GameEvents.Record("player.join", Info.Id, characterId, new { kind = Info.Kind.ToString(), template = Info.Template });
 
         foreach (var entity in InventoryFirst(EntityManager.Entities))
         {

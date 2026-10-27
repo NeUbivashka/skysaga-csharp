@@ -48,7 +48,7 @@ public static class Combat
 
         var player = connection.PlayerEntity;
 
-        if (AiManager.TryDodge(connection.PlayerConnectionManager, target, player) || AiManager.TryBlock(target, player))
+        if (connection.Ai.TryDodge(target, player) || connection.Ai.TryBlock(target, player))
             return;
 
         var weaponLevel = AttackLevel(entityManager, player, usedItemCrc) + attacks.Max(attack => ActionStatTable.Get(attack.EquippedAction).WeaponLevelModifier);
@@ -87,7 +87,7 @@ public static class Combat
         if (!health.IsDead && target.TryGetComponent<ClientEnemyAiComponent>(out _))
         {
             KnockBack(connection, player, target, attacks, usedItemCrc);
-            AiManager.Hit(target, player);
+            connection.Ai.Hit(target, player);
         }
 
         if (!health.IsDead)
@@ -106,7 +106,7 @@ public static class Combat
         });
 
         Console.WriteLine($"[Combat] {target.Name}#{target.Id} killed by player {player.Id}");
-        GameEvents.Record("combat.kill", connection.CharacterId, new { creature = target.Name });
+        GameEvents.Record("combat.kill", connection.WorldManager.Info.Id, connection.CharacterId, new { creature = target.Name });
 
         JobChallengeProgress.Killed(connection, target, usedItemCrc, wasUnhurt);
         JobExperience.Grinder(connection, "Grinder_Kill", targetCrc: Util.ComputeCrc32(target.Name));
@@ -114,10 +114,10 @@ public static class Combat
         ResourcePickups.SpawnCreatureLoot(connection, target);
     }
 
-    public static void CreatureProjectileHit(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability, ProjectileLaunch launch)
-        => CreatureAttack(connections, entityManager, creature, player, ability, launch.ImpactWeaponLevel, launch.ImpactCreatureLevel);
+    public static void CreatureProjectileHit(AiManager ai, PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability, ProjectileLaunch launch)
+        => CreatureAttack(ai, connections, entityManager, creature, player, ability, launch.ImpactWeaponLevel, launch.ImpactCreatureLevel);
 
-    public static void CreatureAttack(PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability,
+    public static void CreatureAttack(AiManager ai, PlayerConnectionManager connections, IMapEntityManager entityManager, Entity creature, Entity player, CreatureAbility ability,
         float? weaponLevelModifier = null, float? creatureLevelModifier = null)
     {
         if (!player.TryGetComponent<ClientHealthComponent>(out var health) || health.IsDead)
@@ -125,7 +125,7 @@ public static class Combat
 
         var creatureVictim = player.TryGetComponent<ClientEnemyAiComponent>(out _);
 
-        if (creatureVictim && (AiManager.TryDodge(connections, player, creature) || AiManager.TryBlock(player, creature)))
+        if (creatureVictim && (ai.TryDodge(player, creature) || ai.TryBlock(player, creature)))
             return;
 
         var action = ActionStatTable.Get(ability.Action);
@@ -161,7 +161,7 @@ public static class Combat
 
         if (!health.IsDead)
         {
-            AiManager.Hit(player, creature);
+            ai.Hit(player, creature);
             return;
         }
 

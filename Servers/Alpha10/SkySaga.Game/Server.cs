@@ -1,6 +1,5 @@
 using RakNet;
 using SkySaga.Game.Managers.Player;
-using System.Collections.Frozen;
 using System.Linq;
 
 namespace SkySaga.Game;
@@ -9,28 +8,20 @@ public class Server : IDisposable
 {
     private const int MaxConnections = 100;
 
-    private readonly ushort _port;
     private readonly string _password;
     private readonly RakPeerInterface _peer;
-    private readonly IWorldManager _worldManager;
-    private readonly PlayerInitializer _playerInitializer;
-    private readonly PlayerConnectionManager _playerConnectionManager;
 
     private readonly Dictionary<ulong, PlayerConnection> _connections = [];
-    private readonly AiManager _aiManager;
-    private readonly ChatCommands _chatCommands;
-    private readonly System.Collections.Concurrent.ConcurrentQueue<(string Text, TaskCompletionSource<string?> Reply)> _commands = new();
+    private readonly System.Collections.Concurrent.ConcurrentQueue<(string Nickname, string Text, TaskCompletionSource<string?> Reply)> _commands = new();
 
-    public Server(IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager, string password = "Something about penguins\0", ushort port = 42069)
+    public Guid Id { get; } = Guid.NewGuid();
+    public ushort Port { get; }
+    public WorldDirectory Worlds { get; } = new();
+
+    public Server(string password = "Something about penguins\0", ushort port = 42069)
     {
-        _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
-        _playerInitializer = playerInitializer ?? throw new ArgumentNullException(nameof(playerInitializer));
-        _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
         _password = password ?? throw new ArgumentNullException(nameof(password));
-        _port = port;
-
-        _aiManager = new AiManager(_worldManager, _playerConnectionManager);
-        _chatCommands = new ChatCommands(_worldManager, _playerConnectionManager);
+        Port = port;
 
         _peer = RakPeerInterface.GetInstance();
 
@@ -40,7 +31,7 @@ public class Server : IDisposable
 
     public bool Start()
     {
-        var status = _peer.Startup(MaxConnections, new SocketDescriptor(_port, string.Empty), 1);
+        var status = _peer.Startup(MaxConnections, new SocketDescriptor(Port, string.Empty), 1);
 
         return status == StartupResult.RAKNET_STARTED;
     }
@@ -53,15 +44,15 @@ public class Server : IDisposable
     private volatile bool _resetRequested;
     private volatile bool _listChickensRequested;
 
-    private static readonly TimeSpan AutosaveInterval = TimeSpan.FromSeconds(15);
-    private DateTime _lastAutosaveUtc = DateTime.UtcNow;
-
     public void Tick()
     {
         if (_resetRequested)
         {
             _resetRequested = false;
-            _worldManager.Reset();
+
+            foreach (var world in Worlds.Loaded)
+                world.Manager.Reset();
+
             return;
         }
 
@@ -74,18 +65,26 @@ public class Server : IDisposable
         ProcessPackets();
         ProcessCommands();
 
-        _aiManager.Tick();
+        foreach (var world in Worlds.Loaded.ToList())
+        {
+            try
+            {
+                world.Tick();
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"[Worlds] {world.Info.Kind} {world.Info.Id} failed to tick: {exception}");
+            }
+        }
 
-        ProcessMaps();
-        ProcessConnections();
-        Autosave();
+        Worlds.UnloadIdle();
     }
 
     public Task<string?> RunCommandAsync(string nickname, string text)
     {
         var reply = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        _commands.Enqueue((text, reply));
+        _commands.Enqueue((nickname, text, reply));
 
         return reply.Task;
     }
@@ -96,28 +95,17 @@ public class Server : IDisposable
         {
             try
             {
-                var connection = _connections.Values.FirstOrDefault(c => c.IsPlayerInitialized);
+                var players = _connections.Values.Where(c => c.IsPlayerInitialized).ToList();
+                var connection = players.FirstOrDefault(c => string.Equals(c.CharacterName, command.Nickname, StringComparison.OrdinalIgnoreCase))
+                    ?? players.FirstOrDefault();
 
-                command.Reply.SetResult(connection is null ? "No player in the world." : _chatCommands.Execute(connection, command.Text));
+                command.Reply.SetResult(connection?.World is not { } world ? "No player in the world." : world.Commands.Execute(connection, command.Text));
             }
             catch (Exception exception)
             {
                 command.Reply.SetResult($"Error: {exception.Message}");
             }
         }
-    }
-
-    private void Autosave()
-    {
-        var now = DateTime.UtcNow;
-
-        if (now - _lastAutosaveUtc < AutosaveInterval)
-            return;
-
-        _lastAutosaveUtc = now;
-
-        foreach (var connection in _playerConnectionManager.GetAllConnections())
-            connection.SaveState();
     }
 
     public void RequestListChickens()
@@ -131,7 +119,7 @@ public class Server : IDisposable
 
         int count = 0;
 
-        foreach (var entity in _worldManager.EntityManager.Entities)
+        foreach (var entity in Worlds.Loaded.SelectMany(world => world.Manager.EntityManager.Entities))
         {
             if (!entity.TryGetComponent<ClientEnemyAiComponent>(out var ai))
                 continue;
@@ -181,11 +169,9 @@ public class Server : IDisposable
             if (!_connections.TryGetValue(packet.guid.g, out var connection)
                 && messageId == (byte)DefaultMessageIDTypes.ID_NEW_INCOMING_CONNECTION)
             {
-                connection = new PlayerConnection(this, packet.guid, _worldManager, _playerInitializer, _playerConnectionManager);
+                connection = new PlayerConnection(this, packet.guid);
 
                 _connections.TryAdd(packet.guid.g, connection);
-
-                OnConnectionAdded(connection);
 
                 Console.WriteLine($"[conn] New connection accepted, guid={packet.guid.g:X}. Total connections: {_connections.Count}");
 
@@ -260,56 +246,20 @@ public class Server : IDisposable
         }
     }
 
-    private void ProcessMaps()
-    {
-        var entities = _worldManager.EntityManager.Entities;
-
-        foreach (var entity in entities)
-        {
-            if (!entity.SyncRequired)
-                continue;
-
-            var entitySync = new EntitySync
-            {
-                Id = entity.Id,
-                SyncData = entity.GetSyncData(newEntity: false)
-            };
-
-            _playerConnectionManager.BroadcastToAll(entitySync);
-        }
-
-        _playerConnectionManager.FlushRemovedAfterSync();
-    }
-
-    private void ProcessConnections()
-    {
-        foreach (var connection in _connections.ToFrozenSet())
-        {
-            connection.Value.Tick();
-        }
-    }
-
     public void Send(BitStream bitStream, AddressOrGUID systemIdentifier)
     {
         _peer.Send(bitStream, PacketPriority.HIGH_PRIORITY, PacketReliability.RELIABLE_ORDERED, (char)0, systemIdentifier, false);
     }
 
-    private void OnConnectionAdded(PlayerConnection connection)
-    {
-        _playerConnectionManager.AddConnection(connection.Guid.g, connection);
-        connection.OnConnected();
-    }
-
     private void OnConnectionRemoved(PlayerConnection connection)
     {
-        _playerConnectionManager.RemoveConnection(connection.Guid.g);
-
         _connections.Remove(connection.Guid.g);
         connection.OnDisconnected();
     }
 
     public void Dispose()
     {
+        Worlds.Dispose();
         RakPeerInterface.DestroyInstance(_peer);
     }
 }

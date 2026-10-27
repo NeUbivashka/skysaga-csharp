@@ -166,7 +166,8 @@ def catch_all_get(path):
 # ---------------------------------------------------------------------------
 
 AUTH_URL = os.environ.get("SKYSAGA_AUTH_URL", "http://127.0.0.1:5100")
-AUTH_PREFIXES = ("/api/authentication/", "/api/account/", "/api/persistent-record/characters/")
+AUTH_PREFIXES = ("/api/authentication/", "/api/account/", "/api/persistent-record/characters/",
+                 "/api/persistent-record/worlds/listforowner/", "/api/persistent-record/worlds/getSpecific")
 AUTH_HEADERS = ("Content-Type", "X-RWPVT", "X-RWPVTP")
 
 
@@ -298,62 +299,51 @@ def alpha10_binary_storage_cooler():
     return "", 200
 
 
-@app.route("/api/persistent-record/worlds/listforowner/<owner>", methods=["GET"])
-def alpha10_worlds_list_for_owner(owner):
-    print("=== worlds/listforowner", owner, "===")
-    return jsonify([_home_world(HOME_WORLD_UUID)]), 200
-
-
 @app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
 def binary_storage_photo_likes():
     return jsonify({"result": {"likes": {}}}), 200
 
 
-HOME_WORLD_UUID = "6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25"
-
-HOME_ISLAND_MAP_SPEC = [
-    [
-        "Forest",
-        0,
-        "Home_Island_Adventure",
-        "Easy",
-        "",
-        1337,
-        "BiomePalette_Forest_HomeIsland",
-        0, 0, 0,
-        "Home_Island",
-        0,
-        "Special",
-        "HomeIsland_6x4x6",
-        0,
-        "Home_Island_World",
-        "NoEvent",
-    ],
-    ["", 0],
-    [],
-    "",
-]
+def _empty_batch(field):
+    return jsonify({field: [], "result": {field: []}}), 200
 
 
-@app.route("/api/persistent-record/worlds/getSpecific", methods=["POST"])
-def alpha10_worlds_get_specific():
-    body = request.get_json(silent=True) or {}
-    print("=== worlds/getSpecific", body, "===")
-    world = _home_world(body.get("uuid", HOME_WORLD_UUID))
-    return jsonify({"result": dict(world), **world}), 200
+@app.route("/api/persistent-record/worlds/visits/multicount", methods=["POST"])
+@app.route("/api/persistent-record/worlds/engagements/worlds", methods=["POST"])
+@app.route("/api/persistent-record/world/like/find/batch", methods=["POST"])
+@app.route("/api/persistent-record/world/like/character/batch", methods=["POST"])
+def alpha10_world_metadata_batch():
+    return _empty_batch("worlds")
 
 
-def _home_world(world_uuid):
-    return {
-        "uuid": world_uuid,
-        "mapSpec": HOME_ISLAND_MAP_SPEC,
-        "owner": _state["character_uuid"],
-        "ownerName": PLAYER_NAME,
-        "ownerType": "C",
-        "name": f"{PLAYER_NAME}'s Ruins",
-        "homeWorld": True,
-        "published": False,
-    }
+@app.route("/api/persistent-record/character/favourite/find/batch", methods=["POST"])
+def alpha10_world_favourites_batch():
+    return _empty_batch("favourite")
+
+
+@app.route("/api/persistent-record/world/buildpermission/batch", methods=["POST"])
+def alpha10_world_permissions_batch():
+    return _empty_batch("worldPermission")
+
+
+@app.route("/api/persistent-record/world/buildpermission/character/batch", methods=["POST"])
+def alpha10_character_world_permissions_batch():
+    return _empty_batch("characterPermission")
+
+
+@app.route("/api/persistent-record/worlds/engagements/numberPromotions", methods=["POST"])
+def alpha10_world_promotions_batch():
+    return _empty_batch("promotions")
+
+
+@app.route("/api/persistent-record/worlds/engagements/engagement/multiavailable", methods=["POST"])
+def alpha10_world_rewards_batch():
+    return _empty_batch("ugcIds")
+
+
+@app.route("/api/persistent-record/curatedcontent/dsscontent/_search", methods=["POST"])
+def alpha10_featured_ugc_islands():
+    return _empty_batch("worlds")
 
 
 @app.route("/ping", methods=["GET"])

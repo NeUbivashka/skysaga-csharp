@@ -45,10 +45,10 @@ public class AiManager
         [StateSwim] = "Swim"
     };
 
-    private static readonly Dictionary<int, Brain> Brains = [];
-    private static readonly List<Sound> Sounds = [];
-    private static readonly Dictionary<int, (ActionStats Action, DateTime Until)> PlayerActions = [];
-    private static readonly Dictionary<int, DateTime> InvisibleUntil = [];
+    private readonly Dictionary<int, Brain> Brains = [];
+    private readonly List<Sound> Sounds = [];
+    private readonly Dictionary<int, (ActionStats Action, DateTime Until)> PlayerActions = [];
+    private readonly Dictionary<int, DateTime> InvisibleUntil = [];
 
     private readonly IWorldManager _worldManager;
     private readonly PlayerConnectionManager _playerConnectionManager;
@@ -124,10 +124,10 @@ public class AiManager
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
-        _projectiles = new Projectiles(worldManager, playerConnectionManager);
+        _projectiles = new Projectiles(worldManager, playerConnectionManager, this);
     }
 
-    public static void Hit(Entity creature, Entity attacker)
+    public void Hit(Entity creature, Entity attacker)
     {
         if (!Brains.TryGetValue(creature.Id, out var brain) || !CreatureAiTable.TryGet(creature.Name, out var ai))
             return;
@@ -149,7 +149,7 @@ public class AiManager
         brain.HuntUntil = DateTime.UtcNow.AddSeconds(ai.HuntTimeAfterHit);
     }
 
-    public static bool TryDodge(PlayerConnectionManager connections, Entity creature, Entity attacker)
+    public bool TryDodge(Entity creature, Entity attacker)
     {
         var now = DateTime.UtcNow;
 
@@ -180,13 +180,13 @@ public class AiManager
 
         Hit(creature, attacker);
 
-        connections.BroadcastToAll(new EntityDodged { EntityId = creature.Id, DodgeKind = kind });
+        _playerConnectionManager.BroadcastToAll(new EntityDodged { EntityId = creature.Id, DodgeKind = kind });
 
         Console.WriteLine($"[AiManager] {creature.Name}#{creature.Id} dodges {(kind == DodgeRight ? "right" : kind == DodgeLeft ? "left" : "back")} from {attacker.Id}");
         return true;
     }
 
-    public static void PlayerSpawned(Entity player, bool respawn)
+    public void PlayerSpawned(Entity player, bool respawn)
     {
         var seconds = respawn ? CreatureAiTable.Invisibility.Respawn : CreatureAiTable.Invisibility.Spawn;
         InvisibleUntil[player.Id] = DateTime.UtcNow.AddSeconds(seconds);
@@ -194,23 +194,23 @@ public class AiManager
         Console.WriteLine($"[AiManager] player {player.Id} is invisible to creatures for {seconds:0.#} s after {(respawn ? "respawning" : "spawning")}");
     }
 
-    private static bool IsInvisible(int id, DateTime now) => InvisibleUntil.TryGetValue(id, out var until) && now < until;
+    private bool IsInvisible(int id, DateTime now) => InvisibleUntil.TryGetValue(id, out var until) && now < until;
 
-    public static void PlayerActionStarted(Entity player, ActionStats action)
+    public void PlayerActionStarted(Entity player, ActionStats action)
         => PlayerActions[player.Id] = (action, DateTime.UtcNow.AddSeconds(action.Duration));
 
-    public static void PlayerActionEnded(Entity player)
+    public void PlayerActionEnded(Entity player)
     {
         if (PlayerActions.TryGetValue(player.Id, out var current) && !current.Action.HasTag(BlockTag))
             PlayerActions.Remove(player.Id);
     }
 
-    private static string[] TargetTags(int targetId, DateTime now)
+    private string[] TargetTags(int targetId, DateTime now)
         => PlayerActions.TryGetValue(targetId, out var current) && now < current.Until ? current.Action.Tags
             : Brains.TryGetValue(targetId, out var other) && other.Current is { } attack && now < attack.EndsAt ? attack.Ability.Tags
             : [];
 
-    public static bool TryBlock(Entity creature, Entity attacker)
+    public bool TryBlock(Entity creature, Entity attacker)
     {
         if (!Brains.TryGetValue(creature.Id, out var brain) || brain.Current is not { } current || !current.Ability.HasTag(BlockTag)
             || DateTime.UtcNow >= current.EndsAt
@@ -232,7 +232,7 @@ public class AiManager
         return true;
     }
 
-    public static void Hear(Entity source, string sensoryEvent)
+    public void Hear(Entity source, string sensoryEvent)
     {
         if (Combat.PositionOf(source) is Vector3 position)
             Sounds.Add(new Sound(source.Id, position, sensoryEvent));
@@ -341,11 +341,11 @@ public class AiManager
         {
             Lunge(entity, transform, ai, brain, attack, now, delta);
 
-            if (attack.Ability.HasTag(ProjectileTag) && !attack.Resolved && now >= attack.HitAt)
+            if (CreatureAiTable.TryGetProjectile(attack.Ability.Action, out var launch) && !attack.Resolved && now >= attack.HitAt)
             {
                 attack.Resolved = true;
 
-                if (CreatureAiTable.TryGetProjectile(attack.Ability.Action, out var launch) && TargetPosition(brain) is Vector3 aim)
+                if (TargetPosition(brain) is Vector3 aim)
                     _projectiles.Launch(entity, _targets.GetValueOrDefault(brain.TargetId), transform.Position, transform.YawDegrees, aim + Vector3.UnitY * ProjectileAimHeight, attack.Ability, launch, now);
             }
 
@@ -362,7 +362,7 @@ public class AiManager
                 if (victim is not null && Combat.PositionOf(victim) is Vector3 victimPosition && InHitArea(transform, attack.Ability, victimPosition, attack.ReachedRange))
                 {
                     attack.Resolved = true;
-                    Combat.CreatureAttack(_playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
+                    Combat.CreatureAttack(this, _playerConnectionManager, _worldManager.EntityManager, entity, victim, attack.Ability);
                 }
                 else if (now >= attack.StartedAt.AddSeconds(attack.Ability.HitEndTime))
                 {

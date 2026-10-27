@@ -83,7 +83,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {
-            var savedPosition = save is { HasPosition: true } && save.PositionMap == WorldMapLoader.MapFileName
+            var savedPosition = save is { HasPosition: true } && save.PositionMap == _worldManager.Info.Id.ToString()
                 ? new Vector3(save.PositionX, save.PositionY, save.PositionZ)
                 : (Vector3?)null;
 
@@ -130,11 +130,13 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientPlayerAspectsComponent>(out var clientPlayerAspectsComponent))
         {
-            clientPlayerAspectsComponent.CanEditMap = true;
+            var canBuild = _worldManager.Info.CanBuild(characterId);
+
+            clientPlayerAspectsComponent.CanEditMap = canBuild;
             clientPlayerAspectsComponent.CanDamageEntities = true;
             clientPlayerAspectsComponent.CanDamagePlayers = true;
-            clientPlayerAspectsComponent.CanCreateDevices = true;
-            clientPlayerAspectsComponent.CanDamageDevices = true;
+            clientPlayerAspectsComponent.CanCreateDevices = canBuild;
+            clientPlayerAspectsComponent.CanDamageDevices = canBuild;
             clientPlayerAspectsComponent.IsDebugPlayer = true;
             clientPlayerAspectsComponent.AccountLevel = 2;
             clientPlayerAspectsComponent.Permissions = [.. PlayerAspectsComponent.DefaultPermissions];
@@ -355,7 +357,7 @@ public class PlayerInitializer(IWorldManager worldManager)
         if (player.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransformComponent))
         {
             data.HasPosition = true;
-            data.PositionMap = WorldMapLoader.MapFileName;
+            data.PositionMap = _worldManager.Info.Id.ToString();
             data.PositionX = smoothedTransformComponent.Position.X;
             data.PositionY = smoothedTransformComponent.Position.Y;
             data.PositionZ = smoothedTransformComponent.Position.Z;

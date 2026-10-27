@@ -1,63 +1,38 @@
 namespace SkySaga.Game.Managers.World;
 
-using System.IO.Compression;
+using SkySaga.Game.Database;
 
 public static class WorldMapLoader
 {
-    public const string DefaultMap = "TestZoo.json";
-
-    public static string MapFileName { get; } = Environment.GetEnvironmentVariable("SKYSAGA_MAP") is { Length: > 0 } map ? map : DefaultMap;
-
-    public static string MapPath => Path.Combine("Data", MapFileName);
-
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public static bool TryLoad(IMapChunkManager chunkManager, out MapDefinition? definition, out List<WorldMapEntityData> entities, string path)
+    public static bool TryLoad(IMapChunkManager chunkManager, WorldInfo world, out MapDefinition? definition, out List<WorldMapEntityData> entities)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
 
         definition = null;
         entities = [];
 
-        string actualPath = path;
-        bool isGzip = path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
-
-        if (!File.Exists(actualPath))
-        {
-            string gzPath = path + ".gz";
-            if (!isGzip && File.Exists(gzPath))
-            {
-                actualPath = gzPath;
-                isGzip = true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        var source = world.TemplateVersion is { } version ? $"{world.Template} version {version[..12]}" : world.Template;
 
         WorldMapData? data;
 
         try
         {
-            using var fileStream = File.OpenRead(actualPath);
-            using Stream sourceStream = isGzip
-                ? new GZipStream(fileStream, CompressionMode.Decompress)
-                : fileStream;
-            data = JsonSerializer.Deserialize<WorldMapData>(sourceStream, _jsonOptions);
+            data = JsonSerializer.Deserialize<WorldMapData>(TemplateStore.Read(world), _jsonOptions);
         }
         catch (Exception ex) when (ex is JsonException or IOException or InvalidDataException)
         {
-            Console.WriteLine($"[WorldMapLoader] Failed to read '{actualPath}': {ex.Message}");
+            Console.WriteLine($"[WorldMapLoader] Failed to read {source}: {ex.Message}");
             return false;
         }
 
         if (data is null || data.Voxels is null || data.Voxels.Count == 0)
         {
-            Console.WriteLine($"[WorldMapLoader] '{actualPath}' has no voxels, ignoring.");
+            Console.WriteLine($"[WorldMapLoader] {source} has no voxels, ignoring.");
             return false;
         }
 
@@ -122,7 +97,7 @@ public static class WorldMapLoader
             Console.WriteLine("[WorldMapLoader] SKYSAGA_SOLID_FLOOR - bottom chunk layer filled solid.");
         }
 
-        var spec = MapSpec.FromEnvironment(seed: 1337);
+        var spec = MapSpec.For(world.Kind, world.Seed);
 
         if (!spec.IsFtue && (sizeX, sizeY, sizeZ) == (6, 4, 6))
             spec.Searchable[MapSpec.MapSizeSlot] = MapSpec.HomeIslandMapSizeIndex;
@@ -147,7 +122,7 @@ public static class WorldMapLoader
             entities = data.Entities;
 
         Console.WriteLine(
-            $"[WorldMapLoader] Loaded '{actualPath}'{(isGzip ? " (gzip)" : "")}: {placed} voxels placed, {entities.Count} entities" +
+            $"[WorldMapLoader] Loaded {source} for {world.Kind} {world.Id}: {placed} voxels placed, {entities.Count} entities" +
             (skippedOutOfBounds > 0 ? $", {skippedOutOfBounds} voxels skipped (out of {sizeX}x{sizeY}x{sizeZ} chunk bounds)" : ""));
 
         return true;

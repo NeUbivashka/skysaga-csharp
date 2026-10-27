@@ -1,13 +1,13 @@
 namespace SkySaga.Game.Packets;
 
-public class RequestWorldTeleport : ISerializablePacket
+public static class RequestWorldTeleport
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadClientUuid(out var worldId)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var triggeringEntityId)) return false;
 
-        bitStream.WritePacketId(PacketId.RequestWorldTeleport);
-
-        return bitStream;
+        return WorldTravel.Request(connection, triggeringEntityId, nameof(RequestWorldTeleport),
+            _ => worldId is { } id ? connection.Server.Worlds.Find(id) : null);
     }
 }

@@ -21,6 +21,7 @@ builder.Services.AddDbContextFactory<SkySagaDbContext>(options => options.UseNpg
 builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton(provider => new EmailProtector(provider.GetRequiredService<IDataProtectionProvider>(), Path.Combine(gameData, "auth-keys")));
 builder.Services.AddSingleton(links);
+builder.Services.AddSingleton(new GameData(gameData));
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.PropertyNamingPolicy = null);
 
 builder.WebHost.UseStaticWebAssets();
@@ -98,6 +99,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 
 app.MapGameApi();
+app.MapWorldsApi();
 app.MapPost("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync();

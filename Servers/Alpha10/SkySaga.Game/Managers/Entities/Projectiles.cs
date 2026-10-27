@@ -2,7 +2,7 @@ using System.Linq;
 
 namespace SkySaga.Game.Managers.Entities;
 
-public class Projectiles(IWorldManager worldManager, PlayerConnectionManager playerConnectionManager)
+public class Projectiles(IWorldManager worldManager, PlayerConnectionManager playerConnectionManager, AiManager ai)
 {
     private const float WorldGravity = CreatureAiTable.WorldGravity;
     private const float StepSeconds = 0.02f;
@@ -121,7 +121,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                         .FirstOrDefault(entity => entity is not null && entity.TryGetComponent<ClientHealthComponent>(out var health) && !health.IsDead
                             && Combat.PositionOf(entity) is Vector3 position && Crosses(from, flight.Position, position)) is { } victim)
                 {
-                    Combat.CreatureProjectileHit(playerConnectionManager, worldManager.EntityManager, flight.Owner, victim, flight.Ability, flight.Launch);
+                    Combat.CreatureProjectileHit(ai, playerConnectionManager, worldManager.EntityManager, flight.Owner, victim, flight.Ability, flight.Launch);
                     Perks.ApplyImpact(victim, flight.Launch.ImpactActions);
                     Splash(flight, players, victim);
                     Remove(flight, flight.Position);
@@ -191,7 +191,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                 continue;
 
             Console.WriteLine($"[Projectiles] {flight.Projectile.Name}#{flight.Projectile.Id} splashes {entity.Id} at {Vector3.Distance(nearest, flight.Position):0.##} m");
-            Combat.CreatureProjectileHit(playerConnectionManager, worldManager.EntityManager, flight.Owner, entity, flight.Ability, flight.Launch);
+            Combat.CreatureProjectileHit(ai, playerConnectionManager, worldManager.EntityManager, flight.Owner, entity, flight.Ability, flight.Launch);
         }
     }
 

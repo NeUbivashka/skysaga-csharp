@@ -29,7 +29,7 @@ public static class EntityPerformedAbilityReceived
         if (!RunActionListReceived.ReadOptionalUInt32(bitStream, out var actionCrc) || actionCrc is not uint crc) return true;
 
         if (ActionStatTable.TryGet(crc, out var action))
-            AiManager.PlayerActionStarted(connection.PlayerEntity, action);
+            connection.Ai.PlayerActionStarted(connection.PlayerEntity, action);
 
         return true;
     }

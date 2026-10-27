@@ -44,8 +44,17 @@ public static class SetUserToken
             return;
         }
 
-        var character = context.Characters.AsNoTracking().Where(c => c.AccountId == account.Id)
-            .OrderBy(c => c.CreatedAt).Select(c => new { c.Id, c.Name }).FirstOrDefault();
+        var character = context.Characters.AsNoTracking()
+            .Where(c => c.AccountId == account.Id && c.Id == connection.ClientCharacterUuid)
+            .Select(c => new { c.Id, c.Name }).SingleOrDefault();
+
+        if (character is null)
+        {
+            Console.WriteLine($"[Auth] {connection.Guid}: account {account.Username} does not own character "
+                + $"{connection.ClientCharacterUuid?.ToString() ?? "<no uuid>"}; sending QuitGame");
+            connection.Send(new QuitGame());
+            return;
+        }
 
         connection.AccountId = account.Id;
         connection.AccountName = account.Username;
@@ -53,11 +62,10 @@ public static class SetUserToken
         if (connection.IsPlayerInitialized)
             return;
 
-        connection.CharacterId = character?.Id;
-        connection.CharacterName = character?.Name;
+        connection.CharacterId = character.Id;
+        connection.CharacterName = character.Name;
 
-        Console.WriteLine($"[Auth] {connection.Guid}: account {account.Username}, character "
-            + $"{character?.Name ?? "<none>"} ({character?.Id.ToString() ?? "-"}), "
-            + $"client sent {connection.ClientCharacterUuid?.ToString() ?? "<no uuid>"}");
+        Console.WriteLine($"[Auth] {connection.Guid}: account {account.Username}, character {character.Name} ({character.Id}) "
+            + $"in {connection.WorldManager.Info.Kind} {connection.WorldManager.Info.Id}");
     }
 }

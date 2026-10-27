@@ -15,7 +15,7 @@ public static class EntityLanded
         var fallHeight = (fallStart - landing) * HeightScale;
         var damage = (int)((fallHeight - SafeFallHeight) * DamagePerVoxel);
 
-        AiManager.Hear(connection.PlayerEntity, "Land");
+        connection.Ai.Hear(connection.PlayerEntity, "Land");
 
         Console.WriteLine($"[EntityLanded] fell {fallHeight:0.##} voxels, damage {Math.Max(damage, 0)}");
 

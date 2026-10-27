@@ -210,6 +210,10 @@ namespace SkySaga.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid?>("CurrentWorldId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_world_id");
+
                     b.Property<string>("CustomisationData")
                         .HasColumnType("text")
                         .HasColumnName("customisation_data");
@@ -440,6 +444,37 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("inventory_items", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.MapTemplate", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("id");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("content");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_map_templates");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_map_templates_name");
+
+                    b.ToTable("map_templates", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.PasswordReset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -568,25 +603,74 @@ namespace SkySaga.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("BuildAccess")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("build_access");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<string>("MapName")
+                    b.Property<string>("Kind")
                         .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastVisitedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_visited_at");
+
+                    b.Property<string>("Name")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
-                        .HasColumnName("map_name");
+                        .HasColumnName("name");
 
                     b.Property<Guid?>("OwnerCharacterId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_character_id");
 
+                    b.Property<Guid?>("OwnerGuildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_guild_id");
+
+                    b.Property<int>("Seed")
+                        .HasColumnType("integer")
+                        .HasColumnName("seed");
+
+                    b.Property<string>("Template")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("template");
+
+                    b.Property<string>("TemplateVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("template_version");
+
+                    b.Property<string>("VisitAccess")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("visit_access");
+
                     b.HasKey("Id")
                         .HasName("pk_worlds");
 
-                    b.HasIndex("MapName")
-                        .HasDatabaseName("ix_worlds_map_name");
+                    b.HasIndex("Template")
+                        .HasDatabaseName("ix_worlds_template");
+
+                    b.HasIndex("TemplateVersion")
+                        .HasDatabaseName("ix_worlds_template_version");
+
+                    b.HasIndex("OwnerCharacterId", "Kind")
+                        .HasDatabaseName("ix_worlds_owner_character_id_kind");
+
+                    b.HasIndex("OwnerGuildId", "Kind")
+                        .HasDatabaseName("ix_worlds_owner_guild_id_kind");
 
                     b.ToTable("worlds", (string)null);
                 });
@@ -762,6 +846,15 @@ namespace SkySaga.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_voxel_edits_worlds_world_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.World", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.MapTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("TemplateVersion")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_worlds_map_templates_template_version");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.Account", b =>

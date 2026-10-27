@@ -2,9 +2,6 @@
 
 public static class ClientConnected
 {
-    private static readonly Guid WorldUuid = new("6f0d3a1e-5c47-4f92-9a6b-1d84c0e73b25");
-    private static readonly Guid ServerUuid = new("b3e94c07-2a15-4d68-8f31-7c05a9be4610");
-
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
         var sessionTicket = bitStream.ReadString();
@@ -16,6 +13,7 @@ public static class ClientConnected
 
         bitStream.ReadClientUuid(out var clientUuid);
         connection.ClientCharacterUuid = clientUuid;
+        connection.GameHost = gameHost;
 
         Console.WriteLine($"[ClientConnected] sessionTicket={sessionTicket} "
             + $"unknownField9bits=0x{unknownFieldBuffer[0]:X2}{unknownFieldBuffer[1]:X2} "
@@ -31,17 +29,25 @@ public static class ClientConnected
             Console.WriteLine("[ClientConnected] Delay done, continuing.");
         }
 
-        Guid? serverOwnerGuid = Guid.TryParse(Util.CharacterUuid(), out var parsedOwnerGuid)
-            ? parsedOwnerGuid
-            : null;
+        if (clientUuid is not { } characterId || connection.Server.Worlds.EntryFor(characterId) is not { } entry)
+        {
+            Console.WriteLine($"[ClientConnected] No character {clientUuid?.ToString() ?? "<none>"}; sending QuitGame.");
+            connection.Send(new QuitGame());
+            return true;
+        }
+
+        var world = connection.Server.Worlds.Open(entry);
+        connection.Join(world);
+
+        Console.WriteLine($"[ClientConnected] Character {characterId} enters {entry.Kind} {entry.Id}.");
 
         var serverInfo = new ServerInfo
         {
-            ServerOwnerGuid = serverOwnerGuid,
-            WorldUuid = WorldUuid,
-            ServerUuid = ServerUuid,
+            ServerOwnerGuid = entry.OwnerCharacterId,
+            WorldUuid = entry.Id,
+            ServerUuid = connection.Server.Id,
 
-            ServerOwnerName = Util.CharacterName(),
+            ServerOwnerName = entry.OwnerName ?? string.Empty,
 
             ChatHost = "127.0.0.1",
             ChatPort = 444,

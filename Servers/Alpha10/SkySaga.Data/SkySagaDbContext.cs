@@ -12,6 +12,7 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
     public DbSet<CharacterJob> CharacterJobs => Set<CharacterJob>();
     public DbSet<ActiveChallenge> ActiveChallenges => Set<ActiveChallenge>();
     public DbSet<World> Worlds => Set<World>();
+    public DbSet<MapTemplate> MapTemplates => Set<MapTemplate>();
     public DbSet<VoxelEdit> VoxelEdits => Set<VoxelEdit>();
     public DbSet<PlacedDevice> PlacedDevices => Set<PlacedDevice>();
     public DbSet<Checkpoint> Checkpoints => Set<Checkpoint>();
@@ -70,8 +71,23 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
 
         model.Entity<World>(world =>
         {
-            world.HasIndex(w => w.MapName);
-            world.Property(w => w.MapName).HasMaxLength(128);
+            world.HasIndex(w => w.Template);
+            world.HasIndex(w => new { w.OwnerCharacterId, w.Kind });
+            world.HasIndex(w => new { w.OwnerGuildId, w.Kind });
+            world.Property(w => w.Template).HasMaxLength(128);
+            world.Property(w => w.TemplateVersion).HasMaxLength(64);
+            world.Property(w => w.Name).HasMaxLength(128);
+            world.Property(w => w.Kind).HasConversion<string>().HasMaxLength(32);
+            world.Property(w => w.VisitAccess).HasConversion<string>().HasMaxLength(16);
+            world.Property(w => w.BuildAccess).HasConversion<string>().HasMaxLength(16);
+            world.HasOne<MapTemplate>().WithMany().HasForeignKey(w => w.TemplateVersion).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        model.Entity<MapTemplate>(template =>
+        {
+            template.Property(t => t.Id).HasMaxLength(64);
+            template.Property(t => t.Name).HasMaxLength(128);
+            template.HasIndex(t => t.Name);
         });
 
         model.Entity<VoxelEdit>(edit =>

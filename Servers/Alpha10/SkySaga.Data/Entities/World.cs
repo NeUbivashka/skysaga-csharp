@@ -1,10 +1,43 @@
 namespace SkySaga.Data.Entities;
 
+public enum WorldKind
+{
+    CharacterCreation,
+    Ftue,
+    Hub,
+    Island,
+    Adventure
+}
+
+public enum WorldAccess
+{
+    Owner,
+    Friends,
+    Guild,
+    Everyone
+}
+
 public class World
 {
     public Guid Id { get; set; }
-    public required string MapName { get; set; }
+    public WorldKind Kind { get; set; }
+    public required string Template { get; set; }
+    public string? TemplateVersion { get; set; }
+    public int Seed { get; set; }
     public Guid? OwnerCharacterId { get; set; }
+    public Guid? OwnerGuildId { get; set; }
+    public string? Name { get; set; }
+    public WorldAccess VisitAccess { get; set; } = WorldAccess.Everyone;
+    public WorldAccess BuildAccess { get; set; } = WorldAccess.Owner;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastVisitedAt { get; set; }
+}
+
+public class MapTemplate
+{
+    public required string Id { get; set; }
+    public required string Name { get; set; }
+    public required byte[] Content { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
 

@@ -2,6 +2,8 @@ namespace SkySaga.Game.Managers.World;
 
 public interface IWorldManager
 {
+    WorldInfo Info { get; }
+    System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, float> VoxelDamage { get; }
     IMapEntityManager EntityManager { get; }
     IMapChunkManager ChunkManager { get; }
     MapDefinition Definition { get; set; }

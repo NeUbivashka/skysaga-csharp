@@ -11,8 +11,6 @@ public static class PlayerSaveStore
     private static readonly Dictionary<Guid, PlayerSaveData?> Cached = [];
     private static readonly Dictionary<Guid, PlayerSaveData> Pending = [];
 
-    public static Guid OwnerId => Guid.Parse(Util.CharacterUuid());
-
     public static PlayerSaveData? Load(Guid characterId)
     {
         lock (CacheLock)
@@ -79,19 +77,6 @@ public static class PlayerSaveStore
 
         Console.WriteLine($"[PlayerSaveStore] Loaded character {character.Name} ({character.Id}) from the database.");
         return ToSaveData(character);
-    }
-
-    public static (Guid Id, string Name)? FindOwner()
-    {
-        using var context = GameDatabase.Context();
-
-        var owner = context.Characters.AsNoTracking()
-            .Where(c => c.Account!.Role == AccountRole.Admin)
-            .OrderBy(c => c.Account!.CreatedAt).ThenBy(c => c.CreatedAt)
-            .Select(c => new { c.Id, c.Name })
-            .FirstOrDefault();
-
-        return owner is null ? null : (owner.Id, owner.Name);
     }
 
     private static async Task WritePending(Data.SkySagaDbContext context, Guid id)

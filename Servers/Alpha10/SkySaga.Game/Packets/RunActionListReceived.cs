@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Numerics;
 
 namespace SkySaga.Game.Packets;
@@ -14,7 +13,6 @@ public static class RunActionListReceived
 
     private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 5), (-10, 13), (0, 38), (10, 63), (20, 125), (40, 500)];
 
-    private static readonly ConcurrentDictionary<Vector3Int, float> VoxelDamage = new();
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
@@ -42,10 +40,10 @@ public static class RunActionListReceived
         var usedItemCrc = usedItem?.Crc;
 
         Combat.ActionStarted(connection, actionListId);
-        AiManager.PlayerActionEnded(connection.PlayerEntity);
+        connection.Ai.PlayerActionEnded(connection.PlayerEntity);
 
         if (ActionListAttackTable.Get(actionListId).Count > 0)
-            AiManager.Hear(connection.PlayerEntity, "Attack");
+            connection.Ai.Hear(connection.PlayerEntity, "Attack");
 
         if (ActionListEatTable.TryGet(actionListId, out var eat))
         {
@@ -62,12 +60,18 @@ public static class RunActionListReceived
         if (hasVoxel != 1)
             return true;
 
+        if (connection.CharacterId is not { } builder || !connection.WorldManager.Info.CanBuild(builder))
+        {
+            Console.WriteLine($"[Voxel] {connection.CharacterName} may not build in {connection.WorldManager.Info.Kind} {connection.WorldManager.Info.Id}; ignored");
+            return true;
+        }
+
         if (usedItem is { } deviceItem
             && DeviceTable.TryGet(deviceItem.Crc, out var device)
             && (ActionListVoxelActionTable.Has(actionListId, "CreateDeviceAction") || ActionListVoxelActionTable.Has(actionListId, "CreateEntityAction")))
         {
             PlaceDevice(connection, deviceItem.Entity, device, voxel, hitNormal);
-            AiManager.Hear(connection.PlayerEntity, "Build");
+            connection.Ai.Hear(connection.PlayerEntity, "Build");
             return true;
         }
         var blockId = usedItemCrc is uint crc ? BlockCrcMapping.GetBlockId(crc) : connection.RightHandBlockId;
@@ -80,8 +84,8 @@ public static class RunActionListReceived
                 voxel.Z + (int)MathF.Round(hitNormal.Z));
 
             SetWorldVoxel(connection, placeAt, (byte)placedBlock);
-            AiManager.Hear(connection.PlayerEntity, "Build");
-            VoxelDamage.TryRemove(placeAt, out _);
+            connection.Ai.Hear(connection.PlayerEntity, "Build");
+            connection.WorldManager.VoxelDamage.TryRemove(placeAt, out _);
 
             if (usedItem is { } placedItem)
                 ConsumeOne(connection, placedItem.Entity);
@@ -95,7 +99,7 @@ public static class RunActionListReceived
         if (!VoxelTable.TryGet(voxelType, out var voxelStats) || !voxelStats.IsDiggable)
             return true;
 
-        AiManager.Hear(connection.PlayerEntity, "Dig");
+        connection.Ai.Hear(connection.PlayerEntity, "Dig");
 
         var (digLevel, powerTier) = usedItemCrc is uint toolCrc && ToolStatTable.TryGet(toolCrc, out var tool)
             ? (tool.DigLevel, tool.MiningPowerTier)
@@ -110,7 +114,7 @@ public static class RunActionListReceived
         }
 
         var hitDamage = DigDamage(strength - voxelStats.Resistance);
-        var damage = VoxelDamage.AddOrUpdate(voxel, hitDamage, (_, current) => current + hitDamage);
+        var damage = connection.WorldManager.VoxelDamage.AddOrUpdate(voxel, hitDamage, (_, current) => current + hitDamage);
 
         var damageId = DamageIdOf(voxel);
 
@@ -133,7 +137,7 @@ public static class RunActionListReceived
 
         if (SendVoxelDamage)
             connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
-        VoxelDamage.TryRemove(voxel, out _);
+        connection.WorldManager.VoxelDamage.TryRemove(voxel, out _);
         SetWorldVoxel(connection, voxel, Air);
         ResourcePickups.SpawnFromVoxel(connection, voxel, voxelType);
 

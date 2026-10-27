@@ -13,9 +13,12 @@
             <MudPaper Class="pa-4 stat-card" Elevation="0" Style="cursor:pointer" @onclick="() => SelectAsync(world.Id)">
                 <MudStack Row="true" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.Public" Style="color:#34d399" />
-                    <MudText Typo="Typo.h6">@world.MapName</MudText>
+                    <MudText Typo="Typo.h6">@Title(world)</MudText>
                 </MudStack>
                 <MudText Typo="Typo.caption" Class="mud-text-secondary mono">@world.Id</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    @world.Template@(world.TemplateVersion is { } version ? $" · version {version[..12]}" : "") · visit: @world.VisitAccess · build: @world.BuildAccess
+                </MudText>
                 <MudStack Row="true" Class="mt-3" Spacing="4">
                     <div><div class="stat-value">@world.Edits.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">voxel edits</MudText></div>
                     <div><div class="stat-value">@world.Devices.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">devices</MudText></div>
@@ -26,7 +29,7 @@
     }
     @if (_worlds.Count == 0)
     {
-        <MudItem xs="12"><MudText Class="mud-text-secondary">No worlds yet. A world appears when the game server loads its map.</MudText></MudItem>
+        <MudItem xs="12"><MudText Class="mud-text-secondary">No worlds yet. The hub appears when a player first reaches it, an island when its owner first flies home.</MudText></MudItem>
     }
 
     @if (_devices is not null)
@@ -55,7 +58,8 @@
 </MudGrid>
 
 @code {
-    private record WorldRow(Guid Id, string MapName, int Edits, int Devices, int Checkpoints);
+    private record WorldRow(Guid Id, WorldKind Kind, string Template, string? TemplateVersion, Guid? Owner,
+        WorldAccess VisitAccess, WorldAccess BuildAccess, int Edits, int Devices, int Checkpoints);
 
     private List<WorldRow> _worlds = [];
     private List<PlacedDevice>? _devices;
@@ -65,8 +69,8 @@
     {
         await using var db = await Db.CreateDbContextAsync();
 
-        _worlds = await db.Worlds.OrderBy(w => w.MapName)
-            .Select(w => new WorldRow(w.Id, w.MapName,
+        _worlds = await db.Worlds.OrderBy(w => w.Kind).ThenBy(w => w.CreatedAt)
+            .Select(w => new WorldRow(w.Id, w.Kind, w.Template, w.TemplateVersion, w.OwnerCharacterId, w.VisitAccess, w.BuildAccess,
                 db.VoxelEdits.Count(e => e.WorldId == w.Id),
                 db.PlacedDevices.Count(d => d.WorldId == w.Id),
                 db.Checkpoints.Count(c => c.WorldId == w.Id)))
@@ -74,6 +78,13 @@
 
         _owners = await db.Characters.ToDictionaryAsync(c => c.Id, c => c.Name);
     }
+
+    private string Title(WorldRow world) => world.Kind switch
+    {
+        WorldKind.Island => world.Owner is { } owner && _owners.TryGetValue(owner, out var name) ? $"{name}'s island" : "Unowned island",
+        WorldKind.Hub => "Hub",
+        _ => world.Kind.ToString()
+    };
 
     private async Task SelectAsync(Guid worldId)
     {

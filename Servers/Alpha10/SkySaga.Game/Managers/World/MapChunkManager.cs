@@ -3,13 +3,9 @@ using SkySaga.Game.Database;
 
 namespace SkySaga.Game.Managers.World;
 
-public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : IMapChunkManager
+public class MapChunkManager(WorldInfo worldInfo, PlayerConnectionManager playerConnectionManager) : IMapChunkManager
 {
     private const int ChunkSize = 32;
-    private static readonly string MapSuffix = $"_{Path.GetFileNameWithoutExtension(WorldMapLoader.MapFileName)}";
-    private static readonly string EditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"voxel_edits{MapSuffix}.json");
-    private static readonly string LegacyEditsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Saves", $"world_edits{MapSuffix}.json");
-    private const byte LegacyAir = 0;
 
     private readonly Dictionary<Vector3Int, WorldChunk> _chunks = [];
     private readonly Dictionary<Vector3Int, byte> _edits = [];
@@ -65,9 +61,10 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
 
     public void LoadSavedEdits()
     {
-        ImportLegacyEdits();
+        if (!worldInfo.IsPersistent)
+            return;
 
-        var edits = WorldStore.LoadVoxelEdits();
+        var edits = WorldStore.LoadVoxelEdits(worldInfo.Id);
 
         lock (_editsLock)
         {
@@ -90,25 +87,6 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
         Console.WriteLine($"[World] Applied {_edits.Count} saved voxel edits");
     }
 
-    private static void ImportLegacyEdits()
-    {
-        var legacy = !File.Exists(EditsPath);
-        var path = legacy ? LegacyEditsPath : EditsPath;
-
-        if (!File.Exists(path))
-            return;
-
-        var entries = JsonSerializer.Deserialize<int[][]>(File.ReadAllText(path)) ?? [];
-
-        if (legacy)
-            foreach (var entry in entries)
-                if (entry.Length == 4 && entry[3] == LegacyAir)
-                    entry[3] = WorldChunk.Air;
-
-        WorldStore.ImportVoxelEdits(entries.Where(e => e.Length == 4).Select(e => (e[0], e[1], e[2], (byte)e[3])));
-        WorldStore.MarkImported(path);
-    }
-
     private void RecordEdit(Vector3Int chunkPosition, Vector3Int voxelPosition, byte blockType)
     {
         var world = new Vector3Int(
@@ -119,7 +97,8 @@ public class MapChunkManager(PlayerConnectionManager playerConnectionManager) : 
         lock (_editsLock)
             _edits[world] = blockType;
 
-        WorldStore.SaveVoxelEdit(world.X, world.Y, world.Z, blockType);
+        if (worldInfo.IsPersistent)
+            WorldStore.SaveVoxelEdit(worldInfo.Id, world.X, world.Y, world.Z, blockType);
     }
 
     public static PartialChunkEditsSync GetPartialChunkEditSync(Vector3Int chunkPosition, Vector3Int voxelPosition, byte oldBlockType, byte newBlockType)

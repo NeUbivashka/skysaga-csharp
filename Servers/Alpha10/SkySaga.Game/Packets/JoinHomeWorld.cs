@@ -1,13 +1,13 @@
+using SkySaga.Game.Database;
+
 namespace SkySaga.Game.Packets;
 
-public class JoinHomeWorld : ISerializablePacket
+public static class JoinHomeWorld
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadFullWidthUInt32(out var triggeringEntityId)) return false;
 
-        bitStream.WritePacketId(PacketId.JoinHomeWorld);
-
-        return bitStream;
+        return WorldTravel.Request(connection, triggeringEntityId, nameof(JoinHomeWorld), WorldStore.HomeIsland);
     }
 }

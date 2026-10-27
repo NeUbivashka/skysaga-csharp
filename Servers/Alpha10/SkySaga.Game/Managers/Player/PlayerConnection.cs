@@ -6,16 +6,17 @@ namespace SkySaga.Game.Managers.Player;
 public class PlayerConnection
 {
     private readonly Server _server;
-    private readonly IWorldManager _worldManager;
-    private readonly PlayerInitializer _playerInitializer;
-    private readonly PlayerConnectionManager _playerConnectionManager;
 
     public readonly RakNetGUID Guid;
 
-    public Entity PlayerEntity { get; }
-    public IWorldManager WorldManager => _worldManager;
-    public PlayerConnectionManager PlayerConnectionManager => _playerConnectionManager;
-    public PlayerInitializer PlayerInitializer => _playerInitializer;
+    public WorldInstance? World { get; private set; }
+    public Entity PlayerEntity { get; private set; } = null!;
+    public IWorldManager WorldManager => World!.Manager;
+    public PlayerConnectionManager PlayerConnectionManager => World!.Connections;
+    public PlayerInitializer PlayerInitializer => World!.PlayerInitializer;
+    public AiManager Ai => World!.Ai;
+    public Server Server => _server;
+    public string? GameHost { get; set; }
 
     public int? LeftHandBlockId { get; set; }
     public int? RightHandBlockId { get; set; }
@@ -32,32 +33,35 @@ public class PlayerConnection
 
     public string? AccountName { get; set; }
 
-    public PlayerConnection(Server server, RakNetGUID guid, IWorldManager worldManager, PlayerInitializer playerInitializer, PlayerConnectionManager playerConnectionManager)
+    public PlayerConnection(Server server, RakNetGUID guid)
     {
         _server = server ?? throw new ArgumentNullException(nameof(server));
-        _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
-        _playerInitializer = playerInitializer ?? throw new ArgumentNullException(nameof(playerInitializer));
-        _playerConnectionManager = playerConnectionManager ?? throw new ArgumentNullException(nameof(playerConnectionManager));
 
         Guid = guid;
+    }
 
-        _worldManager.EntityManager.TryCreateEntity("Player", out var player);
+    public void Join(WorldInstance world)
+    {
+        world.Manager.EntityManager.TryCreateEntity("Player", out var player);
 
         ArgumentNullException.ThrowIfNull(player);
 
         PlayerEntity = player;
-    }
-
-    public void OnConnected()
-    {
+        World = world;
+        world.Join(this);
     }
 
     public void OnDisconnected()
     {
+        if (World is not { } world)
+            return;
+
         SaveState();
 
         if (IsPlayerInitialized)
-            GameEvents.Record("player.leave", CharacterId);
+            GameEvents.Record("player.leave", world.Info.Id, CharacterId);
+
+        world.Leave(this);
 
         var removedItems = 0;
 
@@ -65,9 +69,9 @@ public class PlayerConnection
         {
             if (inventory.VaultInventoryEntity != 0)
             {
-                _worldManager.EntityManager.RemoveEntity(inventory.VaultInventoryEntity);
+                WorldManager.EntityManager.RemoveEntity(inventory.VaultInventoryEntity);
 
-                _playerConnectionManager.BroadcastToAll(new EntityRemoved { Id = inventory.VaultInventoryEntity });
+                PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = inventory.VaultInventoryEntity });
             }
 
             foreach (var itemId in inventory.InventoryEntityList)
@@ -75,22 +79,22 @@ public class PlayerConnection
                 if (itemId == 0)
                     continue;
 
-                _worldManager.EntityManager.RemoveEntity(itemId);
+                WorldManager.EntityManager.RemoveEntity(itemId);
 
-                _playerConnectionManager.BroadcastToAll(new EntityRemoved { Id = itemId });
+                PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = itemId });
 
                 removedItems++;
             }
         }
 
-        _worldManager.EntityManager.RemoveEntity(PlayerEntity);
+        WorldManager.EntityManager.RemoveEntity(PlayerEntity);
 
         var entityRemoved = new EntityRemoved
         {
             Id = PlayerEntity.Id
         };
 
-        _playerConnectionManager.BroadcastToAll(entityRemoved);
+        PlayerConnectionManager.BroadcastToAll(entityRemoved);
 
         Console.WriteLine($"[PlayerConnection] Disconnected guid={Guid.g}: removed player entity "
             + $"{PlayerEntity.Id} and {removedItems} inventory item(s).");
@@ -103,7 +107,7 @@ public class PlayerConnection
         if (!IsPlayerInitialized || CharacterId is not { } characterId)
             return;
 
-        var data = _playerInitializer.CaptureSaveData(PlayerEntity);
+        var data = PlayerInitializer.CaptureSaveData(PlayerEntity);
 
         data.YawDegrees = LookYaw;
         data.LookPitch = LookPitch;
@@ -113,6 +117,12 @@ public class PlayerConnection
 
     public bool ProcessPacket(PacketId packetId, BitStream bitStream)
     {
+        if (World is null && packetId is not (PacketId.ClientConnected or PacketId.QuitGame))
+        {
+            Console.WriteLine($"[PlayerConnection] {Guid.g:X} sent {packetId} before joining a world; ignored.");
+            return true;
+        }
+
         return packetId switch
         {
             PacketId.QuitGame => QuitGame.Handle(this, bitStream),
@@ -153,6 +163,9 @@ public class PlayerConnection
             PacketId.EntityLanded => Packets.EntityLanded.Handle(this, bitStream),
             PacketId.RequestRespawn => Packets.RequestRespawn.Handle(this, bitStream),
             PacketId.JoinDestinationSelectionWorld => JoinDestinationSelectionWorld.Handle(this, bitStream),
+            PacketId.JoinHomeWorld => JoinHomeWorld.Handle(this, bitStream),
+            PacketId.JoinSocialHub => JoinSocialHub.Handle(this, bitStream),
+            PacketId.RequestWorldTeleport => RequestWorldTeleport.Handle(this, bitStream),
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
             PacketId.UISettingsSetGameplayCameraState => UISettingsSetGameplayCameraState.Handle(this, bitStream),
@@ -194,7 +207,7 @@ public class PlayerConnection
         {
             if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= RespawnDelaySeconds)
             {
-                GameEvents.Record("player.death", CharacterId);
+                GameEvents.Record("player.death", WorldManager.Info.Id, CharacterId);
                 Respawn();
             }
 
@@ -228,7 +241,7 @@ public class PlayerConnection
         var (position, yawDegrees) = WorldManager.GetRespawnPoint(CharacterId);
 
         Teleport(position, yawDegrees);
-        AiManager.PlayerSpawned(PlayerEntity, respawn: true);
+        Ai.PlayerSpawned(PlayerEntity, respawn: true);
 
         Console.WriteLine($"[PlayerConnection] Respawned player {PlayerEntity.Id} at {position}.");
     }
@@ -265,11 +278,11 @@ public class PlayerConnection
 
     public void InitialChunkSync()
     {
-        _worldManager.SendInitialChunks(this);
+        WorldManager.SendInitialChunks(this);
     }
 
     public void InitialEntitiySync()
     {
-        _worldManager.SendInitialEntities(this, PlayerEntity, _playerInitializer);
+        WorldManager.SendInitialEntities(this, PlayerEntity, PlayerInitializer);
     }
 }

@@ -17,6 +17,8 @@ public static class Knockback
 
     private static readonly Dictionary<int, Flight> Active = [];
 
+    private static readonly TimeSpan AbandonedAfter = TimeSpan.FromSeconds(10);
+
     public static float Distance(float distance, float strength, float resistance)
     {
         var share = Math.Clamp((strength - resistance) / MaxKnockbackStrength, 0f, 1f);
@@ -54,8 +56,16 @@ public static class Knockback
     {
         foreach (var (entityId, flight) in Active.ToList())
         {
-            if (!worldManager.EntityManager.TryGetEntity(entityId, out var entity)
-                || !entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
+            if (now - flight.Started > AbandonedAfter)
+            {
+                Active.Remove(entityId);
+                continue;
+            }
+
+            if (!worldManager.EntityManager.TryGetEntity(entityId, out var entity))
+                continue;
+
+            if (!entity.TryGetComponent<SmoothedTransformComponent>(out var transform))
             {
                 Active.Remove(entityId);
                 continue;

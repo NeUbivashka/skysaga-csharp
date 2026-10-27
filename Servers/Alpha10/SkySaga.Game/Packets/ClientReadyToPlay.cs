@@ -21,7 +21,7 @@ public static class ClientReadyToPlay
         }
 
         connection.Send(playerSpawned);
-        AiManager.PlayerSpawned(connection.PlayerEntity, respawn: false);
+        connection.Ai.PlayerSpawned(connection.PlayerEntity, respawn: false);
 
         Console.WriteLine($"[ClientReadyToPlay] Sent SetClientLocalPlayerEntity(EntityId={connection.PlayerEntity.Id}), "
             + $"PlayerSpawned(Position={playerSpawned.Position}, Yaw={playerSpawned.YawDegrees}, "
