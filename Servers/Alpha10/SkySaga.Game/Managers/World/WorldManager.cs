@@ -707,7 +707,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             {
                 Id = entity.Id,
                 NameHash = Util.ComputeCrc32(entity.Name),
-                SyncData = entity.GetSyncData(newEntity: true)
+                SyncData = entity.GetSyncData(newEntity: true, includeOwnerOnly: entity == player)
             };
 
             var entityAddStream = entityAdd.Serialize();

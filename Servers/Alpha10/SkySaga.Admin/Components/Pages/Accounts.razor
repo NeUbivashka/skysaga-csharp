@@ -55,6 +55,18 @@
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(context.Item.Status)">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
+            <TemplateColumn Title="Premium" SortBy="x => x.PremiumUntil">
+                <CellTemplate>
+                    @if (context.Item.PremiumUntil > DateTimeOffset.UtcNow)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning">until @context.Item.PremiumUntil.Value.ToString("yyyy-MM-dd")</MudChip>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">no</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
             <PropertyColumn Property="x => x.Sessions" Title="Sessions" />
             <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
             <PropertyColumn Property="x => x.LastLogin" Title="Last sign-in" Format="yyyy-MM-dd HH:mm" />
@@ -63,6 +75,12 @@
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                         <MudMenuItem Icon="@Icons.Material.Filled.Key" OnClick="() => ResetAsync(context.Item)">Password reset link</MudMenuItem>
                         <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="() => SignOutAsync(context.Item)">Sign out everywhere</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Star" OnClick="() => AddPremiumAsync(context.Item, 30)">Premium +30 days</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Star" OnClick="() => AddPremiumAsync(context.Item, 365)">Premium +1 year</MudMenuItem>
+                        @if (context.Item.PremiumUntil > DateTimeOffset.UtcNow)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.StarBorder" OnClick="() => RemovePremiumAsync(context.Item)">Remove premium</MudMenuItem>
+                        }
                         @if (context.Item.Status == "Banned")
                         {
                             <MudMenuItem Icon="@Icons.Material.Filled.LockOpen" OnClick="() => SetBanAsync(context.Item, null)">Lift ban</MudMenuItem>
@@ -82,7 +100,7 @@
 
 @code {
     private record AccountRow(Guid Id, string Username, string? Email, Guid? CharacterId, string? Character, AccountRole Role, string Status,
-        int Sessions, DateTimeOffset CreatedAt, DateTimeOffset? LastLogin);
+        DateTimeOffset? PremiumUntil, int Sessions, DateTimeOffset CreatedAt, DateTimeOffset? LastLogin);
 
     private List<AccountRow> _rows = [];
     private string _search = "";
@@ -105,6 +123,7 @@
                 a.Characters.OrderBy(c => c.CreatedAt).Select(c => c.Name).FirstOrDefault(),
                 a.Role,
                 a.BannedUntil > now ? "Banned" : a.LockedUntil > now ? "Locked" : a.PasswordHash == null ? "No password" : "Active",
+                a.PremiumUntil,
                 db.AuthSessions.Count(s => s.AccountId == a.Id && s.ExpiresAt > now),
                 a.CreatedAt,
                 a.LastLoginAt))
@@ -155,6 +174,29 @@
 
         await RecordAsync(db, until is null ? "admin.unban" : "admin.ban", row);
         Snackbar.Add(until is null ? $"Ban of {row.Username} lifted" : $"{row.Username} banned for 7 days", until is null ? Severity.Success : Severity.Warning);
+        await LoadAsync();
+    }
+
+    private async Task AddPremiumAsync(AccountRow row, int days)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var until = (row.PremiumUntil > now ? row.PremiumUntil.Value : now).AddDays(days);
+
+        await using var db = await Db.CreateDbContextAsync();
+        await db.Accounts.Where(a => a.Id == row.Id).ExecuteUpdateAsync(set => set.SetProperty(a => a.PremiumUntil, until));
+
+        await RecordAsync(db, "admin.premium", row, new { until });
+        Snackbar.Add($"{row.Username} has premium until {until:yyyy-MM-dd}", Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task RemovePremiumAsync(AccountRow row)
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        await db.Accounts.Where(a => a.Id == row.Id).ExecuteUpdateAsync(set => set.SetProperty(a => a.PremiumUntil, (DateTimeOffset?)null));
+
+        await RecordAsync(db, "admin.premium", row, new { until = (DateTimeOffset?)null });
+        Snackbar.Add($"Premium of {row.Username} removed", Severity.Success);
         await LoadAsync();
     }
 

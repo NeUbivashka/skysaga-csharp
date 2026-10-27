@@ -23,6 +23,7 @@ public class Account
     public DateTimeOffset? LastLoginAt { get; set; }
     public DateTimeOffset? BannedUntil { get; set; }
     public string? BanReason { get; set; }
+    public DateTimeOffset? PremiumUntil { get; set; }
 
     public List<Character> Characters { get; set; } = [];
 }

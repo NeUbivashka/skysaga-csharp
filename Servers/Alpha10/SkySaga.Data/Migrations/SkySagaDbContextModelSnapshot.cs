@@ -72,6 +72,10 @@ namespace SkySaga.Data.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("password_hash");
 
+                    b.Property<DateTimeOffset?>("PremiumUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("premium_until");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(16)

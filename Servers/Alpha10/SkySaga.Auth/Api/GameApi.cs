@@ -36,7 +36,7 @@ public static class GameApi
 
         return outcome switch
         {
-            LoginOutcome.Success => Results.Json(LoginResult(await accounts.IssueAsync(account!.Id, SessionKind.Launcher), account.Username, links)),
+            LoginOutcome.Success => Results.Json(LoginResult(await accounts.IssueAsync(account!.Id, SessionKind.Launcher), account.Username, links.Terms(request))),
             LoginOutcome.Banned => Error(StatusCodes.Status403Forbidden, BannedAccount),
             _ => Error(StatusCodes.Status401Unauthorized, WrongCredentials)
         };
@@ -51,7 +51,7 @@ public static class GameApi
 
         await accounts.RevokeAsync(token);
 
-        return Results.Json(LoginResult(await accounts.IssueAsync(session.AccountId, SessionKind.Launcher), session.Account!.Username, links));
+        return Results.Json(LoginResult(await accounts.IssueAsync(session.AccountId, SessionKind.Launcher), session.Account!.Username, links.Terms(request)));
     }
 
     private static async Task<IResult> ConvertLauncherTokenAsync(HttpRequest request, AccountService accounts)
@@ -159,7 +159,7 @@ public static class GameApi
     private static Task<AuthSession?> GameSessionAsync(HttpRequest request, AccountService accounts)
         => accounts.FindSessionAsync(request.Headers[TokenHeader].ToString(), SessionKind.Game);
 
-    private static object LoginResult(IssuedToken issued, string principal, LinkSettings links) => new
+    private static object LoginResult(IssuedToken issued, string principal, string termsUrl) => new
     {
         token = Token(issued),
         principal,
@@ -167,7 +167,7 @@ public static class GameApi
         {
             acceptedVersion = LegalsVersion,
             currentVersion = LegalsVersion,
-            currentTermsAndConditionsUrl = links.Terms
+            currentTermsAndConditionsUrl = termsUrl
         },
         accountActions = new
         {

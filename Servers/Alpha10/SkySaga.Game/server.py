@@ -36,6 +36,7 @@ import ssl
 import sys
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from pathlib import Path
@@ -151,7 +152,7 @@ def catch_all_get(path):
         return jsonify([{
             "UUID": str(uuid.uuid4()),
             "DataCentre": "UK",
-            "IP": "127.0.0.1",
+            "IP": _public_host(),
             "Port": 42069,
         }])
 
@@ -167,8 +168,13 @@ def catch_all_get(path):
 
 AUTH_URL = os.environ.get("SKYSAGA_AUTH_URL", "http://127.0.0.1:5100")
 AUTH_PREFIXES = ("/api/authentication/", "/api/account/", "/api/persistent-record/characters/",
-                 "/api/persistent-record/worlds/listforowner/", "/api/persistent-record/worlds/getSpecific")
+                 "/api/persistent-record/worlds/listforowner/", "/api/persistent-record/worlds/getSpecific",
+                 "/api/game-conductor/retrieve")
 AUTH_HEADERS = ("Content-Type", "X-RWPVT", "X-RWPVTP")
+
+
+def _public_host():
+    return urllib.parse.urlsplit("//" + request.host).hostname or "127.0.0.1"
 
 
 @app.before_request
@@ -179,6 +185,7 @@ def forward_to_auth():
     url = AUTH_URL + request.full_path.rstrip("?")
     headers = {name: request.headers[name] for name in AUTH_HEADERS if name in request.headers}
     headers["X-Forwarded-For"] = request.remote_addr or ""
+    headers["X-Forwarded-Host"] = request.host
     body = request.get_data() if request.method not in ("GET", "HEAD") else None
     forwarded = urllib.request.Request(url, data=body, headers=headers, method=request.method)
 
@@ -357,7 +364,7 @@ def alpha10_geonode():
         "result": [{
             "uuid": str(uuid.uuid4()),
             "datacentre": "UK",
-            "ip": "127.0.0.1",
+            "ip": _public_host(),
             "port": 5001,
         }]
     }), 200
@@ -366,20 +373,6 @@ def alpha10_geonode():
 @app.route("/api/game-conductor/reserve", methods=["PUT"])
 def alpha10_game_conductor_reserve():
     return jsonify({"result": {}}), 200
-
-
-@app.route("/api/game-conductor/retrieve", methods=["POST"])
-def alpha10_game_conductor_retrieve():
-    print("=== alpha10 game-conductor retrieve (client wants game server address) ===")
-    return jsonify({
-        "result": {
-            "retryInMillis": 5000,
-            "world": str(uuid.uuid4()),
-            "ip": "127.0.0.1",
-            "port": 42069,
-            "server": str(uuid.uuid4()),
-        }
-    }), 200
 
 
 @app.route("/api/bi-collector/opensession/_create", methods=["POST"])

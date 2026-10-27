@@ -54,4 +54,13 @@ public sealed class PlayerConnectionManager
             }
         }
     }
+
+    public void BroadcastToAllExcept(ulong excludeGuid, BitStream bitStream)
+    {
+        foreach (var kvp in _connections)
+        {
+            if (kvp.Key != excludeGuid && kvp.Value.IsPlayerInitialized)
+                kvp.Value.Send(bitStream);
+        }
+    }
 }

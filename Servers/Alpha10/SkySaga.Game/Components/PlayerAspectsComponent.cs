@@ -25,6 +25,7 @@ public class PlayerAspectsComponent : Component
     public string? Tags { get; set => SetIfChanged(ref field, value); }
     public int AccountLevel { get; set => SetIfChanged(ref field, value); }
     public List<string> Permissions { get; set => SetIfChanged(ref field, value); } = [];
+    public ulong PremiumExpiryTime { get; set => SetIfChanged(ref field, value); }
 
     public bool IsLocal => SyncingForOwner;
 
@@ -101,6 +102,12 @@ public class PlayerAspectsComponent : Component
                 bitStream.Write1();
                 bitStream.WriteFullWidthUInt32(crc);
             }
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(PremiumExpiryTime), StringComparison.OrdinalIgnoreCase))
+        {
+            bitStream.WriteUInt64(PremiumExpiryTime);
 
             return true;
         }

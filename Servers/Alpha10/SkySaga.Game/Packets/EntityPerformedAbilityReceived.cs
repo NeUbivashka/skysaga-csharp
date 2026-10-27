@@ -9,10 +9,11 @@ public static class EntityPerformedAbilityReceived
 
     public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        if (!bitStream.ReadFullWidthUInt32(out _)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var entityId)) return false;
         if (!bitStream.ReadFullWidthUInt32(out var itemId)) return false;
 
         connection.LastUsedItemId = (int)itemId;
+        PlayerActionRelay.Relay(connection, bitStream, entityId);
 
         if (!RunActionListReceived.ReadOptionalUInt32(bitStream, out _)) return true;
         if (!RunActionListReceived.ReadOptionalUInt32(bitStream, out _)) return true;

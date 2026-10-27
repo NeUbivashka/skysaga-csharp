@@ -31,6 +31,9 @@ public class IrcClient : IDisposable
     /// </summary>
     public string? Nickname => _nickname;
 
+    private string Prefix(string? nickname = null)
+        => $"{nickname ?? _nickname}!{_username ?? nickname ?? _nickname}@{(_tcpClient.Client.RemoteEndPoint as IPEndPoint)?.Address}";
+
     /// <summary>
     /// Processes incoming messages from the client.
     /// </summary>
@@ -131,7 +134,7 @@ public class IrcClient : IDisposable
 
         if (_isRegistered)
         {
-            await BroadcastToChannelsAsync($":{_nickname} NICK {newNick}");
+            await BroadcastToChannelsAsync($":{Prefix(oldNick)} NICK {newNick}");
         }
         else if (_username != null)
         {
@@ -191,8 +194,7 @@ public class IrcClient : IDisposable
         _channels.Add(channel);
         _logger.LogInformation("Client {Nickname} joined channel {ChannelName}", _nickname, channelName);
 
-        await SendAsync($":{_nickname} JOIN {channelName}");
-        await BroadcastToChannelAsync(channelName, $":{_nickname} JOIN {channelName}", excludeSelf: false);
+        await BroadcastToChannelAsync(channelName, $":{Prefix()} JOIN {channelName}", excludeSelf: false);
     }
 
     private async Task HandlePartAsync(string[] parts)
@@ -215,7 +217,7 @@ public class IrcClient : IDisposable
             channel.RemoveClient(this);
             _channels.Remove(channel);
             _logger.LogInformation("Client {Nickname} left channel {ChannelName}", _nickname, channelName);
-            await BroadcastToChannelAsync(channelName, $":{_nickname} PART {channelName}");
+            await BroadcastToChannelAsync(channelName, $":{Prefix()} PART {channelName}");
         }
     }
 
@@ -260,7 +262,7 @@ public class IrcClient : IDisposable
         {
             // Channel message
             _logger.LogDebug("Channel message from {Nickname} to {Channel}: {Message}", _nickname, target, message);
-            await BroadcastToChannelAsync(target, $":{_nickname} PRIVMSG {target} :{message}", excludeSelf: false);
+            await BroadcastToChannelAsync(target, $":{Prefix()} PRIVMSG {target} :{message}");
         }
         else
         {
@@ -268,7 +270,7 @@ public class IrcClient : IDisposable
             if (_server.TryGetClient(target, out var targetClient))
             {
                 _logger.LogDebug("Private message from {Nickname} to {Target}: {Message}", _nickname, target, message);
-                await targetClient.SendAsync($":{_nickname} PRIVMSG {target} :{message}");
+                await targetClient.SendAsync($":{Prefix()} PRIVMSG {target} :{message}");
             }
             else
             {

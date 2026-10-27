@@ -39,7 +39,7 @@ public static class WorldTravel
         connection.Send(new TransferToServer
         {
             WorldUuid = destination.Id,
-            ServerUuid = connection.Server.Id,
+            ServerUuid = destination.Id,
             Host = connection.GameHost,
             Port = connection.Server.Port
         });

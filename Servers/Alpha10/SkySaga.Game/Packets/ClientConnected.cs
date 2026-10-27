@@ -49,7 +49,7 @@ public static class ClientConnected
 
             ServerOwnerName = entry.OwnerName ?? string.Empty,
 
-            ChatHost = "127.0.0.1",
+            ChatHost = gameHost,
             ChatPort = 444,
 
             MaxUsers = 32,

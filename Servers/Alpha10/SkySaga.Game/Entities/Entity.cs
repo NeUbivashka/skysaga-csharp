@@ -70,7 +70,7 @@ public class Entity
         return true;
     }
 
-    public BitStream GetSyncData(bool newEntity, bool forOwner = false, string? onlyParameter = null)
+    public BitStream GetSyncData(bool newEntity, bool forOwner = false, string? onlyParameter = null, bool includeOwnerOnly = true, bool clearDirty = true)
     {
         var bitArray = new BitArray(_entityData.SyncedParametersCount);
 
@@ -88,6 +88,9 @@ public class Entity
                 continue;
 
             if (onlyParameter is not null && !parameterName.Equals(onlyParameter, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!includeOwnerOnly && OwnerOnlyTable.Contains(componentName))
                 continue;
 
             if (!_components.TryGetValue(componentName, out var component))
@@ -137,7 +140,7 @@ public class Entity
         if (parameterBits > 0)
             syncData.Write(parameterBitStream);
 
-        if (onlyParameter is null)
+        if (onlyParameter is null && clearDirty)
             _sync.SetAll(false);
 
         return syncData;

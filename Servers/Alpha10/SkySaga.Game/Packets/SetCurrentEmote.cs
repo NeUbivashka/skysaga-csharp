@@ -17,6 +17,9 @@ public static class SetCurrentEmote
 
         emotes.EmoteId = (ushort)emote;
 
+        if (emote != 0)
+            emotes.EmoteTriggered++;
+
         Console.WriteLine($"[Emote] {entityId} emote {(emote == 0 ? "stopped" : EmoteTable.NameOf((ushort)emote))}");
         return true;
     }

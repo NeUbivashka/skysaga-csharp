@@ -169,7 +169,7 @@ public class Server : IDisposable
             if (!_connections.TryGetValue(packet.guid.g, out var connection)
                 && messageId == (byte)DefaultMessageIDTypes.ID_NEW_INCOMING_CONNECTION)
             {
-                connection = new PlayerConnection(this, packet.guid);
+                connection = new PlayerConnection(this, new RakNetGUID(packet.guid.g));
 
                 _connections.TryAdd(packet.guid.g, connection);
 

@@ -31,7 +31,7 @@ public static class ClientReadyToPlay
         {
             Id = connection.PlayerEntity.Id,
             NameHash = Util.ComputeCrc32(connection.PlayerEntity.Name),
-            SyncData = connection.PlayerEntity.GetSyncData(newEntity: true)
+            SyncData = connection.PlayerEntity.GetSyncData(newEntity: true, includeOwnerOnly: false)
         };
 
         connection.PlayerConnectionManager.BroadcastToAllExcept(connection.Guid.g, entityAdd);

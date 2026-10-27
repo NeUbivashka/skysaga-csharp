@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using SkySaga.Game.Database;
 namespace SkySaga.Game.Managers.Player;
 
 public class PlayerInitializer(IWorldManager worldManager)
@@ -140,6 +141,11 @@ public class PlayerInitializer(IWorldManager worldManager)
             clientPlayerAspectsComponent.IsDebugPlayer = true;
             clientPlayerAspectsComponent.AccountLevel = 2;
             clientPlayerAspectsComponent.Permissions = [.. PlayerAspectsComponent.DefaultPermissions];
+
+            var premiumLeft = AccountStore.PremiumUntil(characterId) - DateTimeOffset.UtcNow;
+            clientPlayerAspectsComponent.PremiumExpiryTime = premiumLeft > TimeSpan.Zero
+                ? RakNet.RakNet.GetTime() + (ulong)premiumLeft.Value.TotalMilliseconds
+                : 0;
         }
 
         if (player.TryGetComponent<ClientEmoteComponent>(out var emotes))

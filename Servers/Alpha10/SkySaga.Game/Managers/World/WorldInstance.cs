@@ -56,15 +56,30 @@ public sealed class WorldInstance : IDisposable
 
     private void SyncEntities()
     {
+        var owners = Connections.GetAllConnections()
+            .Where(connection => connection.IsPlayerInitialized)
+            .ToDictionary(connection => connection.PlayerEntity.Id);
+
         foreach (var entity in Manager.EntityManager.Entities)
         {
             if (!entity.SyncRequired)
                 continue;
 
-            Connections.BroadcastToAll(new EntitySync
+            if (!owners.TryGetValue(entity.Id, out var owner))
+            {
+                Connections.BroadcastToAll(new EntitySync
+                {
+                    Id = entity.Id,
+                    SyncData = entity.GetSyncData(newEntity: false)
+                });
+                continue;
+            }
+
+            owner.Send(new EntitySync { Id = entity.Id, SyncData = entity.GetSyncData(newEntity: false, clearDirty: false) });
+            Connections.BroadcastToAllExcept(owner.Guid.g, new EntitySync
             {
                 Id = entity.Id,
-                SyncData = entity.GetSyncData(newEntity: false)
+                SyncData = entity.GetSyncData(newEntity: false, includeOwnerOnly: false)
             });
         }
 
