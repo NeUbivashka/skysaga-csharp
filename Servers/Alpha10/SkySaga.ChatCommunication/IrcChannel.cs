@@ -35,10 +35,11 @@ public class IrcChannel(string name)
     /// <summary>
     /// Broadcasts a message to all clients in the channel.
     /// </summary>
-    public async Task BroadcastAsync(string message, IrcClient? excludeClient = null)
+    public async Task BroadcastAsync(string message, IrcClient? excludeClient = null, IReadOnlyCollection<string>? excludeNicknames = null)
     {
         var tasks = _clients
             .Where(client => client != excludeClient)
+            .Where(client => excludeNicknames is null || client.Nickname is null || !excludeNicknames.Contains(client.Nickname, StringComparer.OrdinalIgnoreCase))
             .Select(client => client.SendAsync(message))
             .ToList();
 

@@ -129,6 +129,7 @@ public static class PlayerSaveStore
         character.Settings = data.Settings is { } settings ? ToEntity(settings) : null;
         character.ChallengeRefreshIndex = data.ChallengeRefreshIndex;
         character.AvailableEmotes = data.AvailableEmotes;
+        character.CurrentSigil = (int?)data.CurrentSigil;
         character.KeyboundEmotes = data.KeyboundEmotes;
         character.KnownRecipes = data.KnownRecipes;
         character.CompletedChallenges = data.CompletedChallenges;
@@ -179,6 +180,7 @@ public static class PlayerSaveStore
         Settings = character.Settings is { } settings ? ToSaveData(settings) : null,
         ChallengeRefreshIndex = (uint?)character.ChallengeRefreshIndex,
         AvailableEmotes = character.AvailableEmotes,
+        CurrentSigil = (uint?)character.CurrentSigil,
         KeyboundEmotes = character.KeyboundEmotes,
         KnownRecipes = character.KnownRecipes,
         CompletedChallenges = character.CompletedChallenges,

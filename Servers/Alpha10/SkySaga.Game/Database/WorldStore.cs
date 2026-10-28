@@ -54,6 +54,19 @@ public static class WorldStore
             .ExecuteUpdate(update => update.SetProperty(c => c.CurrentWorldId, worldId));
     }
 
+    public static bool CanBuild(WorldInfo info, Guid characterId)
+    {
+        if (info.CanBuild(characterId))
+            return true;
+
+        if (info.Kind != WorldKind.Island || info.OwnerCharacterId is not { } owner)
+            return false;
+
+        using var context = GameDatabase.Context();
+
+        return context.BuildPermissions.Any(p => p.OwnerId == owner && p.GranteeId == characterId);
+    }
+
     public static void Visited(Guid worldId)
     {
         var now = DateTimeOffset.UtcNow;

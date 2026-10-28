@@ -28,6 +28,7 @@ public class Character
     public CharacterSettings? Settings { get; set; }
     public long? ChallengeRefreshIndex { get; set; }
     public List<string>? AvailableEmotes { get; set; }
+    public int? CurrentSigil { get; set; }
     public List<string>? KeyboundEmotes { get; set; }
     public List<string>? KnownRecipes { get; set; }
     public List<string>? CompletedChallenges { get; set; }

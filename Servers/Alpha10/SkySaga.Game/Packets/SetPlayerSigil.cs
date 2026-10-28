@@ -1,13 +1,25 @@
+using System.Linq;
+
 namespace SkySaga.Game.Packets;
 
-public class SetPlayerSigil : ISerializablePacket
+public static class SetPlayerSigil
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadInt32(ClientPlayernameComponent.SigilTableCount - 1, out var sigil))
+            return false;
 
-        bitStream.WritePacketId(PacketId.SetPlayerSigil);
+        if (!connection.IsPlayerInitialized
+            || !connection.PlayerEntity.TryGetComponent<ClientPlayernameComponent>(out var playername)
+            || playername.AvailablePlayerSigilList.All(entry => entry.Index != (uint)sigil))
+        {
+            Console.WriteLine($"[Sigil] {connection.CharacterName} sigil {sigil} rejected");
+            return true;
+        }
 
-        return bitStream;
+        playername.CurrentSigil = (uint)sigil;
+
+        Console.WriteLine($"[Sigil] {connection.CharacterName} shows sigil {sigil}");
+        return true;
     }
 }

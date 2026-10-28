@@ -187,6 +187,29 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("auth_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.BuildPermission", b =>
+                {
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
+                    b.Property<Guid>("GranteeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("grantee_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("OwnerId", "GranteeId")
+                        .HasName("pk_build_permissions");
+
+                    b.HasIndex("GranteeId")
+                        .HasDatabaseName("ix_build_permissions_grantee_id");
+
+                    b.ToTable("build_permissions", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.Character", b =>
                 {
                     b.Property<Guid>("Id")
@@ -213,6 +236,10 @@ namespace SkySaga.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<int?>("CurrentSigil")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_sigil");
 
                     b.Property<Guid?>("CurrentWorldId")
                         .HasColumnType("uuid")
@@ -293,6 +320,29 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("characters", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.CharacterBlock", b =>
+                {
+                    b.Property<Guid>("BlockerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("blocker_id");
+
+                    b.Property<Guid>("BlockedId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("blocked_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("BlockerId", "BlockedId")
+                        .HasName("pk_character_blocks");
+
+                    b.HasIndex("BlockedId")
+                        .HasDatabaseName("ix_character_blocks_blocked_id");
+
+                    b.ToTable("character_blocks", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.CharacterCurrency", b =>
                 {
                     b.Property<Guid>("CharacterId")
@@ -311,6 +361,29 @@ namespace SkySaga.Data.Migrations
                         .HasName("pk_character_currencies");
 
                     b.ToTable("character_currencies", (string)null);
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.CharacterFollow", b =>
+                {
+                    b.Property<Guid>("FollowerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("follower_id");
+
+                    b.Property<Guid>("FollowedId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("followed_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("FollowerId", "FollowedId")
+                        .HasName("pk_character_follows");
+
+                    b.HasIndex("FollowedId")
+                        .HasDatabaseName("ix_character_follows_followed_id");
+
+                    b.ToTable("character_follows", (string)null);
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.CharacterJob", b =>
@@ -371,6 +444,58 @@ namespace SkySaga.Data.Migrations
                         .HasName("pk_checkpoints");
 
                     b.ToTable("checkpoints", (string)null);
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.FriendRequest", b =>
+                {
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requester_id");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("message");
+
+                    b.HasKey("RequesterId", "RecipientId")
+                        .HasName("pk_friend_requests");
+
+                    b.HasIndex("RecipientId")
+                        .HasDatabaseName("ix_friend_requests_recipient_id");
+
+                    b.ToTable("friend_requests", (string)null);
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.Friendship", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("character_id");
+
+                    b.Property<Guid>("FriendId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("friend_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("CharacterId", "FriendId")
+                        .HasName("pk_friendships");
+
+                    b.HasIndex("FriendId")
+                        .HasDatabaseName("ix_friendships_friend_id");
+
+                    b.ToTable("friendships", (string)null);
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.GameEvent", b =>
@@ -796,6 +921,23 @@ namespace SkySaga.Data.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.BuildPermission", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("GranteeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_build_permissions_characters_grantee_id");
+
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_build_permissions_characters_owner_id");
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.Character", b =>
                 {
                     b.HasOne("SkySaga.Data.Entities.Account", "Account")
@@ -875,6 +1017,23 @@ namespace SkySaga.Data.Migrations
                     b.Navigation("Settings");
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.CharacterBlock", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("BlockedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_character_blocks_characters_blocked_id");
+
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("BlockerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_character_blocks_characters_blocker_id");
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.CharacterCurrency", b =>
                 {
                     b.HasOne("SkySaga.Data.Entities.Character", null)
@@ -883,6 +1042,23 @@ namespace SkySaga.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_character_currencies_characters_character_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.CharacterFollow", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("FollowedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_character_follows_characters_followed_id");
+
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_character_follows_characters_follower_id");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.CharacterJob", b =>
@@ -903,6 +1079,40 @@ namespace SkySaga.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_checkpoints_worlds_world_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.FriendRequest", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_friend_requests_characters_recipient_id");
+
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_friend_requests_characters_requester_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.Friendship", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_friendships_characters_character_id");
+
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("FriendId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_friendships_characters_friend_id");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.InventoryItem", b =>

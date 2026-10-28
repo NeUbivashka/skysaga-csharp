@@ -30,7 +30,9 @@ public class PlayerInitializer(IWorldManager worldManager)
             var sigilB = sigilFields.Length > 1 && uint.TryParse(sigilFields[1], out var b) ? b : 0u;
 
             clientPlayernameComponent.AvailablePlayerSigilList = [.. StarterSigils.Select(index => (index, sigilA, sigilB))];
-            clientPlayernameComponent.CurrentSigil = ForestMasterSigil;
+            clientPlayernameComponent.CurrentSigil = save?.CurrentSigil is { } savedSigil && StarterSigils.Contains(savedSigil)
+                ? savedSigil
+                : ForestMasterSigil;
         }
 
         if (player.TryGetComponent<ClientOwnerComponent>(out var owner))
@@ -131,7 +133,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientPlayerAspectsComponent>(out var clientPlayerAspectsComponent))
         {
-            var canBuild = _worldManager.Info.CanBuild(characterId);
+            var canBuild = WorldStore.CanBuild(_worldManager.Info, characterId);
 
             clientPlayerAspectsComponent.CanEditMap = canBuild;
             clientPlayerAspectsComponent.CanDamageEntities = true;
@@ -321,6 +323,9 @@ public class PlayerInitializer(IWorldManager worldManager)
             data.IsCharacterCustomised = customisation.IsCharacterCustomised;
             data.CustomisationData = customisation.CustomisationData is { } bytes ? Convert.ToBase64String(bytes) : null;
         }
+
+        if (player.TryGetComponent<ClientPlayernameComponent>(out var playername))
+            data.CurrentSigil = playername.CurrentSigil;
 
         if (player.TryGetComponent<ClientEmoteComponent>(out var emotes))
         {

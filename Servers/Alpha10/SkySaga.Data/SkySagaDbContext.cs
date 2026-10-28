@@ -20,6 +20,11 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
     public DbSet<PasswordReset> PasswordResets => Set<PasswordReset>();
     public DbSet<Photo> Photos => Set<Photo>();
+    public DbSet<CharacterFollow> CharacterFollows => Set<CharacterFollow>();
+    public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
+    public DbSet<Friendship> Friendships => Set<Friendship>();
+    public DbSet<CharacterBlock> CharacterBlocks => Set<CharacterBlock>();
+    public DbSet<BuildPermission> BuildPermissions => Set<BuildPermission>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -76,6 +81,46 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
             photo.Property(p => p.Caption).HasMaxLength(256);
             photo.Property(p => p.Md5).HasMaxLength(32);
             photo.HasOne<Character>().WithMany().HasForeignKey(p => p.OwnerCharacterId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        model.Entity<CharacterFollow>(follow =>
+        {
+            follow.HasKey(f => new { f.FollowerId, f.FollowedId });
+            follow.HasIndex(f => f.FollowedId);
+            follow.HasOne<Character>().WithMany().HasForeignKey(f => f.FollowerId).OnDelete(DeleteBehavior.Cascade);
+            follow.HasOne<Character>().WithMany().HasForeignKey(f => f.FollowedId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        model.Entity<FriendRequest>(friendRequest =>
+        {
+            friendRequest.HasKey(r => new { r.RequesterId, r.RecipientId });
+            friendRequest.HasIndex(r => r.RecipientId);
+            friendRequest.Property(r => r.Message).HasMaxLength(256);
+            friendRequest.HasOne<Character>().WithMany().HasForeignKey(r => r.RequesterId).OnDelete(DeleteBehavior.Cascade);
+            friendRequest.HasOne<Character>().WithMany().HasForeignKey(r => r.RecipientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        model.Entity<Friendship>(friendship =>
+        {
+            friendship.HasKey(f => new { f.CharacterId, f.FriendId });
+            friendship.HasOne<Character>().WithMany().HasForeignKey(f => f.CharacterId).OnDelete(DeleteBehavior.Cascade);
+            friendship.HasOne<Character>().WithMany().HasForeignKey(f => f.FriendId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        model.Entity<CharacterBlock>(block =>
+        {
+            block.HasKey(b => new { b.BlockerId, b.BlockedId });
+            block.HasIndex(b => b.BlockedId);
+            block.HasOne<Character>().WithMany().HasForeignKey(b => b.BlockerId).OnDelete(DeleteBehavior.Cascade);
+            block.HasOne<Character>().WithMany().HasForeignKey(b => b.BlockedId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        model.Entity<BuildPermission>(permission =>
+        {
+            permission.HasKey(p => new { p.OwnerId, p.GranteeId });
+            permission.HasIndex(p => p.GranteeId);
+            permission.HasOne<Character>().WithMany().HasForeignKey(p => p.OwnerId).OnDelete(DeleteBehavior.Cascade);
+            permission.HasOne<Character>().WithMany().HasForeignKey(p => p.GranteeId).OnDelete(DeleteBehavior.Cascade);
         });
 
         model.Entity<World>(world =>

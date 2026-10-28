@@ -1,3 +1,4 @@
+using SkySaga.Game.Database;
 using System.Numerics;
 
 namespace SkySaga.Game.Packets;
@@ -60,7 +61,7 @@ public static class RunActionListReceived
         if (hasVoxel != 1)
             return true;
 
-        if (connection.CharacterId is not { } builder || !connection.WorldManager.Info.CanBuild(builder))
+        if (connection.CharacterId is not { } builder || !WorldStore.CanBuild(connection.WorldManager.Info, builder))
         {
             Console.WriteLine($"[Voxel] {connection.CharacterName} may not build in {connection.WorldManager.Info.Kind} {connection.WorldManager.Info.Id}; ignored");
             return true;

@@ -14,6 +14,7 @@ public class IrcServer(ILogger<IrcServer> logger) : IDisposable
     private Task? _serverTask;
 
     public Func<string, string, Task<string?>>? CommandHandler { get; set; }
+    public Func<string, Task<IReadOnlyCollection<string>>>? BlockersHandler { get; set; }
 
     /// <summary>
     /// Starts the IRC server.

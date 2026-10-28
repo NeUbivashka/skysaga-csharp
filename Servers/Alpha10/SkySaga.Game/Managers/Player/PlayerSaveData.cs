@@ -34,6 +34,8 @@ public class PlayerSaveData
 
     public List<string>? AvailableEmotes { get; set; }
 
+    public uint? CurrentSigil { get; set; }
+
     public List<string>? KeyboundEmotes { get; set; }
 
     public List<string>? KnownRecipes { get; set; }

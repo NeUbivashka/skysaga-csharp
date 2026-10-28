@@ -258,17 +258,24 @@ public class IrcClient : IDisposable
             }
         }
 
+        var blockers = _server.BlockersHandler is { } blockersHandler ? await blockersHandler(_nickname) : [];
+
         if (target.StartsWith("#"))
         {
             // Channel message
             _logger.LogDebug("Channel message from {Nickname} to {Channel}: {Message}", _nickname, target, message);
-            await BroadcastToChannelAsync(target, $":{Prefix()} PRIVMSG {target} :{message}");
+
+            if (_server.TryGetChannel(target, out var channel))
+                await channel.BroadcastAsync($":{Prefix()} PRIVMSG {target} :{message}", this, blockers);
         }
         else
         {
             // Private message
             if (_server.TryGetClient(target, out var targetClient))
             {
+                if (blockers.Contains(target, StringComparer.OrdinalIgnoreCase))
+                    return;
+
                 _logger.LogDebug("Private message from {Nickname} to {Target}: {Message}", _nickname, target, message);
                 await targetClient.SendAsync($":{Prefix()} PRIVMSG {target} :{message}");
             }

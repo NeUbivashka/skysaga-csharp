@@ -81,7 +81,6 @@ def _load_account():
 
 ACCOUNT = _load_account()
 PLAYER_NAME = ACCOUNT["name"]
-ACCOUNT_CREATED = int(ACCOUNT_FILE.stat().st_ctime)
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +168,8 @@ def catch_all_get(path):
 AUTH_URL = os.environ.get("SKYSAGA_AUTH_URL", "http://127.0.0.1:5100")
 AUTH_PREFIXES = ("/api/authentication/", "/api/account/", "/api/persistent-record/characters/",
                  "/api/persistent-record/worlds/listforowner/", "/api/persistent-record/worlds/getSpecific",
-                 "/api/game-conductor/retrieve", "/api/binary-storage/photos/")
+                 "/api/game-conductor/retrieve", "/api/binary-storage/photos/",
+                 "/api/social-graph/")
 AUTH_HEADERS = ("Content-Type", "X-RWPVT", "X-RWPVTP")
 
 
@@ -216,26 +216,6 @@ def get_guid():
     return jsonify({
         "result": {"GUID": _state["character_uuid"], "Name": PLAYER_NAME}
     }), 200
-
-
-@app.route("/api/social-graph/character/profile/batch", methods=["POST"])
-def alpha10_character_profile_batch():
-    body = request.get_json(silent=True, force=True) or {}
-    params = body.get("params", body)
-    recipients = params.get("recipients") or [_state["character_uuid"]]
-    print("=== alpha10 character profile batch", request.get_data(as_text=True), "===", flush=True)
-    return jsonify({"result": [_character_profile(uuid_) for uuid_ in recipients]}), 200
-
-
-def _character_profile(character_uuid):
-    return {
-        "characterOnlineData": {
-            "characterUuid": character_uuid,
-            "characterName": PLAYER_NAME,
-        },
-        "counts": {"follows": 0, "followedBy": 0, "friends": 0},
-        "accountCreated": ACCOUNT_CREATED,
-    }
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ public class IrcServerHostedService(
     {
         _logger.LogInformation("Starting IRC server...");
         _ircServer.CommandHandler = server.RunCommandAsync;
+        _ircServer.BlockersHandler = Database.SocialStore.BlockersOfAsync;
         _ = _ircServer.StartAsync();
         _logger.LogInformation("IRC server started");
 
