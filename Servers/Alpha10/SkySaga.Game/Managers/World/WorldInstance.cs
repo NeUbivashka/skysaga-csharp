@@ -70,7 +70,7 @@ public sealed class WorldInstance : IDisposable
                 Connections.BroadcastToAll(new EntitySync
                 {
                     Id = entity.Id,
-                    SyncData = entity.GetSyncData(newEntity: false)
+                    SyncData = entity.GetSyncData(newEntity: false, forOthers: true)
                 });
                 continue;
             }
@@ -79,7 +79,7 @@ public sealed class WorldInstance : IDisposable
             Connections.BroadcastToAllExcept(owner.Guid.g, new EntitySync
             {
                 Id = entity.Id,
-                SyncData = entity.GetSyncData(newEntity: false, includeOwnerOnly: false)
+                SyncData = entity.GetSyncData(newEntity: false, includeOwnerOnly: false, forOthers: true)
             });
         }
 

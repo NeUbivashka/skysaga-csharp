@@ -5,6 +5,7 @@ namespace SkySaga.Game.Entities;
 public class Entity
 {
     private readonly BitArray _sync;
+    private readonly BitArray _syncForOthers;
     private readonly EntityData _entityData;
 
     private readonly Dictionary<string, Component> _components = new(StringComparer.OrdinalIgnoreCase);
@@ -13,7 +14,7 @@ public class Entity
 
     public string Name => _entityData.Name;
 
-    public bool SyncRequired => _sync.HasAnySet();
+    public bool SyncRequired => _sync.HasAnySet() || _syncForOthers.HasAnySet();
 
     public IReadOnlyList<string> TextListParameter(string name)
         => _entityData.Parameters.Find(parameter => parameter.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } parameter
@@ -40,11 +41,21 @@ public class Entity
         foreach (var component in components)
         {
             component.ParameterChanged += OnComponentParameterChanged;
+            component.ParameterChangedForOthers += OnComponentParameterChangedForOthers;
 
             _components.Add(component.Name, component);
         }
 
         _sync = new BitArray(_entityData.SyncedParametersCount);
+        _syncForOthers = new BitArray(_entityData.SyncedParametersCount);
+    }
+
+    private void OnComponentParameterChangedForOthers(Component component, string parameter)
+    {
+        var syncIndex = _entityData.GetParameterSyncIndex(component.Name, parameter);
+
+        if (syncIndex >= 0)
+            _syncForOthers.Set(syncIndex, true);
     }
 
     private void OnComponentParameterChanged(Component component, string parameter)
@@ -70,7 +81,7 @@ public class Entity
         return true;
     }
 
-    public BitStream GetSyncData(bool newEntity, bool forOwner = false, string? onlyParameter = null, bool includeOwnerOnly = true, bool clearDirty = true)
+    public BitStream GetSyncData(bool newEntity, bool forOwner = false, string? onlyParameter = null, bool includeOwnerOnly = true, bool clearDirty = true, bool forOthers = false)
     {
         var bitArray = new BitArray(_entityData.SyncedParametersCount);
 
@@ -81,7 +92,7 @@ public class Entity
 
         for (var i = 0; i < _entityData.SyncedParametersCount; i++)
         {
-            if (onlyParameter is null && !newEntity && !_sync[i])
+            if (onlyParameter is null && !newEntity && !_sync[i] && !(forOthers && _syncForOthers[i]))
                 continue;
 
             if (!_entityData.TryGetSyncedParameterInfo(i, out var componentName, out var parameterName))
@@ -141,7 +152,10 @@ public class Entity
             syncData.Write(parameterBitStream);
 
         if (onlyParameter is null && clearDirty)
+        {
             _sync.SetAll(false);
+            _syncForOthers.SetAll(false);
+        }
 
         return syncData;
     }

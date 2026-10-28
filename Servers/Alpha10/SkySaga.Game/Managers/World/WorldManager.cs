@@ -724,7 +724,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         connection.Send(new ClientEntitiesSyncFinished());
     }
 
-    private IEnumerable<Entity> InventoryFirst(IEnumerable<Entity> entities)
+    public IEnumerable<Entity> InventoryFirst(IEnumerable<Entity> entities)
     {
         var sent = new HashSet<int>();
         var ordered = new List<Entity>();

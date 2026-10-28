@@ -14,6 +14,7 @@ public interface IWorldManager
 
     void SendInitialChunks(PlayerConnection connection);
     void SendInitialEntities(PlayerConnection connection, Entity player, PlayerInitializer playerInitializer);
+    IEnumerable<Entity> InventoryFirst(IEnumerable<Entity> entities);
     List<Entity> SpawnCreature(string name, Vector3 position);
     void DeviceInventoryChanged(Entity entity);
     List<int> RemoveDevice(Entity entity, bool placedOnly, out WorldManager.PlacedDevice? placed);

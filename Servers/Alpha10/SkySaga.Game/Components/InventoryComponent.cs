@@ -14,7 +14,10 @@ public class InventoryComponent : Component
     public int VaultInventoryEntity { get; set => SetIfChanged(ref field, value); }
 
     public void ApplyClientPredictedSwap(int first, int second)
-        => (InventoryEntityList[first], InventoryEntityList[second]) = (InventoryEntityList[second], InventoryEntityList[first]);
+    {
+        (InventoryEntityList[first], InventoryEntityList[second]) = (InventoryEntityList[second], InventoryEntityList[first]);
+        ChangedForOthers(nameof(InventoryEntityList));
+    }
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {

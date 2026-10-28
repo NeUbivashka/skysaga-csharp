@@ -10,6 +10,8 @@ public abstract class Component
 
     public event ParameterChangedEventHandler? ParameterChanged;
 
+    public event ParameterChangedEventHandler? ParameterChangedForOthers;
+
     public bool SyncingForOwner { get; internal set; }
 
     protected bool SetIfChanged<T>(ref T field, T value, [CallerMemberName] string? parameterName = null)
@@ -23,6 +25,9 @@ public abstract class Component
 
         return true;
     }
+
+    protected void ChangedForOthers(string parameterName)
+        => ParameterChangedForOthers?.Invoke(this, parameterName);
 
     public abstract bool TrySync(string parameterName, BitStream bitStream);
 }

@@ -27,14 +27,15 @@ public static class ClientReadyToPlay
             + $"PlayerSpawned(Position={playerSpawned.Position}, Yaw={playerSpawned.YawDegrees}, "
             + $"Pitch={playerSpawned.PitchDegrees}).");
 
-        var entityAdd = new EntityAdd
+        foreach (var entity in connection.WorldManager.InventoryFirst([connection.PlayerEntity]))
         {
-            Id = connection.PlayerEntity.Id,
-            NameHash = Util.ComputeCrc32(connection.PlayerEntity.Name),
-            SyncData = connection.PlayerEntity.GetSyncData(newEntity: true, includeOwnerOnly: false)
-        };
-
-        connection.PlayerConnectionManager.BroadcastToAllExcept(connection.Guid.g, entityAdd);
+            connection.PlayerConnectionManager.BroadcastToAllExcept(connection.Guid.g, new EntityAdd
+            {
+                Id = entity.Id,
+                NameHash = Util.ComputeCrc32(entity.Name),
+                SyncData = entity.GetSyncData(newEntity: true, includeOwnerOnly: false)
+            });
+        }
 
         return true;
     }
