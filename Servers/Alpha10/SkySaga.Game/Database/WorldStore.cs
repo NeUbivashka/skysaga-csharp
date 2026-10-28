@@ -29,13 +29,13 @@ public static class WorldStore
         return ToInfo(context, WorldCatalog.HomeIsland(context, TemplateStore.DataDirectory, characterId));
     }
 
-    public static WorldInfo Instance(WorldKind kind, Guid ownerCharacterId)
+    public static WorldInfo Instance(WorldKind kind, Guid ownerCharacterId, MapSpec? spec = null)
     {
         using var context = GameDatabase.Context();
         var ownerName = context.Characters.Where(c => c.Id == ownerCharacterId).Select(c => c.Name).SingleOrDefault();
 
-        return new WorldInfo(Guid.NewGuid(), kind, WorldCatalog.Template(TemplateStore.DataDirectory, kind), null, DefaultSeed, ownerCharacterId, ownerName,
-            WorldAccess.Owner, WorldAccess.Owner);
+        return new WorldInfo(Guid.NewGuid(), kind, WorldCatalog.Template(TemplateStore.DataDirectory, kind), null, spec?.Seed ?? DefaultSeed, ownerCharacterId, ownerName,
+            WorldAccess.Owner, WorldAccess.Owner, spec);
     }
 
     public static (Guid? WorldId, bool Customised)? Character(Guid characterId)

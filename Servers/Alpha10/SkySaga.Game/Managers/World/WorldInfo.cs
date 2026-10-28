@@ -11,7 +11,8 @@ public sealed record WorldInfo(
     Guid? OwnerCharacterId,
     string? OwnerName,
     WorldAccess VisitAccess,
-    WorldAccess BuildAccess)
+    WorldAccess BuildAccess,
+    MapSpec? Spec = null)
 {
     public bool IsPersistent => Kind == WorldKind.Island;
 

@@ -39,7 +39,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>, !perk <entity action | clear>";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count] [material], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>, !perk <entity action | clear>";
 
     private static string LearnRecipe(PlayerConnection connection, string[] args)
     {
@@ -207,17 +207,19 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
     private string Give(PlayerConnection connection, string[] args)
     {
         if (args.Length < 2)
-            return "Usage: !give <item> [count]";
+            return "Usage: !give <item> [count] [material]";
 
         var count = args.Length > 2 && int.TryParse(args[2], out var parsed) ? Math.Clamp(parsed, 1, 999) : 1;
 
         if (ItemTable.IndexOf(args[1]) == 0)
             return $"Unknown item {args[1]}.";
 
-        if (!InventoryItems.Give(connection, Util.ComputeCrc32(args[1]), count))
+        uint?[]? materials = args.Length > 3 ? [Util.ComputeCrc32(args[3])] : null;
+
+        if (!InventoryItems.Give(connection, Util.ComputeCrc32(args[1]), count, materials))
             return "The inventory is full.";
 
-        return $"Gave {count} x {args[1]}.";
+        return $"Gave {count} x {args[1]}{(args.Length > 3 ? $" ({args[3]})" : "")}.";
     }
 
     private string Spawn(PlayerConnection connection, string[] args)

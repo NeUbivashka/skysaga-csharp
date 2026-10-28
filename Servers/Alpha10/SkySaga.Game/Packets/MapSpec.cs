@@ -191,6 +191,64 @@ public class MapSpec
         bitStream.WriteString(Version);
     }
 
+    public static bool TryDecode(BitStream bitStream, out MapSpec spec)
+    {
+        spec = new MapSpec();
+
+        for (var slot = 0; slot < 3; slot++)
+            if (!TryReadIndex(bitStream, slot, spec.Searchable)) return false;
+
+        if (!bitStream.ReadInt32(DifficultyMax, out var difficulty)) return false;
+        spec.Searchable[3] = (uint)difficulty;
+
+        spec.AdventureType = bitStream.ReadString();
+        if (!bitStream.ReadFullWidthUInt32(out spec.Seed)) return false;
+
+        for (var slot = 4; slot < 13; slot++)
+            if (!TryReadIndex(bitStream, slot, spec.Searchable)) return false;
+
+        spec.FeatureName = bitStream.ReadString();
+        if (!TryReadIndex(bitStream, 13, spec.Searchable)) return false;
+
+        spec.NonSearchableName = bitStream.ReadString();
+        if (!bitStream.ReadInt32(NonSearchableCount - 1, out var nonSearchable) || nonSearchable >= NonSearchableCount) return false;
+        spec.NonSearchableIndex = (uint)nonSearchable;
+
+        if (!bitStream.ReadEscapedCount(MasteryLevelCountMax, out var count) || count > SearchableCounts[0]) return false;
+
+        var biomes = new uint[count];
+
+        for (var i = 0; i < count; i++)
+        {
+            if (!bitStream.ReadInt32(SearchableCounts[0] - 1, out var biome) || biome >= SearchableCounts[0]) return false;
+            biomes[i] = (uint)biome;
+        }
+
+        foreach (var biome in biomes)
+        {
+            if (!bitStream.ReadFullWidthUInt32(out var level)) return false;
+            spec.MasteryLevels.Add(new MasteryLevel(biome, level));
+        }
+
+        spec.Version = bitStream.ReadString();
+        return true;
+    }
+
+    private static bool TryReadIndex(BitStream bitStream, int slot, uint[] searchable)
+    {
+        var count = SearchableCounts[slot];
+
+        if (!bitStream.ReadInt32(count - 1, out var value) || value >= count)
+            return false;
+
+        searchable[slot] = (uint)value;
+        return true;
+    }
+
+    public override string ToString()
+        => $"[{string.Join(',', Searchable)}] type '{AdventureType}' seed {Seed} feature '{FeatureName}' "
+            + $"non-searchable '{NonSearchableName}' {NonSearchableIndex} mastery {MasteryLevels.Count} version '{Version}'";
+
     private void EncodeNonSearchable(BitStream bitStream)
     {
         bitStream.WriteString(NonSearchableName);

@@ -97,7 +97,7 @@ public static class WorldMapLoader
             Console.WriteLine("[WorldMapLoader] SKYSAGA_SOLID_FLOOR - bottom chunk layer filled solid.");
         }
 
-        var spec = MapSpec.For(world.Kind, world.Seed);
+        var spec = world.Spec ?? MapSpec.For(world.Kind, world.Seed);
 
         if (!spec.IsFtue && (sizeX, sizeY, sizeZ) == (6, 4, 6))
             spec.Searchable[MapSpec.MapSizeSlot] = MapSpec.HomeIslandMapSizeIndex;

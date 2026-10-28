@@ -211,30 +211,14 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientWalletComponent>(out var clientWalletComponent))
         {
-            if (save is { Currencies.Count: > 0 })
+            foreach (var currency in save?.Currencies ?? [])
             {
-                foreach (var currency in save.Currencies)
-                {
+                if (StartingCurrencies.Any(entry => Util.ComputeCrc32(entry.Currency) == currency.NameHash))
                     clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData
                     {
                         NameHash = currency.NameHash,
                         Value = currency.Value
                     });
-                }
-            }
-            else
-            {
-                clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData
-                {
-                    NameHash = Util.ComputeCrc32("Life_Ticket"),
-                    Value = 69
-                });
-
-                clientWalletComponent.WalletCurrency.CurrencyList.Add(new WalletData.CurrencyData
-                {
-                    NameHash = Util.ComputeCrc32("Portal_Ticket"),
-                    Value = 420
-                });
             }
 
             foreach (var (currency, amount) in StartingCurrencies)
@@ -682,7 +666,7 @@ public class PlayerInitializer(IWorldManager worldManager)
             {
                 inventoryItemComponent.InventorySlotData.Name = nameHash;
                 inventoryItemComponent.InventorySlotData.Count = count;
-                inventoryItemComponent.InventorySlotData.ItemUUID = itemUuid ?? Util.NewGuid();
+                inventoryItemComponent.InventorySlotData.ItemUUID = UnequippableTable.Contains(nameHash) ? null : itemUuid ?? Util.NewGuid();
             }
         }
 

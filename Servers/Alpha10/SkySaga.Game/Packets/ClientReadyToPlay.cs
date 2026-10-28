@@ -22,6 +22,7 @@ public static class ClientReadyToPlay
 
         connection.Send(playerSpawned);
         connection.Ai.PlayerSpawned(connection.PlayerEntity, respawn: false);
+        connection.Send(AdventureRotation.Current());
 
         Console.WriteLine($"[ClientReadyToPlay] Sent SetClientLocalPlayerEntity(EntityId={connection.PlayerEntity.Id}), "
             + $"PlayerSpawned(Position={playerSpawned.Position}, Yaw={playerSpawned.YawDegrees}, "

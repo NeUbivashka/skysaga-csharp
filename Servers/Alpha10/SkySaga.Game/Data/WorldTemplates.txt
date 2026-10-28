@@ -2,3 +2,4 @@ CharacterCreation TestZoo
 Ftue ftue
 Hub SocialHub
 Island TestZoo
+Adventure TestZoo
