@@ -520,6 +520,101 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("password_resets", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.Photo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.PrimitiveCollection<float[]>("CameraDirection")
+                        .IsRequired()
+                        .HasColumnType("real[]")
+                        .HasColumnName("camera_direction");
+
+                    b.PrimitiveCollection<float[]>("CameraPosition")
+                        .IsRequired()
+                        .HasColumnType("real[]")
+                        .HasColumnName("camera_position");
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("caption");
+
+                    b.Property<bool>("CaptureOption")
+                        .HasColumnType("boolean")
+                        .HasColumnName("capture_option");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.PrimitiveCollection<long[]>("EntityIds")
+                        .IsRequired()
+                        .HasColumnType("bigint[]")
+                        .HasColumnName("entity_ids");
+
+                    b.PrimitiveCollection<float[]>("FacingDirection")
+                        .IsRequired()
+                        .HasColumnType("real[]")
+                        .HasColumnName("facing_direction");
+
+                    b.Property<byte[]>("Image")
+                        .HasColumnType("bytea")
+                        .HasColumnName("image");
+
+                    b.Property<bool>("IsAvatar")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_avatar");
+
+                    b.Property<int>("Likes")
+                        .HasColumnType("integer")
+                        .HasColumnName("likes");
+
+                    b.Property<string>("Md5")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("md5");
+
+                    b.Property<Guid>("OwnerCharacterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_character_id");
+
+                    b.PrimitiveCollection<float[]>("PlayerPosition")
+                        .IsRequired()
+                        .HasColumnType("real[]")
+                        .HasColumnName("player_position");
+
+                    b.Property<Guid>("UploadToken")
+                        .HasColumnType("uuid")
+                        .HasColumnName("upload_token");
+
+                    b.Property<DateTimeOffset?>("UploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("uploaded_at");
+
+                    b.Property<bool>("VisibleFriends")
+                        .HasColumnType("boolean")
+                        .HasColumnName("visible_friends");
+
+                    b.Property<bool>("VisiblePublic")
+                        .HasColumnType("boolean")
+                        .HasColumnName("visible_public");
+
+                    b.Property<Guid?>("WorldId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("world_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_photos");
+
+                    b.HasIndex("OwnerCharacterId", "WorldId")
+                        .HasDatabaseName("ix_photos_owner_character_id_world_id");
+
+                    b.ToTable("photos", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.PlacedDevice", b =>
                 {
                     b.Property<long>("Id")
@@ -830,6 +925,16 @@ namespace SkySaga.Data.Migrations
                         .HasConstraintName("fk_password_resets_accounts_account_id");
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.Photo", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.Character", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerCharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_photos_characters_owner_character_id");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.PlacedDevice", b =>

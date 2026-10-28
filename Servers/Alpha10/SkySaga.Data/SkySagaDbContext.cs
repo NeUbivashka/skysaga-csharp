@@ -19,6 +19,7 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
     public DbSet<GameEvent> GameEvents => Set<GameEvent>();
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
     public DbSet<PasswordReset> PasswordResets => Set<PasswordReset>();
+    public DbSet<Photo> Photos => Set<Photo>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -68,6 +69,14 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
         model.Entity<CharacterJob>().HasKey(j => new { j.CharacterId, j.Name });
         model.Entity<ActiveChallenge>().HasKey(a => new { a.CharacterId, a.Name });
         model.Entity<ActiveChallenge>().Property(a => a.TodoTimestamp).HasPrecision(20, 0);
+
+        model.Entity<Photo>(photo =>
+        {
+            photo.HasIndex(p => new { p.OwnerCharacterId, p.WorldId });
+            photo.Property(p => p.Caption).HasMaxLength(256);
+            photo.Property(p => p.Md5).HasMaxLength(32);
+            photo.HasOne<Character>().WithMany().HasForeignKey(p => p.OwnerCharacterId).OnDelete(DeleteBehavior.Cascade);
+        });
 
         model.Entity<World>(world =>
         {

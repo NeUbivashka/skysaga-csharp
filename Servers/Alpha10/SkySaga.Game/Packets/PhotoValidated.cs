@@ -2,30 +2,30 @@ namespace SkySaga.Game.Packets;
 
 public class PhotoValidated : ISerializablePacket
 {
-    private const uint ResultShortMax = 0x7F;
+    private const uint CaptureIdShortMax = 0x7F;
 
-    public uint Result;
+    public uint CaptureId;
     public Guid? PhotoUuid;
-    public Guid? OwnerUuid;
+    public Guid? UploadToken;
 
     public BitStream Serialize()
     {
         var bitStream = new BitStream();
         bitStream.WritePacketId(PacketId.PhotoValidated);
 
-        if (Result <= ResultShortMax)
+        if (CaptureId <= CaptureIdShortMax)
         {
             bitStream.Write0();
-            bitStream.WriteRanged(Result, ResultShortMax);
+            bitStream.WriteRanged(CaptureId, CaptureIdShortMax);
         }
         else
         {
             bitStream.Write1();
-            InventoryItemRef.WriteUInt32(bitStream, Result);
+            InventoryItemRef.WriteUInt32(bitStream, CaptureId);
         }
 
         InventoryItemRef.WriteOptionalUuid(bitStream, PhotoUuid);
-        InventoryItemRef.WriteOptionalUuid(bitStream, OwnerUuid);
+        InventoryItemRef.WriteOptionalUuid(bitStream, UploadToken);
 
         return bitStream;
     }

@@ -169,7 +169,7 @@ def catch_all_get(path):
 AUTH_URL = os.environ.get("SKYSAGA_AUTH_URL", "http://127.0.0.1:5100")
 AUTH_PREFIXES = ("/api/authentication/", "/api/account/", "/api/persistent-record/characters/",
                  "/api/persistent-record/worlds/listforowner/", "/api/persistent-record/worlds/getSpecific",
-                 "/api/game-conductor/retrieve")
+                 "/api/game-conductor/retrieve", "/api/binary-storage/photos/")
 AUTH_HEADERS = ("Content-Type", "X-RWPVT", "X-RWPVTP")
 
 
@@ -299,16 +299,6 @@ def alpha10_surveys_answer():
 @app.route("/api/matchmaking/userdatacentre/create", methods=["POST"])
 def alpha10_matchmaking_create():
     return "", 200
-
-
-@app.route("/api/binary-storage/photos/_whichIsCooler", methods=["POST"])
-def alpha10_binary_storage_cooler():
-    return "", 200
-
-
-@app.route("/api/binary-storage/photos/_multiLikeGet", methods=["POST"])
-def binary_storage_photo_likes():
-    return jsonify({"result": {"likes": {}}}), 200
 
 
 def _empty_batch(field):

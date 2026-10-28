@@ -101,6 +101,7 @@ app.MapStaticAssets();
 app.MapGameApi();
 app.MapWorldsApi();
 app.MapConductorApi();
+app.MapPhotosApi();
 app.MapPost("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync();

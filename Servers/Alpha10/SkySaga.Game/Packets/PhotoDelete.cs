@@ -1,13 +1,20 @@
+using SkySaga.Game.Database;
+
 namespace SkySaga.Game.Packets;
 
-public class PhotoDelete : ISerializablePacket
+public static class PhotoDelete
 {
-    public BitStream Serialize()
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadClientUuid(out var photoId))
+            return false;
 
-        bitStream.WritePacketId(PacketId.PhotoDelete);
+        if (photoId is not { } id || connection.CharacterId is not { } characterId)
+            return true;
 
-        return bitStream;
+        var deleted = PhotoStore.Delete(id, characterId);
+
+        Console.WriteLine($"[Photo] {connection.CharacterName} {(deleted ? "deleted" : "tried to delete unknown or foreign")} photo {id}");
+        return true;
     }
 }

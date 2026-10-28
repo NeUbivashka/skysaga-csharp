@@ -175,6 +175,8 @@ public class PlayerConnection
             PacketId.AssignCollectionResourcePickup => AssignCollectionResourcePickup.Handle(this, bitStream),
             PacketId.FinalizeCollectionResourcePickup => FinalizeCollectionResourcePickup.Handle(this, bitStream),
             PacketId.EntityPerformedAbility => EntityPerformedAbilityReceived.Handle(this, bitStream),
+            PacketId.NotifyPhotoCaptured => NotifyPhotoCaptured.Handle(this, bitStream),
+            PacketId.PhotoDelete => PhotoDelete.Handle(this, bitStream),
             PacketId.EntityStartedSequentialCombo => PlayerActionRelay.Handle(this, bitStream),
             PacketId.SetEntityActionState => PlayerActionRelay.Handle(this, bitStream),
             PacketId.EntityActionRecovery => PlayerActionRelay.Handle(this, bitStream),
