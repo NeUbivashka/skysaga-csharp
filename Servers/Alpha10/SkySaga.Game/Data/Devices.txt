@@ -601,6 +601,7 @@ Tableware_Inkwell Tableware_Inkwell 0 0 0 0 0 0,0,0
 Tableware_Metal Tableware_Metal 0 0 0 0 0 0,0,0
 Tableware_Wood Tableware_Wood 0 0 0 0 0 0,0,0
 Tent Tent -1 1 0 -1 1 -1,0,-1;-1,0,0;-1,0,1;-1,1,-1;-1,1,0;-1,1,1;-1,2,-1;-1,2,0;-1,2,1;0,0,-1;0,0,0;0,0,1;0,1,-1;0,1,1;0,2,-1;0,2,0;0,2,1;0,3,0;1,0,-1;1,0,0;1,0,1;1,1,-1;1,1,0;1,1,1;1,2,-1;1,2,0;1,2,1
+Tool_Explorer_Generic_Torch Tool_Explorer_Generic_Torch 0 0 0 0 0 0,0,0
 Totem_Large_A Totem_Large_A 0 0 0 0 0 0,0,0;0,1,0;0,2,0
 Totem_Small_A Totem_Small_A 0 0 0 0 0 0,0,0
 Totem_Wood_A Totem_Wood_A 0 0 0 0 0 0,0,0

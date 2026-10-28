@@ -54,6 +54,33 @@ public static class WorldStore
             .ExecuteUpdate(update => update.SetProperty(c => c.CurrentWorldId, worldId));
     }
 
+    public static void SetOnline(Guid characterId, Guid worldId)
+    {
+        using var context = GameDatabase.Context();
+        context.Characters.Where(c => c.Id == characterId)
+            .ExecuteUpdate(update => update.SetProperty(c => c.OnlineWorldId, worldId));
+    }
+
+    public static Guid? OnlineWorld(Guid characterId)
+    {
+        using var context = GameDatabase.Context();
+        return context.Characters.AsNoTracking().Where(c => c.Id == characterId).Select(c => c.OnlineWorldId).SingleOrDefault();
+    }
+
+    public static void SetOffline(Guid characterId, Guid worldId)
+    {
+        using var context = GameDatabase.Context();
+        context.Characters.Where(c => c.Id == characterId && c.OnlineWorldId == worldId)
+            .ExecuteUpdate(update => update.SetProperty(c => c.OnlineWorldId, (Guid?)null));
+    }
+
+    public static void ClearOnline()
+    {
+        using var context = GameDatabase.Context();
+        context.Characters.Where(c => c.OnlineWorldId != null)
+            .ExecuteUpdate(update => update.SetProperty(c => c.OnlineWorldId, (Guid?)null));
+    }
+
     public static bool CanBuild(WorldInfo info, Guid characterId)
     {
         if (info.CanBuild(characterId))
@@ -122,7 +149,9 @@ public static class WorldStore
             Z = d.Z,
             OwnerCharacterId = d.OwnerCharacterId,
             Materials = d.Materials,
-            Items = d.Items
+            Items = d.Items,
+            Face = d.Face,
+            Yaw = d.Yaw
         }).ToList();
 
         GameDatabase.Enqueue(async context =>

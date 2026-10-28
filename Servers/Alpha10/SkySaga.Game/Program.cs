@@ -34,6 +34,7 @@ catch
 try
 {
     SkySaga.Game.Database.GameDatabase.Initialize();
+    SkySaga.Game.Database.WorldStore.ClearOnline();
 }
 catch (Exception exception)
 {

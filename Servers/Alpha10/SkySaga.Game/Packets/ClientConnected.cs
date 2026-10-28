@@ -73,6 +73,7 @@ public static class ClientConnected
             + $"{serverInfoStream.GetNumberOfBitsUsed()} bits used)");
 
         connection.Send(serverInfoStream);
+        connection.Send(TimeSync.Now());
 
         var definition = connection.WorldManager.Definition;
 

@@ -13,6 +13,11 @@ public static class WorldTravel
             return true;
         }
 
+        return Request(connection, characterId, request, destinationFor);
+    }
+
+    public static bool Request(PlayerConnection connection, Guid characterId, string request, Func<Guid, WorldInfo?> destinationFor)
+    {
         var current = connection.WorldManager.Info;
         var destination = destinationFor(characterId);
 

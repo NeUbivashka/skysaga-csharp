@@ -4,6 +4,7 @@ public class TransformComponent : Component
 {
     public Vector3 Position { get; set => SetIfChanged(ref field, value); }
     public float YawDegrees { get; set => SetIfChanged(ref field, value); }
+    public float PitchDegrees { get; set => SetIfChanged(ref field, value); }
     public Vector3 Size { get; set => SetIfChanged(ref field, value); }
     public float Scale { get; set => SetIfChanged(ref field, value); }
 
@@ -20,6 +21,14 @@ public class TransformComponent : Component
         else if (parameterName.Equals(nameof(YawDegrees), StringComparison.OrdinalIgnoreCase))
         {
             var value = (int)MathF.Round(YawDegrees / 0.03125f) + 0x3200;
+
+            bitStream.WriteRanged((uint)Math.Clamp(value, 0, 0x6400), 0x6400);
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(PitchDegrees), StringComparison.OrdinalIgnoreCase))
+        {
+            var value = (int)MathF.Round(PitchDegrees / 0.03125f) + 0x3200;
 
             bitStream.WriteRanged((uint)Math.Clamp(value, 0, 0x6400), 0x6400);
 

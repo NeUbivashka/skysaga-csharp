@@ -13,6 +13,7 @@ public class Character
     public DateTimeOffset? LastSeenAt { get; set; }
 
     public Guid? CurrentWorldId { get; set; }
+    public Guid? OnlineWorldId { get; set; }
 
     public string? PositionMap { get; set; }
     public float PositionX { get; set; }

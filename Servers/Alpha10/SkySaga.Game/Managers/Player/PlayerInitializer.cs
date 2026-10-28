@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using SkySaga.Data;
+using System.Linq;
 using SkySaga.Game.Database;
 namespace SkySaga.Game.Managers.Player;
 
@@ -6,9 +7,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 {
     private const byte BackpackSlots = 42;
 
-    private const uint ForestMasterSigil = 10;
     private const byte VaultSlots = 200;
-    private static readonly uint[] StarterSigils = [2, 8, ForestMasterSigil, 14];
 
     private readonly IWorldManager _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
     private IMapEntityManager _entityManager => _worldManager.EntityManager;
@@ -29,10 +28,8 @@ public class PlayerInitializer(IWorldManager worldManager)
             var sigilA = uint.TryParse(sigilFields[0], out var a) ? a : 0u;
             var sigilB = sigilFields.Length > 1 && uint.TryParse(sigilFields[1], out var b) ? b : 0u;
 
-            clientPlayernameComponent.AvailablePlayerSigilList = [.. StarterSigils.Select(index => (index, sigilA, sigilB))];
-            clientPlayernameComponent.CurrentSigil = save?.CurrentSigil is { } savedSigil && StarterSigils.Contains(savedSigil)
-                ? savedSigil
-                : ForestMasterSigil;
+            clientPlayernameComponent.AvailablePlayerSigilList = [.. PlayerSigils.Starter.Select(index => (index, sigilA, sigilB))];
+            clientPlayernameComponent.CurrentSigil = PlayerSigils.Current((int?)save?.CurrentSigil);
         }
 
         if (player.TryGetComponent<ClientOwnerComponent>(out var owner))
@@ -126,7 +123,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
         if (player.TryGetComponent<ClientFeatureUnlockComponent>(out var clientFeatureUnlockComponent))
             clientFeatureUnlockComponent.UnlockedFeatures =
-                [.. FeatureUnlockComponent.AllFeatures.Except(FeatureUnlockComponent.KeptLocked)];
+                [.. FeatureUnlocks.Unlocked];
 
         if (player.TryGetComponent<ClientCraftingDropSlotsComponent>(out var clientCraftingDropSlotsComponent))
             clientCraftingDropSlotsComponent.CraftingDropSlots = [0, 0];
@@ -137,7 +134,7 @@ public class PlayerInitializer(IWorldManager worldManager)
 
             clientPlayerAspectsComponent.CanEditMap = canBuild;
             clientPlayerAspectsComponent.CanDamageEntities = true;
-            clientPlayerAspectsComponent.CanDamagePlayers = true;
+            clientPlayerAspectsComponent.CanDamagePlayers = GameModeTable.PlayersCanDamagePlayers(_worldManager.Info.GameMode);
             clientPlayerAspectsComponent.CanCreateDevices = canBuild;
             clientPlayerAspectsComponent.CanDamageDevices = canBuild;
             clientPlayerAspectsComponent.IsDebugPlayer = true;

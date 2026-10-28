@@ -112,7 +112,7 @@ public static class WorldMapLoader
             MapSizeChunks = new Vector3Int(sizeX, sizeY, sizeZ),
 
             Spec = spec,
-            GameMode = (uint)data.GameMode,
+            GameMode = (uint)world.GameMode,
             AdventureType = "Adventure",
 
             MapFileName = "TestMap"

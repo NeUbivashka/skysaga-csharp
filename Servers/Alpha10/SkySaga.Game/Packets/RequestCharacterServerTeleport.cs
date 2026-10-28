@@ -1,13 +1,24 @@
+using SkySaga.Game.Database;
+
 namespace SkySaga.Game.Packets;
 
-public class RequestCharacterServerTeleport : ISerializablePacket
+public static class RequestCharacterServerTeleport
 {
-    public BitStream Serialize()
+    private const uint ReasonMax = 0x11;
+
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadClientUuid(out var target)) return false;
+        if (!bitStream.ReadInt32(1, out var flag)) return false;
+        if (!bitStream.ReadFullWidthUInt32(out var value)) return false;
+        if (!bitStream.ReadInt32(ReasonMax, out var reason)) return false;
 
-        bitStream.WritePacketId(PacketId.RequestCharacterServerTeleport);
+        Console.WriteLine($"[Travel] {connection.CharacterName} asks to join {target} (flag {flag}, value {value}, reason {reason})");
 
-        return bitStream;
+        if (!connection.IsPlayerInitialized || connection.CharacterId is not { } characterId || target is not { } targetId)
+            return true;
+
+        return WorldTravel.Request(connection, characterId, nameof(RequestCharacterServerTeleport),
+            _ => WorldStore.OnlineWorld(targetId) is { } worldId ? connection.Server.Worlds.Find(worldId) : null);
     }
 }

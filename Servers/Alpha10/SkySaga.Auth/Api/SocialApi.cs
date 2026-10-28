@@ -39,7 +39,7 @@ public static class SocialApi
         app.MapPost("/api/persistent-record/characters/_findWithOnlineInfo", FindWithOnlineInfoAsync);
     }
 
-    private static async Task<IResult> ProfileBatchAsync(HttpRequest request, IDbContextFactory<SkySagaDbContext> factory)
+    private static async Task<IResult> ProfileBatchAsync(HttpRequest request, IDbContextFactory<SkySagaDbContext> factory, GameTables tables)
     {
         var body = await BodyAsync(request);
         var recipients = Uuids(body, "recipients");
@@ -55,18 +55,71 @@ public static class SocialApi
                 AccountCreated = c.Account!.CreatedAt,
                 Follows = db.CharacterFollows.Count(f => f.FollowerId == c.Id),
                 FollowedBy = db.CharacterFollows.Count(f => f.FollowedId == c.Id),
-                Friends = db.Friendships.Count(f => f.CharacterId == c.Id)
+                Friends = db.Friendships.Count(f => f.CharacterId == c.Id),
+                c.OnlineWorldId,
+                c.CurrentSigil,
+                c.CustomisationData,
+                OnlineKind = db.Worlds.Where(w => w.Id == c.OnlineWorldId).Select(w => (WorldKind?)w.Kind).FirstOrDefault()
             })
             .ToListAsync();
 
         var result = characters.Select(c => new
         {
-            characterOnlineData = new { characterUuid = c.Id.ToString(), characterName = c.Name },
+            characterOnlineData = OnlineData(c.Id, c.Name, c.OnlineWorldId, c.OnlineKind, SigilList(tables, c.CurrentSigil),
+                tables.SignatureMaterial(c.CustomisationData)),
             counts = new { follows = c.Follows, followedBy = c.FollowedBy, friends = c.Friends },
             accountCreated = c.AccountCreated.ToUnixTimeSeconds()
         });
 
         return Results.Json(new { result });
+    }
+
+    private static Dictionary<string, object> SigilList(GameTables tables, int? currentSigil)
+    {
+        var owned = PlayerSigils.Starter.Select(tables.SigilName).OfType<string>().ToArray();
+
+        return new Dictionary<string, object>
+        {
+            ["activeSigil"] = tables.SigilName(PlayerSigils.Current(currentSigil)) ?? "",
+            ["number"] = owned.Length,
+            ["sigils"] = owned.Select(name => new Dictionary<string, object> { ["crc"] = name, ["level"] = 0 }).ToArray()
+        };
+    }
+
+    private static Dictionary<string, object> OnlineData(Guid id, string name, Guid? worldId, WorldKind? kind, Dictionary<string, object> sigilList,
+        string? playerMaterial)
+    {
+        var data = new Dictionary<string, object>
+        {
+            ["characterUuid"] = id.ToString(),
+            ["characterName"] = name,
+            ["featureUnlock"] = FeatureUnlocks.Unlocked.ToArray(),
+            ["sigilList"] = sigilList
+        };
+
+        if (playerMaterial is not null)
+            data["playerMaterialCRC"] = playerMaterial;
+
+        if (worldId is not { } world)
+            return data;
+
+        data["currentWorld"] = world.ToString();
+        data["instanceUuid"] = world.ToString();
+
+        (string Biome, string Adventure)? location = kind switch
+        {
+            WorldKind.Island => ("Forest", "Home_Island_Adventure"),
+            WorldKind.Hub => ("NPCfriend", "NPC_Friend_Adventure"),
+            _ => null
+        };
+
+        if (location is { } place)
+        {
+            data["currentWorldBiome"] = place.Biome;
+            data["currentWorldAdventure"] = place.Adventure;
+        }
+
+        return data;
     }
 
     private static async Task<IResult> RelationshipInfoAsync(HttpRequest request, IDbContextFactory<SkySagaDbContext> factory)

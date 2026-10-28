@@ -283,6 +283,10 @@ namespace SkySaga.Data.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("OnlineWorldId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("online_world_id");
+
                     b.Property<string>("PositionMap")
                         .HasColumnType("text")
                         .HasColumnName("position_map");
@@ -749,6 +753,10 @@ namespace SkySaga.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<byte>("Face")
+                        .HasColumnType("smallint")
+                        .HasColumnName("face");
+
                     b.Property<long>("ItemCrc")
                         .HasColumnType("bigint")
                         .HasColumnName("item_crc");
@@ -778,6 +786,10 @@ namespace SkySaga.Data.Migrations
                     b.Property<int>("Y")
                         .HasColumnType("integer")
                         .HasColumnName("y");
+
+                    b.Property<float>("Yaw")
+                        .HasColumnType("real")
+                        .HasColumnName("yaw");
 
                     b.Property<int>("Z")
                         .HasColumnType("integer")

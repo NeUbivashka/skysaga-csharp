@@ -61,6 +61,8 @@ public class PlacedDevice
     public Guid? OwnerCharacterId { get; set; }
     public long?[] Materials { get; set; } = [];
     public string Items { get; set; } = "[]";
+    public byte Face { get; set; }
+    public float Yaw { get; set; }
 }
 
 public class Checkpoint

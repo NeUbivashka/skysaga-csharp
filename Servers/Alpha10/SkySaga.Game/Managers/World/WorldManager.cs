@@ -20,7 +20,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
     public record StoredItem(uint ItemCrc, int Count, uint?[] Materials);
 
-    public record PlacedDevice(uint ItemCrc, int X, int Y, int Z, Guid? Owner, uint?[] Materials)
+    public record PlacedDevice(uint ItemCrc, int X, int Y, int Z, Guid? Owner, uint?[] Materials, byte Face = 0, float Yaw = 0)
     {
         public List<StoredItem?> Items { get; set; } = [];
     }
@@ -148,7 +148,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 MapSizeChunks = new Vector3Int(4, 4, 4),
 
                 Spec = MapSpec.Ftue(seed: 1337),
-                GameMode = 1,
+                GameMode = (uint)Info.GameMode,
                 AdventureType = "Adventure",
 
                 MapFileName = "TestMap"
@@ -261,12 +261,14 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return true;
     }
 
-    public List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Guid? owner, uint?[] materials)
+    public List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Vector3 surfaceNormal, Guid? owner, uint?[] materials)
     {
         if (!CanPlaceDevice(device, voxel))
             return [];
 
-        var placed = new PlacedDevice(itemCrc, voxel.X, voxel.Y, voxel.Z, owner, materials);
+        var face = ClientDynamicPlaceAgainstWallComponent.FaceOf(surfaceNormal);
+        var yaw = face is 2 or 3 ? 0f : MathF.Atan2(surfaceNormal.X, surfaceNormal.Z) * 180f / MathF.PI;
+        var placed = new PlacedDevice(itemCrc, voxel.X, voxel.Y, voxel.Z, owner, materials, face, yaw);
         var entities = SpawnDevice(placed, device);
 
         if (entities.Count == 0)
@@ -367,6 +369,17 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (entities[^1].TryGetComponent<ClientOwnerComponent>(out var owner))
             owner.Owner = placed.Owner;
 
+        if (entities[^1].TryGetComponent<ClientDynamicPlaceAgainstWallComponent>(out var placement))
+        {
+            var rule = WallPlacementTable.ForFace(device.Entity, placed.Face);
+
+            placement.PlacedOnFace = placed.Face;
+            SetYaw(entities[^1], placed.Yaw + rule.Yaw);
+
+            if (entities[^1].TryGetComponent<TransformComponent>(out var transform))
+                transform.PitchDegrees = rule.Pitch;
+        }
+
         SetDeviceItemSpec(entities[^1], placed.ItemCrc, placed.Materials);
         FillLinkedVoxels(entities[^1], device);
         _deviceEntities[entities[^1].Id] = placed;
@@ -438,11 +451,13 @@ public sealed class WorldManager : IWorldManager, IDisposable
         Z = device.Z,
         OwnerCharacterId = device.Owner,
         Materials = [.. device.Materials.Select(m => (long?)m)],
-        Items = JsonSerializer.Serialize(device.Items)
+        Items = JsonSerializer.Serialize(device.Items),
+        Face = device.Face,
+        Yaw = device.Yaw
     };
 
     private static PlacedDevice FromRecord(Data.Entities.PlacedDevice record)
-        => new((uint)record.ItemCrc, record.X, record.Y, record.Z, record.OwnerCharacterId, [.. record.Materials.Select(m => (uint?)m)])
+        => new((uint)record.ItemCrc, record.X, record.Y, record.Z, record.OwnerCharacterId, [.. record.Materials.Select(m => (uint?)m)], record.Face, record.Yaw)
         {
             Items = JsonSerializer.Deserialize<List<StoredItem?>>(record.Items) ?? []
         };
@@ -700,6 +715,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         connection.IsPlayerInitialized = true;
 
         GameEvents.Record("player.join", Info.Id, characterId, new { kind = Info.Kind.ToString(), template = Info.Template });
+        WorldStore.SetOnline(characterId, Info.Id);
 
         foreach (var entity in InventoryFirst(EntityManager.Entities))
         {

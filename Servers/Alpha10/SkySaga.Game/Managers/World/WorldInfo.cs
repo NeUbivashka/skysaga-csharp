@@ -17,6 +17,13 @@ public sealed record WorldInfo(
 
     public bool IsShared => Kind is WorldKind.Hub or WorldKind.Island;
 
+    public GameMode GameMode => Kind switch
+    {
+        WorldKind.Island => GameMode.HomeIsland,
+        WorldKind.Hub => GameMode.Social,
+        _ => GameMode.Adventure
+    };
+
     public bool CanVisit(Guid characterId) => Kind switch
     {
         WorldKind.Hub => true,

@@ -2,25 +2,29 @@ namespace SkySaga.Game.Packets;
 
 public class TimeSync : ISerializablePacket
 {
-    private const uint PhaseMax = 0xF;
+    private const uint TimeScaleMax = 0xF;
 
-    public uint Timestamp;
+    public ulong GameTimeMs;
 
-    public uint Phase;
+    public uint TimeScale = 1;
 
-    public uint Unnamed;
+    public ulong RealTimeMs;
+
+    public static TimeSync Now()
+    {
+        var now = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        return new TimeSync { GameTimeMs = now, RealTimeMs = now };
+    }
 
     public BitStream Serialize()
     {
         var bitStream = new BitStream();
 
         bitStream.WritePacketId(PacketId.TimeSync);
-
-        InventoryItemRef.WriteUInt32(bitStream, Timestamp);
-
-        bitStream.WriteRanged(Math.Min(Phase, PhaseMax), PhaseMax);
-
-        InventoryItemRef.WriteUInt32(bitStream, Unnamed);
+        bitStream.WriteUInt64(GameTimeMs);
+        bitStream.WriteRanged(Math.Min(TimeScale, TimeScaleMax), TimeScaleMax);
+        bitStream.WriteUInt64(RealTimeMs);
 
         return bitStream;
     }

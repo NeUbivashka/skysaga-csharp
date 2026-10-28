@@ -22,6 +22,7 @@ builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton(provider => new EmailProtector(provider.GetRequiredService<IDataProtectionProvider>(), Path.Combine(gameData, "auth-keys")));
 builder.Services.AddSingleton(links);
 builder.Services.AddSingleton(new GameData(gameData));
+builder.Services.AddSingleton<GameTables>();
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.PropertyNamingPolicy = null);
 
 builder.WebHost.UseStaticWebAssets();

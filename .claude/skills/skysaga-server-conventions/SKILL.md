@@ -60,7 +60,7 @@ PacketId.AllowFriendToEditHomeIsland => AllowFriendToEditHomeIsland.Handle(this,
 ```
 
 Read fields in the exact order and widths of the client's send stub. Use the `Read*`
-`out` pattern (`ReadClientUuid`, `ReadInt32(bits, out …)` with the bit count of the client's range …).
+`out` pattern (`ReadClientUuid`, `ReadInt32(max, out …)` with the client's range maximum, `ReadFullWidthUInt32` …).
 
 **Server → client.** Use a class implementing `ISerializablePacket` (`BitStream Serialize()`)
 with public fields and, when useful, a static factory. Send it with `connection.Send(packet)`, or

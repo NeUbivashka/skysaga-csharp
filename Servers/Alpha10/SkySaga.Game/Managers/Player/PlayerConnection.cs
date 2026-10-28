@@ -61,6 +61,9 @@ public class PlayerConnection
         if (IsPlayerInitialized)
             GameEvents.Record("player.leave", world.Info.Id, CharacterId);
 
+        if (CharacterId is { } characterId)
+            WorldStore.SetOffline(characterId, world.Info.Id);
+
         world.Leave(this);
 
         var removedItems = 0;
@@ -166,6 +169,7 @@ public class PlayerConnection
             PacketId.JoinHomeWorld => JoinHomeWorld.Handle(this, bitStream),
             PacketId.JoinSocialHub => JoinSocialHub.Handle(this, bitStream),
             PacketId.RequestWorldTeleport => RequestWorldTeleport.Handle(this, bitStream),
+            PacketId.RequestCharacterServerTeleport => RequestCharacterServerTeleport.Handle(this, bitStream),
             PacketId.UISettingsSetUISettings => UISettingsSetUISettings.Handle(this, bitStream),
             PacketId.UISettingsSetControlSettings => UISettingsSetControlSettings.Handle(this, bitStream),
             PacketId.UISettingsSetGameplayCameraState => UISettingsSetGameplayCameraState.Handle(this, bitStream),
@@ -177,6 +181,7 @@ public class PlayerConnection
             PacketId.EntityPerformedAbility => EntityPerformedAbilityReceived.Handle(this, bitStream),
             PacketId.NotifyPhotoCaptured => NotifyPhotoCaptured.Handle(this, bitStream),
             PacketId.SetPlayerSigil => SetPlayerSigil.Handle(this, bitStream),
+            PacketId.AllowFriendToEditHomeIsland => AllowFriendToEditHomeIsland.Handle(this, bitStream),
             PacketId.PhotoDelete => PhotoDelete.Handle(this, bitStream),
             PacketId.EntityStartedSequentialCombo => PlayerActionRelay.Handle(this, bitStream),
             PacketId.SetEntityActionState => PlayerActionRelay.Handle(this, bitStream),

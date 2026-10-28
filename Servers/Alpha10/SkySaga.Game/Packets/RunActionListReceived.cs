@@ -176,7 +176,7 @@ public static class RunActionListReceived
 
         var owner = connection.PlayerEntity.TryGetComponent<ClientOwnerComponent>(out var playerOwner) ? playerOwner.Owner : null;
         var materials = item.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
-        var entities = connection.WorldManager.PlaceDevice(UsedCrc(item), device, placeAt, owner, materials);
+        var entities = connection.WorldManager.PlaceDevice(UsedCrc(item), device, placeAt, hitNormal, owner, materials);
 
         if (entities.Count == 0)
         {

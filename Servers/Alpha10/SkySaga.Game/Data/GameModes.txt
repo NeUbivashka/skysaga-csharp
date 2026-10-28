@@ -1,0 +1,16 @@
+GameMode_Adventure 0
+GameMode_BlueprintStudio 0
+GameMode_BuildCompetition 0
+GameMode_BuildOff 0
+GameMode_CTF 1
+GameMode_DestinationSelection 0
+GameMode_EndGame 0
+GameMode_Fortress 1
+GameMode_GuildIsland 0
+GameMode_HomeIsland 0
+GameMode_Lair 1
+GameMode_ShatteredFrontier 1
+GameMode_SocialHub 0
+GameMode_SoleSurvivor 1
+GameMode_Strike 1
+GameMode_TDM 1

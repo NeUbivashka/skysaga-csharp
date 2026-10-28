@@ -4,7 +4,6 @@ public class WorldMapData
 {
     public WorldMapSizeData MapSizeChunks { get; set; } = new();
     public string? BiomeName { get; set; }
-    public int GameMode { get; set; } = 1;
     public List<WorldMapVoxelData> Voxels { get; set; } = [];
     public List<WorldMapEntityData>? Entities { get; set; }
 }

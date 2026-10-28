@@ -3,16 +3,38 @@ import os
 
 from targets import BUNDLE, GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "CombatStats.txt")
+GAME_MODE = "HomeIsland"
 
 
 def stat(properties, name):
     return properties.get("Stat", {}).get(name, {}).get("Value", 0) if properties else 0
 
 
-def with_perks(properties, perk_names, perks, effects):
+def holds(reference, conditions, game_mode):
+    name, invert = reference.get("Condition", ""), reference.get("Invert", False)
+    if not name:
+        return not invert
+    entry = conditions.get(name)
+    result = False
+    if entry and entry["Test"] == "GameModeIs":
+        result = entry["GameModeIs"]["GameMode"] == game_mode
+    elif entry and entry["Test"] in ("ConditionOrList", "ConditionAndList"):
+        outcomes = [holds(r["ConditionReference"], conditions, game_mode)
+                    for r in entry[entry["Test"]]["ConditionList"]["ConditionReferences"]]
+        result = any(outcomes) if entry["Test"] == "ConditionOrList" else all(outcomes)
+    if entry:
+        result = result != entry.get("Invert", False)
+    return result != invert
+
+
+def with_perks(properties, perk_names, perks, effects, conditions=None, game_mode=None):
     stats = {name: value.get("Value", 0) for name, value in properties.get("Stat", {}).items()}
-    changes = [effects.get(e["Effect"], {}).get("StatChange") for name in perk_names
-               for e in perks.get(name.lower(), {}).get("Effects", [])]
+    picked = [effects.get(e["Effect"], {}) for name in perk_names
+              for e in perks.get(name.lower(), {}).get("Effects", [])]
+    if conditions is not None:
+        picked = [e for e in picked if not e.get("StatChange", {}).get("ApplyToCharacterFinalStat")
+                  and holds(e.get("Condition", {}), conditions, game_mode)]
+    changes = [e.get("StatChange") for e in picked]
     changes = [c for c in changes if c and c.get("Stat") in stats]
     for operation in ("Add", "Multiply", "Override"):
         for change in changes:
@@ -63,8 +85,12 @@ def main():
         inherent = entity["parameters"].get("inherentperklist", {}).get("value") or []
         entity_properties = with_perks(entity_properties, inherent, perks, effects)
         rows.append(row("Entity", entity["Name"], stat(entity_properties, "Health"), entity_properties))
+    conditions = {c["Name"]: c for c in geo["Conditions"]}
     for resource in geo["Resources"]:
         resource_properties = properties.get(resource.get("PhysicalProperties", "").lower())
+        if resource_properties:
+            perk_names = [entry["Value"] for entry in resource.get("PerkEntries", [])]
+            resource_properties = with_perks(resource_properties, perk_names, perks, effects, conditions, GAME_MODE)
         if any(levels(resource_properties)) or any(knockback(resource_properties)):
             rows.append(row("Item", resource["Name"], 0, resource_properties))
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
