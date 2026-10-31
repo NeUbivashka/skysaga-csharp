@@ -89,6 +89,8 @@ public static class WorldCatalog
                 CreatedAt = DateTimeOffset.UtcNow
             };
             db.Worlds.Add(island);
+            if (!InitialKeystoneVeins.AddToNewIsland(db, island, ReadTemplateFile(dataDirectory, template)))
+                Console.WriteLine($"[WorldCatalog] No safe space found for keystone veins on new island {island.Id}.");
             db.SaveChanges();
             return island;
         }
