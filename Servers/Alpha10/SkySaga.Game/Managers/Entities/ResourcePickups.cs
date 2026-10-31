@@ -14,6 +14,19 @@ public static class ResourcePickups
 
     public static void SpawnFromVoxel(PlayerConnection connection, Vector3Int voxel, byte voxelType)
     {
+        foreach (var entity in connection.WorldManager.EntityManager.Entities)
+        {
+            if (entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree)
+                && sparseTree.Description.Any(part => part.Position == voxel))
+            {
+                SpawnSparseTreeLoot(connection, entity, sparseTree);
+                connection.WorldManager.RemoveSavedKeystoneVein(entity);
+                connection.WorldManager.EntityManager.RemoveEntity(entity.Id);
+                connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = entity.Id });
+                break;
+            }
+        }
+
         if (voxelType == WorldChunk.Air || BlockCrcMapping.GetItemCrc(voxelType) is not uint itemCrc)
             return;
 
@@ -56,6 +69,32 @@ public static class ResourcePickups
         var voxel = new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y) + 1, (int)MathF.Floor(position.Z));
 
         Spawn(connection, itemCrc, count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0, materials);
+    }
+
+    public static void SpawnSparseTreeLoot(PlayerConnection connection, Entity tree, ClientSparseTreeComponent sparseTree)
+    {
+        var position = sparseTree.Description.Count > 0
+            ? new Vector3(sparseTree.Description[0].Position.X + 0.5f, sparseTree.Description[0].Position.Y + 0.5f, sparseTree.Description[0].Position.Z + 0.5f)
+            : new Vector3(0.5f, 0.5f, 0.5f);
+        var voxel = sparseTree.Description.Count > 0
+            ? sparseTree.Description[0].Position
+            : new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y), (int)MathF.Floor(position.Z));
+
+        var material = tree.TryGetComponent<MaterialCompositionComponent>(out var comp) && comp.MaterialList.Length > 0 && comp.MaterialList[0] is { } matCrc
+            ? matCrc
+            : Util.ComputeCrc32("Forest");
+
+        var lootTable = tree.Name.Equals("SparseTreeKeystoneOre", StringComparison.OrdinalIgnoreCase) || tree.Name.Equals("TreeKeystoneOre", StringComparison.OrdinalIgnoreCase)
+            ? "OreSeam_Keystone_LootTable"
+            : "OreSeam_Metal_LootTable";
+
+        foreach (var drop in LootTable.Roll(lootTable, "Forest"))
+        {
+            var materials = drop.Materials.Select(mat => mat == LootTable.EntityMaterial
+                ? (uint?)material
+                : mat is null ? null : Util.ComputeCrc32(mat)).ToArray();
+            Spawn(connection, drop.ItemCrc, drop.Count, position, voxel, connection.PlayerEntity.Id, materials);
+        }
     }
 
     public static void SpawnCreatureLoot(PlayerConnection connection, Entity creature)

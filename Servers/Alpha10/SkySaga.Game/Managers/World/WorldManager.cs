@@ -419,6 +419,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             };
     }
 
+
     private void LoadDevices()
     {
         lock (_devicesLock)
@@ -430,10 +431,47 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 _devices.AddRange(WorldStore.LoadDevices(Info.Id).Select(FromRecord));
 
             foreach (var placed in _devices)
-                if (DeviceTable.TryGet(placed.ItemCrc, out var device))
+                if (placed.ItemCrc == Data.InitialKeystoneVeins.ItemCrc)
+                    SpawnSavedKeystoneVein(placed);
+                else if (DeviceTable.TryGet(placed.ItemCrc, out var device))
                     SpawnDevice(placed, device);
 
             Console.WriteLine($"[WorldManager] Loaded {_devices.Count} placed devices.");
+        }
+    }
+
+    private void SpawnSavedKeystoneVein(PlacedDevice placed)
+    {
+        var pos = new Vector3Int(placed.X, placed.Y, placed.Z);
+        var chunk = new Vector3Int(FloorDiv(pos.X, ChunkSize), FloorDiv(pos.Y, ChunkSize), FloorDiv(pos.Z, ChunkSize));
+        var local = new Vector3Int(pos.X - chunk.X * ChunkSize, pos.Y - chunk.Y * ChunkSize, pos.Z - chunk.Z * ChunkSize);
+        var voxel = ChunkManager.GetVoxel(chunk, local);
+        if (voxel != 2 || !EntityManager.TryCreateEntity("SparseTreeKeystoneOre", out var entity))
+            return;
+        if (!entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree)
+            || !entity.TryGetComponent<MaterialCompositionComponent>(out var material))
+        {
+            EntityManager.RemoveEntity(entity.Id);
+            return;
+        }
+        sparseTree.TreeType = Util.ComputeCrc32("Keystone_Deposit");
+        sparseTree.IsVoxelOwner = true;
+        sparseTree.Description = [new TreePart(pos, 0, placed.Face, 2, false, voxel)];
+        sparseTree.PartsDestroyed = [false];
+        material.MaterialList = placed.Materials;
+        _deviceEntities[entity.Id] = placed;
+    }
+
+    public void RemoveSavedKeystoneVein(Entity entity)
+    {
+        lock (_devicesLock)
+        {
+            if (!_deviceEntities.TryGetValue(entity.Id, out var placed)
+                || placed.ItemCrc != Data.InitialKeystoneVeins.ItemCrc)
+                return;
+            _deviceEntities.Remove(entity.Id);
+            _devices.Remove(placed);
+            SaveDevices();
         }
     }
 

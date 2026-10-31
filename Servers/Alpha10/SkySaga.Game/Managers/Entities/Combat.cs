@@ -41,8 +41,27 @@ public static class Combat
         var entityManager = connection.WorldManager.EntityManager;
 
         if (!entityManager.TryGetEntity(targetEntityId, out var target)
-            || target.TryGetComponent<ClientPlayerAspectsComponent>(out _)
-            || !target.TryGetComponent<ClientHealthComponent>(out var health)
+            || target.TryGetComponent<ClientPlayerAspectsComponent>(out _))
+            return;
+
+        if (target.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree))
+        {
+            var attackingPlayer = connection.PlayerEntity;
+            connection.PlayerConnectionManager.BroadcastToAll(new HitOccurred
+            {
+                SourceEntityId = attackingPlayer.Id,
+                TargetEntityId = target.Id,
+                Amount = 1
+            });
+            connection.WorldManager.RemoveSavedKeystoneVein(target);
+            connection.WorldManager.EntityManager.RemoveEntity(target.Id);
+            connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = target.Id });
+            ResourcePickups.SpawnSparseTreeLoot(connection, target, sparseTree);
+            Console.WriteLine($"[Combat] {target.Name}#{target.Id} mined by player {attackingPlayer.Id}");
+            return;
+        }
+
+        if (!target.TryGetComponent<ClientHealthComponent>(out var health)
             || health.IsDead)
             return;
 
