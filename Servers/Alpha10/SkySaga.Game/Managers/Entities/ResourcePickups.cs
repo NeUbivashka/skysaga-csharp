@@ -11,20 +11,16 @@ public static class ResourcePickups
     private const float PopSpeed = 4f;
     private const float FallSpeed = 3f;
     private const float CreatureDropHeight = 0.75f;
+    private const string KeystoneVeinLootTable = "OreSeam_Keystone_LootTable";
 
     public static void SpawnFromVoxel(PlayerConnection connection, Vector3Int voxel, byte voxelType)
     {
-        foreach (var entity in connection.WorldManager.EntityManager.Entities)
+        if (connection.WorldManager.TakeKeystoneVein(voxel) is { } vein)
         {
-            if (entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree)
-                && sparseTree.Description.Any(part => part.Position == voxel))
-            {
-                SpawnSparseTreeLoot(connection, entity, sparseTree);
-                connection.WorldManager.RemoveSavedKeystoneVein(entity);
-                connection.WorldManager.EntityManager.RemoveEntity(entity.Id);
-                connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = entity.Id });
-                break;
-            }
+            connection.WorldManager.EntityManager.RemoveEntity(vein.Id);
+            connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = vein.Id });
+            SpawnKeystoneLoot(connection, vein, voxel);
+            return;
         }
 
         if (voxelType == WorldChunk.Air || BlockCrcMapping.GetItemCrc(voxelType) is not uint itemCrc)
@@ -71,28 +67,19 @@ public static class ResourcePickups
         Spawn(connection, itemCrc, count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0, materials);
     }
 
-    public static void SpawnSparseTreeLoot(PlayerConnection connection, Entity tree, ClientSparseTreeComponent sparseTree)
+    private static void SpawnKeystoneLoot(PlayerConnection connection, Entity vein, Vector3Int voxel)
     {
-        var position = sparseTree.Description.Count > 0
-            ? new Vector3(sparseTree.Description[0].Position.X + 0.5f, sparseTree.Description[0].Position.Y + 0.5f, sparseTree.Description[0].Position.Z + 0.5f)
-            : new Vector3(0.5f, 0.5f, 0.5f);
-        var voxel = sparseTree.Description.Count > 0
-            ? sparseTree.Description[0].Position
-            : new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y), (int)MathF.Floor(position.Z));
+        var material = vein.TryGetComponent<MaterialCompositionComponent>(out var composition) && composition.MaterialList.Length > 0
+            ? composition.MaterialList[0]
+            : null;
+        var position = new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f);
 
-        var material = tree.TryGetComponent<MaterialCompositionComponent>(out var comp) && comp.MaterialList.Length > 0 && comp.MaterialList[0] is { } matCrc
-            ? matCrc
-            : Util.ComputeCrc32("Forest");
-
-        var lootTable = tree.Name.Equals("SparseTreeKeystoneOre", StringComparison.OrdinalIgnoreCase) || tree.Name.Equals("TreeKeystoneOre", StringComparison.OrdinalIgnoreCase)
-            ? "OreSeam_Keystone_LootTable"
-            : "OreSeam_Metal_LootTable";
-
-        foreach (var drop in LootTable.Roll(lootTable, "Forest"))
+        foreach (var drop in LootTable.Roll(KeystoneVeinLootTable, ""))
         {
-            var materials = drop.Materials.Select(mat => mat == LootTable.EntityMaterial
-                ? (uint?)material
-                : mat is null ? null : Util.ComputeCrc32(mat)).ToArray();
+            var materials = drop.Materials.Select(name => name == LootTable.EntityMaterial
+                ? material
+                : name is null ? null : Util.ComputeCrc32(name)).ToArray();
+
             Spawn(connection, drop.ItemCrc, drop.Count, position, voxel, connection.PlayerEntity.Id, materials);
         }
     }

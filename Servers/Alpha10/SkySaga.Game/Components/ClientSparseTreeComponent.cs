@@ -1,6 +1,6 @@
 namespace SkySaga.Game.Components;
 
-public readonly record struct TreePart(
+public readonly record struct SparseTreePart(
     Vector3Int Position,
     uint SizeProfile,
     byte PartType,
@@ -52,7 +52,7 @@ public class ClientSparseTreeComponent : Component
         (3200, 3200)
     ];
 
-    public List<TreePart> Description { get; set => SetIfChanged(ref field, value); } = [];
+    public List<SparseTreePart> Description { get; set => SetIfChanged(ref field, value); } = [];
 
     public uint TreeType { get; set => SetIfChanged(ref field, value); }
 

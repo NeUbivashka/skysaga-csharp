@@ -50,6 +50,15 @@ public class VoxelEdit
     public short Block { get; set; }
 }
 
+public class KeystoneVein
+{
+    public Guid WorldId { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int Z { get; set; }
+    public long Material { get; set; }
+}
+
 public class PlacedDevice
 {
     public long Id { get; set; }

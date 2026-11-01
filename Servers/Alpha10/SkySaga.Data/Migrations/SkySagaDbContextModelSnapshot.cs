@@ -577,6 +577,34 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("inventory_items", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.KeystoneVein", b =>
+                {
+                    b.Property<Guid>("WorldId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("world_id");
+
+                    b.Property<int>("X")
+                        .HasColumnType("integer")
+                        .HasColumnName("x");
+
+                    b.Property<int>("Y")
+                        .HasColumnType("integer")
+                        .HasColumnName("y");
+
+                    b.Property<int>("Z")
+                        .HasColumnType("integer")
+                        .HasColumnName("z");
+
+                    b.Property<long>("Material")
+                        .HasColumnType("bigint")
+                        .HasColumnName("material");
+
+                    b.HasKey("WorldId", "X", "Y", "Z")
+                        .HasName("pk_keystone_veins");
+
+                    b.ToTable("keystone_veins", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.MapTemplate", b =>
                 {
                     b.Property<string>("Id")
@@ -1135,6 +1163,16 @@ namespace SkySaga.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_inventory_items_characters_character_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.KeystoneVein", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.World", null)
+                        .WithMany()
+                        .HasForeignKey("WorldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_keystone_veins_worlds_world_id");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.PasswordReset", b =>

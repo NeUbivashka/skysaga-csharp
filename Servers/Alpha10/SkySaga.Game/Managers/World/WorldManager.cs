@@ -26,6 +26,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
     }
 
     private readonly Dictionary<int, PlacedDevice> _deviceEntities = [];
+    private readonly Dictionary<Vector3Int, int> _keystoneVeins = [];
+    private const string KeystoneVeinEntity = "SparseTreeKeystoneOre";
+    private const string KeystoneVeinTreeType = "Keystone_Deposit";
+    private const byte KeystoneVeinPart = 0;
+    private const byte KeystoneVeinFacing = 2;
 
     private readonly List<PlacedDevice> _devices = [];
 
@@ -159,6 +164,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         ChunkManager.LoadSavedEdits();
         LoadDevices();
+        LoadKeystoneVeins();
 
         foreach (var entity in EntityManager.Entities.ToList())
             PlaceLinkedVoxels(entity);
@@ -419,7 +425,6 @@ public sealed class WorldManager : IWorldManager, IDisposable
             };
     }
 
-
     private void LoadDevices()
     {
         lock (_devicesLock)
@@ -431,48 +436,62 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 _devices.AddRange(WorldStore.LoadDevices(Info.Id).Select(FromRecord));
 
             foreach (var placed in _devices)
-                if (placed.ItemCrc == Data.InitialKeystoneVeins.ItemCrc)
-                    SpawnSavedKeystoneVein(placed);
-                else if (DeviceTable.TryGet(placed.ItemCrc, out var device))
+                if (DeviceTable.TryGet(placed.ItemCrc, out var device))
                     SpawnDevice(placed, device);
 
             Console.WriteLine($"[WorldManager] Loaded {_devices.Count} placed devices.");
         }
     }
 
-    private void SpawnSavedKeystoneVein(PlacedDevice placed)
+    private void LoadKeystoneVeins()
     {
-        var pos = new Vector3Int(placed.X, placed.Y, placed.Z);
+        _keystoneVeins.Clear();
+
+        if (!Info.IsPersistent)
+            return;
+
+        foreach (var vein in WorldStore.LoadKeystoneVeins(Info.Id))
+            SpawnKeystoneVein(vein);
+
+        Console.WriteLine($"[WorldManager] Loaded {_keystoneVeins.Count} keystone veins.");
+    }
+
+    private void SpawnKeystoneVein(Data.Entities.KeystoneVein vein)
+    {
+        var pos = new Vector3Int(vein.X, vein.Y, vein.Z);
         var chunk = new Vector3Int(FloorDiv(pos.X, ChunkSize), FloorDiv(pos.Y, ChunkSize), FloorDiv(pos.Z, ChunkSize));
         var local = new Vector3Int(pos.X - chunk.X * ChunkSize, pos.Y - chunk.Y * ChunkSize, pos.Z - chunk.Z * ChunkSize);
         var voxel = ChunkManager.GetVoxel(chunk, local);
-        if (voxel != 2 || !EntityManager.TryCreateEntity("SparseTreeKeystoneOre", out var entity))
+
+        if (voxel != Data.InitialKeystoneVeins.Block || !EntityManager.TryCreateEntity(KeystoneVeinEntity, out var entity))
             return;
+
         if (!entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree)
             || !entity.TryGetComponent<MaterialCompositionComponent>(out var material))
         {
             EntityManager.RemoveEntity(entity.Id);
             return;
         }
-        sparseTree.TreeType = Util.ComputeCrc32("Keystone_Deposit");
+
+        sparseTree.TreeType = Util.ComputeCrc32(KeystoneVeinTreeType);
         sparseTree.IsVoxelOwner = true;
-        sparseTree.Description = [new TreePart(pos, 0, placed.Face, 2, false, voxel)];
+        sparseTree.Description = [new SparseTreePart(pos, 0, KeystoneVeinPart, KeystoneVeinFacing, false, voxel)];
         sparseTree.PartsDestroyed = [false];
-        material.MaterialList = placed.Materials;
-        _deviceEntities[entity.Id] = placed;
+        material.MaterialList = [(uint)vein.Material];
+        _keystoneVeins[pos] = entity.Id;
     }
 
-    public void RemoveSavedKeystoneVein(Entity entity)
+    public bool IsKeystoneVein(int entityId) => _keystoneVeins.ContainsValue(entityId);
+
+    public Entity? TakeKeystoneVein(Vector3Int block)
     {
-        lock (_devicesLock)
-        {
-            if (!_deviceEntities.TryGetValue(entity.Id, out var placed)
-                || placed.ItemCrc != Data.InitialKeystoneVeins.ItemCrc)
-                return;
-            _deviceEntities.Remove(entity.Id);
-            _devices.Remove(placed);
-            SaveDevices();
-        }
+        if (!_keystoneVeins.Remove(block, out var entityId))
+            return null;
+
+        if (Info.IsPersistent)
+            WorldStore.RemoveKeystoneVein(Info.Id, block.X, block.Y, block.Z);
+
+        return EntityManager.TryGetEntity(entityId, out var entity) ? entity : null;
     }
 
     private void SaveDevices()
@@ -809,6 +828,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     public void Reset()
     {
         ((EntityManager)EntityManager).Clear();
+        _keystoneVeins.Clear();
         _mapCreatureSpawns.Clear();
         ChunkManager.ClearAll();
         InitializeWorld();

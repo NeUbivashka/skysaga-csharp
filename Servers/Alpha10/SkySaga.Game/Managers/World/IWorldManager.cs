@@ -17,7 +17,8 @@ public interface IWorldManager
     IEnumerable<Entity> InventoryFirst(IEnumerable<Entity> entities);
     List<Entity> SpawnCreature(string name, Vector3 position);
     void DeviceInventoryChanged(Entity entity);
-    void RemoveSavedKeystoneVein(Entity entity);
+    bool IsKeystoneVein(int entityId);
+    Entity? TakeKeystoneVein(Vector3Int block);
     List<int> RemoveDevice(Entity entity, bool placedOnly, out WorldManager.PlacedDevice? placed);
     List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Vector3 surfaceNormal, Guid? owner, uint?[] materials);
     List<Entity> RespawnMapCreature(Entity creature);

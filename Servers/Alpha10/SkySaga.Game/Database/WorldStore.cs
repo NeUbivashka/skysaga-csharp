@@ -131,6 +131,19 @@ public static class WorldStore
             """));
     }
 
+    public static List<KeystoneVein> LoadKeystoneVeins(Guid worldId)
+    {
+        using var context = GameDatabase.Context();
+
+        return [.. context.KeystoneVeins.AsNoTracking().Where(vein => vein.WorldId == worldId)];
+    }
+
+    public static void RemoveKeystoneVein(Guid worldId, int x, int y, int z)
+    {
+        GameDatabase.Enqueue(context => context.Database.ExecuteSqlInterpolatedAsync(
+            $"DELETE FROM keystone_veins WHERE world_id = {worldId} AND x = {x} AND y = {y} AND z = {z}"));
+    }
+
     public static List<PlacedDevice> LoadDevices(Guid worldId)
     {
         using var context = GameDatabase.Context();
