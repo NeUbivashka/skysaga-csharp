@@ -122,7 +122,7 @@ public class Projectiles(IWorldManager worldManager, PlayerConnectionManager pla
                             && Combat.PositionOf(entity) is Vector3 position && Crosses(from, flight.Position, position)) is { } victim)
                 {
                     Combat.CreatureProjectileHit(ai, playerConnectionManager, worldManager.EntityManager, flight.Owner, victim, flight.Ability, flight.Launch);
-                    Perks.ApplyImpact(victim, flight.Launch.ImpactActions);
+                    Perks.ApplyImpact(victim, flight.Launch.ImpactActions, flight.Owner.Id);
                     Splash(flight, players, victim);
                     Remove(flight, flight.Position);
                     break;

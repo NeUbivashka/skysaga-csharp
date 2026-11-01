@@ -524,7 +524,10 @@ public class AiManager
 
         var outsideTerritory = ai.IsTerritorial && brain.Spawn.HomeRange > 0
             && Horizontal(targetPosition - brain.Home).Length() > brain.Spawn.HomeRange;
+        var immobilised = Perks.HasAppliedAny(entity.Id);
         var behaviour = brain.JustHeard ? AiBehaviour.SensoryEventResponse
+            : !immobilised && ai.Abilities.Any(ability => CreatureAiTable.ImmobiliseTags.Any(ability.HasTag) && reach <= ability.AttackRange)
+                ? AiBehaviour.Immobilise
             : brain.Blocked || outsideTerritory ? AiBehaviour.Taunt
             : ai.IsRangedFighter || brain.Zone != SquadZone.Near ? AiBehaviour.Ranged
             : AiBehaviour.Melee;
@@ -547,7 +550,7 @@ public class AiManager
             ? (ownHealth.SyncedFullHPValues ?? ownHealth.MaxHP) / (float)ownHealth.MaxHP
             : 1f;
         var selected = AbilitySelection.Select(ai, new SelectionContext(behaviour, reach, !brain.Blocked, targetTags,
-            healthFraction, HasSpawnBudget(entity, ai, brain, now), (float)(now - brain.LastSummon).TotalSeconds));
+            healthFraction, HasSpawnBudget(entity, ai, brain, now), (float)(now - brain.LastSummon).TotalSeconds, immobilised));
 
         if (brain.Zone != SquadZone.Near)
             selected = [.. selected.Where(ability => !IsMelee(ability))];
@@ -940,7 +943,8 @@ public class AiManager
 
     private static bool IsMelee(CreatureAbility ability) => ability.HasTag(MeleeTag) || ability.HasTag(ShieldBreakerTag) || ability.HasTag(KickTag);
 
-    private static bool IsAttack(CreatureAbility ability) => IsMelee(ability) || ability.HasTag(ProjectileTag);
+    private static bool IsAttack(CreatureAbility ability)
+        => IsMelee(ability) || ability.HasTag(ProjectileTag) || CreatureAiTable.TryGetProjectile(ability.Action, out _);
 
     private void Rest(Entity entity, CreatureAi ai, Brain brain, float timeOfDay, DateTime now)
     {

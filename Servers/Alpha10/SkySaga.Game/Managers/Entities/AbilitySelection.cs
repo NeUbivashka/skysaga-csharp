@@ -15,7 +15,7 @@ public enum AiBehaviour
 }
 
 public readonly record struct SelectionContext(AiBehaviour Behaviour, float Distance, bool CanPath, string[] TargetTags,
-    float HealthFraction = 1f, bool HasSpawnBudget = false, float SecondsSinceSummon = float.MaxValue);
+    float HealthFraction = 1f, bool HasSpawnBudget = false, float SecondsSinceSummon = float.MaxValue, bool HasImmobilisedPlayer = false);
 
 public static class AbilitySelection
 {
@@ -56,6 +56,7 @@ public static class AbilitySelection
             "canpath" => context.CanPath,
             "healthbelow" => context.HealthFraction <= float.Parse(condition.Argument, System.Globalization.CultureInfo.InvariantCulture),
             "spawnbudget" => context.HasSpawnBudget,
+            "immobilised" => context.HasImmobilisedPlayer,
             "sincesummon" => context.SecondsSinceSummon > float.Parse(condition.Argument, System.Globalization.CultureInfo.InvariantCulture),
             "targetusing:TargetEntity" => condition.Argument.Split(',').Any(tag => context.TargetTags.Contains(tag, StringComparer.OrdinalIgnoreCase)),
             "constant" => condition.Argument == "True",

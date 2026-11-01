@@ -11,6 +11,7 @@ public static class Perks
         public required DateTime? Expires;
         public required PerkCondition? Condition;
         public required bool InvertCondition;
+        public required int SourceId;
         public required List<(PeriodicPerkEffect Effect, DateTime Next)> Periodic;
         public int Hits;
     }
@@ -18,20 +19,20 @@ public static class Perks
     private static readonly Dictionary<int, (Entity Entity, List<ActivePerk> Perks)> Active = [];
     private static readonly object Gate = new();
 
-    public static void ApplyImpact(Entity target, IEnumerable<string> impactActions)
+    public static void ApplyImpact(Entity target, IEnumerable<string> impactActions, int sourceId = 0)
     {
         var precedingHits = 0;
 
         foreach (var action in impactActions)
         {
             if (PerkTable.TryGetAction(action, out _))
-                Apply(target, action, precedingHits);
+                Apply(target, action, precedingHits, sourceId);
             else
                 precedingHits++;
         }
     }
 
-    public static void Apply(Entity target, string entityAction, int precedingHits = 0)
+    public static void Apply(Entity target, string entityAction, int precedingHits = 0, int sourceId = 0)
     {
         if (!PerkTable.TryGetAction(entityAction, out var entries)
             || !target.TryGetComponent<ClientPerkComponent>(out var component)
@@ -68,6 +69,7 @@ public static class Perks
                     Expires = entry.DurationSeconds > 0 ? now.AddSeconds(entry.DurationSeconds) : null,
                     Condition = condition,
                     InvertCondition = entry.InvertCondition,
+                    SourceId = sourceId,
                     Periodic = [.. perk.Effects
                         .Select(effect => PerkTable.TryGetPeriodic(effect, out var periodic) ? periodic : null)
                         .OfType<PeriodicPerkEffect>()
@@ -82,6 +84,12 @@ public static class Perks
 
             Publish(component, state.Perks);
         }
+    }
+
+    public static bool HasAppliedAny(int sourceId)
+    {
+        lock (Gate)
+            return sourceId != 0 && Active.Values.Any(state => state.Perks.Any(active => active.SourceId == sourceId));
     }
 
     public static void Hit(Entity target)

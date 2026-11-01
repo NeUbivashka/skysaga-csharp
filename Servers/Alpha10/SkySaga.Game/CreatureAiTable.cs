@@ -309,7 +309,7 @@ public static class CreatureAiTable
         (float Input, float Output)[] CreatureDamageLut, Dictionary<string, List<RelationRule>> Relations, (float Spawn, float Respawn) Invisibility,
         Dictionary<string, SelectionTableRule[]> SelectionTables, Dictionary<string, SelectionListRule[]> SelectionLists,
         Dictionary<string, AiCondition> Conditions, Dictionary<string, float> BlockAngles, Dictionary<string, AttackMotion> Motions,
-        Dictionary<string, CreatureList> CreatureLists, Dictionary<string, MinionSpawn> MinionSpawns, Dictionary<string, Summon> Summons);
+        Dictionary<string, CreatureList> CreatureLists, Dictionary<string, MinionSpawn> MinionSpawns, Dictionary<string, Summon> Summons, string[]? ImmobiliseTags = null);
 
     private static readonly Lazy<Data> Table = new(Load);
 
@@ -361,6 +361,9 @@ public static class CreatureAiTable
             {
                 case ["damage", var lut]:
                     data = data with { DamageLut = Lut(lut) };
+                    break;
+                case ["immobilisetags", var immobiliseTags]:
+                    data = data with { ImmobiliseTags = immobiliseTags.Split(',') };
                     break;
                 case ["invisibility", var onSpawn, var onRespawn]:
                     data = data with { Invisibility = (Number(onSpawn.Split('=')[1]), Number(onRespawn.Split('=')[1])) };
@@ -452,6 +455,8 @@ public static class CreatureAiTable
     public static (float Input, float Output)[] CreatureDamageLut => Table.Value.CreatureDamageLut;
 
     public static (float Spawn, float Respawn) Invisibility => Table.Value.Invisibility;
+
+    public static string[] ImmobiliseTags => Table.Value.ImmobiliseTags ?? [];
 
     public static bool TryGetRelations(string table, out List<RelationRule> rules) => Table.Value.Relations.TryGetValue(table, out rules!);
 

@@ -171,6 +171,7 @@ def main():
     rows.append("damagecreature " + ",".join(f"{p['Input']:g}:{p['Output']:g}"
                                              for p in geo["GlobalConstantsCombat"][0]["CreatureVersusCreatureDamage"]["ValueLookup"]))
     constants = geo["GlobalConstants"][0]
+    rows.append("immobilisetags " + ",".join(v["Value"] for v in constants["AIAbilityConstants"]["ImmobiliseAbilityTags"]["Values"]))
     rows.append(f"invisibility spawn={constants['AIInvisibilityOnSpawnTime']:g} respawn={constants['AIInvisibilityOnRespawnTime']:g}")
     rows += [f"spawnparams {spawn['Name']} home={spawn['HomeRange']:g} roam={spawn['MaxDistanceFromSpawnPosition']:g}"
              for spawn in geo["SpawnParams"]]
