@@ -13,15 +13,19 @@ public sealed record PerkCondition(string Name, string? Event, int Hits, string[
 
 public static class PerkTable
 {
+    private const string FoodHealthStat = "FoodHealthBoostMultiplier";
+
     private sealed record Data(Dictionary<string, Perk> Perks, Dictionary<string, PeriodicPerkEffect> Periodic,
-        Dictionary<string, PerkEntry[]> Actions, Dictionary<string, PerkCondition> Conditions);
+        Dictionary<string, PerkEntry[]> Actions, Dictionary<string, PerkCondition> Conditions, Dictionary<uint, float> FoodHealth);
 
     private static readonly Lazy<Data> Table = new(Load);
 
     private static Data Load()
     {
         var data = new Data(new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase),
-            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
+            new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase), []);
+        var foodEffects = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        var materialPerks = new List<(string Material, string Perk)>();
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "Perks.txt");
 
         if (!File.Exists(path))
@@ -41,6 +45,12 @@ public static class PerkTable
                 case ["perkeffect", var name, "periodic", ..]:
                     data.Periodic[name] = new PeriodicPerkEffect(fields["action"], Number(fields["interval"]), Number(fields["hp"]));
                     break;
+                case ["perkeffect", var name, "statchange", ..] when fields["stat"] == FoodHealthStat && fields["op"] == "Multiply":
+                    foodEffects[name] = Number(fields["value"]);
+                    break;
+                case ["materialperk", var material, var perk]:
+                    materialPerks.Add((material, perk));
+                    break;
                 case ["applyperk", var action, ..]:
                     data.Actions[action] = [.. parts[2..].Select(Entry)];
                     break;
@@ -53,6 +63,12 @@ public static class PerkTable
             }
         }
 
+        foreach (var (material, perk) in materialPerks)
+            if (data.Perks.TryGetValue(perk, out var info))
+                data.FoodHealth[Util.ComputeCrc32(material)] = info.Effects
+                    .Where(foodEffects.ContainsKey)
+                    .Aggregate(1f, (total, effect) => total * foodEffects[effect]);
+
         return data;
 
         static float Number(string text) => float.Parse(text, CultureInfo.InvariantCulture);
@@ -64,6 +80,9 @@ public static class PerkTable
             return new PerkEntry(entry[0], Number(entry[1]), condition, entry[2].StartsWith('!'));
         }
     }
+
+    public static float FoodHealthMultiplier(IEnumerable<uint?> materials)
+        => materials.OfType<uint>().Aggregate(1f, (total, material) => total * Table.Value.FoodHealth.GetValueOrDefault(material, 1f));
 
     public static bool TryGetPerk(string name, out Perk perk) => Table.Value.Perks.TryGetValue(name, out perk!);
 

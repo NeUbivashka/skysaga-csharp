@@ -55,6 +55,10 @@ def main():
         else:
             rows.append(f"perkeffect {effect['Name']} {kind.lower()} condition={condition}")
 
+    for material in geo["Materials"]:
+        for entry in (material.get("PerksForConsumables") or {}).get("PerkEntries") or []:
+            rows.append(f"materialperk {material['Name']} {entry['Value']}")
+
     used = set()
     for action in geo["EntityActions"]:
         if action.get("Category") != "ApplyPerkAction":
