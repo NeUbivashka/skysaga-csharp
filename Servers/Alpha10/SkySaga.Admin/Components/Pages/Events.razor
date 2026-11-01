@@ -1,68 +1,115 @@
 @page "/events"
+@inherits LivePage
 @inject IDbContextFactory<SkySagaDbContext> Db
 
 <PageTitle>Events · SkySaga Control</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h4">Events</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
-</MudStack>
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Audit log</div>
+        <h1 class="page-title">Events</h1>
+        <div class="page-subtitle">The last @Limit.ToString("N0") game and admin events</div>
+    </div>
+    <div class="header-actions">
+        <MudSwitch T="bool" @bind-Value="_follow" Color="Color.Success" Label="Follow live" />
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Reload</MudButton>
+    </div>
+</div>
 
-<MudPaper Class="pa-4 section" Elevation="0">
-    <MudDataGrid T="EventRow" Items="_rows" QuickFilter="Matches" Dense="true" Hover="true" Elevation="0">
-        <ToolBarContent>
-            <MudTextField @bind-Value="_search" Placeholder="Filter by kind, character or data" Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.FilterList" Immediate="true" Clearable="true" Class="mt-0" />
-        </ToolBarContent>
+<MudGrid Spacing="3">
+    <MudItem xs="12" lg="4">
+        <div class="glass-card full">
+            <div class="card-title">Kinds</div>
+            <div class="card-sub mb-3">In the loaded events</div>
+            <DonutChart Slices="_kinds" CenterLabel="events" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" lg="8">
+        <div class="glass-card full">
+            <div class="card-title">Per hour</div>
+            <div class="card-sub mb-2">Last 24 hours</div>
+            <AreaChart Values="Live.ActivityPerHour" Labels="Live.HourLabels" Color="#f472b6" SecondColor="#fbbf24" Unit="events" LabelEvery="3" Height="230" />
+        </div>
+    </MudItem>
+</MudGrid>
+
+<div class="filter-bar mt-3">
+    <MudTextField @bind-Value="_search" Placeholder="Filter by kind, character or data" Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.FilterList" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="filter-search" />
+    <button class="filter-chip @(_category is null ? "active" : "")" @onclick="() => _category = null">All <span>@_rows.Count</span></button>
+    @foreach (var category in _rows.GroupBy(r => r.Kind.Split('.')[0]).OrderByDescending(g => g.Count()))
+    {
+        var key = category.Key;
+        <button class="filter-chip @(_category == key ? "active" : "")" style="--chip:@Format.EventColor(key + ".")" @onclick="() => _category = key">@key <span>@category.Count()</span></button>
+    }
+</div>
+
+<div class="glass-card no-pad">
+    <MudDataGrid T="EventRow" Items="Filtered" Dense="true" Hover="true" Elevation="0" Class="glass-grid" RowsPerPage="50">
         <Columns>
-            <PropertyColumn Property="x => x.Time" Title="Time" Format="yyyy-MM-dd HH:mm:ss" />
+            <TemplateColumn Title="Time" SortBy="x => x.Time">
+                <CellTemplate><span class="mono">@context.Item.Time.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span></CellTemplate>
+            </TemplateColumn>
             <TemplateColumn Title="Kind" SortBy="x => x.Kind">
                 <CellTemplate>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@KindColor(context.Item.Kind)">@context.Item.Kind</MudChip>
+                    <span class="event-kind" style="--accent:@Format.EventColor(context.Item.Kind)">
+                        <MudIcon Icon="@Format.EventIcon(context.Item.Kind)" Size="Size.Small" />@context.Item.Kind
+                    </span>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Character" Title="Character" />
-            <TemplateColumn Title="Data">
-                <CellTemplate><span class="mono">@context.Item.Data</span></CellTemplate>
+            <TemplateColumn Title="Character" SortBy="x => x.Character">
+                <CellTemplate>
+                    @if (context.Item.CharacterId is Guid id)
+                    {
+                        <MudLink Href="@($"/players/{id}")">@(context.Item.Character ?? "unknown")</MudLink>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Data" Sortable="false">
+                <CellTemplate><span class="mono data-cell">@context.Item.Data</span></CellTemplate>
             </TemplateColumn>
         </Columns>
-        <NoRecordsContent><MudText Class="mud-text-secondary">No events recorded yet.</MudText></NoRecordsContent>
+        <NoRecordsContent><div class="empty-state">No events match.</div></NoRecordsContent>
         <PagerContent><MudDataGridPager T="EventRow" /></PagerContent>
     </MudDataGrid>
-</MudPaper>
+</div>
 
 @code {
-    private record EventRow(DateTimeOffset Time, string Kind, string? Character, string? Data);
+    private const int Limit = 3000;
+
+    private record EventRow(long Id, DateTimeOffset Time, string Kind, Guid? CharacterId, string? Character, string? Data);
 
     private List<EventRow> _rows = [];
+    private List<Slice> _kinds = [];
     private string _search = "";
+    private string? _category;
+    private bool _follow = true;
+
+    private IEnumerable<EventRow> Filtered => _rows
+        .Where(row => _category is null || row.Kind.Split('.')[0] == _category)
+        .Where(row => string.IsNullOrWhiteSpace(_search)
+            || row.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (row.Character?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (row.Data?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false));
 
     protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override async Task OnLiveChangedAsync()
+    {
+        if (_follow && Live.RecentEvents.FirstOrDefault()?.Id > (_rows.FirstOrDefault()?.Id ?? 0))
+            await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
         await using var db = await Db.CreateDbContextAsync();
 
-        var names = await db.Characters.ToDictionaryAsync(c => c.Id, c => c.Name);
-        var events = await db.GameEvents.AsNoTracking().OrderByDescending(e => e.Time).Take(2000).ToListAsync();
+        var names = await db.Characters.AsNoTracking().ToDictionaryAsync(c => c.Id, c => c.Name);
+        var events = await db.GameEvents.AsNoTracking().OrderByDescending(e => e.Id).Take(Limit).ToListAsync();
 
-        _rows = [.. events.Select(e => new EventRow(e.Time.ToLocalTime(), e.Kind,
+        _rows = [.. events.Select(e => new EventRow(e.Id, e.Time, e.Kind, e.CharacterId,
             e.CharacterId is Guid id && names.TryGetValue(id, out var name) ? name : null, e.Data))];
+        _kinds = [.. _rows.GroupBy(r => r.Kind).OrderByDescending(g => g.Count())
+            .Select((g, i) => new Slice(g.Key, g.Count(), LiveMetrics.Palette[i % LiveMetrics.Palette.Length]))];
     }
-
-    private bool Matches(EventRow row)
-        => string.IsNullOrWhiteSpace(_search)
-           || row.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
-           || (row.Character?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false)
-           || (row.Data?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
-
-    private static Color KindColor(string kind) => kind.Split('.')[0] switch
-    {
-        "admin" => Color.Secondary,
-        "player" => Color.Info,
-        "combat" => Color.Error,
-        "world" => Color.Success,
-        _ => Color.Default
-    };
 }

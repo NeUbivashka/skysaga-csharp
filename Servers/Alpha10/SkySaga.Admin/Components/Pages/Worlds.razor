@@ -1,94 +1,196 @@
 @page "/worlds"
+@inherits LivePage
 @inject IDbContextFactory<SkySagaDbContext> Db
 @inject GameNames Names
+@inject ISnackbar Snackbar
+@inject AccountActions Actions
 
 <PageTitle>Worlds · SkySaga Control</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Worlds</MudText>
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Hub, islands and instances</div>
+        <h1 class="page-title">Worlds</h1>
+        <div class="page-subtitle">@_worlds.Count saved worlds · @Live.Online.Select(p => p.WorldId).Distinct().Count() with players right now</div>
+    </div>
+</div>
 
 <MudGrid Spacing="3">
+    <MudItem xs="12" lg="4">
+        <div class="glass-card full">
+            <div class="card-title">By kind</div>
+            <div class="card-sub mb-3">Saved worlds</div>
+            <DonutChart Slices="Live.WorldKinds" CenterLabel="worlds" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" lg="8">
+        <div class="glass-card full">
+            <div class="card-title">Biggest builds</div>
+            <div class="card-sub mb-3">Voxel edits and placed devices per world</div>
+            @foreach (var world in _worlds.OrderByDescending(w => w.Edits + w.Devices).Take(6))
+            {
+                var max = Math.Max(_worlds.Max(w => w.Edits + w.Devices), 1);
+                <div class="rank-row">
+                    <span class="rank-index"><MudIcon Icon="@KindIcon(world.Kind)" Size="Size.Small" /></span>
+                    <div class="rank-body">
+                        <div class="rank-line"><span>@Title(world)</span><span class="mono">@world.Edits.ToString("N0") edits · @world.Devices.ToString("N0") devices</span></div>
+                        <div class="meter split">
+                            <span style="width:@ChartGeometry.Number(100.0 * world.Edits / max)%;background:#38bdf8"></span>
+                            <span style="width:@ChartGeometry.Number(100.0 * world.Devices / max)%;background:#f472b6"></span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </MudItem>
+</MudGrid>
+
+<div class="world-grid mt-3">
     @foreach (var world in _worlds)
     {
-        <MudItem xs="12" md="6" lg="4">
-            <MudPaper Class="pa-4 stat-card" Elevation="0" Style="cursor:pointer" @onclick="() => SelectAsync(world.Id)">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Public" Style="color:#34d399" />
-                    <MudText Typo="Typo.h6">@Title(world)</MudText>
-                </MudStack>
-                <MudText Typo="Typo.caption" Class="mud-text-secondary mono">@world.Id</MudText>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                    @world.Template@(world.TemplateVersion is { } version ? $" · version {version[..12]}" : "") · visit: @world.VisitAccess · build: @world.BuildAccess
-                </MudText>
-                <MudStack Row="true" Class="mt-3" Spacing="4">
-                    <div><div class="stat-value">@world.Edits.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">voxel edits</MudText></div>
-                    <div><div class="stat-value">@world.Devices.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">devices</MudText></div>
-                    <div><div class="stat-value">@world.Checkpoints.ToString("N0")</div><MudText Typo="Typo.caption" Class="mud-text-secondary">checkpoints</MudText></div>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
+        var online = Live.Online.Count(p => p.WorldId == world.Id);
+        <div class="world-card @(_selected == world.Id ? "selected" : "")" style="--accent:@KindColor(world.Kind)">
+            <div class="world-card-head">
+                <span class="world-icon"><MudIcon Icon="@KindIcon(world.Kind)" /></span>
+                <div class="world-card-title">
+                    <div class="card-title">@Title(world)</div>
+                    <div class="card-sub mono">@world.Id</div>
+                </div>
+                @if (online > 0)
+                {
+                    <span class="tag green"><span class="pulse inline"></span>@online online</span>
+                }
+            </div>
+            <div class="world-meta">
+                <span>@world.Kind</span>
+                <span>@world.Template@(world.TemplateVersion is { } version ? $" · {version[..8]}" : "")</span>
+                <span>created @world.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</span>
+                <span>visited @Format.Ago(world.LastVisited)</span>
+            </div>
+            <div class="world-stats">
+                <div><span class="stat-number">@world.Edits.ToString("N0")</span><span class="stat-label">edits</span></div>
+                <div><span class="stat-number">@world.Devices.ToString("N0")</span><span class="stat-label">devices</span></div>
+                <div><span class="stat-number">@world.Checkpoints.ToString("N0")</span><span class="stat-label">checkpoints</span></div>
+            </div>
+            @if (world.Kind == WorldKind.Island)
+            {
+                <div class="access-row">
+                    <MudSelect T="WorldAccess" Value="world.VisitAccess" ValueChanged="v => SetAccessAsync(world, v, world.BuildAccess)" Label="Visit" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var access in Enum.GetValues<WorldAccess>())
+                        {
+                            <MudSelectItem Value="access">@access</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSelect T="WorldAccess" Value="world.BuildAccess" ValueChanged="b => SetAccessAsync(world, world.VisitAccess, b)" Label="Build" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var access in Enum.GetValues<WorldAccess>())
+                        {
+                            <MudSelectItem Value="access">@access</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+            }
+            <div class="world-card-foot">
+                @if (world.Owner is Guid owner)
+                {
+                    <MudLink Href="@($"/players/{owner}")" Typo="Typo.body2">Owner: @(_owners.GetValueOrDefault(owner) ?? "unknown")</MudLink>
+                }
+                <MudSpacer />
+                <MudButton Size="Size.Small" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.Inventory2" OnClick="() => SelectAsync(world.Id)">Devices</MudButton>
+            </div>
+        </div>
     }
     @if (_worlds.Count == 0)
     {
-        <MudItem xs="12"><MudText Class="mud-text-secondary">No worlds yet. The hub appears when a player first reaches it, an island when its owner first flies home.</MudText></MudItem>
+        <div class="glass-card"><div class="empty-state">No worlds yet. The hub appears when a player first reaches it, an island when its owner first flies home.</div></div>
     }
+</div>
 
-    @if (_devices is not null)
-    {
-        <MudItem xs="12">
-            <MudPaper Class="pa-4 section" Elevation="0">
-                <MudText Typo="Typo.h6" Class="mb-2">Placed devices</MudText>
-                <MudTable Items="_devices" Dense="true" Hover="true" Elevation="0">
-                    <HeaderContent>
-                        <MudTh>Device</MudTh>
-                        <MudTh>Position</MudTh>
-                        <MudTh>Owner</MudTh>
-                        <MudTh>Contents</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>@Names.Item(context.ItemCrc)</MudTd>
-                        <MudTd Class="mono">@context.X, @context.Y, @context.Z</MudTd>
-                        <MudTd>@(context.OwnerCharacterId is Guid owner && _owners.TryGetValue(owner, out var name) ? name : "—")</MudTd>
-                        <MudTd Class="mono">@(context.Items == "[]" ? "empty" : $"{context.Items.Length} bytes")</MudTd>
-                    </RowTemplate>
-                    <NoRecordsContent><MudText Class="mud-text-secondary">No devices placed.</MudText></NoRecordsContent>
-                </MudTable>
-            </MudPaper>
-        </MudItem>
-    }
-</MudGrid>
+@if (_devices is not null)
+{
+    <div class="glass-card no-pad mt-3">
+        <div class="card-head padded">
+            <div class="card-title">Placed devices · @(_worlds.FirstOrDefault(w => w.Id == _selected) is { } chosen ? Title(chosen) : "")</div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => { _devices = null; _selected = null; }" />
+        </div>
+        <MudTable Items="_devices" Dense="true" Hover="true" Elevation="0" Class="glass-grid">
+            <HeaderContent>
+                <MudTh>Device</MudTh>
+                <MudTh>Position</MudTh>
+                <MudTh>Owner</MudTh>
+                <MudTh>Contents</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@Names.Item(context.ItemCrc)</MudTd>
+                <MudTd Class="mono">@context.X, @context.Y, @context.Z</MudTd>
+                <MudTd>@(context.OwnerCharacterId is Guid owner && _owners.TryGetValue(owner, out var name) ? name : "—")</MudTd>
+                <MudTd Class="mono">@(context.Items == "[]" ? "empty" : $"{context.Items.Length} bytes")</MudTd>
+            </RowTemplate>
+            <NoRecordsContent><div class="empty-state">No devices placed.</div></NoRecordsContent>
+        </MudTable>
+    </div>
+}
 
 @code {
-    private record WorldRow(Guid Id, WorldKind Kind, string Template, string? TemplateVersion, Guid? Owner,
-        WorldAccess VisitAccess, WorldAccess BuildAccess, int Edits, int Devices, int Checkpoints);
+    private record WorldRow(Guid Id, WorldKind Kind, string? Name, string Template, string? TemplateVersion, Guid? Owner,
+        WorldAccess VisitAccess, WorldAccess BuildAccess, DateTimeOffset CreatedAt, DateTimeOffset? LastVisited, int Edits, int Devices, int Checkpoints);
 
     private List<WorldRow> _worlds = [];
     private List<PlacedDevice>? _devices;
     private Dictionary<Guid, string> _owners = [];
+    private Guid? _selected;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
     {
         await using var db = await Db.CreateDbContextAsync();
 
-        _worlds = await db.Worlds.OrderBy(w => w.Kind).ThenBy(w => w.CreatedAt)
-            .Select(w => new WorldRow(w.Id, w.Kind, w.Template, w.TemplateVersion, w.OwnerCharacterId, w.VisitAccess, w.BuildAccess,
+        _worlds = await db.Worlds.AsNoTracking().OrderBy(w => w.Kind).ThenBy(w => w.CreatedAt)
+            .Select(w => new WorldRow(w.Id, w.Kind, w.Name, w.Template, w.TemplateVersion, w.OwnerCharacterId, w.VisitAccess, w.BuildAccess,
+                w.CreatedAt, w.LastVisitedAt,
                 db.VoxelEdits.Count(e => e.WorldId == w.Id),
                 db.PlacedDevices.Count(d => d.WorldId == w.Id),
                 db.Checkpoints.Count(c => c.WorldId == w.Id)))
             .ToListAsync();
 
-        _owners = await db.Characters.ToDictionaryAsync(c => c.Id, c => c.Name);
+        _owners = await db.Characters.AsNoTracking().ToDictionaryAsync(c => c.Id, c => c.Name);
     }
 
     private string Title(WorldRow world) => world.Kind switch
     {
         WorldKind.Island => world.Owner is { } owner && _owners.TryGetValue(owner, out var name) ? $"{name}'s island" : "Unowned island",
         WorldKind.Hub => "Hub",
-        _ => world.Kind.ToString()
+        _ => world.Name ?? world.Kind.ToString()
+    };
+
+    private static string KindColor(WorldKind kind) => kind switch
+    {
+        WorldKind.Hub => "#a78bfa",
+        WorldKind.Island => "#34d399",
+        WorldKind.Ftue => "#22d3ee",
+        WorldKind.CharacterCreation => "#94a3b8",
+        _ => "#fbbf24"
+    };
+
+    private static string KindIcon(WorldKind kind) => kind switch
+    {
+        WorldKind.Hub => Icons.Material.Filled.LocationCity,
+        WorldKind.Island => Icons.Material.Filled.Landscape,
+        WorldKind.CharacterCreation => Icons.Material.Filled.Face,
+        _ => Icons.Material.Filled.Explore
     };
 
     private async Task SelectAsync(Guid worldId)
     {
         await using var db = await Db.CreateDbContextAsync();
+        _selected = worldId;
         _devices = await db.PlacedDevices.AsNoTracking().Where(d => d.WorldId == worldId).OrderBy(d => d.Id).ToListAsync();
+    }
+
+    private async Task SetAccessAsync(WorldRow world, WorldAccess visit, WorldAccess build)
+    {
+        await Actions.SetWorldAccessAsync(world.Id, visit, build);
+        Snackbar.Add($"{Title(world)}: visit {visit}, build {build}", Severity.Success);
+        await LoadAsync();
     }
 }

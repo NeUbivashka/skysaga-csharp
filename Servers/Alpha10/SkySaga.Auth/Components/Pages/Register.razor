@@ -1,59 +1,111 @@
 @page "/register"
 @inject AccountService Accounts
+@inject CommunityStats Stats
 @inject NavigationManager Navigation
 
 <PageTitle>Create account · SkySaga</PageTitle>
 
-<section class="card">
-    <h1>Create account</h1>
-    <p class="muted">Sign in to the launcher with your e-mail and password. You name and shape your character in the game.</p>
+<section class="auth-shell">
+    <div class="auth-hero">
+        <span class="kicker"><Icon Name="sparkle" /> New adventurer</span>
+        <h1 class="display">Claim your <span class="gradient-text">isle</span>.</h1>
+        <p class="lead">One account for the launcher and the game. You name and shape your character in the game on your first flight.</p>
+        <Motto />
 
-    <EditForm Model="Input" FormName="register" OnValidSubmit="SubmitAsync" method="post" class="form">
-        <DataAnnotationsValidator />
+        <div class="stat-row">
+            <div class="stat"><b data-count="@_community.Adventurers">@_community.Adventurers</b><span>adventurers</span></div>
+            <div class="stat"><b data-count="@_community.Isles">@_community.Isles</b><span>isles built</span></div>
+            <div class="stat live"><b data-count="@_community.Online">@_community.Online</b><span><i class="live-dot"></i>online now</span></div>
+        </div>
 
-        <label>
-            <span>E-mail</span>
-            <InputText type="email" @bind-Value="Input.Email" autocomplete="email" maxlength="254" autofocus />
-            <small class="hint">Stored encrypted. Admins see only a masked form.</small>
-            <ValidationMessage For="() => Input.Email" />
-            @if (_errors.TryGetValue("email", out var emailError))
-            {
-                <div class="validation-message">@emailError</div>
-            }
-        </label>
+        <ul class="perks">
+            <li>
+                <span class="perk-icon violet"><Icon Name="shield" /></span>
+                <div><strong>Unreadable password</strong><span>Kept only as an Argon2id hash. Nobody can read it, admins included.</span></div>
+            </li>
+            <li>
+                <span class="perk-icon azure"><Icon Name="mail" /></span>
+                <div><strong>Private e-mail</strong><span>Stored encrypted. Admins see a masked form like m***@@mail.com.</span></div>
+            </li>
+            <li>
+                <span class="perk-icon gold"><Icon Name="launch" /></span>
+                <div><strong>Straight into the sky</strong><span>Sign in to the launcher with the same details and press Play.</span></div>
+            </li>
+        </ul>
+    </div>
 
-        <label>
-            <span>Username</span>
-            <InputText @bind-Value="Input.Username" autocomplete="username" maxlength="32" />
-            <small class="hint">3–32 letters, digits, dots, dashes or underscores.</small>
-            <ValidationMessage For="() => Input.Username" />
-            @if (_errors.TryGetValue("username", out var usernameError))
-            {
-                <div class="validation-message">@usernameError</div>
-            }
-        </label>
+    <div class="auth-card">
+        <div class="auth-card-head">
+            <h2>Create account</h2>
+            <p class="muted">It takes about ten seconds.</p>
+        </div>
 
-        <label>
-            <span>Password</span>
-            <InputPassword @bind-Value="Input.Password" autocomplete="new-password" maxlength="128" />
-            <small class="hint">At least @AccountService.MinPasswordLength characters.</small>
-            <ValidationMessage For="() => Input.Password" />
-            @if (_errors.TryGetValue("password", out var passwordError))
-            {
-                <div class="validation-message">@passwordError</div>
-            }
-        </label>
+        <EditForm Model="Input" FormName="register" OnValidSubmit="SubmitAsync" method="post" class="form" novalidate>
+            <DataAnnotationsValidator />
 
-        <label>
-            <span>Repeat password</span>
-            <InputPassword @bind-Value="Input.Confirm" autocomplete="new-password" maxlength="128" />
-            <ValidationMessage For="() => Input.Confirm" />
-        </label>
+            <div class="field">
+                <label for="email">E-mail</label>
+                <div class="input-wrap">
+                    <Icon Name="mail" Class="input-icon" />
+                    <InputText id="email" type="email" @bind-Value="Input.Email" autocomplete="email" maxlength="254" placeholder="you@example.com" autofocus />
+                </div>
+                <small class="hint">Stored encrypted. Admins see only a masked form.</small>
+                <ValidationMessage For="() => Input.Email" />
+                @if (_errors.TryGetValue("email", out var emailError))
+                {
+                    <div class="validation-message">@emailError</div>
+                }
+            </div>
 
-        <button type="submit" class="button primary wide">Create account</button>
-    </EditForm>
+            <div class="field">
+                <label for="username">Username</label>
+                <div class="input-wrap">
+                    <Icon Name="user" Class="input-icon" />
+                    <InputText id="username" @bind-Value="Input.Username" autocomplete="username" maxlength="32" placeholder="SkyCaptain" />
+                </div>
+                <small class="hint">3–32 letters, digits, dots, dashes or underscores.</small>
+                <ValidationMessage For="() => Input.Username" />
+                @if (_errors.TryGetValue("username", out var usernameError))
+                {
+                    <div class="validation-message">@usernameError</div>
+                }
+            </div>
 
-    <p class="switch">Already have an account? <a href="/login">Sign in</a></p>
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <Icon Name="lock" Class="input-icon" />
+                    <InputPassword id="password" @bind-Value="Input.Password" autocomplete="new-password" maxlength="128" placeholder="@($"At least {AccountService.MinPasswordLength} characters")" data-strength="password-strength" />
+                    <button type="button" class="reveal" data-reveal="password" aria-label="Show password"><Icon Name="eye" /></button>
+                </div>
+                <div class="strength" id="password-strength" data-min="@AccountService.MinPasswordLength">
+                    <div class="strength-bars"><span></span><span></span><span></span><span></span></div>
+                    <small class="strength-label">Use at least @AccountService.MinPasswordLength characters.</small>
+                </div>
+                <ValidationMessage For="() => Input.Password" />
+                @if (_errors.TryGetValue("password", out var passwordError))
+                {
+                    <div class="validation-message">@passwordError</div>
+                }
+            </div>
+
+            <div class="field">
+                <label for="confirm">Repeat password</label>
+                <div class="input-wrap">
+                    <Icon Name="key" Class="input-icon" />
+                    <InputPassword id="confirm" @bind-Value="Input.Confirm" autocomplete="new-password" maxlength="128" placeholder="Once more" data-match="password" />
+                    <span class="match-mark"><Icon Name="check" /></span>
+                </div>
+                <ValidationMessage For="() => Input.Confirm" />
+            </div>
+
+            <button type="submit" class="button primary wide shine">
+                Create account <Icon Name="arrow" />
+            </button>
+        </EditForm>
+
+        <p class="switch">Already have an account? <a href="/login">Sign in</a></p>
+    </div>
 </section>
 
 @code {
@@ -63,8 +115,13 @@
     private RegisterModel Input { get; set; } = default!;
 
     private readonly Dictionary<string, string> _errors = [];
+    private Community _community = new(0, 0, 0);
 
-    protected override void OnInitialized() => Input ??= new();
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        _community = await Stats.GetAsync();
+    }
 
     private async Task SubmitAsync()
     {

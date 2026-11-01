@@ -1,65 +1,135 @@
 @page "/players"
+@inherits LivePage
 @inject IDbContextFactory<SkySagaDbContext> Db
 @inject NavigationManager Navigation
 
 <PageTitle>Players · SkySaga Control</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Players</MudText>
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Characters</div>
+        <h1 class="page-title">Players</h1>
+        <div class="page-subtitle">@_rows.Count characters · @Live.Online.Count online now</div>
+    </div>
+</div>
 
-<MudPaper Class="pa-4 section" Elevation="0">
-    <MudDataGrid T="PlayerRow" Items="_rows" QuickFilter="Matches" Hover="true" Dense="true" Elevation="0"
+<div class="filter-bar">
+    <MudTextField @bind-Value="_search" Placeholder="Search by character or account" Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="filter-search" />
+    <button class="filter-chip @(_filter == "all" ? "active" : "")" @onclick='() => _filter = "all"'>All <span>@_rows.Count</span></button>
+    <button class="filter-chip green @(_filter == "online" ? "active" : "")" @onclick='() => _filter = "online"'>Online <span>@Live.Online.Count</span></button>
+    <button class="filter-chip gold @(_filter == "vip" ? "active" : "")" @onclick='() => _filter = "vip"'>VIP <span>@_rows.Count(r => r.Premium)</span></button>
+    <button class="filter-chip red @(_filter == "banned" ? "active" : "")" @onclick='() => _filter = "banned"'>Banned <span>@_rows.Count(r => r.Banned)</span></button>
+</div>
+
+<div class="glass-card no-pad">
+    <MudDataGrid T="PlayerRow" Items="Filtered" Hover="true" Elevation="0" Class="glass-grid" RowsPerPage="25"
                  RowClick="@(args => Navigation.NavigateTo($"/players/{args.Item.Id}"))" RowStyle="cursor:pointer">
-        <ToolBarContent>
-            <MudTextField @bind-Value="_search" Placeholder="Search by character or account" Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Class="mt-0" />
-        </ToolBarContent>
         <Columns>
-            <PropertyColumn Property="x => x.Name" Title="Character" />
-            <PropertyColumn Property="x => x.Account" Title="Account" />
+            <TemplateColumn Title="Character" SortBy="x => x.Name">
+                <CellTemplate>
+                    <div class="person-cell">
+                        <Avatar Name="@context.Item.Name" Size="sm" Photo="@Live.AvatarOf(context.Item.Id)" Online="@(IsOnline(context.Item.Id))" />
+                        <div>
+                            <div class="person-name">@context.Item.Name</div>
+                            <div class="person-sub">@context.Item.Account</div>
+                        </div>
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Where" Sortable="false">
+                <CellTemplate>
+                    @if (Live.Online.FirstOrDefault(p => p.Id == context.Item.Id) is { } online)
+                    {
+                        <span class="tag green">@online.World</span>
+                    }
+                    else
+                    {
+                        <span class="muted-label">offline</span>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
             <TemplateColumn Title="Role" SortBy="x => x.Role">
                 <CellTemplate>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(context.Item.Role == AccountRole.Player ? Color.Default : Color.Secondary)">@context.Item.Role</MudChip>
+                    <span class="tag @(context.Item.Role switch { AccountRole.Admin => "pink", AccountRole.GameMaster => "violet", _ => "" })">@context.Item.Role</span>
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Rank" Title="Rank" />
-            <PropertyColumn Property="x => x.Map" Title="Map" />
             <PropertyColumn Property="x => x.Items" Title="Items" />
+            <TemplateColumn Title="VIP" SortBy="x => x.PremiumUntil">
+                <CellTemplate>
+                    @if (Forever.Is(context.Item.PremiumUntil))
+                    {
+                        <span class="vip-badge forever small">∞ forever</span>
+                    }
+                    else if (context.Item.Premium)
+                    {
+                        <span class="vip-badge small">@Format.Left(context.Item.PremiumUntil!.Value)</span>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
             <TemplateColumn Title="Status" SortBy="x => x.Banned">
                 <CellTemplate>
                     @if (context.Item.Banned)
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Block">Banned</MudChip>
+                        <span class="tag red">Banned</span>
                     }
                     else
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Active</MudChip>
+                        <span class="tag green-soft">Active</span>
                     }
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.LastSeen" Title="Last seen" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Last seen" SortBy="x => x.LastSeen">
+                <CellTemplate><span class="muted-label">@(IsOnline(context.Item.Id) ? "now" : Format.Ago(context.Item.LastSeen))</span></CellTemplate>
+            </TemplateColumn>
         </Columns>
-        <NoRecordsContent><MudText Class="mud-text-secondary">No characters yet.</MudText></NoRecordsContent>
+        <NoRecordsContent><div class="empty-state">No characters match.</div></NoRecordsContent>
         <PagerContent><MudDataGridPager T="PlayerRow" /></PagerContent>
     </MudDataGrid>
-</MudPaper>
+</div>
 
 @code {
-    private record PlayerRow(Guid Id, string Name, string Account, AccountRole Role, int Rank, string? Map, int Items, bool Banned, DateTimeOffset? LastSeen);
+    private record PlayerRow(Guid Id, string Name, string Account, AccountRole Role, int Rank, int Items, bool Banned, DateTimeOffset? PremiumUntil, DateTimeOffset? LastSeen)
+    {
+        public bool Premium => PremiumUntil > DateTimeOffset.UtcNow;
+    }
 
     private List<PlayerRow> _rows = [];
     private string _search = "";
+    private string _filter = "all";
+    private DateTimeOffset _loaded;
 
-    protected override async Task OnInitializedAsync()
+    private IEnumerable<PlayerRow> Filtered => _rows.Where(Matches).Where(row => _filter switch
+    {
+        "online" => IsOnline(row.Id),
+        "vip" => row.Premium,
+        "banned" => row.Banned,
+        _ => true
+    });
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override async Task OnLiveChangedAsync()
+    {
+        if (DateTimeOffset.UtcNow - _loaded > TimeSpan.FromSeconds(10))
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
     {
         await using var db = await Db.CreateDbContextAsync();
         var now = DateTimeOffset.UtcNow;
 
-        _rows = await db.Characters.OrderBy(c => c.Name)
+        _rows = await db.Characters.AsNoTracking().OrderBy(c => c.Name)
             .Select(c => new PlayerRow(c.Id, c.Name, c.Account!.Username, c.Account.Role,
                 c.Jobs.Where(j => j.Name == "Unified").Select(j => (int)j.Rank).FirstOrDefault(),
-                c.PositionMap, c.Inventory.Count, c.Account.BannedUntil > now, c.LastSeenAt))
+                c.Inventory.Count, c.Account.BannedUntil > now, c.Account.PremiumUntil, c.LastSeenAt))
             .ToListAsync();
+        _loaded = now;
     }
+
+    private bool IsOnline(Guid id) => Live.Online.Any(p => p.Id == id);
 
     private bool Matches(PlayerRow row)
         => string.IsNullOrWhiteSpace(_search)

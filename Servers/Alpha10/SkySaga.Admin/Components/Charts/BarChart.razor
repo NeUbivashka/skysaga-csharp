@@ -1,0 +1,72 @@
+<div class="bar-chart" @onmouseleave="() => _hovered = null">
+    <svg viewBox="0 0 @Width @Height" preserveAspectRatio="xMidYMid meet" role="img" aria-label="@Title">
+        <defs>
+            <linearGradient id="@_fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="@Color" />
+                <stop offset="100%" stop-color="@(SecondColor ?? Color)" stop-opacity="0.35" />
+            </linearGradient>
+        </defs>
+
+        @for (var line = 0; line <= 4; line++)
+        {
+            var y = Top + PlotHeight - line / 4.0 * PlotHeight;
+            <g>
+                <line x1="@Left" x2="@(Width - Right)" y1="@ChartGeometry.Number(y)" y2="@ChartGeometry.Number(y)" class="grid-line" />
+                <text x="@(Left - 8)" y="@ChartGeometry.Number(y + 4)" class="axis-label" text-anchor="end">@ChartGeometry.Number(_max * line / 4)</text>
+            </g>
+        }
+
+        @for (var i = 0; i < Values.Count; i++)
+        {
+            var index = i;
+            var slot = PlotWidth / Values.Count;
+            var barWidth = slot * 0.62;
+            var x = Left + i * slot + (slot - barWidth) / 2;
+            var height = Values[i] / _max * PlotHeight;
+            var y = Top + PlotHeight - height;
+            <rect x="@ChartGeometry.Number(Left + i * slot)" y="@Top" width="@ChartGeometry.Number(slot)" height="@PlotHeight" fill="transparent" @onmouseover="() => _hovered = index" />
+            <rect x="@ChartGeometry.Number(x)" y="@ChartGeometry.Number(y)" width="@ChartGeometry.Number(barWidth)" height="@ChartGeometry.Number(Math.Max(height, 0))" rx="5"
+                  fill="url(#@_fill)" class="bar @(_hovered == index ? "hovered" : "")" @onmouseover="() => _hovered = index" />
+            @if (Labels.Count > i && i % LabelEvery == 0)
+            {
+                <g><text x="@ChartGeometry.Number(x + barWidth / 2)" y="@(Height - 6)" class="axis-label" text-anchor="middle">@Labels[i]</text></g>
+            }
+            @if (_hovered == index)
+            {
+                var text = $"{(Labels.Count > i ? Labels[i] : "")}  {Values[i]:N0} {Unit}".Trim();
+                var boxWidth = Math.Max(70, text.Length * 7.2 + 16);
+                var boxX = Math.Clamp(x + barWidth / 2 - boxWidth / 2, Left, Width - Right - boxWidth);
+                <g>
+                    <rect x="@ChartGeometry.Number(boxX)" y="@ChartGeometry.Number(Math.Max(y - 34, 2))" width="@ChartGeometry.Number(boxWidth)" height="26" rx="8" class="tooltip-box" />
+                    <text x="@ChartGeometry.Number(boxX + boxWidth / 2)" y="@ChartGeometry.Number(Math.Max(y - 34, 2) + 17)" class="tooltip-text" text-anchor="middle">@text</text>
+                </g>
+            }
+        }
+    </svg>
+</div>
+
+@code {
+    private const double Left = 40;
+    private const double Right = 10;
+    private const double Top = 14;
+    private const double Bottom = 28;
+
+    [Parameter, EditorRequired] public IReadOnlyList<double> Values { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Labels { get; set; } = [];
+    [Parameter] public string Color { get; set; } = "#a78bfa";
+    [Parameter] public string? SecondColor { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Unit { get; set; } = "";
+    [Parameter] public int Width { get; set; } = 520;
+    [Parameter] public int Height { get; set; } = 240;
+    [Parameter] public int LabelEvery { get; set; } = 2;
+
+    private readonly string _fill = ChartGeometry.NewId();
+    private double _max = 1;
+    private int? _hovered;
+
+    private double PlotWidth => Width - Left - Right;
+    private double PlotHeight => Height - Top - Bottom;
+
+    protected override void OnParametersSet() => _max = ChartGeometry.NiceMax(Math.Max(Values.DefaultIfEmpty(0).Max(), 4));
+}

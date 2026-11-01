@@ -1,0 +1,27 @@
+@implements IDisposable
+
+<div class="page-subtitle motto">
+    <span class="motto-text" @key="_index"><span class="motto-mark">✦</span>@Mottos.All[_order[_index]]</span>
+</div>
+
+@code {
+    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(8);
+
+    private readonly int[] _order = Enumerable.Range(0, Mottos.All.Length).ToArray();
+    private int _index;
+    private Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        Random.Shared.Shuffle(_order);
+        _timer = new Timer(_ => InvokeAsync(Next), null, Interval, Interval);
+    }
+
+    private void Next()
+    {
+        _index = (_index + 1) % _order.Length;
+        StateHasChanged();
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

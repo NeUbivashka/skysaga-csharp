@@ -1,0 +1,86 @@
+@using SkySaga.Admin.Services
+
+<div class="donut">
+    <div class="donut-ring" style="width:@(Size)px;height:@(Size)px">
+        <svg viewBox="0 0 200 200" role="img" aria-label="@Title">
+            <defs>
+                <filter id="@_glow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+            </defs>
+            <circle cx="100" cy="100" r="@Radius" class="donut-track" style="stroke-width:@Thickness" />
+            @{
+                var offset = 0.0;
+            }
+            @for (var i = 0; i < Slices.Count; i++)
+            {
+                var index = i;
+                var slice = Slices[i];
+                var length = _total > 0 ? slice.Value / _total * Circumference : 0;
+                var visible = Math.Max(length - Gap, 0);
+                <circle cx="100" cy="100" r="@Radius"
+                        class="donut-slice @(_hovered == index ? "hovered" : "")"
+                        style="stroke:@slice.Color;stroke-width:@(_hovered == index ? Thickness + 6 : Thickness);stroke-dasharray:@ChartGeometry.Number(visible) @ChartGeometry.Number(Circumference);stroke-dashoffset:@ChartGeometry.Number(-offset)"
+                        filter="@(_hovered == index ? $"url(#{_glow})" : null)"
+                        @onmouseover="() => _hovered = index" @onmouseout="() => _hovered = null">
+                    <title>@slice.Label: @slice.Value.ToString("N0") (@Percent(slice.Value))</title>
+                </circle>
+                offset += length;
+            }
+        </svg>
+        <div class="donut-center">
+            @if (_hovered is int h && h < Slices.Count)
+            {
+                <div class="donut-value" style="color:@Slices[h].Color">@Slices[h].Value.ToString("N0")</div>
+                <div class="donut-caption">@Slices[h].Label</div>
+            }
+            else
+            {
+                <div class="donut-value">@_total.ToString("N0")</div>
+                <div class="donut-caption">@CenterLabel</div>
+            }
+        </div>
+    </div>
+    @if (ShowLegend)
+    {
+        <ul class="donut-legend">
+            @for (var i = 0; i < Slices.Count; i++)
+            {
+                var index = i;
+                var slice = Slices[i];
+                <li class="@(_hovered == index ? "active" : "") @(slice.Value == 0 ? "empty" : "")" @onmouseover="() => _hovered = index" @onmouseout="() => _hovered = null">
+                    <span class="dot" style="background:@slice.Color;box-shadow:0 0 10px @slice.Color"></span>
+                    <span class="label">@slice.Label</span>
+                    <span class="value mono">@slice.Value.ToString("N0")</span>
+                    <span class="percent mono">@Percent(slice.Value)</span>
+                </li>
+            }
+            @if (Slices.Count == 0)
+            {
+                <li class="empty"><span class="label">No data yet</span></li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private const double Radius = 78;
+    private const double Gap = 3;
+    private static readonly double Circumference = 2 * Math.PI * Radius;
+
+    [Parameter, EditorRequired] public IReadOnlyList<Slice> Slices { get; set; } = [];
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string CenterLabel { get; set; } = "total";
+    [Parameter] public int Size { get; set; } = 180;
+    [Parameter] public double Thickness { get; set; } = 20;
+    [Parameter] public bool ShowLegend { get; set; } = true;
+
+    private readonly string _glow = ChartGeometry.NewId();
+    private double _total;
+    private int? _hovered;
+
+    protected override void OnParametersSet() => _total = Slices.Sum(s => s.Value);
+
+    private string Percent(double value) => _total > 0 ? $"{value / _total * 100:0}%" : "0%";
+}

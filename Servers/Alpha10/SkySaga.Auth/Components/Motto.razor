@@ -1,0 +1,10 @@
+@using System.Text.Json
+
+<p class="motto @Class" data-mottos="@JsonSerializer.Serialize(Mottos.All)">
+    <span class="motto-mark"><Icon Name="sparkle" /></span>
+    <span class="motto-text">@Mottos.All[Random.Shared.Next(Mottos.All.Length)]</span>
+</p>
+
+@code {
+    [Parameter] public string Class { get; set; } = "";
+}

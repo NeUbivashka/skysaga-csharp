@@ -51,6 +51,9 @@ public static class WorldTravel
 
         connection.Send(new TeleportBegins { Spec = world.Manager.Definition.Spec });
 
+        GameEvents.Record("player.travel", destination.Id, characterId,
+            new { from = connection.WorldManager.Info.Kind.ToString(), to = destination.Kind.ToString() });
+
         Console.WriteLine($"[Travel] {connection.CharacterName} leaves {connection.WorldManager.Info.Kind} {connection.WorldManager.Info.Id} "
             + $"for {destination.Kind} {destination.Id} at {connection.GameHost}:{connection.Server.Port}.");
     }

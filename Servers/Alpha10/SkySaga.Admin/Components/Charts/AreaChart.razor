@@ -1,0 +1,96 @@
+<div class="area-chart" @onmouseleave="() => _hovered = null">
+    <svg viewBox="0 0 @Width @Height" preserveAspectRatio="xMidYMid meet" role="img" aria-label="@Title">
+        <defs>
+            <linearGradient id="@_fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="@Color" stop-opacity="0.45" />
+                <stop offset="100%" stop-color="@Color" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="@_stroke" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="@(SecondColor ?? Color)" />
+                <stop offset="100%" stop-color="@Color" />
+            </linearGradient>
+            <filter id="@_glow" x="-5%" y="-30%" width="110%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+        </defs>
+
+        @for (var line = 0; line <= 4; line++)
+        {
+            var y = Top + PlotHeight - line / 4.0 * PlotHeight;
+            <g>
+                <line x1="@Left" x2="@(Width - Right)" y1="@ChartGeometry.Number(y)" y2="@ChartGeometry.Number(y)" class="grid-line" />
+                <text x="@(Left - 8)" y="@ChartGeometry.Number(y + 4)" class="axis-label" text-anchor="end">@ChartGeometry.Number(_max * line / 4)</text>
+            </g>
+        }
+
+        @if (_points.Count > 0)
+        {
+            <path d="@($"{_path} L{ChartGeometry.Number(_points[^1].X)},{Top + PlotHeight} L{ChartGeometry.Number(_points[0].X)},{Top + PlotHeight} Z")" fill="url(#@_fill)" class="area-fill" />
+            <path d="@_path" fill="none" stroke="url(#@_stroke)" stroke-width="3" stroke-linecap="round" filter="url(#@_glow)" class="area-line" />
+        }
+
+        @for (var i = 0; i < _points.Count; i++)
+        {
+            var index = i;
+            var point = _points[i];
+            var slot = PlotWidth / Math.Max(_points.Count - 1, 1);
+            <rect x="@ChartGeometry.Number(point.X - slot / 2)" y="@Top" width="@ChartGeometry.Number(slot)" height="@PlotHeight" fill="transparent" @onmouseover="() => _hovered = index" />
+            @if (Labels.Count > i && (i % LabelEvery == 0 || i == _points.Count - 1))
+            {
+                <g><text x="@ChartGeometry.Number(point.X)" y="@(Height - 6)" class="axis-label" text-anchor="middle">@Labels[i]</text></g>
+            }
+        }
+
+        @if (_hovered is int h && h < _points.Count)
+        {
+            var point = _points[h];
+            var label = Labels.Count > h ? Labels[h] : "";
+            var text = $"{label}  {Values[h]:N0} {Unit}".Trim();
+            var boxWidth = Math.Max(70, text.Length * 7.2 + 16);
+            var boxX = Math.Clamp(point.X - boxWidth / 2, Left, Width - Right - boxWidth);
+            <g>
+                <line x1="@ChartGeometry.Number(point.X)" x2="@ChartGeometry.Number(point.X)" y1="@Top" y2="@(Top + PlotHeight)" class="hover-line" />
+                <circle cx="@ChartGeometry.Number(point.X)" cy="@ChartGeometry.Number(point.Y)" r="6" fill="@Color" class="hover-dot" />
+                <rect x="@ChartGeometry.Number(boxX)" y="@ChartGeometry.Number(Math.Max(point.Y - 40, 2))" width="@ChartGeometry.Number(boxWidth)" height="26" rx="8" class="tooltip-box" />
+                <text x="@ChartGeometry.Number(boxX + boxWidth / 2)" y="@ChartGeometry.Number(Math.Max(point.Y - 40, 2) + 17)" class="tooltip-text" text-anchor="middle">@text</text>
+            </g>
+        }
+    </svg>
+</div>
+
+@code {
+    private const double Left = 44;
+    private const double Right = 12;
+    private const double Top = 14;
+    private const double Bottom = 28;
+
+    [Parameter, EditorRequired] public IReadOnlyList<double> Values { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Labels { get; set; } = [];
+    [Parameter] public string Color { get; set; } = "#38bdf8";
+    [Parameter] public string? SecondColor { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Unit { get; set; } = "";
+    [Parameter] public int Width { get; set; } = 720;
+    [Parameter] public int Height { get; set; } = 240;
+    [Parameter] public int LabelEvery { get; set; } = 3;
+
+    private readonly string _fill = ChartGeometry.NewId();
+    private readonly string _stroke = ChartGeometry.NewId();
+    private readonly string _glow = ChartGeometry.NewId();
+    private List<(double X, double Y)> _points = [];
+    private string _path = "";
+    private double _max = 1;
+    private int? _hovered;
+
+    private double PlotWidth => Width - Left - Right;
+    private double PlotHeight => Height - Top - Bottom;
+
+    protected override void OnParametersSet()
+    {
+        _max = ChartGeometry.NiceMax(Math.Max(Values.DefaultIfEmpty(0).Max(), 4));
+        var step = PlotWidth / Math.Max(Values.Count - 1, 1);
+        _points = [.. Values.Select((value, i) => (Left + i * step, Top + PlotHeight - value / _max * PlotHeight))];
+        _path = ChartGeometry.SmoothPath(_points);
+    }
+}

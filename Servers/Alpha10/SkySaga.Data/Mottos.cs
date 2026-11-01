@@ -1,0 +1,52 @@
+namespace SkySaga.Data;
+
+public static class Mottos
+{
+    public static readonly string[] All =
+    [
+        "The winds are kind today. Fair skies, captain.",
+        "Every isle was once a single block. Keep building.",
+        "The portals are humming. Adventure is one step away.",
+        "May your pickaxe stay sharp and your pockets stay full.",
+        "Clouds below, stars above, friends all around.",
+        "No storm lasts forever. Isles do.",
+        "Today's forecast: clear skies with a high chance of loot.",
+        "A good builder measures twice and places once.",
+        "Even the smallest isle has room for a big dream.",
+        "The sky has no edge. Neither does your imagination.",
+        "Keep calm and craft on.",
+        "Somebody just found something shiny. You might be next.",
+        "Lanterns lit, bridges built, the isles are waking up.",
+        "Every adventurer was once a beginner with a wooden sword.",
+        "Hold on to your hat, the updrafts are strong today.",
+        "Brave hearts, steady hands, endless horizons.",
+        "The best view is always one more jump away.",
+        "Gather, craft, build, repeat. The isles thank you.",
+        "Fortune favours the curious explorer.",
+        "There is always another isle beyond the clouds.",
+        "Good morning, isles. Or evening. Time is strange up here.",
+        "A sky full of isles, and every one of them is home.",
+        "The creatures are restless. The heroes are ready.",
+        "Build something today that makes someone smile tomorrow.",
+        "Watch your step: the ground ends sooner than you think.",
+        "The forge is warm, and the mood is warmer.",
+        "Rare loot comes to those who keep exploring.",
+        "The stars align for those who dare to fly.",
+        "Every block placed is a story told.",
+        "The isles are quiet. That just means they are listening.",
+        "Adventure awaits. Snacks recommended.",
+        "Strong walls, open doors, kind neighbours.",
+        "Up here, every sunrise is a new beginning.",
+        "Let the winds carry you somewhere wonderful.",
+        "A true hero comes back with more stories than scars.",
+        "Mind the gap between the isles. It is a long way down.",
+        "The world is made of blocks, and the blocks are made of dreams.",
+        "Thank you for keeping the isles alive.",
+        "Fly high, build bold, play kind.",
+        "The skies remember everyone who ever built here.",
+        "One more adventure? The portal says yes.",
+        "Great isles are not found. They are built, block by block.",
+        "Treasure is nice. Friends to share it with are better.",
+        "The horizon called. It asked for you by name."
+    ];
+}

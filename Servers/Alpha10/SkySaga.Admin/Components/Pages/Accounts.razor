@@ -1,15 +1,23 @@
 @page "/accounts"
+@inherits LivePage
 @inject IDbContextFactory<SkySagaDbContext> Db
 @inject AuthLinks Links
 @inject ISnackbar Snackbar
+@inject IDialogService Dialogs
+@inject AccountActions Actions
 
 <PageTitle>Accounts · SkySaga Control</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h4">Accounts</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@Links.PublicUrl" Target="_blank">Account site</MudButton>
-</MudStack>
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Sign-in and permissions</div>
+        <h1 class="page-title">Accounts</h1>
+        <div class="page-subtitle">@_rows.Count accounts · @_rows.Count(r => r.Premium) VIP · @_rows.Count(r => r.Status == "Banned") banned</div>
+    </div>
+    <div class="header-actions">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@Links.PublicUrl" Target="_blank">Account site</MudButton>
+    </div>
+</div>
 
 @if (_resetLink is not null)
 {
@@ -19,15 +27,30 @@
     </MudAlert>
 }
 
-<MudPaper Class="pa-4 section" Elevation="0">
-    <MudDataGrid T="AccountRow" Items="_rows" QuickFilter="Matches" Hover="true" Dense="true" Elevation="0">
-        <ToolBarContent>
-            <MudTextField @bind-Value="_search" Placeholder="Search by account or character" Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Class="mt-0" />
-        </ToolBarContent>
+<div class="filter-bar">
+    <MudTextField @bind-Value="_search" Placeholder="Search by account, e-mail or character" Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="filter-search" />
+    @foreach (var (key, label, css) in Filters)
+    {
+        var filter = key;
+        <button class="filter-chip @css @(_filter == filter ? "active" : "")" @onclick="() => _filter = filter">@label <span>@Count(filter)</span></button>
+    }
+</div>
+
+<div class="glass-card no-pad">
+    <MudDataGrid T="AccountRow" Items="Filtered" Hover="true" Elevation="0" Class="glass-grid" RowsPerPage="25">
         <Columns>
-            <PropertyColumn Property="x => x.Username" Title="Account" />
-            <PropertyColumn Property="x => x.Email" Title="E-mail" />
+            <TemplateColumn Title="Account" SortBy="x => x.Username">
+                <CellTemplate>
+                    <div class="person-cell">
+                        <Avatar Name="@context.Item.Username" Size="sm" Photo="@Live.AvatarOf(context.Item.CharacterId)" Online="@(context.Item.CharacterId is Guid id && Live.Online.Any(p => p.Id == id))" />
+                        <div>
+                            <div class="person-name">@context.Item.Username</div>
+                            <div class="person-sub">@(context.Item.Email ?? "no e-mail")</div>
+                        </div>
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
             <TemplateColumn Title="Character" SortBy="x => x.Character">
                 <CellTemplate>
                     @if (context.Item.CharacterId is { } characterId)
@@ -36,13 +59,13 @@
                     }
                     else
                     {
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">not created yet</MudText>
+                        <span class="muted-label">not created yet</span>
                     }
                 </CellTemplate>
             </TemplateColumn>
             <TemplateColumn Title="Role" SortBy="x => x.Role">
                 <CellTemplate>
-                    <MudSelect T="AccountRole" Value="context.Item.Role" ValueChanged="role => SetRoleAsync(context.Item, role)" Dense="true" Margin="Margin.Dense" Variant="Variant.Text">
+                    <MudSelect T="AccountRole" Value="context.Item.Role" ValueChanged="role => SetRoleAsync(context.Item, role)" Dense="true" Margin="Margin.Dense" Variant="Variant.Text" Class="role-select">
                         @foreach (var role in Enum.GetValues<AccountRole>())
                         {
                             <MudSelectItem Value="role">@role</MudSelectItem>
@@ -52,60 +75,99 @@
             </TemplateColumn>
             <TemplateColumn Title="Status" SortBy="x => x.Status">
                 <CellTemplate>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(context.Item.Status)">@context.Item.Status</MudChip>
+                    <span class="tag @StatusCss(context.Item.Status)" title="@(context.Item.Status == "Banned" ? $"{Format.Until(context.Item.BannedUntil)} · {context.Item.BanReason}" : null)">
+                        @(context.Item.Status == "Banned" && Forever.Is(context.Item.BannedUntil) ? "Banned forever" : context.Item.Status)
+                    </span>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Premium" SortBy="x => x.PremiumUntil">
+            <TemplateColumn Title="VIP" SortBy="x => x.PremiumUntil">
                 <CellTemplate>
-                    @if (context.Item.PremiumUntil > DateTimeOffset.UtcNow)
-                    {
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning">until @context.Item.PremiumUntil.Value.ToString("yyyy-MM-dd")</MudChip>
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">no</MudText>
-                    }
-                </CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.Sessions" Title="Sessions" />
-            <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.LastLogin" Title="Last sign-in" Format="yyyy-MM-dd HH:mm" />
-            <TemplateColumn Title="" Sortable="false">
-                <CellTemplate>
-                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                        <MudMenuItem Icon="@Icons.Material.Filled.Key" OnClick="() => ResetAsync(context.Item)">Password reset link</MudMenuItem>
-                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="() => SignOutAsync(context.Item)">Sign out everywhere</MudMenuItem>
-                        <MudMenuItem Icon="@Icons.Material.Filled.Star" OnClick="() => AddPremiumAsync(context.Item, 30)">Premium +30 days</MudMenuItem>
-                        <MudMenuItem Icon="@Icons.Material.Filled.Star" OnClick="() => AddPremiumAsync(context.Item, 365)">Premium +1 year</MudMenuItem>
-                        @if (context.Item.PremiumUntil > DateTimeOffset.UtcNow)
+                    <button class="vip-cell" @onclick="() => EditPremiumAsync(context.Item)" title="Change VIP">
+                        @if (Forever.Is(context.Item.PremiumUntil))
                         {
-                            <MudMenuItem Icon="@Icons.Material.Filled.StarBorder" OnClick="() => RemovePremiumAsync(context.Item)">Remove premium</MudMenuItem>
+                            <span class="vip-badge forever small">∞ forever</span>
                         }
-                        @if (context.Item.Status == "Banned")
+                        else if (context.Item.Premium)
                         {
-                            <MudMenuItem Icon="@Icons.Material.Filled.LockOpen" OnClick="() => SetBanAsync(context.Item, null)">Lift ban</MudMenuItem>
+                            <span class="vip-badge small">until @context.Item.PremiumUntil!.Value.ToLocalTime().ToString("yyyy-MM-dd")</span>
                         }
                         else
                         {
-                            <MudMenuItem Icon="@Icons.Material.Filled.Block" IconColor="Color.Error" OnClick="() => SetBanAsync(context.Item, DateTimeOffset.UtcNow.AddDays(7))">Ban 7 days</MudMenuItem>
+                            <span class="muted-label">+ add</span>
                         }
+                    </button>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Sessions" Title="Sessions" />
+            <TemplateColumn Title="Created" SortBy="x => x.CreatedAt">
+                <CellTemplate><span class="muted-label">@context.Item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</span></CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Last sign-in" SortBy="x => x.LastLogin">
+                <CellTemplate><span class="muted-label">@Format.Ago(context.Item.LastLogin)</span></CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <MudMenuItem Icon="@Icons.Material.Filled.WorkspacePremium" OnClick="() => EditPremiumAsync(context.Item)">VIP…</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.AllInclusive" OnClick="() => ForeverAsync(context.Item)">VIP forever</MudMenuItem>
+                        @if (context.Item.Status == "Banned")
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.LockOpen" OnClick="() => UnbanAsync(context.Item)">Lift ban</MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.Gavel" IconColor="Color.Error" OnClick="() => BanAsync(context.Item)">Ban…</MudMenuItem>
+                        }
+                        @if (context.Item.Status == "Locked")
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.LockReset" OnClick="() => UnlockAsync(context.Item)">Unlock sign-in</MudMenuItem>
+                        }
+                        <MudMenuItem Icon="@Icons.Material.Filled.Key" OnClick="() => ResetAsync(context.Item)">Password reset link</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="() => SignOutAsync(context.Item)">Sign out everywhere</MudMenuItem>
                     </MudMenu>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
-        <NoRecordsContent><MudText Class="mud-text-secondary">No accounts yet.</MudText></NoRecordsContent>
+        <NoRecordsContent><div class="empty-state">No accounts match.</div></NoRecordsContent>
         <PagerContent><MudDataGridPager T="AccountRow" /></PagerContent>
     </MudDataGrid>
-</MudPaper>
+</div>
 
 @code {
     private record AccountRow(Guid Id, string Username, string? Email, Guid? CharacterId, string? Character, AccountRole Role, string Status,
-        DateTimeOffset? PremiumUntil, int Sessions, DateTimeOffset CreatedAt, DateTimeOffset? LastLogin);
+        DateTimeOffset? PremiumUntil, DateTimeOffset? BannedUntil, string? BanReason, int Sessions, DateTimeOffset CreatedAt, DateTimeOffset? LastLogin)
+    {
+        public bool Premium => PremiumUntil > DateTimeOffset.UtcNow;
+    }
+
+    private static readonly (string Key, string Label, string Css)[] Filters =
+    [
+        ("all", "All", ""), ("vip", "VIP", "gold"), ("banned", "Banned", "red"), ("locked", "Locked", "orange"), ("staff", "Staff", "violet")
+    ];
+
+    [SupplyParameterFromQuery(Name = "search")] private string? SearchQuery { get; set; }
+
+    private string _search = "";
 
     private List<AccountRow> _rows = [];
-    private string _search = "";
+    private string _filter = "all";
     private string? _resetLink;
     private string? _resetFor;
+
+    private IEnumerable<AccountRow> Filtered => _rows.Where(Matches).Where(row => Is(row, _filter));
+
+    private int Count(string filter) => _rows.Count(row => Is(row, filter));
+
+    private static bool Is(AccountRow row, string filter) => filter switch
+    {
+        "vip" => row.Premium,
+        "banned" => row.Status == "Banned",
+        "locked" => row.Status == "Locked",
+        "staff" => row.Role != AccountRole.Player,
+        _ => true
+    };
+
+    protected override void OnParametersSet() => _search = SearchQuery ?? _search;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -114,7 +176,7 @@
         await using var db = await Db.CreateDbContextAsync();
         var now = DateTimeOffset.UtcNow;
 
-        _rows = await db.Accounts.OrderBy(a => a.Username)
+        _rows = await db.Accounts.AsNoTracking().OrderBy(a => a.Username)
             .Select(a => new AccountRow(
                 a.Id,
                 a.Username,
@@ -124,6 +186,8 @@
                 a.Role,
                 a.BannedUntil > now ? "Banned" : a.LockedUntil > now ? "Locked" : a.PasswordHash == null ? "No password" : "Active",
                 a.PremiumUntil,
+                a.BannedUntil,
+                a.BanReason,
                 db.AuthSessions.Count(s => s.AccountId == a.Id && s.ExpiresAt > now),
                 a.CreatedAt,
                 a.LastLoginAt))
@@ -136,89 +200,64 @@
            || (row.Email?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false)
            || (row.Character?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
 
-    private static Color StatusColor(string status) => status switch
+    private static string StatusCss(string status) => status switch
     {
-        "Active" => Color.Success,
-        "Banned" => Color.Error,
-        _ => Color.Warning
+        "Active" => "green-soft",
+        "Banned" => "red",
+        "Locked" => "orange",
+        _ => ""
     };
+
+    private async Task EditPremiumAsync(AccountRow row)
+    {
+        if (await Dialogs.EditPremiumAsync(Actions, Snackbar, row.Id, row.Username, row.PremiumUntil))
+            await LoadAsync();
+    }
+
+    private async Task ForeverAsync(AccountRow row)
+    {
+        await Actions.SetPremiumAsync(row.Id, Forever.Until);
+        Snackbar.Add($"{row.Username} is VIP forever", Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task BanAsync(AccountRow row)
+    {
+        if (await Dialogs.BanAsync(Actions, Snackbar, row.Id, row.Username))
+            await LoadAsync();
+    }
+
+    private async Task UnbanAsync(AccountRow row)
+    {
+        await Actions.SetBanAsync(row.Id, null, null);
+        Snackbar.Add($"Ban of {row.Username} lifted", Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task UnlockAsync(AccountRow row)
+    {
+        await Actions.UnlockAsync(row.Id);
+        Snackbar.Add($"{row.Username} can sign in again", Severity.Success);
+        await LoadAsync();
+    }
 
     private async Task ResetAsync(AccountRow row)
     {
-        await using var db = await Db.CreateDbContextAsync();
-        var code = await AccountSecurity.CreateResetCodeAsync(db, row.Id);
-
-        await RecordAsync(db, "admin.password_reset", row);
         _resetFor = row.Username;
-        _resetLink = Links.Reset(code);
+        _resetLink = Links.Reset(await Actions.CreateResetCodeAsync(row.Id));
     }
 
     private async Task SignOutAsync(AccountRow row)
     {
-        await using var db = await Db.CreateDbContextAsync();
-        await AccountSecurity.SignOutEverywhereAsync(db, row.Id);
-
-        await RecordAsync(db, "admin.sign_out", row);
+        await Actions.SignOutEverywhereAsync(row.Id);
         Snackbar.Add($"{row.Username} was signed out everywhere", Severity.Success);
-        await LoadAsync();
-    }
-
-    private async Task SetBanAsync(AccountRow row, DateTimeOffset? until)
-    {
-        await using var db = await Db.CreateDbContextAsync();
-        await db.Accounts.Where(a => a.Id == row.Id)
-            .ExecuteUpdateAsync(set => set.SetProperty(a => a.BannedUntil, until).SetProperty(a => a.BanReason, until is null ? null : "Banned from the admin panel"));
-
-        if (until is not null)
-            await AccountSecurity.SignOutEverywhereAsync(db, row.Id);
-
-        await RecordAsync(db, until is null ? "admin.unban" : "admin.ban", row);
-        Snackbar.Add(until is null ? $"Ban of {row.Username} lifted" : $"{row.Username} banned for 7 days", until is null ? Severity.Success : Severity.Warning);
-        await LoadAsync();
-    }
-
-    private async Task AddPremiumAsync(AccountRow row, int days)
-    {
-        var now = DateTimeOffset.UtcNow;
-        var until = (row.PremiumUntil > now ? row.PremiumUntil.Value : now).AddDays(days);
-
-        await using var db = await Db.CreateDbContextAsync();
-        await db.Accounts.Where(a => a.Id == row.Id).ExecuteUpdateAsync(set => set.SetProperty(a => a.PremiumUntil, until));
-
-        await RecordAsync(db, "admin.premium", row, new { until });
-        Snackbar.Add($"{row.Username} has premium until {until:yyyy-MM-dd}", Severity.Success);
-        await LoadAsync();
-    }
-
-    private async Task RemovePremiumAsync(AccountRow row)
-    {
-        await using var db = await Db.CreateDbContextAsync();
-        await db.Accounts.Where(a => a.Id == row.Id).ExecuteUpdateAsync(set => set.SetProperty(a => a.PremiumUntil, (DateTimeOffset?)null));
-
-        await RecordAsync(db, "admin.premium", row, new { until = (DateTimeOffset?)null });
-        Snackbar.Add($"Premium of {row.Username} removed", Severity.Success);
         await LoadAsync();
     }
 
     private async Task SetRoleAsync(AccountRow row, AccountRole role)
     {
-        await using var db = await Db.CreateDbContextAsync();
-        await db.Accounts.Where(a => a.Id == row.Id).ExecuteUpdateAsync(set => set.SetProperty(a => a.Role, role));
-
-        await RecordAsync(db, "admin.role", row, new { role = role.ToString() });
+        await Actions.SetRoleAsync(row.Id, role);
         Snackbar.Add($"{row.Username} is now {role}", Severity.Success);
         await LoadAsync();
-    }
-
-    private static async Task RecordAsync(SkySagaDbContext db, string kind, AccountRow row, object? data = null)
-    {
-        db.GameEvents.Add(new GameEvent
-        {
-            Time = DateTimeOffset.UtcNow,
-            Kind = kind,
-            CharacterId = row.CharacterId,
-            Data = System.Text.Json.JsonSerializer.Serialize(new { account = row.Username, details = data })
-        });
-        await db.SaveChangesAsync();
     }
 }

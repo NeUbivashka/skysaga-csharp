@@ -3,49 +3,68 @@
 
 <PageTitle>Reset password · SkySaga</PageTitle>
 
-<section class="card">
-    <h1>Reset password</h1>
+<section class="auth-card solo">
+    <div class="auth-card-head">
+        <span class="badge-icon"><Icon Name="key" /></span>
+        <h2>Reset password</h2>
+        @if (!_done)
+        {
+            <p class="muted">Ask a server admin for a reset code, then choose a new password.</p>
+        }
+    </div>
 
     @if (_done)
     {
         <div class="alert success">Your password is set. Every old session was signed out.</div>
-        <a class="button primary wide" href="/login">Sign in</a>
+        <a class="button primary wide shine" href="/login">Sign in <Icon Name="arrow" /></a>
     }
     else
     {
-        <p class="muted">Ask a server admin for a reset code, then choose a new password.</p>
-
-        <EditForm Model="Input" FormName="reset" OnValidSubmit="SubmitAsync" method="post" class="form">
+        <EditForm Model="Input" FormName="reset" OnValidSubmit="SubmitAsync" method="post" class="form" novalidate>
             <DataAnnotationsValidator />
 
-            <label>
-                <span>Reset code</span>
-                <InputText @bind-Value="Input.Code" autocomplete="one-time-code" maxlength="40" class="mono" />
+            <div class="field">
+                <label for="code">Reset code</label>
+                <div class="input-wrap">
+                    <Icon Name="key" Class="input-icon" />
+                    <InputText id="code" @bind-Value="Input.Code" autocomplete="one-time-code" maxlength="40" class="mono" placeholder="20 characters from the admin" />
+                </div>
                 <ValidationMessage For="() => Input.Code" />
                 @if (_errors.TryGetValue("code", out var codeError))
                 {
                     <div class="validation-message">@codeError</div>
                 }
-            </label>
+            </div>
 
-            <label>
-                <span>New password</span>
-                <InputPassword @bind-Value="Input.Password" autocomplete="new-password" maxlength="128" />
-                <small class="hint">At least @AccountService.MinPasswordLength characters.</small>
+            <div class="field">
+                <label for="password">New password</label>
+                <div class="input-wrap">
+                    <Icon Name="lock" Class="input-icon" />
+                    <InputPassword id="password" @bind-Value="Input.Password" autocomplete="new-password" maxlength="128" placeholder="@($"At least {AccountService.MinPasswordLength} characters")" data-strength="password-strength" />
+                    <button type="button" class="reveal" data-reveal="password" aria-label="Show password"><Icon Name="eye" /></button>
+                </div>
+                <div class="strength" id="password-strength" data-min="@AccountService.MinPasswordLength">
+                    <div class="strength-bars"><span></span><span></span><span></span><span></span></div>
+                    <small class="strength-label">Use at least @AccountService.MinPasswordLength characters.</small>
+                </div>
                 <ValidationMessage For="() => Input.Password" />
                 @if (_errors.TryGetValue("password", out var passwordError))
                 {
                     <div class="validation-message">@passwordError</div>
                 }
-            </label>
+            </div>
 
-            <label>
-                <span>Repeat new password</span>
-                <InputPassword @bind-Value="Input.Confirm" autocomplete="new-password" maxlength="128" />
+            <div class="field">
+                <label for="confirm">Repeat new password</label>
+                <div class="input-wrap">
+                    <Icon Name="key" Class="input-icon" />
+                    <InputPassword id="confirm" @bind-Value="Input.Confirm" autocomplete="new-password" maxlength="128" placeholder="Once more" data-match="password" />
+                    <span class="match-mark"><Icon Name="check" /></span>
+                </div>
                 <ValidationMessage For="() => Input.Confirm" />
-            </label>
+            </div>
 
-            <button type="submit" class="button primary wide">Set password</button>
+            <button type="submit" class="button primary wide shine">Set password <Icon Name="arrow" /></button>
         </EditForm>
     }
 </section>

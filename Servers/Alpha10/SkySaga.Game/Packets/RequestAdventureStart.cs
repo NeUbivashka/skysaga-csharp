@@ -16,6 +16,9 @@ public static class RequestAdventureStart
         if (!connection.IsPlayerInitialized || connection.CharacterId is not { } characterId)
             return true;
 
+        GameEvents.Record("adventure.start", connection.WorldManager.Info.Id, characterId,
+            new { adventure = AdventureRotation.NameOf(spec.Searchable[2]) ?? spec.Searchable[2].ToString(), difficulty = spec.Searchable[3] });
+
         return WorldTravel.Request(connection, characterId, nameof(RequestAdventureStart),
             owner => WorldStore.Instance(WorldKind.Adventure, owner, spec));
     }

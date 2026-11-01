@@ -154,6 +154,8 @@ public static class PhotosApi
         return Results.Json(new { result = new { results } });
     }
 
+    public static string FileUrl(Guid id) => $"{Route}/{id}/file";
+
     private static IResult EmptySearch() => Results.Json(new { result = new { totalHits = 0, results = Array.Empty<object>() } });
 
     private static IResult NotFound() => Results.Json(new { error = new { errorCode = 404, message = "Photo not found" } }, statusCode: StatusCodes.Status404NotFound);
@@ -161,7 +163,7 @@ public static class PhotosApi
     private static async Task<object> RecordAsync(SkySagaDbContext db, Photo photo, HttpRequest request)
     {
         var ownerName = await db.Characters.Where(c => c.Id == photo.OwnerCharacterId).Select(c => c.Name).SingleOrDefaultAsync();
-        var image = new { url = $"http://{PublicHost(request)}{Route}/{photo.Id}/file", hash = photo.Md5 ?? "" };
+        var image = new { url = $"http://{PublicHost(request)}{FileUrl(photo.Id)}", hash = photo.Md5 ?? "" };
 
         var game = new Dictionary<string, object?>
         {

@@ -23,6 +23,7 @@ builder.Services.AddSingleton(provider => new EmailProtector(provider.GetRequire
 builder.Services.AddSingleton(links);
 builder.Services.AddSingleton(new GameData(gameData));
 builder.Services.AddSingleton<GameTables>();
+builder.Services.AddSingleton<CommunityStats>();
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.PropertyNamingPolicy = null);
 
 builder.WebHost.UseStaticWebAssets();

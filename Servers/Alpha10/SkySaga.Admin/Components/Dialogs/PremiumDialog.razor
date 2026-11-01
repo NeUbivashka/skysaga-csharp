@@ -1,0 +1,148 @@
+<MudDialog Class="glass-dialog">
+    <TitleContent>
+        <div class="dialog-title">
+            <span class="dialog-icon vip"><MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" /></span>
+            <div>
+                <div class="dialog-heading">VIP status</div>
+                <div class="dialog-sub">@Username</div>
+            </div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="current-state">
+            <span class="muted-label">Now</span>
+            @if (Forever.Is(Current))
+            {
+                <span class="vip-badge forever">∞ VIP forever</span>
+            }
+            else if (Current > DateTimeOffset.UtcNow)
+            {
+                <span class="vip-badge">VIP until @Format.Until(Current)</span>
+                <span class="muted-label">@Format.Left(Current.Value)</span>
+            }
+            else
+            {
+                <span class="muted-label">no VIP</span>
+            }
+        </div>
+
+        <div class="section-label">Quick add</div>
+        <div class="preset-grid">
+            @foreach (var (label, span) in Presets)
+            {
+                <button type="button" class="preset @(_selected == label ? "selected" : "")" @onclick="() => Add(label, span)">@label</button>
+            }
+            <button type="button" class="preset forever @(_selected == "forever" ? "selected" : "")" @onclick="SetForever">∞ Forever</button>
+        </div>
+
+        <div class="section-label">Custom amount</div>
+        <div class="row-fields">
+            <MudNumericField T="int" @bind-Value="_amount" Min="1" Max="100000" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Amount" />
+            <MudSelect T="string" @bind-Value="_unit" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Unit">
+                @foreach (var unit in Units)
+                {
+                    <MudSelectItem Value="unit">@unit</MudSelectItem>
+                }
+            </MudSelect>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="AddCustom">Add</MudButton>
+        </div>
+
+        <div class="section-label">Exact end</div>
+        <div class="row-fields">
+            <MudDatePicker @bind-Date="_date" Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" MinDate="DateTime.Today" />
+            <MudTimePicker @bind-Time="_time" Label="Time" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SetExact" Disabled="_date is null">Set</MudButton>
+        </div>
+
+        <div class="preview @(_until is null ? "" : "ready")">
+            @if (_until is null)
+            {
+                <span>Pick a duration.</span>
+            }
+            else if (Forever.Is(_until))
+            {
+                <span>New status: <b>VIP forever</b></span>
+            }
+            else
+            {
+                <span>New end: <b>@Format.Until(_until)</b> · @Format.Left(_until.Value)</span>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        @if (Current > DateTimeOffset.UtcNow)
+        {
+            <MudButton Color="Color.Error" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.StarBorder" OnClick="Remove">Remove VIP</MudButton>
+        }
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Disabled="_until is null" OnClick="Apply" Class="glow-button">Apply</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public sealed record Choice(DateTimeOffset? Until);
+
+    private static readonly (string Label, TimeSpan Span)[] Presets =
+    [
+        ("+1 day", TimeSpan.FromDays(1)),
+        ("+7 days", TimeSpan.FromDays(7)),
+        ("+30 days", TimeSpan.FromDays(30)),
+        ("+90 days", TimeSpan.FromDays(90)),
+        ("+1 year", TimeSpan.FromDays(365))
+    ];
+
+    private static readonly string[] Units = ["Hours", "Days", "Weeks", "Months", "Years"];
+
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter] public string Username { get; set; } = "";
+    [Parameter] public DateTimeOffset? Current { get; set; }
+
+    private DateTimeOffset? _until;
+    private string? _selected;
+    private int _amount = 14;
+    private string _unit = "Days";
+    private DateTime? _date;
+    private TimeSpan? _time = new(23, 59, 0);
+
+    private DateTimeOffset Start => Current > DateTimeOffset.UtcNow && !Forever.Is(Current) ? Current!.Value : DateTimeOffset.UtcNow;
+
+    private void Add(string label, TimeSpan span)
+    {
+        _selected = label;
+        _until = Start + span;
+    }
+
+    private void SetForever()
+    {
+        _selected = "forever";
+        _until = Forever.Until;
+    }
+
+    private void AddCustom()
+    {
+        _selected = null;
+        _until = _unit switch
+        {
+            "Hours" => Start.AddHours(_amount),
+            "Weeks" => Start.AddDays(7.0 * _amount),
+            "Months" => Start.AddMonths(_amount),
+            "Years" => Start.AddYears(_amount),
+            _ => Start.AddDays(_amount)
+        };
+    }
+
+    private void SetExact()
+    {
+        if (_date is not DateTime date)
+            return;
+
+        _selected = null;
+        _until = new DateTimeOffset(date.Date + (_time ?? TimeSpan.Zero), TimeZoneInfo.Local.GetUtcOffset(date)).ToUniversalTime();
+    }
+
+    private void Apply() => Dialog.Close(DialogResult.Ok(new Choice(_until)));
+
+    private void Remove() => Dialog.Close(DialogResult.Ok(new Choice(null)));
+}

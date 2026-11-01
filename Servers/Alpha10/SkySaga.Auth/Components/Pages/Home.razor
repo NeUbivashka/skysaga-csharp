@@ -1,31 +1,74 @@
 @page "/"
-@inject NavigationManager Navigation
+@inject CommunityStats Stats
 
 <PageTitle>SkySaga Account</PageTitle>
 
-<section class="hero">
-    <h1>Your isles are waiting.</h1>
-    <p class="lead">
-        Create an account to play SkySaga on this server. Sign in to the launcher with the same
-        e-mail and password.
-    </p>
+<section class="landing">
+    @if (_userName is null)
+    {
+        <span class="kicker"><Icon Name="sparkle" /> Community server · Alpha 10</span>
+        <h1 class="display huge">Your isles are <span class="gradient-text">waiting</span>.</h1>
+        <p class="lead center">Create an account, sign in to the launcher with the same e-mail and password, and take off into an endless sky of floating islands.</p>
+    }
+    else
+    {
+        <span class="kicker"><Icon Name="sparkle" /> Welcome back, @_userName</span>
+        <h1 class="display huge">The sky is <span class="gradient-text">yours</span>.</h1>
+        <p class="lead center">Your account is ready. Open the launcher, sign in with the same details and pick up where you left off.</p>
+    }
+    <Motto Class="center" />
+
     <div class="actions">
-        <a class="button primary" href="/register">Create account</a>
-        <a class="button ghost" href="/login">Sign in</a>
+        @if (_userName is null)
+        {
+            <a class="button primary big shine" href="/register">Create account <Icon Name="arrow" /></a>
+            <a class="button ghost big" href="/login">Sign in</a>
+        }
+        else
+        {
+            <a class="button primary big shine" href="/account">My account <Icon Name="arrow" /></a>
+        }
     </div>
-    <ul class="features">
-        <li><strong>Your own character.</strong> Name it and shape its look in the game.</li>
-        <li><strong>Safe password.</strong> Stored only as an Argon2id hash: nobody can read it, admins included.</li>
-        <li><strong>Private e-mail.</strong> Stored encrypted; admins see only a masked form like m***@@mail.com.</li>
-    </ul>
+
+    <div class="stat-row center">
+        <div class="stat"><b data-count="@_community.Adventurers">@_community.Adventurers</b><span>adventurers</span></div>
+        <div class="stat"><b data-count="@_community.Isles">@_community.Isles</b><span>isles built</span></div>
+        <div class="stat live"><b data-count="@_community.Online">@_community.Online</b><span><i class="live-dot"></i>online now</span></div>
+    </div>
+
+    <div class="steps-grid">
+        <div class="step-card">
+            <span class="step-number">1</span>
+            <span class="perk-icon azure"><Icon Name="user" /></span>
+            <h3>Create an account</h3>
+            <p>Pick a username and a password. The e-mail is stored encrypted.</p>
+        </div>
+        <div class="step-card">
+            <span class="step-number">2</span>
+            <span class="perk-icon violet"><Icon Name="launch" /></span>
+            <h3>Open the launcher</h3>
+            <p>Sign in with the same details and press Play.</p>
+        </div>
+        <div class="step-card">
+            <span class="step-number">3</span>
+            <span class="perk-icon gold"><Icon Name="globe" /></span>
+            <h3>Shape your hero</h3>
+            <p>Name your character, build your island and visit friends.</p>
+        </div>
+    </div>
 </section>
 
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
 
+    private Community _community = new(0, 0, 0);
+    private string? _userName;
+
     protected override async Task OnInitializedAsync()
     {
-        if (AuthenticationState is not null && (await AuthenticationState).User.Identity?.IsAuthenticated == true)
-            Navigation.NavigateTo("/account");
+        if (AuthenticationState is not null && (await AuthenticationState).User.Identity is { IsAuthenticated: true } identity)
+            _userName = identity.Name;
+
+        _community = await Stats.GetAsync();
     }
 }

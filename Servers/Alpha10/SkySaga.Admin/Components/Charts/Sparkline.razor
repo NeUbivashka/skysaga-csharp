@@ -1,0 +1,32 @@
+<svg class="sparkline" viewBox="0 0 @Width @Height" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+        <linearGradient id="@_fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="@Color" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="@Color" stop-opacity="0" />
+        </linearGradient>
+    </defs>
+    @if (_points.Count > 1)
+    {
+        <path d="@($"{_path} L{Width},{Height} L0,{Height} Z")" fill="url(#@_fill)" />
+        <path d="@_path" fill="none" stroke="@Color" stroke-width="2" vector-effect="non-scaling-stroke" />
+    }
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<double> Values { get; set; } = [];
+    [Parameter] public string Color { get; set; } = "#38bdf8";
+    [Parameter] public int Width { get; set; } = 200;
+    [Parameter] public int Height { get; set; } = 48;
+
+    private readonly string _fill = ChartGeometry.NewId();
+    private List<(double X, double Y)> _points = [];
+    private string _path = "";
+
+    protected override void OnParametersSet()
+    {
+        var max = Math.Max(Values.DefaultIfEmpty(0).Max(), 1);
+        var step = (double)Width / Math.Max(Values.Count - 1, 1);
+        _points = [.. Values.Select((value, i) => (i * step, Height - 3 - value / max * (Height - 6)))];
+        _path = ChartGeometry.SmoothPath(_points);
+    }
+}

@@ -31,6 +31,9 @@ public static class AdventureRotation
         return cards;
     }
 
+    public static string? NameOf(uint adventureIndex)
+        => Cards.Value.FirstOrDefault(card => card.Searchable[2] == adventureIndex)?.Adventure;
+
     public static SetMapRotationList Current()
     {
         var now = DateTime.UtcNow;

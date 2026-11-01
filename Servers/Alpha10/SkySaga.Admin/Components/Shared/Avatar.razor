@@ -1,0 +1,21 @@
+<span class="avatar @Size" style="@Format.AvatarGradient(Name)">
+    @if (Photo is { } photo)
+    {
+        <img src="/avatars/@photo" alt="" />
+    }
+    else
+    {
+        @Format.Initial(Name)
+    }
+    @if (Online)
+    {
+        <span class="presence"></span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter] public Guid? Photo { get; set; }
+    [Parameter] public string Size { get; set; } = "";
+    [Parameter] public bool Online { get; set; }
+}

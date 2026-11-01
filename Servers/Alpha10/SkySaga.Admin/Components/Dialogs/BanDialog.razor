@@ -1,0 +1,97 @@
+<MudDialog Class="glass-dialog">
+    <TitleContent>
+        <div class="dialog-title">
+            <span class="dialog-icon ban"><MudIcon Icon="@Icons.Material.Filled.Gavel" /></span>
+            <div>
+                <div class="dialog-heading">Ban account</div>
+                <div class="dialog-sub">@Username · signs out every session</div>
+            </div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="section-label">Duration</div>
+        <div class="preset-grid">
+            @foreach (var (label, span) in Presets)
+            {
+                <button type="button" class="preset danger @(_selected == label ? "selected" : "")" @onclick="() => Pick(label, span)">@label</button>
+            }
+            <button type="button" class="preset danger forever @(_selected == "permanent" ? "selected" : "")" @onclick="Permanent">Permanent</button>
+        </div>
+
+        <div class="section-label">Until a date</div>
+        <div class="row-fields">
+            <MudDatePicker @bind-Date="_date" Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" MinDate="DateTime.Today" />
+            <MudTimePicker @bind-Time="_time" Label="Time" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="SetExact" Disabled="_date is null">Set</MudButton>
+        </div>
+
+        <div class="section-label">Reason</div>
+        <MudTextField @bind-Value="_reason" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" MaxLength="200" Placeholder="Shown to the player when signing in" />
+
+        <div class="preview danger @(_until is null ? "" : "ready")">
+            @if (_until is null)
+            {
+                <span>Pick a duration.</span>
+            }
+            else if (Forever.Is(_until))
+            {
+                <span>Banned <b>permanently</b></span>
+            }
+            else
+            {
+                <span>Banned until <b>@Format.Until(_until)</b> · @Format.Left(_until.Value)</span>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="_until is null" OnClick="Apply" StartIcon="@Icons.Material.Filled.Block">Ban</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public sealed record Choice(DateTimeOffset Until, string Reason);
+
+    private static readonly (string Label, TimeSpan Span)[] Presets =
+    [
+        ("1 hour", TimeSpan.FromHours(1)),
+        ("1 day", TimeSpan.FromDays(1)),
+        ("7 days", TimeSpan.FromDays(7)),
+        ("30 days", TimeSpan.FromDays(30)),
+        ("1 year", TimeSpan.FromDays(365))
+    ];
+
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter] public string Username { get; set; } = "";
+
+    private DateTimeOffset? _until;
+    private string? _selected;
+    private string _reason = "Banned from the admin panel";
+    private DateTime? _date;
+    private TimeSpan? _time = new(23, 59, 0);
+
+    private void Pick(string label, TimeSpan span)
+    {
+        _selected = label;
+        _until = DateTimeOffset.UtcNow + span;
+    }
+
+    private void Permanent()
+    {
+        _selected = "permanent";
+        _until = Forever.Until;
+    }
+
+    private void SetExact()
+    {
+        if (_date is not DateTime date)
+            return;
+
+        _selected = null;
+        _until = new DateTimeOffset(date.Date + (_time ?? TimeSpan.Zero), TimeZoneInfo.Local.GetUtcOffset(date)).ToUniversalTime();
+    }
+
+    private void Apply() => Dialog.Close(DialogResult.Ok(new Choice(_until!.Value, string.IsNullOrWhiteSpace(_reason) ? "Banned from the admin panel" : _reason.Trim())));
+}

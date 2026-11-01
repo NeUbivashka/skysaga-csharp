@@ -1,161 +1,282 @@
 @page "/"
+@inherits LivePage
 @inject IDbContextFactory<SkySagaDbContext> Db
-@inject GameNames Names
 
 <PageTitle>Overview · SkySaga Control</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h4">Overview</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
-</MudStack>
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Alpha 10 · build 36731</div>
+        <h1 class="page-title">@Greeting</h1>
+        <Motto />
+    </div>
+    <div class="header-actions">
+        <MudButton Href="/live" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sensors" Class="glow-button">Live view</MudButton>
+        <MudButton Href="/events" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Timeline">Events</MudButton>
+    </div>
+</div>
 
-@if (_error is not null)
+@if (Live.Error is not null)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Database: @_error</MudAlert>
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Database: @Live.Error</MudAlert>
 }
 
-<MudGrid Spacing="3">
-    @foreach (var stat in _stats)
-    {
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <MudPaper Class="pa-4 stat-card" Elevation="0">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@stat.Icon" Style="@($"color:{stat.Color}")" />
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@stat.Label</MudText>
-                </MudStack>
-                <div class="stat-value mt-2">@stat.Value.ToString("N0")</div>
-            </MudPaper>
-        </MudItem>
-    }
+<div class="kpi-grid">
+    <div class="kpi kpi-hero" style="--accent:#34d399">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.Sensors" /></span>Online now</div>
+        <div class="kpi-value">@Live.Online.Count</div>
+        <div class="kpi-foot">peak @Live.PeakOnline since the panel started</div>
+        <div class="kpi-spark"><Sparkline Values="Live.OnlineHistory" Color="#34d399" /></div>
+    </div>
+    <div class="kpi" style="--accent:#38bdf8">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.Badge" /></span>Accounts</div>
+        <div class="kpi-value">@Live.Accounts.ToString("N0")</div>
+        <div class="kpi-foot"><span class="delta up">+@Live.NewAccountsWeek</span> this week</div>
+    </div>
+    <div class="kpi" style="--accent:#a78bfa">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.Person" /></span>Characters</div>
+        <div class="kpi-value">@Live.Characters.ToString("N0")</div>
+        <div class="kpi-foot">@Live.Friendships.ToString("N0") friendships</div>
+    </div>
+    <div class="kpi" style="--accent:#fbbf24">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" /></span>VIP</div>
+        <div class="kpi-value">@Live.PremiumActive.ToString("N0")</div>
+        <div class="kpi-foot">@Live.PremiumForever forever · @Live.Banned banned</div>
+    </div>
+    <div class="kpi" style="--accent:#22d3ee">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.Public" /></span>Worlds</div>
+        <div class="kpi-value">@Live.Worlds.ToString("N0")</div>
+        <div class="kpi-foot">@Island islands · @Live.Photos.ToString("N0") photos</div>
+    </div>
+    <div class="kpi" style="--accent:#fb923c">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.ViewInAr" /></span>Builds</div>
+        <div class="kpi-value">@Live.VoxelEdits.ToString("N0")</div>
+        <div class="kpi-foot">voxel edits · @Live.Devices.ToString("N0") devices placed</div>
+    </div>
+    <div class="kpi" style="--accent:#f472b6">
+        <div class="kpi-head"><span class="kpi-icon"><MudIcon Icon="@Icons.Material.Filled.Bolt" /></span>Events, 24 h</div>
+        <div class="kpi-value">@Live.EventsDay.ToString("N0")</div>
+        <div class="kpi-foot">@Live.EventsHour.ToString("N0") in the last hour</div>
+    </div>
+</div>
 
+<MudGrid Spacing="3" Class="mt-1">
     <MudItem xs="12" lg="8">
-        <MudPaper Class="pa-4 section" Elevation="0">
-            <MudText Typo="Typo.h6">Activity, last 24 hours</MudText>
-            <MudText Typo="Typo.caption" Class="mud-text-secondary">Game events per hour</MudText>
-            <MudChart T="double" ChartType="ChartType.Line" ChartSeries="_activity" ChartLabels="_hours" Width="100%" Height="280px" />
-        </MudPaper>
+        <div class="glass-card">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">Activity</div>
+                    <div class="card-sub">Game events per hour, last 24 hours</div>
+                </div>
+                <span class="chip-soft">@Live.EventsDay.ToString("N0") total</span>
+            </div>
+            <AreaChart Values="Live.ActivityPerHour" Labels="Live.HourLabels" Color="#38bdf8" SecondColor="#a78bfa" Unit="events" LabelEvery="3" Height="250" />
+        </div>
     </MudItem>
-
     <MudItem xs="12" lg="4">
-        <MudPaper Class="pa-4 section" Elevation="0" Style="height:100%">
-            <MudText Typo="Typo.h6" Class="mb-2">Most held items</MudText>
-            @if (_topItems.Count == 0)
+        <div class="glass-card full">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">Where players are</div>
+                    <div class="card-sub">Online players by world</div>
+                </div>
+            </div>
+            @if (Live.OnlineByWorld.Count == 0)
             {
-                <MudText Class="mud-text-secondary">No items yet.</MudText>
+                <div class="empty-state">
+                    <MudIcon Icon="@Icons.Material.Filled.NightsStay" Size="Size.Large" />
+                    <div>Nobody is online right now.</div>
+                </div>
             }
-            @foreach (var item in _topItems)
+            else
             {
-                <MudStack Row="true" Class="mt-2">
-                    <MudText Typo="Typo.body2">@item.Name</MudText>
-                    <MudSpacer />
-                    <MudText Typo="Typo.body2" Class="mono">@item.Count.ToString("N0")</MudText>
-                </MudStack>
-                <MudProgressLinear Color="Color.Primary" Rounded="true" Value="@(100.0 * item.Count / _topItems[0].Count)" />
+                <DonutChart Slices="Live.OnlineByWorld" CenterLabel="online" Title="Online players by world" />
             }
-        </MudPaper>
+        </div>
     </MudItem>
 
-    <MudItem xs="12">
-        <MudPaper Class="pa-4 section" Elevation="0">
-            <MudText Typo="Typo.h6" Class="mb-2">Recently seen</MudText>
-            <MudTable Items="_recent" Dense="true" Hover="true" Elevation="0">
-                <HeaderContent>
-                    <MudTh>Character</MudTh>
-                    <MudTh>Account</MudTh>
-                    <MudTh>Map</MudTh>
-                    <MudTh>Rank</MudTh>
-                    <MudTh>Last seen</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd><MudLink Href="@($"/players/{context.Id}")">@context.Name</MudLink></MudTd>
-                    <MudTd>@context.Account</MudTd>
-                    <MudTd>@(context.Map ?? "—")</MudTd>
-                    <MudTd>@context.Rank</MudTd>
-                    <MudTd>@Ago(context.LastSeen)</MudTd>
-                </RowTemplate>
-                <NoRecordsContent><MudText Class="mud-text-secondary">No characters yet.</MudText></NoRecordsContent>
-            </MudTable>
-        </MudPaper>
+    <MudItem xs="12" sm="6" lg="3">
+        <div class="glass-card full">
+            <div class="card-title">Account status</div>
+            <div class="card-sub mb-3">Active, VIP, banned and locked</div>
+            <DonutChart Slices="Live.AccountStatus" CenterLabel="accounts" Size="160" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" sm="6" lg="3">
+        <div class="glass-card full">
+            <div class="card-title">Roles</div>
+            <div class="card-sub mb-3">Players, game masters and admins</div>
+            <DonutChart Slices="Live.Roles" CenterLabel="accounts" Size="160" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" sm="6" lg="3">
+        <div class="glass-card full">
+            <div class="card-title">Worlds by kind</div>
+            <div class="card-sub mb-3">Saved worlds in the database</div>
+            <DonutChart Slices="Live.WorldKinds" CenterLabel="worlds" Size="160" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" sm="6" lg="3">
+        <div class="glass-card full">
+            <div class="card-title">Event mix</div>
+            <div class="card-sub mb-3">Kinds of events, last 24 hours</div>
+            <DonutChart Slices="Live.EventKinds" CenterLabel="events" Size="160" />
+        </div>
+    </MudItem>
+
+    <MudItem xs="12" lg="6">
+        <div class="glass-card full">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">New accounts</div>
+                    <div class="card-sub">Registrations per day, last 14 days</div>
+                </div>
+                <span class="chip-soft">+@Live.NewAccountsWeek this week</span>
+            </div>
+            <BarChart Values="Live.RegistrationsPerDay" Labels="Live.DayLabels" Color="#a78bfa" SecondColor="#38bdf8" Unit="accounts" LabelEvery="2" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" lg="6">
+        <div class="glass-card full">
+            <div class="card-title">Most held items</div>
+            <div class="card-sub mb-3">Summed over every inventory</div>
+            @if (Live.TopItems.Count == 0)
+            {
+                <div class="empty-state">No items yet.</div>
+            }
+            @for (var i = 0; i < Live.TopItems.Count; i++)
+            {
+                var item = Live.TopItems[i];
+                var color = LiveMetrics.Palette[i % LiveMetrics.Palette.Length];
+                <div class="rank-row">
+                    <span class="rank-index">@(i + 1)</span>
+                    <div class="rank-body">
+                        <div class="rank-line"><span>@item.Name</span><span class="mono">@item.Count.ToString("N0")</span></div>
+                        <div class="meter"><span style="width:@ChartGeometry.Number(100.0 * item.Count / Live.TopItems[0].Count)%;background:linear-gradient(90deg,@color,@(color)66)"></span></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </MudItem>
+
+    <MudItem xs="12" lg="7">
+        <div class="glass-card full">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">Live feed</div>
+                    <div class="card-sub">Newest game and admin events</div>
+                </div>
+                <span class="pill live small"><span class="pulse"></span>streaming</span>
+            </div>
+            <div class="feed">
+                @foreach (var item in Live.RecentEvents.Take(12))
+                {
+                    <div class="feed-item" @key="item.Id">
+                        <span class="feed-icon" style="--accent:@Format.EventColor(item.Kind)"><MudIcon Icon="@Format.EventIcon(item.Kind)" Size="Size.Small" /></span>
+                        <div class="feed-body">
+                            <div class="feed-line">
+                                <span class="feed-kind" style="color:@Format.EventColor(item.Kind)">@item.Kind</span>
+                                @if (item.CharacterId is Guid id)
+                                {
+                                    <a href="/players/@id" class="feed-who">@(item.Character ?? "unknown")</a>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Data))
+                            {
+                                <div class="feed-data mono">@item.Data</div>
+                            }
+                        </div>
+                        <span class="feed-time">@Format.Ago(item.Time)</span>
+                    </div>
+                }
+                @if (Live.RecentEvents.Count == 0)
+                {
+                    <div class="empty-state">No events yet.</div>
+                }
+            </div>
+        </div>
+    </MudItem>
+    <MudItem xs="12" lg="5">
+        <div class="glass-card">
+            <div class="card-title">Services</div>
+            <div class="card-sub mb-3">Checked every six seconds</div>
+            <div class="service-grid">
+                @foreach (var service in Live.Services)
+                {
+                    <div class="service-card @(service.Up ? "up" : "down")">
+                        <span class="dot @(service.Up ? "up" : "down")"></span>
+                        <div>
+                            <div class="service-title">@service.Name</div>
+                            <div class="service-address mono">@service.Address</div>
+                        </div>
+                        <div class="service-state mono">@(service.Up ? $"{service.LatencyMs:0.0} ms" : "down")</div>
+                    </div>
+                }
+                <div class="service-card up">
+                    <span class="dot up"></span>
+                    <div>
+                        <div class="service-title">PostgreSQL</div>
+                        <div class="service-address mono">EF Core</div>
+                    </div>
+                    <div class="service-state mono">@Live.DbLatencyMs.ToString("0.0") ms</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card mt-3">
+            <div class="card-title">Recently seen</div>
+            <div class="card-sub mb-2">Last characters in the game</div>
+            @foreach (var row in _recent)
+            {
+                <a class="person-row" href="/players/@row.Id">
+                    <Avatar Name="@row.Name" Size="sm" Photo="@Live.AvatarOf(row.Id)" Online="@(Live.Online.Any(p => p.Id == row.Id))" />
+                    <div class="person-body">
+                        <div class="person-name">@row.Name</div>
+                        <div class="person-sub">@row.Account · rank @row.Rank</div>
+                    </div>
+                    <span class="feed-time">@Format.Ago(row.LastSeen)</span>
+                </a>
+            }
+            @if (_recent.Count == 0)
+            {
+                <div class="empty-state">No characters yet.</div>
+            }
+        </div>
     </MudItem>
 </MudGrid>
 
 @code {
-    private record Stat(string Label, string Icon, string Color, long Value);
-    private record TopItem(string Name, long Count);
-    private record RecentRow(Guid Id, string Name, string Account, string? Map, int Rank, DateTimeOffset? LastSeen);
+    private sealed record RecentRow(Guid Id, string Name, string Account, int Rank, DateTimeOffset? LastSeen);
 
-    private List<Stat> _stats = [];
-    private List<TopItem> _topItems = [];
     private List<RecentRow> _recent = [];
-    private List<ChartSeries<double>> _activity = [];
-    private string[] _hours = [];
-    private string? _error;
+    private DateTimeOffset _recentLoaded;
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    private double Island => Live.WorldKinds.FirstOrDefault(k => k.Label == nameof(WorldKind.Island))?.Value ?? 0;
 
-    private async Task LoadAsync()
+    private static string Greeting => DateTime.Now.Hour switch
     {
-        try
-        {
-            await using var db = await Db.CreateDbContextAsync();
-            var since = DateTimeOffset.UtcNow.AddHours(-24);
+        < 5 => "Good night",
+        < 12 => "Good morning",
+        < 18 => "Good afternoon",
+        _ => "Good evening"
+    };
 
-            _stats =
-            [
-                new("Accounts", Icons.Material.Filled.Badge, "#7dd3fc", await db.Accounts.LongCountAsync()),
-                new("Characters", Icons.Material.Filled.Person, "#a78bfa", await db.Characters.LongCountAsync()),
-                new("Worlds", Icons.Material.Filled.Public, "#34d399", await db.Worlds.LongCountAsync()),
-                new("Voxel edits", Icons.Material.Filled.ViewInAr, "#fbbf24", await db.VoxelEdits.LongCountAsync()),
-                new("Devices", Icons.Material.Filled.Inventory2, "#f472b6", await db.PlacedDevices.LongCountAsync()),
-                new("Events, 24 h", Icons.Material.Filled.Bolt, "#f87171", await db.GameEvents.LongCountAsync(e => e.Time >= since))
-            ];
+    protected override Task OnInitializedAsync() => LoadRecentAsync();
 
-            var perHour = await db.GameEvents.Where(e => e.Time >= since)
-                .GroupBy(e => new { e.Time.Year, e.Time.Month, e.Time.Day, e.Time.Hour })
-                .Select(g => new { g.Key.Year, g.Key.Month, g.Key.Day, g.Key.Hour, Count = g.Count() })
-                .ToListAsync();
-
-            var start = DateTimeOffset.UtcNow.AddHours(-23);
-            var buckets = Enumerable.Range(0, 24).Select(i => start.AddHours(i)).ToList();
-            _hours = [.. buckets.Select((b, i) => i % 3 == 0 ? b.ToLocalTime().ToString("HH:00") : "")];
-            _activity =
-            [
-                new ChartSeries<double>
-                {
-                    Name = "Events",
-                    Data = new ChartData<double>([.. buckets.Select(b => (double)(perHour.FirstOrDefault(p => p.Year == b.Year && p.Month == b.Month && p.Day == b.Day && p.Hour == b.Hour)?.Count ?? 0))])
-                }
-            ];
-
-            var items = await db.InventoryItems.GroupBy(i => i.NameHash)
-                .Select(g => new { NameHash = g.Key, Count = g.Sum(i => (long)i.Count) })
-                .OrderByDescending(g => g.Count).Take(8).ToListAsync();
-            _topItems = [.. items.Select(i => new TopItem(Names.Item(i.NameHash), i.Count))];
-
-            _recent = [.. await db.Characters.OrderByDescending(c => c.LastSeenAt).Take(10)
-                .Select(c => new RecentRow(c.Id, c.Name, c.Account!.Username, c.PositionMap,
-                    c.Jobs.Where(j => j.Name == "Unified").Select(j => (int)j.Rank).FirstOrDefault(), c.LastSeenAt))
-                .ToListAsync()];
-
-            _error = null;
-        }
-        catch (Exception exception)
-        {
-            _error = exception.GetBaseException().Message;
-        }
+    protected override async Task OnLiveChangedAsync()
+    {
+        if (DateTimeOffset.UtcNow - _recentLoaded > TimeSpan.FromSeconds(10))
+            await LoadRecentAsync();
     }
 
-    private static string Ago(DateTimeOffset? time)
+    private async Task LoadRecentAsync()
     {
-        if (time is not DateTimeOffset value)
-            return "never";
+        await using var db = await Db.CreateDbContextAsync();
 
-        var span = DateTimeOffset.UtcNow - value;
-
-        return span.TotalMinutes < 1 ? "just now"
-            : span.TotalHours < 1 ? $"{(int)span.TotalMinutes} min ago"
-            : span.TotalDays < 1 ? $"{(int)span.TotalHours} h ago"
-            : $"{(int)span.TotalDays} d ago";
+        _recent = await db.Characters.AsNoTracking().Where(c => c.LastSeenAt != null).OrderByDescending(c => c.LastSeenAt).Take(6)
+            .Select(c => new RecentRow(c.Id, c.Name, c.Account!.Username,
+                c.Jobs.Where(j => j.Name == "Unified").Select(j => (int)j.Rank).FirstOrDefault(), c.LastSeenAt))
+            .ToListAsync();
+        _recentLoaded = DateTimeOffset.UtcNow;
     }
 }

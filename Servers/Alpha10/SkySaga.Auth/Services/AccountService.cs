@@ -324,6 +324,15 @@ public sealed partial class AccountService(IDbContextFactory<SkySagaDbContext> f
         return await db.Characters.AsNoTracking().Where(c => c.AccountId == accountId).OrderBy(c => c.CreatedAt).FirstOrDefaultAsync();
     }
 
+    public async Task<Guid?> GetAvatarIdAsync(Guid accountId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var characterId = await db.Characters.Where(c => c.AccountId == accountId).OrderBy(c => c.CreatedAt).Select(c => (Guid?)c.Id).FirstOrDefaultAsync();
+
+        return await db.Photos.Where(p => p.OwnerCharacterId == characterId && p.IsAvatar && p.UploadedAt != null)
+            .OrderByDescending(p => p.UploadedAt).Select(p => (Guid?)p.Id).FirstOrDefaultAsync();
+    }
+
     public async Task<Character> CreateCharacterAsync(Guid accountId)
     {
         await using var db = await factory.CreateDbContextAsync();

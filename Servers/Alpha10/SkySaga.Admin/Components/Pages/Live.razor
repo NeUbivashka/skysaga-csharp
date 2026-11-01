@@ -1,0 +1,136 @@
+@page "/live"
+@inherits LivePage
+
+<PageTitle>Live · SkySaga Control</PageTitle>
+
+<div class="page-header">
+    <div>
+        <div class="eyebrow"><span class="pulse inline"></span> real time</div>
+        <h1 class="page-title">Live</h1>
+        <div class="page-subtitle">Who is in which world right now, and what they are doing.</div>
+    </div>
+    <div class="big-counter">
+        <div class="big-counter-value">@Live.Online.Count</div>
+        <div class="big-counter-label">players online</div>
+    </div>
+</div>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" lg="8">
+        <div class="glass-card">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">Players online</div>
+                    <div class="card-sub">Sampled every two seconds, last @Format.For(TimeSpan.FromSeconds(Live.OnlineHistory.Count * 2))</div>
+                </div>
+                <span class="chip-soft">peak @Live.PeakOnline</span>
+            </div>
+            <AreaChart Values="Live.OnlineHistory" Labels="HistoryLabels" Color="#34d399" SecondColor="#22d3ee" Unit="online" LabelEvery="30" Height="220" />
+        </div>
+
+        @if (Live.Online.Count == 0)
+        {
+            <div class="glass-card mt-3">
+                <div class="empty-state large">
+                    <MudIcon Icon="@Icons.Material.Filled.Cloud" Size="Size.Large" />
+                    <div>The isles are quiet. Players appear here the moment they join a world.</div>
+                </div>
+            </div>
+        }
+
+        <div class="world-grid mt-3">
+            @foreach (var world in Live.Online.GroupBy(p => (p.WorldId, p.World, p.Kind)).OrderByDescending(g => g.Count()))
+            {
+                <div class="world-live-card" style="--accent:@KindColor(world.Key.Kind)">
+                    <div class="world-live-head">
+                        <span class="world-icon"><MudIcon Icon="@KindIcon(world.Key.Kind)" /></span>
+                        <div>
+                            <div class="card-title">@world.Key.World</div>
+                            <div class="card-sub mono">@world.Key.WorldId.ToString()[..8]</div>
+                        </div>
+                        <span class="world-count">@world.Count()</span>
+                    </div>
+                    <div class="player-chips">
+                        @foreach (var player in world)
+                        {
+                            <a class="player-chip" href="/players/@player.Id" @key="player.Id">
+                                <Avatar Name="@player.Name" Size="xs" Photo="@Live.AvatarOf(player.Id)" Online="true" />
+                                <span class="player-chip-name">@player.Name</span>
+                                @if (player.Premium)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Size="Size.Small" Style="color:#fbbf24" />
+                                }
+                                @if (player.Since is { } since)
+                                {
+                                    <span class="player-chip-time">@Format.For(DateTimeOffset.UtcNow - since)</span>
+                                }
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </MudItem>
+
+    <MudItem xs="12" lg="4">
+        <div class="glass-card full">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">Event stream</div>
+                    <div class="card-sub">Newest first</div>
+                </div>
+                <span class="pill live small"><span class="pulse"></span>@Live.EventsHour / h</span>
+            </div>
+            <div class="feed tall">
+                @foreach (var item in Live.RecentEvents)
+                {
+                    <div class="feed-item" @key="item.Id">
+                        <span class="feed-icon" style="--accent:@Format.EventColor(item.Kind)"><MudIcon Icon="@Format.EventIcon(item.Kind)" Size="Size.Small" /></span>
+                        <div class="feed-body">
+                            <div class="feed-line">
+                                <span class="feed-kind" style="color:@Format.EventColor(item.Kind)">@item.Kind</span>
+                                @if (item.CharacterId is Guid id)
+                                {
+                                    <a href="/players/@id" class="feed-who">@(item.Character ?? "unknown")</a>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Data))
+                            {
+                                <div class="feed-data mono">@item.Data</div>
+                            }
+                        </div>
+                        <span class="feed-time">@item.Time.ToLocalTime().ToString("HH:mm:ss")</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private IReadOnlyList<string> HistoryLabels
+    {
+        get
+        {
+            var count = Live.OnlineHistory.Count;
+            return [.. Enumerable.Range(0, count).Select(i => i == count - 1 ? "now" : $"-{Format.For(TimeSpan.FromSeconds((count - 1 - i) * 2))}")];
+        }
+    }
+
+    private static string KindColor(WorldKind? kind) => kind switch
+    {
+        WorldKind.Hub => "#a78bfa",
+        WorldKind.Island => "#34d399",
+        WorldKind.Ftue => "#22d3ee",
+        WorldKind.CharacterCreation => "#94a3b8",
+        _ => "#fbbf24"
+    };
+
+    private static string KindIcon(WorldKind? kind) => kind switch
+    {
+        WorldKind.Hub => Icons.Material.Filled.LocationCity,
+        WorldKind.Island => Icons.Material.Filled.Landscape,
+        WorldKind.CharacterCreation => Icons.Material.Filled.Face,
+        _ => Icons.Material.Filled.Explore
+    };
+}

@@ -1,36 +1,133 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject LiveMetrics Metrics
+@inject IDbContextFactory<SkySagaDbContext> Db
+@inject NavigationManager Navigation
 
 <MudThemeProvider Theme="_theme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
+<div class="backdrop" aria-hidden="true">
+    <div class="aurora aurora-a"></div>
+    <div class="aurora aurora-b"></div>
+    <div class="aurora aurora-c"></div>
+    <div class="grid-overlay"></div>
+</div>
+
 <MudLayout>
-    <MudAppBar Elevation="0" Dense="true">
+    <MudAppBar Elevation="0" Class="topbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="() => _drawerOpen = !_drawerOpen" />
-        <MudIcon Icon="@Icons.Material.Filled.Cloud" Class="ml-2 mr-2" Style="color:#7dd3fc" />
-        <MudText Typo="Typo.h6" Class="brand">SkySaga Control</MudText>
+        <a href="/" class="brand-link">
+            <svg viewBox="0 0 64 64" class="brand-mark" aria-hidden="true">
+                <defs>
+                    <linearGradient id="isleTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ee7b7" /><stop offset="1" stop-color="#10b981" /></linearGradient>
+                    <linearGradient id="isleRock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b45309" /><stop offset="1" stop-color="#78350f" /></linearGradient>
+                </defs>
+                <path d="M8 28 L32 18 L56 28 L32 38 Z" fill="url(#isleTop)" />
+                <path d="M8 28 L32 38 L32 46 L14 36 Z" fill="#059669" />
+                <path d="M56 28 L32 38 L32 46 L50 36 Z" fill="#047857" />
+                <path d="M14 36 L32 46 L50 36 L32 60 Z" fill="url(#isleRock)" />
+            </svg>
+            <span class="brand">SkySaga</span>
+            <span class="brand-sub">Control</span>
+        </a>
         <MudSpacer />
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" Icon="@Icons.Material.Filled.Storage">Alpha 10 · 36731</MudChip>
+        <div class="search-box">
+            <MudAutocomplete T="SearchHit" SearchFunc="SearchAsync" ToStringFunc="@(hit => hit?.Title)" ValueChanged="Go"
+                             Placeholder="Find a player or account…" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                             Variant="Variant.Outlined" Margin="Margin.Dense" DebounceInterval="200" Dense="true" MaxItems="10">
+                <ItemTemplate Context="hit">
+                    <div class="search-hit">
+                        <Avatar Name="@hit.Title" Size="xs" Photo="@Metrics.Snapshot.AvatarOf(hit.CharacterId)" />
+                        <span>@hit.Title</span>
+                        <span class="muted-label">@hit.Subtitle</span>
+                    </div>
+                </ItemTemplate>
+            </MudAutocomplete>
+        </div>
+        <MudSpacer />
+        <div class="topbar-pills">
+            <span class="pill live @(Stale ? "stale" : "")" title="Updated @Format.Ago(Metrics.Snapshot.Time)">
+                <span class="pulse"></span>@(Stale ? "Paused" : "Live")
+            </span>
+            <a class="pill online" href="/live"><MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" />@Metrics.Snapshot.Online.Count online</a>
+            <span class="pill db" title="Database round trip"><MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Small" />@Metrics.Snapshot.DbLatencyMs.ToString("0.0") ms</span>
+        </div>
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Variant="DrawerVariant.Mini" OpenMiniOnHover="true">
-        <MudNavMenu Class="mt-2">
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Variant="DrawerVariant.Mini" OpenMiniOnHover="true" Class="sidebar">
+        <MudNavMenu Class="mt-3 nav">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.SpaceDashboard">Overview</MudNavLink>
+            <MudNavLink Href="/live" Icon="@Icons.Material.Filled.Sensors">Live</MudNavLink>
             <MudNavLink Href="/players" Icon="@Icons.Material.Filled.People">Players</MudNavLink>
             <MudNavLink Href="/accounts" Icon="@Icons.Material.Filled.ManageAccounts">Accounts</MudNavLink>
             <MudNavLink Href="/worlds" Icon="@Icons.Material.Filled.Public">Worlds</MudNavLink>
             <MudNavLink Href="/events" Icon="@Icons.Material.Filled.Timeline">Events</MudNavLink>
         </MudNavMenu>
+        @if (_drawerOpen)
+        {
+            <div class="sidebar-services">
+                <div class="sidebar-caption">Services</div>
+                @foreach (var service in Metrics.Snapshot.Services)
+                {
+                    <div class="service-row" title="@service.Address">
+                        <span class="dot @(service.Up ? "up" : "down")"></span>
+                        <span class="service-name">@service.Name</span>
+                        <span class="service-latency mono">@(service.Up ? $"{service.LatencyMs:0.0} ms" : "down")</span>
+                    </div>
+                }
+            </div>
+        }
     </MudDrawer>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="py-6">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="py-6 page">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
-    private bool _drawerOpen;
+    private sealed record SearchHit(string Title, string Subtitle, string Href, Guid? CharacterId);
+
+    private bool _drawerOpen = true;
+
+    private bool Stale => DateTimeOffset.UtcNow - Metrics.Snapshot.Time > TimeSpan.FromSeconds(10);
+
+    protected override void OnInitialized() => Metrics.Changed += Refresh;
+
+    private void Refresh() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Metrics.Changed -= Refresh;
+
+    private async Task<IEnumerable<SearchHit>> SearchAsync(string text, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return [];
+
+        var pattern = $"%{text.Trim()}%";
+        await using var db = await Db.CreateDbContextAsync(token);
+
+        var characters = await db.Characters.AsNoTracking()
+            .Where(c => EF.Functions.ILike(c.Name, pattern) || EF.Functions.ILike(c.Account!.Username, pattern))
+            .OrderBy(c => c.Name).Take(8)
+            .Select(c => new SearchHit(c.Name, "player · " + c.Account!.Username, "/players/" + c.Id, (Guid?)c.Id))
+            .ToListAsync(token);
+
+        var accounts = await db.Accounts.AsNoTracking()
+            .Where(a => !a.Characters.Any() && EF.Functions.ILike(a.Username, pattern))
+            .OrderBy(a => a.Username).Take(4)
+            .Select(a => new SearchHit(a.Username, "account without character", "/accounts?search=" + a.Username, null))
+            .ToListAsync(token);
+
+        return [.. characters, .. accounts];
+    }
+
+    private void Go(SearchHit? hit)
+    {
+        if (hit is not null)
+            Navigation.NavigateTo(hit.Href);
+    }
 
     private readonly MudTheme _theme = new()
     {
@@ -41,25 +138,32 @@
             Tertiary = "#a78bfa",
             Info = "#7dd3fc",
             Success = "#34d399",
-            Warning = "#fbbf24",
+            Warning = "#fb923c",
             Error = "#f87171",
-            Background = "#0b1120",
-            Surface = "#111a2e",
-            AppbarBackground = "#0d1528",
+            Background = "#060a16",
+            BackgroundGray = "#0c1326",
+            Surface = "#0d1528",
+            AppbarBackground = "rgba(6,10,22,0.7)",
             AppbarText = "#e2e8f0",
-            DrawerBackground = "#0d1528",
+            DrawerBackground = "rgba(6,10,22,0.6)",
             DrawerText = "#cbd5e1",
             DrawerIcon = "#7dd3fc",
             TextPrimary = "#e2e8f0",
             TextSecondary = "#94a3b8",
             LinesDefault = "rgba(148,163,184,0.14)",
-            TableLines = "rgba(148,163,184,0.10)",
-            ActionDefault = "#94a3b8"
+            LinesInputs = "rgba(148,163,184,0.3)",
+            TableLines = "rgba(148,163,184,0.08)",
+            TableHover = "rgba(56,189,248,0.06)",
+            ActionDefault = "#94a3b8",
+            OverlayDark = "rgba(2,6,23,0.72)"
         },
         Typography = new Typography
         {
-            Default = new DefaultTypography { FontFamily = ["Inter", "system-ui", "sans-serif"] }
+            Default = new DefaultTypography { FontFamily = ["Inter", "system-ui", "sans-serif"] },
+            H4 = new H4Typography { FontFamily = ["Space Grotesk", "Inter", "sans-serif"], FontWeight = "700" },
+            H5 = new H5Typography { FontFamily = ["Space Grotesk", "Inter", "sans-serif"], FontWeight = "700" },
+            H6 = new H6Typography { FontFamily = ["Space Grotesk", "Inter", "sans-serif"], FontWeight = "600" }
         },
-        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "10px" }
+        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "14px", AppbarHeight = "68px" }
     };
 }
