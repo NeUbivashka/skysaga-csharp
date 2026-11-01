@@ -35,7 +35,7 @@ public static class InitialOreVeins
         (OreVeinKind.Metal, "Metal_Yellow")
     ];
 
-    public static bool AddToIsland(SkySagaDbContext db, World island, byte[] template)
+    public static bool AddToIsland(SkySagaDbContext db, World island, byte[] template, bool addCaveDisplay = false)
     {
         using var json = JsonDocument.Parse(template);
         var root = json.RootElement;
@@ -100,6 +100,37 @@ public static class InitialOreVeins
             else db.VoxelEdits.Add(new VoxelEdit { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Block = Block });
             db.OreVeins.Add(new OreVein { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Kind = vein.Kind, Material = NameCrc(vein.Material) });
         }
+        if (!addCaveDisplay) return true;
+
+        var crystals = new List<(int X, int Y, int Z)>();
+        foreach (var vein in selected.Take(4 * VeinLength).Chunk(VeinLength))
+        {
+            var origin = vein[1];
+            var found = false;
+            for (var radius = 1; radius <= 4 && !found; radius++)
+            for (var dz = -radius; dz <= radius && !found; dz++)
+            for (var dx = -radius; dx <= radius && !found; dx++)
+            {
+                if (Math.Max(Math.Abs(dx), Math.Abs(dz)) != radius) continue;
+                var pos = (X: origin.X + dx, Y: origin.Y, Z: origin.Z + dz);
+                if (pos.X < 1 || pos.X >= sizeX || pos.Z < 1 || pos.Z >= sizeZ
+                    || voxels.Contains(pos) || voxels.Contains((pos.X, pos.Y + 1, pos.Z))
+                    || !voxels.Contains((pos.X, pos.Y - 1, pos.Z))
+                    || entities.Any(e => Math.Abs(e.X - pos.X) <= 2 && Math.Abs(e.Y - pos.Y) <= 2 && Math.Abs(e.Z - pos.Z) <= 2)
+                    || selected.Contains(pos) || crystals.Contains(pos)) continue;
+                crystals.Add(pos);
+                found = true;
+            }
+        }
+        long[] crystalMaterials = [2315324841, 228787774, 2697292451, 1536416095, 3667810571];
+        for (var i = 0; i < crystals.Count; i++)
+        {
+            var pos = crystals[i];
+            db.PlacedDevices.Add(new PlacedDevice { WorldId = island.Id, ItemCrc = 1422256949, X = pos.X, Y = pos.Y, Z = pos.Z,
+                Materials = [crystalMaterials[i]], Face = 2 });
+        }
+        if (!InitialCaveDisplay.Add(db, island, voxels, entities, selected, crystals, center))
+            Console.WriteLine($"[WorldCatalog] No safe space found for cave display on new island {island.Id}.");
         return true;
     }
 

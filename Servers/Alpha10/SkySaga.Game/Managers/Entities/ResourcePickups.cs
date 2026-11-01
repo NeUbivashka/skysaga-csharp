@@ -48,7 +48,22 @@ public static class ResourcePickups
         var start = new Vector3(device.X + 0.5f, device.Y + 0.5f, device.Z + 0.5f);
         var owner = connection.PlayerEntity.Id;
 
-        Spawn(connection, device.ItemCrc, 1, start, voxel, owner, device.Materials);
+        var lootTable = device.ItemCrc == Util.ComputeCrc32("Mushroom_Cave_A") || device.ItemCrc == Util.ComputeCrc32("Mushroom_Cave_B")
+            ? "Food_Mushroom_LootTable"
+            : device.ItemCrc == Util.ComputeCrc32("Cave_Crystal_Clump_A_Lit") || device.ItemCrc == Util.ComputeCrc32("Cave_Crystal_Clump_Large") || device.ItemCrc == Util.ComputeCrc32("Cave_Crystal_Hanging_A")
+                ? "Cave_Crystal_Clump_LootTable" : null;
+        if (lootTable is not null)
+        {
+            foreach (var drop in LootTable.Roll(lootTable, "Forest"))
+            {
+                var materials = drop.Materials.Select((material, index) => material == LootTable.EntityMaterial
+                    ? index < device.Materials.Length ? device.Materials[index] : null
+                    : material is null ? null : (uint?)Util.ComputeCrc32(material)).ToArray();
+                Spawn(connection, drop.ItemCrc, drop.Count, start, voxel, owner, materials);
+            }
+        }
+        else
+            Spawn(connection, device.ItemCrc, 1, start, voxel, owner, device.Materials);
 
         foreach (var stored in device.Items)
             if (stored is not null)

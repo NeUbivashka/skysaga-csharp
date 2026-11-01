@@ -33,6 +33,8 @@ public static class DeviceTable
                 int.Parse(parts[2]), int.Parse(parts[3]), int.Parse(parts[4]), int.Parse(parts[5]), int.Parse(parts[6]), cells);
         }
 
+        foreach (var name in new[] { "Mushroom_Cave_A", "Mushroom_Cave_B" })
+            map.TryAdd(Util.ComputeCrc32(name), new DeviceInfo(name, 0, 0, 0, 0, 0, [new Vector3Int(0, 0, 0)]));
         return map;
     }
 
