@@ -7,6 +7,7 @@ namespace SkySaga.Game.Managers.World;
 public sealed class WorldManager : IWorldManager, IDisposable
 {
     private readonly MapChunkManager _chunkManager;
+    private readonly PlayerConnectionManager _playerConnectionManager;
     private readonly Random _random = new(1337);
     private FileSystemWatcher? _mapFileWatcher;
     private System.Threading.Timer? _reloadDebounceTimer;
@@ -43,6 +44,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private const int LandingSearchRadius = 16;
 
     public System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, float> VoxelDamage { get; } = new();
+    public System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, DateTime> VoxelRegeneration { get; } = new();
+
+    private const float VoxelRegenerationPerSecond = 5f;
+    private static readonly TimeSpan VoxelRegenerationDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan VoxelRegenerationInterval = TimeSpan.FromSeconds(1);
+    private DateTime _nextVoxelRegeneration;
 
     public WorldManager(WorldInfo info, PlayerConnectionManager playerConnectionManager)
     {
@@ -50,6 +57,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         Info = info;
         EntityManager = new EntityManager();
+        _playerConnectionManager = playerConnectionManager;
         _chunkManager = new MapChunkManager(info, playerConnectionManager);
         _checkpoints = info.IsPersistent ? WorldStore.LoadCheckpoints(info.Id) : [];
 
@@ -135,6 +143,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         VoxelDamage.Clear();
+        VoxelRegeneration.Clear();
 
         if (WorldMapLoader.TryLoad(ChunkManager, Info, VoxelDamage, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
         {
@@ -843,6 +852,47 @@ public sealed class WorldManager : IWorldManager, IDisposable
             Visit(entity);
 
         return ordered;
+    }
+
+    public void HitVoxel(Vector3Int voxel, DateTime now)
+    {
+        if (!VoxelDamage.ContainsKey(voxel) || VoxelRegeneration.ContainsKey(voxel))
+            VoxelRegeneration[voxel] = now + VoxelRegenerationDelay;
+    }
+
+    public void RegenerateVoxels(DateTime now)
+    {
+        if (now < _nextVoxelRegeneration)
+            return;
+
+        _nextVoxelRegeneration = now + VoxelRegenerationInterval;
+
+        foreach (var (voxel, from) in VoxelRegeneration)
+        {
+            if (now <= from)
+                continue;
+
+            var chunk = new Vector3Int(voxel.X / 32, voxel.Y / 32, voxel.Z / 32);
+            var local = new Vector3Int(voxel.X % 32, voxel.Y % 32, voxel.Z % 32);
+            var damage = VoxelDamage.GetValueOrDefault(voxel) - (float)(now - from).TotalSeconds * VoxelRegenerationPerSecond;
+
+            if (damage > 0 && VoxelTable.TryGet(ChunkManager.GetVoxel(chunk, local), out var stats))
+            {
+                VoxelDamage[voxel] = damage;
+                VoxelRegeneration[voxel] = now;
+
+                if (UpdateVoxelDamage.For(Definition, voxel, stats.Durability - damage, 0) is { } update)
+                    _playerConnectionManager.BroadcastToAll(update);
+
+                continue;
+            }
+
+            VoxelDamage.TryRemove(voxel, out _);
+            VoxelRegeneration.TryRemove(voxel, out _);
+
+            if (UpdateVoxelDamage.TryPackVoxelId(Definition, voxel, out var voxelId))
+                _playerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { VoxelId = voxelId });
+        }
     }
 
     public void Reset()

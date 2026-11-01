@@ -86,6 +86,7 @@ public static class RunActionListReceived
             SetWorldVoxel(connection, placeAt, (byte)placedBlock);
             connection.Ai.Hear(connection.PlayerEntity, "Build");
             connection.WorldManager.VoxelDamage.TryRemove(placeAt, out _);
+            connection.WorldManager.VoxelRegeneration.TryRemove(placeAt, out _);
 
             if (usedItem is { } placedItem)
                 ConsumeOne(connection, placedItem.Entity);
@@ -114,6 +115,8 @@ public static class RunActionListReceived
         }
 
         var hitDamage = DigDamage(strength - voxelStats.Resistance);
+        connection.WorldManager.HitVoxel(voxel, DateTime.UtcNow);
+
         var damage = connection.WorldManager.VoxelDamage.AddOrUpdate(voxel, hitDamage, (_, current) => current + hitDamage);
 
         if (damage < voxelStats.Durability)
@@ -128,6 +131,7 @@ public static class RunActionListReceived
         if (UpdateVoxelDamage.TryPackVoxelId(connection.WorldManager.Definition, voxel, out var voxelId))
             connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { VoxelId = voxelId });
         connection.WorldManager.VoxelDamage.TryRemove(voxel, out _);
+        connection.WorldManager.VoxelRegeneration.TryRemove(voxel, out _);
         SetWorldVoxel(connection, voxel, Air);
         ResourcePickups.SpawnFromVoxel(connection, voxel, voxelType);
 

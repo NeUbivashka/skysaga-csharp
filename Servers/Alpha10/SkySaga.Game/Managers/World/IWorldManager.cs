@@ -4,6 +4,9 @@ public interface IWorldManager
 {
     WorldInfo Info { get; }
     System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, float> VoxelDamage { get; }
+    System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, DateTime> VoxelRegeneration { get; }
+    void HitVoxel(Vector3Int voxel, DateTime now);
+    void RegenerateVoxels(DateTime now);
     IMapEntityManager EntityManager { get; }
     IMapChunkManager ChunkManager { get; }
     MapDefinition Definition { get; set; }

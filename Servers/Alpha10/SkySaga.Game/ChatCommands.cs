@@ -263,6 +263,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
             return "This map size has no client id";
 
         worldManager.VoxelDamage[voxel] = stats.Durability - health;
+        worldManager.VoxelRegeneration.TryRemove(voxel, out _);
         playerConnectionManager.BroadcastToAll(packet);
 
         return $"{voxel}: health {health}/{stats.Durability}, id 0x{packet.VoxelId:X8}";
