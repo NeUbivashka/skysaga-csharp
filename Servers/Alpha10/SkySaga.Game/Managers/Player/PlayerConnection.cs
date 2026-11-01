@@ -210,8 +210,30 @@ public class PlayerConnection
     public float LookPitch { get; set; }
     public float LookYaw { get; set; }
 
+    private (DateTime Due, Guid CharacterId, WorldInfo Destination, Guid SourceWorldId)? _pendingWorldTravel;
+
+    public bool HasPendingWorldTravel => _pendingWorldTravel.HasValue;
+
+    public bool BeginAnimatedWorldTravel(Guid characterId, WorldInfo destination)
+    {
+        if (_pendingWorldTravel.HasValue || !PlayerEntity.TryGetComponent<ClientPlayerAspectsComponent>(out var aspects))
+            return false;
+
+        aspects.TeleportingMethod = 1;
+        Send(new EntitySync { Id = PlayerEntity.Id, SyncData = PlayerEntity.GetSyncData(newEntity: false, forOwner: true, onlyParameter: "teleportingmethod") });
+        Send(new EntityEvent { EventKind = 0xa4, EntityId = PlayerEntity.Id });
+        _pendingWorldTravel = (DateTime.UtcNow.AddMilliseconds(2500), characterId, destination, WorldManager.Info.Id);
+        return true;
+    }
+
     public void Tick()
     {
+        if (_pendingWorldTravel is { } travel && DateTime.UtcNow >= travel.Due)
+        {
+            _pendingWorldTravel = null;
+            if (IsPlayerInitialized && CharacterId == travel.CharacterId && WorldManager.Info.Id == travel.SourceWorldId)
+                WorldTravel.Send(this, travel.CharacterId, travel.Destination);
+        }
         JobChallenges.RefreshIfDue(this);
         JobChallengeProgress.InventoryChanged(this);
 

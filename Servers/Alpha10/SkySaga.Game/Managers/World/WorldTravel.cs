@@ -18,6 +18,8 @@ public static class WorldTravel
 
     public static bool Request(PlayerConnection connection, Guid characterId, string request, Func<Guid, WorldInfo?> destinationFor)
     {
+        if (connection.HasPendingWorldTravel) return true;
+
         var current = connection.WorldManager.Info;
         var destination = destinationFor(characterId);
 
@@ -30,11 +32,16 @@ public static class WorldTravel
         if (destination.Id == current.Id)
             Console.WriteLine($"[Travel] {request}: {connection.CharacterName} is already in {current.Kind} {current.Id}; reloading it.");
 
+        if (current.Kind is SkySaga.Data.Entities.WorldKind.Island or SkySaga.Data.Entities.WorldKind.Hub or SkySaga.Data.Entities.WorldKind.Adventure
+            && destination.Kind is SkySaga.Data.Entities.WorldKind.Hub or SkySaga.Data.Entities.WorldKind.Adventure or SkySaga.Data.Entities.WorldKind.Island
+            && connection.BeginAnimatedWorldTravel(characterId, destination))
+            return true;
+
         Send(connection, characterId, destination);
         return true;
     }
 
-    private static void Send(PlayerConnection connection, Guid characterId, WorldInfo destination)
+    public static void Send(PlayerConnection connection, Guid characterId, WorldInfo destination)
     {
         var world = connection.Server.Worlds.Open(destination);
 
