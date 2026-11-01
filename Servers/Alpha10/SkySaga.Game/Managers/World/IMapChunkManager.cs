@@ -22,6 +22,8 @@ public interface IMapChunkManager
 
     void ClearAll();
 
+    bool HasEdit(Vector3Int worldPosition);
+
     ChunkSync GetChunkSyncData(Vector3Int chunkPosition);
 
     IEnumerable<ChunkSync> GetAllChunkSyncData();

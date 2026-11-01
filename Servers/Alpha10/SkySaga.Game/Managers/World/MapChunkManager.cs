@@ -131,6 +131,12 @@ public class MapChunkManager(WorldInfo worldInfo, PlayerConnectionManager player
         _chunks.Clear();
     }
 
+    public bool HasEdit(Vector3Int worldPosition)
+    {
+        lock (_editsLock)
+            return _edits.ContainsKey(worldPosition);
+    }
+
     public ChunkSync GetChunkSyncData(Vector3Int chunkPosition)
     {
         if (!TryGetChunk(chunkPosition, out var chunk))

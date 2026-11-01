@@ -134,7 +134,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
             return;
         }
 
-        if (WorldMapLoader.TryLoad(ChunkManager, Info, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
+        VoxelDamage.Clear();
+
+        if (WorldMapLoader.TryLoad(ChunkManager, Info, VoxelDamage, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
         {
             Definition = loadedDefinition;
 
@@ -161,6 +163,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         ChunkManager.LoadSavedEdits();
+
+        foreach (var voxel in VoxelDamage.Keys)
+            if (ChunkManager.HasEdit(voxel))
+                VoxelDamage.TryRemove(voxel, out _);
+
         LoadDevices();
         LoadOreVeins();
 

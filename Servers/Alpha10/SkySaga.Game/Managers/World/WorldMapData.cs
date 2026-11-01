@@ -22,6 +22,7 @@ public class WorldMapVoxelData
     public int Z { get; set; }
     public byte Block { get; set; }
     public byte Meta { get; set; }
+    public int? Health { get; set; }
 }
 
 public class WorldMapEntityData

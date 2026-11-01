@@ -10,7 +10,6 @@ public static class RunActionListReceived
     private const float HandMiningPowerTier = 1;
     private const uint SwingPowerMax = 0x20;
     private const byte Air = WorldChunk.Air;
-    private static readonly bool SendVoxelDamage = Environment.GetEnvironmentVariable("SKYSAGA_VOXEL_DAMAGE") == "1";
 
     private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 5), (-10, 13), (0, 38), (10, 63), (20, 125), (40, 500)];
 
@@ -117,27 +116,17 @@ public static class RunActionListReceived
         var hitDamage = DigDamage(strength - voxelStats.Resistance);
         var damage = connection.WorldManager.VoxelDamage.AddOrUpdate(voxel, hitDamage, (_, current) => current + hitDamage);
 
-        var damageId = DamageIdOf(voxel);
-
         if (damage < voxelStats.Durability)
         {
-            if (SendVoxelDamage)
-                connection.PlayerConnectionManager.BroadcastToAll(new UpdateVoxelDamage
-            {
-                DamageId = damageId,
-                Amount = (uint)damage,
-                EntityId = 0,
-                SourceId = connection.PlayerEntity.Id,
-                Position = new Vector3(voxel.X, voxel.Y, voxel.Z),
-                Timestamp = (ulong)Environment.TickCount64
-            });
+            if (UpdateVoxelDamage.For(connection.WorldManager.Definition, voxel, voxelStats.Durability - damage, connection.PlayerEntity.Id) is { } update)
+                connection.PlayerConnectionManager.BroadcastToAll(update);
 
             Console.WriteLine($"[Voxel] {voxel} type {voxelType} damage {damage}/{voxelStats.Durability} (+{hitDamage})");
             return true;
         }
 
-        if (SendVoxelDamage)
-            connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { DamageId = damageId });
+        if (UpdateVoxelDamage.TryPackVoxelId(connection.WorldManager.Definition, voxel, out var voxelId))
+            connection.PlayerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { VoxelId = voxelId });
         connection.WorldManager.VoxelDamage.TryRemove(voxel, out _);
         SetWorldVoxel(connection, voxel, Air);
         ResourcePickups.SpawnFromVoxel(connection, voxel, voxelType);
@@ -145,8 +134,6 @@ public static class RunActionListReceived
         Console.WriteLine($"[Voxel] removed {voxel}");
         return true;
     }
-
-    private static int DamageIdOf(Vector3Int voxel) => (voxel.X << 20) | (voxel.Y << 11) | voxel.Z | 1 << 30;
 
     private static float DigDamage(float input)
     {

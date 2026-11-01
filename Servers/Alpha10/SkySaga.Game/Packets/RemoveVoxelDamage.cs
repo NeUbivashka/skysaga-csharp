@@ -2,7 +2,7 @@ namespace SkySaga.Game.Packets;
 
 public class RemoveVoxelDamage : ISerializablePacket
 {
-    public int DamageId;
+    public uint VoxelId;
 
     public BitStream Serialize()
     {
@@ -10,7 +10,7 @@ public class RemoveVoxelDamage : ISerializablePacket
 
         bitStream.WritePacketId(PacketId.RemoveVoxelDamage);
 
-        var bytes = BitConverter.GetBytes(DamageId);
+        var bytes = BitConverter.GetBytes(VoxelId);
 
         Array.Reverse(bytes);
 
