@@ -22,7 +22,7 @@ Servers/
   SkySaga.RakNet/             RakNet C# port (bitstream, connection, file transfer)
   SkySaga.Web/, SmilegateAuth/, SkySaga.ChatCommunication/  Old services, not used by Alpha 10
 Tools/
-  maps/                       GeoData → server table generators (run with SKYSAGA_TARGET=alpha10)
+  maps/                       GeoData → server table generators (Alpha 10 by default; SKYSAGA_TARGET=beta1 for the old Beta 1 data)
   terrain-editor/             Map editor (one HTML file)
   PatchedLaunch/              Client launcher patcher
   AudioExtractor/             Game audio extraction tool

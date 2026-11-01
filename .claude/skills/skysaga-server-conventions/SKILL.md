@@ -98,7 +98,7 @@ The generators default to Beta 1. Always run them for Alpha 10, and without `pyt
 because they import `targets.py` from their folder:
 
 ```bash
-SKYSAGA_TARGET=alpha10 python Tools/maps/make_combat_stats.py
+python Tools/maps/make_combat_stats.py
 ```
 
 Check `git diff --stat` afterwards: only `Servers/Alpha10/SkySaga.Game/Data` should change.

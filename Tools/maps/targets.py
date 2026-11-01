@@ -7,7 +7,7 @@ TARGETS = {
     "beta1": ("38328", "Beta1"),
 }
 
-BUILD, SERVERS = TARGETS[os.environ.get("SKYSAGA_TARGET", "beta1").lower()]
+BUILD, SERVERS = TARGETS[os.environ.get("SKYSAGA_TARGET", "alpha10").lower()]
 BUNDLE = os.path.join(ROOT, "Bundled", BUILD)
 GEODATA = os.path.join(BUNDLE, "GeoData.json")
 GAME = os.path.join(ROOT, "Servers", SERVERS, "SkySaga.Game")
