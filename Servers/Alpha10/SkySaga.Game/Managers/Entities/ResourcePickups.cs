@@ -11,15 +11,14 @@ public static class ResourcePickups
     private const float PopSpeed = 4f;
     private const float FallSpeed = 3f;
     private const float CreatureDropHeight = 0.75f;
-    private const string KeystoneVeinLootTable = "OreSeam_Keystone_LootTable";
 
     public static void SpawnFromVoxel(PlayerConnection connection, Vector3Int voxel, byte voxelType)
     {
-        if (connection.WorldManager.TakeKeystoneVein(voxel) is { } vein)
+        if (connection.WorldManager.TakeOreVein(voxel) is { } vein)
         {
             connection.WorldManager.EntityManager.RemoveEntity(vein.Id);
             connection.PlayerConnectionManager.BroadcastToAll(new EntityRemoved { Id = vein.Id });
-            SpawnKeystoneLoot(connection, vein, voxel);
+            SpawnOreVeinLoot(connection, vein, voxel);
             return;
         }
 
@@ -67,14 +66,16 @@ public static class ResourcePickups
         Spawn(connection, itemCrc, count, position + new Vector3(0, CreatureDropHeight, 0), voxel, owner: 0, materials);
     }
 
-    private static void SpawnKeystoneLoot(PlayerConnection connection, Entity vein, Vector3Int voxel)
+    private static void SpawnOreVeinLoot(PlayerConnection connection, Entity vein, Vector3Int voxel)
     {
         var material = vein.TryGetComponent<MaterialCompositionComponent>(out var composition) && composition.MaterialList.Length > 0
             ? composition.MaterialList[0]
             : null;
         var position = new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f);
 
-        foreach (var drop in LootTable.Roll(KeystoneVeinLootTable, ""))
+        var table = vein.Name == "SparseTreeKeystoneOre" ? "OreSeam_Keystone_LootTable" : "OreSeam_Metal_LootTable";
+
+        foreach (var drop in LootTable.Roll(table, ""))
         {
             var materials = drop.Materials.Select(name => name == LootTable.EntityMaterial
                 ? material

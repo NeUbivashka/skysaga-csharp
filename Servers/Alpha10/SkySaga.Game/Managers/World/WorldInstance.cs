@@ -29,6 +29,9 @@ public sealed class WorldInstance : IDisposable
 
     public void Join(PlayerConnection connection)
     {
+        if (IsEmpty)
+            Manager.RestoreOreVeins();
+
         Connections.AddConnection(connection.Guid.g, connection);
     }
 

@@ -1,24 +1,41 @@
+using System.Text;
 using System.Text.Json;
 using SkySaga.Data.Entities;
 
 namespace SkySaga.Data;
 
-public static class InitialKeystoneVeins
+public static class InitialOreVeins
 {
     public const byte Block = 2;
 
     private const int ChunkSize = 32;
     private const int VeinLength = 3;
-    private const int MinRadius = 6;
-    private const int MaxRadius = 32;
-    private const long ForestCrc = 2517439084;
-    private const long DesertCrc = 2111478763;
-    private const long JungleCrc = 3882895874;
-    private const long MountainCrc = 433052062;
+    private const int VeinGap = 4;
+    private const int MinRadius = 8;
+    private const int MaxRadius = 48;
 
-    private static readonly long[] Materials = [ForestCrc, DesertCrc, JungleCrc, MountainCrc];
+    private static readonly (OreVeinKind Kind, string Material)[] Veins =
+    [
+        (OreVeinKind.Keystone, "Forest"),
+        (OreVeinKind.Keystone, "Desert"),
+        (OreVeinKind.Keystone, "Jungle"),
+        (OreVeinKind.Keystone, "Mountain"),
+        (OreVeinKind.Metal, "Metal_Black"),
+        (OreVeinKind.Metal, "Metal_Blue"),
+        (OreVeinKind.Metal, "Metal_Brown"),
+        (OreVeinKind.Metal, "Metal_Cyan"),
+        (OreVeinKind.Metal, "Metal_Green"),
+        (OreVeinKind.Metal, "Metal_Grey"),
+        (OreVeinKind.Metal, "Metal_Lime"),
+        (OreVeinKind.Metal, "Metal_Orange"),
+        (OreVeinKind.Metal, "Metal_Pink"),
+        (OreVeinKind.Metal, "Metal_Purple"),
+        (OreVeinKind.Metal, "Metal_Red"),
+        (OreVeinKind.Metal, "Metal_White"),
+        (OreVeinKind.Metal, "Metal_Yellow")
+    ];
 
-    public static bool AddToNewIsland(SkySagaDbContext db, World island, byte[] template)
+    public static bool AddToIsland(SkySagaDbContext db, World island, byte[] template)
     {
         using var json = JsonDocument.Parse(template);
         var root = json.RootElement;
@@ -36,6 +53,11 @@ public static class InitialKeystoneVeins
             if (voxel.GetProperty("block").GetInt32() != 255)
                 voxels.Add((voxel.GetProperty("x").GetInt32(), voxel.GetProperty("y").GetInt32(), voxel.GetProperty("z").GetInt32()));
 
+        var edits = db.VoxelEdits.Where(edit => edit.WorldId == island.Id).ToDictionary(edit => (edit.X, edit.Y, edit.Z));
+        foreach (var edit in edits)
+            if (edit.Value.Block == 255) voxels.Remove(edit.Key);
+            else voxels.Add(edit.Key);
+
         var entities = new List<(int X, int Y, int Z)>();
         (int X, int Y, int Z)? spawn = null;
         foreach (var entity in entityArray.EnumerateArray())
@@ -45,9 +67,10 @@ public static class InitialKeystoneVeins
             if (entity.GetProperty("name").GetString() == "Player") spawn = pos;
         }
         if (spawn is null) return false;
+        entities.AddRange(db.PlacedDevices.Where(device => device.WorldId == island.Id).Select(device => new ValueTuple<int, int, int>(device.X, device.Y, device.Z)));
 
         var center = spawn.Value;
-        var wanted = Materials.Length * VeinLength;
+        var wanted = Veins.Length * VeinLength;
         var selected = new List<(int X, int Y, int Z)>();
         for (int radius = MinRadius; radius <= MaxRadius && selected.Count < wanted; radius++)
         for (int dz = -radius; dz <= radius && selected.Count < wanted; dz++)
@@ -62,7 +85,7 @@ public static class InitialKeystoneVeins
                 var pos = (X: x + i, Y: y, Z: z);
                 if (voxels.Contains(pos) || voxels.Contains((pos.X, y + 1, z)) || !voxels.Contains((pos.X, y - 1, z))
                     || entities.Any(e => Math.Abs(e.X - pos.X) <= 2 && Math.Abs(e.Y - y) <= 2 && Math.Abs(e.Z - z) <= 2)
-                    || selected.Any(p => Math.Abs(p.X - pos.X) <= 1 && p.Z == z)) { valid = false; break; }
+                    || selected.Any(p => Math.Abs(p.X - pos.X) <= VeinGap && Math.Abs(p.Z - z) <= VeinGap)) { valid = false; break; }
             }
             if (!valid) continue;
             for (int i = 0; i < VeinLength; i++) selected.Add((x + i, y, z));
@@ -72,9 +95,26 @@ public static class InitialKeystoneVeins
         for (int i = 0; i < selected.Count; i++)
         {
             var pos = selected[i];
-            db.VoxelEdits.Add(new VoxelEdit { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Block = Block });
-            db.KeystoneVeins.Add(new KeystoneVein { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Material = Materials[i / VeinLength] });
+            var vein = Veins[i / VeinLength];
+            if (edits.TryGetValue(pos, out var edit)) edit.Block = Block;
+            else db.VoxelEdits.Add(new VoxelEdit { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Block = Block });
+            db.OreVeins.Add(new OreVein { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Kind = vein.Kind, Material = NameCrc(vein.Material) });
         }
         return true;
+    }
+
+    private static long NameCrc(string name)
+    {
+        uint crc = 0;
+
+        foreach (var value in Encoding.UTF8.GetBytes(name.ToLowerInvariant()))
+        {
+            crc ^= (uint)value << 24;
+
+            for (var bit = 0; bit < 8; bit++)
+                crc = (crc & 0x80000000) != 0 ? (crc << 1) ^ 0x04C11DB7 : crc << 1;
+        }
+
+        return crc;
     }
 }

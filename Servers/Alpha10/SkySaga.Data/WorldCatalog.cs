@@ -89,11 +89,39 @@ public static class WorldCatalog
                 CreatedAt = DateTimeOffset.UtcNow
             };
             db.Worlds.Add(island);
-            if (!InitialKeystoneVeins.AddToNewIsland(db, island, ReadTemplateFile(dataDirectory, template)))
-                Console.WriteLine($"[WorldCatalog] No safe space found for keystone veins on new island {island.Id}.");
+            AddOreVeins(db, island, ReadTemplateFile(dataDirectory, template));
             db.SaveChanges();
             return island;
         }
+    }
+
+    public static void EnsureOreVeins(SkySagaDbContext db, string dataDirectory, Guid worldId)
+    {
+        lock (CreateLock)
+        {
+            if (db.OreVeins.Any(vein => vein.WorldId == worldId))
+                return;
+
+            var island = db.Worlds.Single(w => w.Id == worldId);
+            AddOreVeins(db, island, TemplateContent(db, dataDirectory, island));
+        }
+    }
+
+    private static void AddOreVeins(SkySagaDbContext db, World island, byte[] template)
+    {
+        if (InitialOreVeins.AddToIsland(db, island, template))
+            db.SaveChanges();
+        else
+            Console.WriteLine($"[WorldCatalog] No safe space found for ore veins on island {island.Id}.");
+    }
+
+    private static byte[] TemplateContent(SkySagaDbContext db, string dataDirectory, World island)
+    {
+        var stored = island.TemplateVersion is { } version
+            ? db.MapTemplates.Where(t => t.Id == version).Select(t => t.Content).SingleOrDefault()
+            : null;
+
+        return stored is null ? ReadTemplateFile(dataDirectory, island.Template) : Decompress(stored);
     }
 
     public static byte[] Decompress(byte[] content)

@@ -15,7 +15,7 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
     public DbSet<MapTemplate> MapTemplates => Set<MapTemplate>();
     public DbSet<VoxelEdit> VoxelEdits => Set<VoxelEdit>();
     public DbSet<PlacedDevice> PlacedDevices => Set<PlacedDevice>();
-    public DbSet<KeystoneVein> KeystoneVeins => Set<KeystoneVein>();
+    public DbSet<OreVein> OreVeins => Set<OreVein>();
     public DbSet<Checkpoint> Checkpoints => Set<Checkpoint>();
     public DbSet<GameEvent> GameEvents => Set<GameEvent>();
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
@@ -151,7 +151,7 @@ public class SkySagaDbContext(DbContextOptions<SkySagaDbContext> options) : DbCo
             edit.HasOne<World>().WithMany().HasForeignKey(e => e.WorldId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        model.Entity<KeystoneVein>(vein =>
+        model.Entity<OreVein>(vein =>
         {
             vein.HasKey(e => new { e.WorldId, e.X, e.Y, e.Z });
             vein.HasOne<World>().WithMany().HasForeignKey(e => e.WorldId).OnDelete(DeleteBehavior.Cascade);

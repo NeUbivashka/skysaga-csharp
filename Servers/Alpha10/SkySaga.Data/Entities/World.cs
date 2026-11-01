@@ -50,12 +50,19 @@ public class VoxelEdit
     public short Block { get; set; }
 }
 
-public class KeystoneVein
+public enum OreVeinKind : short
+{
+    Keystone,
+    Metal
+}
+
+public class OreVein
 {
     public Guid WorldId { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public int Z { get; set; }
+    public OreVeinKind Kind { get; set; }
     public long Material { get; set; }
 }
 
