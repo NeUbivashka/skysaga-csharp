@@ -22,6 +22,15 @@ public static class ResourcePickups
             return;
         }
 
+        if (voxelType == TreeGrowth.TreeVoxel && connection.WorldManager.CutTreeBlock(voxel) is { } treeTable)
+        {
+            foreach (var drop in LootTable.Roll(treeTable, ""))
+                Spawn(connection, drop.ItemCrc, drop.Count, new Vector3(voxel.X + 0.5f, voxel.Y + 0.5f, voxel.Z + 0.5f), voxel,
+                    connection.PlayerEntity.Id);
+
+            return;
+        }
+
         if (voxelType == WorldChunk.Air || BlockCrcMapping.GetItemCrc(voxelType) is not uint itemCrc)
             return;
 

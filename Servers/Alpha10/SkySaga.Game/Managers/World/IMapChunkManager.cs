@@ -14,6 +14,10 @@ public interface IMapChunkManager
 
     void SetVoxel(Vector3Int chunkPosition, Vector3Int voxelPosition, byte blockType, byte metaValue = 0x00);
 
+    void SetVoxelUnsaved(Vector3Int worldPosition, byte blockType);
+
+    byte GetVoxel(Vector3Int worldPosition);
+
     void LoadSavedEdits();
 
     IEnumerable<WorldChunk> GetLoadedChunks();

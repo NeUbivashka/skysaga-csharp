@@ -35,4 +35,6 @@ public class WorldMapEntityData
     public string? MentalState { get; set; }
     public float? Yaw { get; set; }
     public string? SpawnParams { get; set; }
+    public string? TreeType { get; set; }
+    public int? Seed { get; set; }
 }

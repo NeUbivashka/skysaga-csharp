@@ -51,7 +51,7 @@ public static class RunActionListReceived
             return true;
         }
 
-        if (targetEntityId != 0 && !(hasVoxel == 1 && connection.WorldManager.IsOreVein((int)targetEntityId)))
+        if (targetEntityId != 0 && !(hasVoxel == 1 && connection.WorldManager.IsDugEntity((int)targetEntityId)))
         {
             Combat.PlayerAttack(connection, actionListId, (int)targetEntityId, usedItemCrc);
             return true;

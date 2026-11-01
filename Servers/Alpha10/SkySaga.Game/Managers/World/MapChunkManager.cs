@@ -59,6 +59,30 @@ public class MapChunkManager(WorldInfo worldInfo, PlayerConnectionManager player
         _playerConnectionManager.BroadcastToAll(partialSync);
     }
 
+    public void SetVoxelUnsaved(Vector3Int worldPosition, byte blockType)
+    {
+        var (chunkPosition, voxelPosition) = Split(worldPosition);
+        var chunk = GetOrCreateChunk(chunkPosition);
+        var oldBlockType = chunk.GetVoxel(voxelPosition);
+
+        chunk.SetVoxel(voxelPosition, blockType);
+        _playerConnectionManager.BroadcastToAll(GetPartialChunkEditSync(chunkPosition, voxelPosition, oldBlockType, blockType));
+    }
+
+    public byte GetVoxel(Vector3Int worldPosition)
+    {
+        var (chunkPosition, voxelPosition) = Split(worldPosition);
+        return GetVoxel(chunkPosition, voxelPosition);
+    }
+
+    private static (Vector3Int Chunk, Vector3Int Voxel) Split(Vector3Int world)
+    {
+        var chunk = new Vector3Int(FloorDiv(world.X), FloorDiv(world.Y), FloorDiv(world.Z));
+        return (chunk, new Vector3Int(world.X - chunk.X * ChunkSize, world.Y - chunk.Y * ChunkSize, world.Z - chunk.Z * ChunkSize));
+
+        static int FloorDiv(int value) => (int)Math.Floor(value / (double)ChunkSize);
+    }
+
     public void LoadSavedEdits()
     {
         if (!worldInfo.IsPersistent)
