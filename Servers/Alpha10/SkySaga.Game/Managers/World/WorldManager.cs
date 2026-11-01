@@ -180,6 +180,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
             SpawnAirship(null);
         }
 
+        if (Info.IsPersistent)
+            WorldStore.EnsureCaveDisplay(Info.Id);
+
         ChunkManager.LoadSavedEdits();
 
         foreach (var voxel in VoxelDamage.Keys)
@@ -366,6 +369,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 SaveDevices();
             }
         }
+
+        if (placed is null && Info.Kind == Data.Entities.WorldKind.Adventure && entity.TryGetComponent<TransformComponent>(out var origin))
+            placed = new PlacedDevice(Util.ComputeCrc32(entity.Name), (int)MathF.Floor(origin.Position.X), (int)MathF.Floor(origin.Position.Y),
+                (int)MathF.Floor(origin.Position.Z), null, [.. ResourcePickups.MaterialsOf(entity)]);
 
         EntityManager.RemoveEntity(entity.Id);
         removed.Add(entity.Id);
@@ -620,6 +627,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (string.IsNullOrWhiteSpace(spec.Name))
                 continue;
 
+            if (spec.OnlyIn is { Length: > 0 } && !string.Equals(spec.OnlyIn, Info.Kind.ToString(), StringComparison.OrdinalIgnoreCase))
+                continue;
+
             var position = DeviceTable.TryGetByEntity(spec.Name, out var mapDevice)
                 ? DeviceTable.Origin(mapDevice, new Vector3Int(spec.X, spec.Y, spec.Z))
                 : new Vector3(spec.X + 0.5f, spec.Y, spec.Z + 0.5f);
@@ -660,7 +670,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 var nameHash = Util.ComputeCrc32(spec.Name);
                 SetDeviceItemSpec(creature[^1], nameHash, MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
 
-                if (creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Info.OwnerCharacterId is { } islandOwner)
+                if (Info.Kind != Data.Entities.WorldKind.Adventure
+                    && creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Info.OwnerCharacterId is { } islandOwner)
                     mapOwner.Owner = islandOwner;
             }
 
@@ -749,6 +760,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             return [];
         }
+
+        if (Info.Kind == Data.Entities.WorldKind.Adventure && entity.TryGetComponent<ClientPickupComponent>(out var pickup))
+            pickup.CanBePickedUp = false;
 
         if (entity.TryGetComponent<SmoothedTransformComponent>(out var smoothedTransform))
             smoothedTransform.Position = position;

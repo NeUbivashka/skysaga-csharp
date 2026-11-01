@@ -9,7 +9,7 @@ public static class InitialOreVeins
     public const byte Block = 2;
 
     private const int ChunkSize = 32;
-    private const int VeinLength = 3;
+    public const int VeinLength = 3;
     private const int VeinGap = 4;
     private const int MinRadius = 8;
     private const int MaxRadius = 48;
@@ -35,14 +35,17 @@ public static class InitialOreVeins
         (OreVeinKind.Metal, "Metal_Yellow")
     ];
 
-    public static bool AddToIsland(SkySagaDbContext db, World island, byte[] template)
+    internal sealed record IslandSite(HashSet<(int X, int Y, int Z)> Voxels, List<(int X, int Y, int Z)> Entities, Dictionary<(int X, int Y, int Z), VoxelEdit> Edits,
+        (int X, int Y, int Z) Spawn, (int X, int Y, int Z) Arrival, (int X, int Y, int Z) Size);
+
+    internal static IslandSite? ReadSite(SkySagaDbContext db, World island, byte[] template)
     {
         using var json = JsonDocument.Parse(template);
         var root = json.RootElement;
         if (!root.TryGetProperty("voxels", out var voxelArray)
             || !root.TryGetProperty("entities", out var entityArray)
             || !root.TryGetProperty("mapSizeChunks", out var size))
-            return false;
+            return null;
 
         var sizeX = size.GetProperty("x").GetInt32() * ChunkSize;
         var sizeY = size.GetProperty("y").GetInt32() * ChunkSize;
@@ -60,16 +63,29 @@ public static class InitialOreVeins
 
         var entities = new List<(int X, int Y, int Z)>();
         (int X, int Y, int Z)? spawn = null;
+        (int X, int Y, int Z)? airship = null;
         foreach (var entity in entityArray.EnumerateArray())
         {
+            if (entity.TryGetProperty("onlyIn", out var onlyIn) && onlyIn.GetString() != island.Kind.ToString())
+                continue;
+
             var pos = (entity.GetProperty("x").GetInt32(), entity.GetProperty("y").GetInt32(), entity.GetProperty("z").GetInt32());
             entities.Add(pos);
             if (entity.GetProperty("name").GetString() == "Player") spawn = pos;
+            if (entity.GetProperty("name").GetString() == "Airship") airship = pos;
         }
-        if (spawn is null) return false;
+        if (spawn is null) return null;
         entities.AddRange(db.PlacedDevices.Where(device => device.WorldId == island.Id).Select(device => new ValueTuple<int, int, int>(device.X, device.Y, device.Z)));
 
-        var center = spawn.Value;
+        return new IslandSite(voxels, entities, edits, spawn.Value, airship ?? spawn.Value, (sizeX, sizeY, sizeZ));
+    }
+
+    public static bool AddToIsland(SkySagaDbContext db, World island, byte[] template, bool addCaveDisplay = false)
+    {
+        if (ReadSite(db, island, template) is not { } site)
+            return false;
+
+        var (voxels, entities, edits, center, _, (sizeX, sizeY, sizeZ)) = site;
         var wanted = Veins.Length * VeinLength;
         var selected = new List<(int X, int Y, int Z)>();
         for (int radius = MinRadius; radius <= MaxRadius && selected.Count < wanted; radius++)
@@ -100,10 +116,13 @@ public static class InitialOreVeins
             else db.VoxelEdits.Add(new VoxelEdit { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Block = Block });
             db.OreVeins.Add(new OreVein { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Kind = vein.Kind, Material = NameCrc(vein.Material) });
         }
+        if (addCaveDisplay)
+            InitialCaveDisplay.Add(db, island, site, selected, VeinLength);
+
         return true;
     }
 
-    private static long NameCrc(string name)
+    internal static long NameCrc(string name)
     {
         uint crc = 0;
 

@@ -57,7 +57,19 @@ public static class ResourcePickups
         var start = new Vector3(device.X + 0.5f, device.Y + 0.5f, device.Z + 0.5f);
         var owner = connection.PlayerEntity.Id;
 
-        Spawn(connection, device.ItemCrc, 1, start, voxel, owner, device.Materials);
+        if (device.Owner is null && DeviceTable.TryGetLoot(device.ItemCrc, out var tables))
+        {
+            foreach (var drop in tables.SelectMany(table => LootTable.Roll(table, "")))
+            {
+                var materials = drop.Materials.Select((material, index) => material == LootTable.EntityMaterial
+                    ? index < device.Materials.Length ? device.Materials[index] : null
+                    : material is null ? null : (uint?)Util.ComputeCrc32(material)).ToArray();
+
+                Spawn(connection, drop.ItemCrc, drop.Count, start, voxel, owner, materials);
+            }
+        }
+        else
+            Spawn(connection, device.ItemCrc, 1, start, voxel, owner, device.Materials);
 
         foreach (var stored in device.Items)
             if (stored is not null)
@@ -193,7 +205,7 @@ public static class ResourcePickups
             start.Z + RandomOffset());
 
         component.InventoryItemEntity = item.Id;
-        component.OwningEntity = owner;
+        component.OwningEntity = owner != 0 && !HasRoom(connection, item, itemCrc, count) ? 0 : owner;
         component.StartPosition = start;
         component.StartVelocity = new Vector3(RandomOffset(), PopSpeed, RandomOffset());
         component.TargetPosition = target;
@@ -279,6 +291,15 @@ public static class ResourcePickups
 
     internal static uint?[] MaterialsOf(Entity item)
         => item.TryGetComponent<MaterialCompositionComponent>(out var composition) ? composition.MaterialList : [];
+
+    private static bool HasRoom(PlayerConnection connection, Entity item, uint itemCrc, int count)
+    {
+        if (!connection.PlayerEntity.TryGetComponent<ClientInventoryComponent>(out var inventory))
+            return false;
+
+        return inventory.InventoryEntityList.IndexOf(0, (int)ClientEquippedItemComponent.SlotCount) >= 0
+            || TryFindStack(connection.WorldManager.EntityManager, inventory, itemCrc, MaterialsOf(item), count, out _);
+    }
 
     internal static bool TryFindStack(IMapEntityManager entityManager, ClientInventoryComponent inventory, uint? name, uint?[] materials, int count, [NotNullWhen(true)] out InventoryItemComponent? stack)
     {

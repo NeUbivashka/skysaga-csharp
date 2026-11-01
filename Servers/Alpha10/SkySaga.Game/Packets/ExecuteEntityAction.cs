@@ -2,6 +2,21 @@
 
 public static class ExecuteEntityAction
 {
+    private static bool CanPickUp(PlayerConnection connection, Entity device)
+    {
+        var kind = connection.WorldManager.Info.Kind;
+
+        if (kind == SkySaga.Data.Entities.WorldKind.Adventure)
+            return false;
+
+        if (device.TryGetComponent<ClientOwnerComponent>(out var owner) && owner.Owner is not null && owner.Owner == connection.CharacterId)
+            return true;
+
+        return kind == SkySaga.Data.Entities.WorldKind.Island
+            && connection.PlayerEntity.TryGetComponent<ClientPlayerAspectsComponent>(out var aspects)
+            && aspects.CanEditMap;
+    }
+
     private static Dictionary<uint, string> _actions = new()
     {
         { Util.ComputeCrc32("PlaceVoxelAction"), "PlaceVoxelAction" },
@@ -48,7 +63,7 @@ public static class ExecuteEntityAction
         if (actionName == "PickupAction"
             && srcEntityId == connection.PlayerEntity.Id
             && connection.WorldManager.EntityManager.TryGetEntity((int)targetEntityId, out var device)
-            && (!device.TryGetComponent<ClientOwnerComponent>(out var owner) || owner.Owner is null || owner.Owner == connection.CharacterId)
+            && CanPickUp(connection, device)
             && ResourcePickups.RemoveDevice(connection, device, placedOnly: true))
             Console.WriteLine($"[Device] {device.Name}#{device.Id} picked up by player {srcEntityId}");
 

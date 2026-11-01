@@ -37,4 +37,5 @@ public class WorldMapEntityData
     public string? SpawnParams { get; set; }
     public string? TreeType { get; set; }
     public int? Seed { get; set; }
+    public string? OnlyIn { get; set; }
 }

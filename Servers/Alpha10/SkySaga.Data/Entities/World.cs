@@ -31,6 +31,7 @@ public class World
     public WorldAccess BuildAccess { get; set; } = WorldAccess.Owner;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastVisitedAt { get; set; }
+    public bool CaveDisplayPlaced { get; set; }
 }
 
 public class MapTemplate

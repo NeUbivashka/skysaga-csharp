@@ -137,6 +137,13 @@ public static class WorldStore
         WorldCatalog.EnsureOreVeins(context, TemplateStore.DataDirectory, worldId);
     }
 
+    public static void EnsureCaveDisplay(Guid worldId)
+    {
+        using var context = GameDatabase.Context();
+        WorldCatalog.EnsureOreVeins(context, TemplateStore.DataDirectory, worldId);
+        WorldCatalog.EnsureCaveDisplay(context, TemplateStore.DataDirectory, worldId);
+    }
+
     public static List<OreVein> LoadOreVeins(Guid worldId)
     {
         using var context = GameDatabase.Context();

@@ -56,6 +56,21 @@ HOSTILE_DISTANCE = 20
 COLUMN_SPACING = 4
 
 
+ADVENTURE_ROW = [
+    ("Mushroom_Cave_A", 16, GROUND_Y, 71),
+    ("Mushroom_Cave_B", 18, GROUND_Y, 71),
+    ("Cave_Crystal_Clump_A", 20, GROUND_Y, 71),
+    ("Cave_Crystal_Clump_A", 22, GROUND_Y, 71),
+    ("Cave_Crystal_Clump_A_Lit", 24, GROUND_Y, 71),
+    ("Cave_Crystal_Clump_A_Lit", 26, GROUND_Y, 71),
+    ("Cave_Crystal_Hanging_A", 19, GROUND_Y + 2, 74),
+    ("Stalactite_Medium", 22, GROUND_Y + 2, 74),
+    ("Cave_Crystal_Clump_Large", 20, GROUND_Y, 77),
+    ("Barrel_A", 24, GROUND_Y, 77),
+    ("Anvil_2x1x1", 27, GROUND_Y, 77),
+]
+
+
 def broken_rows():
     data = json.load(open(os.path.join(GAME, "Data", "Entities.json"), encoding="utf-8"))
     entities = data["Entities"] if isinstance(data, dict) else data
@@ -125,6 +140,10 @@ def mental_state_row(entities):
             for i, state in enumerate(MENTAL_STATES)]
 
 
+def adventure_row():
+    return [{"name": name, "x": x, "y": y, "z": z, "onlyIn": "Adventure"} for name, x, y, z in ADVENTURE_ROW]
+
+
 def main():
     all_types = "--all" in sys.argv
     sx, sz = SIZE_CHUNKS[0] * 32, SIZE_CHUNKS[2] * 32
@@ -168,6 +187,7 @@ def main():
                 creature["z"] += HOSTILE_DISTANCE
     if BUILD in REFERENCE_CHEST_BUILDS:
         entities += reference_chests(gallery_end_z + 4)
+    entities += adventure_row()
     entities.append({"name": "Airship",
                      "x": (min(e["x"] for e in creatures) + max(e["x"] for e in creatures)) // 2,
                      "y": GROUND_Y,

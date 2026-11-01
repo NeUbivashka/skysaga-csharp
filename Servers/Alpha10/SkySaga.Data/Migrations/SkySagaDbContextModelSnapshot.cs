@@ -877,6 +877,10 @@ namespace SkySaga.Data.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("build_access");
 
+                    b.Property<bool>("CaveDisplayPlaced")
+                        .HasColumnType("boolean")
+                        .HasColumnName("cave_display_placed");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");

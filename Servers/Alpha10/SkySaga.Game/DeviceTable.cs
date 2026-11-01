@@ -36,6 +36,20 @@ public static class DeviceTable
         return map;
     }
 
+    private static readonly Lazy<Dictionary<uint, string[]>> LootByItem = new(() =>
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "DeviceLoot.txt");
+
+        return File.Exists(path)
+            ? File.ReadLines(path)
+                .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                .Where(parts => parts.Length == 2)
+                .ToDictionary(parts => Util.ComputeCrc32(parts[0]), parts => parts[1].Split(','))
+            : [];
+    });
+
+    public static bool TryGetLoot(uint itemCrc, out string[] tables) => LootByItem.Value.TryGetValue(itemCrc, out tables!);
+
     public static bool TryGet(uint itemCrc, out DeviceInfo device) => DevicesByItem.Value.TryGetValue(itemCrc, out device);
 
     public static bool TryGetByEntity(string entity, out DeviceInfo device) => DevicesByEntity.Value.TryGetValue(entity, out device);

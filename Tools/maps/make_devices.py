@@ -3,6 +3,8 @@ import os
 
 from targets import BUNDLE, GAME, GEODATA
 OUT = os.path.join(GAME, "Data", "Devices.txt")
+LOOT_OUT = os.path.join(GAME, "Data", "DeviceLoot.txt")
+WORLD_ONLY = {"Mushroom_Cave_A", "Mushroom_Cave_B"}
 
 
 def entity_creating_items(geo):
@@ -30,12 +32,14 @@ def main():
         geo = json.load(f)
     placeable = entity_creating_items(geo)
     with open(os.path.join(BUNDLE, "Entities.json"), encoding="utf-8") as f:
-        entities = {e["Name"] for e in json.load(f)["Entities"]}
+        entities = {e["Name"]: e for e in json.load(f)["Entities"]}
     entity_infos = {e["Name"]: e for e in geo["ExportedEntityInfos"]}
     mesh_infos = {m["Name"]: m for m in geo["ExportedMeshInfos"]}
     rows = []
+    loot = []
     for resource in geo["Resources"]:
-        if not str(resource.get("EquippedAction", "")).startswith("Create_") and resource["Name"] not in placeable:
+        if (not str(resource.get("EquippedAction", "")).startswith("Create_") and resource["Name"] not in placeable
+                and resource["Name"] not in WORLD_ONLY):
             continue
         entity = resource.get("EntityBlueprint") or resource["Name"]
         if entity not in entities:
@@ -45,9 +49,14 @@ def main():
         xs, ys, zs = ([o[axis] for o in occupancy] for axis in "XYZ")
         cells = ";".join(f"{o['X']},{o['Y']},{o['Z']}" for o in occupancy)
         rows.append(f"{resource['Name']} {entity} {min(xs)} {max(xs)} {min(ys)} {min(zs)} {max(zs)} {cells}")
+        tables = entities[entity]["parameters"].get("loottables", {}).get("value")
+        if tables:
+            loot.append(f"{resource['Name']} {','.join(tables)}")
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(sorted(rows)) + "\n")
-    print(f"{len(rows)} devices -> {OUT}")
+    with open(LOOT_OUT, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(sorted(loot)) + "\n")
+    print(f"{len(rows)} devices -> {OUT}, {len(loot)} with loot -> {LOOT_OUT}")
 
 
 if __name__ == "__main__":

@@ -89,7 +89,7 @@ public static class WorldCatalog
                 CreatedAt = DateTimeOffset.UtcNow
             };
             db.Worlds.Add(island);
-            AddOreVeins(db, island, ReadTemplateFile(dataDirectory, template));
+            AddOreVeins(db, island, ReadTemplateFile(dataDirectory, template), true);
             db.SaveChanges();
             return island;
         }
@@ -107,9 +107,24 @@ public static class WorldCatalog
         }
     }
 
-    private static void AddOreVeins(SkySagaDbContext db, World island, byte[] template)
+    public static void EnsureCaveDisplay(SkySagaDbContext db, string dataDirectory, Guid worldId)
     {
-        if (InitialOreVeins.AddToIsland(db, island, template))
+        lock (CreateLock)
+        {
+            var island = db.Worlds.Single(w => w.Id == worldId);
+
+            if (island.Kind != WorldKind.Island || island.CaveDisplayPlaced)
+                return;
+
+            InitialCaveDisplay.AddToExisting(db, island, TemplateContent(db, dataDirectory, island), InitialOreVeins.VeinLength);
+            db.SaveChanges();
+            Console.WriteLine($"[WorldCatalog] Island {island.Id}: cave display placed.");
+        }
+    }
+
+    private static void AddOreVeins(SkySagaDbContext db, World island, byte[] template, bool addCaveDisplay = false)
+    {
+        if (InitialOreVeins.AddToIsland(db, island, template, addCaveDisplay))
             db.SaveChanges();
         else
             Console.WriteLine($"[WorldCatalog] No safe space found for ore veins on island {island.Id}.");
