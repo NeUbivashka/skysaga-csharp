@@ -1,4 +1,5 @@
 using SkySaga.Game.Database;
+using System.Linq;
 using System.Numerics;
 
 namespace SkySaga.Game.Packets;
@@ -9,6 +10,7 @@ public static class RunActionListReceived
     private const float HandDigLevel = 1;
     private const float HandMiningPowerTier = 1;
     private const uint SwingPowerMax = 0x20;
+    private const int FoodPerkMaterials = 1;
     private const byte Air = WorldChunk.Air;
 
     private static readonly (float Input, float Output)[] DigDamageLut = [(-20, 5), (-10, 13), (0, 38), (10, 63), (20, 125), (40, 500)];
@@ -198,17 +200,19 @@ public static class RunActionListReceived
             || health.IsDead)
             return;
 
-        health.Heal((int)eat.HealthBoost);
+        var healing = (int)MathF.Round(eat.HealthBoost * PerkTable.FoodHealthMultiplier(ResourcePickups.MaterialsOf(food.Entity).Take(FoodPerkMaterials)));
+
+        health.Heal(healing);
         ConsumeOne(connection, food.Entity);
 
         connection.PlayerConnectionManager.BroadcastToAll(new HealOccurred
         {
             SourceEntityId = connection.PlayerEntity.Id,
             TargetEntityId = connection.PlayerEntity.Id,
-            Amount = (uint)eat.HealthBoost
+            Amount = (uint)healing
         });
 
-        Console.WriteLine($"[Eat] {eat.EatAction} +{eat.HealthBoost} HP, now {health.SyncedFullHPValues}/{health.MaxHP}");
+        Console.WriteLine($"[Eat] {eat.EatAction} +{healing} HP, now {health.SyncedFullHPValues}/{health.MaxHP}");
     }
 
     private static void ConsumeOne(PlayerConnection connection, Entity itemEntity)
