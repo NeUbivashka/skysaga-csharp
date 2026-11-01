@@ -34,12 +34,14 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
             "mental" => MentalState(connection, args),
             "charge" => Charge(connection, args),
             "perk" => Perk(connection, args),
+            "tree" => Tree(connection, args),
+            "crack" => Crack(connection, args),
             _ => $"Unknown command {args[0]}. {Help()}"
         };
     }
 
     private static string Help()
-        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count] [material], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>, !perk <entity action | clear>";
+        => "Commands: !heal, !kill, !tp <x> <y> <z>, !give <item> [count] [material], !spawn <creature> [count], !time [hh[:mm] | freeze | run], !xp <amount>, !recipe <name | all>, !mental <state> [radius], !charge <points>, !perk <entity action | clear>, !tree [type] [seed], !crack <health>";
 
     private static string LearnRecipe(PlayerConnection connection, string[] args)
     {
@@ -242,6 +244,48 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
         }
 
         return $"Spawned {count} x {args[1]} at {position} (yaw {connection.LookYaw:0}, pitch {connection.LookPitch:0}).";
+    }
+
+    private string Tree(PlayerConnection connection, string[] args)
+    {
+        var type = args.Length > 1 ? args[1] : "ForestTree";
+        var seed = args.Length > 2 && int.TryParse(args[2], out var parsed) ? parsed : Random.Shared.Next();
+        var target = LookTarget(connection);
+        var root = new Vector3Int((int)MathF.Floor(target.X), (int)MathF.Floor(target.Y), (int)MathF.Floor(target.Z));
+
+        if (!TreeTable.TryGet(type, out _))
+            return $"Unknown tree type {type}. Types: {string.Join(", ", TreeTable.Names)}.";
+
+        if (worldManager.SpawnTree(type, root, seed, fromMap: false) is not { } tree)
+            return $"No room for {type} at {root}.";
+
+        Broadcast(tree);
+
+        return $"Grew {type} at {root} (seed {seed}).";
+    }
+
+    private string Crack(PlayerConnection connection, string[] args)
+    {
+        if (args.Length < 2 || !int.TryParse(args[1], out var health))
+            return "Usage: !crack <health>";
+
+        var target = LookTarget(connection);
+        var voxel = new Vector3Int((int)MathF.Floor(target.X), (int)MathF.Floor(target.Y) - 1, (int)MathF.Floor(target.Z));
+
+        if (!IsSolid(voxel) || !VoxelTable.TryGet(RunActionListReceived.GetWorldVoxel(connection, voxel), out var stats))
+            return "Look at a block";
+
+        if (health < 1 || health >= stats.Durability)
+            return $"Health must be 1..{stats.Durability - 1}";
+
+        if (UpdateVoxelDamage.For(worldManager.Definition, voxel, health, 0) is not { } packet)
+            return "This map size has no client id";
+
+        worldManager.VoxelDamage[voxel] = stats.Durability - health;
+        worldManager.VoxelRegeneration.TryRemove(voxel, out _);
+        playerConnectionManager.BroadcastToAll(packet);
+
+        return $"{voxel}: health {health}/{stats.Durability}, id 0x{packet.VoxelId:X8}";
     }
 
     private Vector3 LookTarget(PlayerConnection connection)

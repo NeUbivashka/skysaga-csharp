@@ -22,6 +22,7 @@ public class WorldMapVoxelData
     public int Z { get; set; }
     public byte Block { get; set; }
     public byte Meta { get; set; }
+    public int? Health { get; set; }
 }
 
 public class WorldMapEntityData
@@ -34,4 +35,6 @@ public class WorldMapEntityData
     public string? MentalState { get; set; }
     public float? Yaw { get; set; }
     public string? SpawnParams { get; set; }
+    public string? TreeType { get; set; }
+    public int? Seed { get; set; }
 }

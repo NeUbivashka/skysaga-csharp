@@ -7,6 +7,7 @@ public static class ClientInitialSyncFinished
         Debug.WriteLine("", nameof(ClientInitialSyncFinished));
 
         connection.InitialEntitiySync();
+        UpdateVoxelDamage.SendAll(connection);
 
         return true;
     }

@@ -4,6 +4,8 @@ Research & development server emulator for **[SkySaga: Infinite Isles](https://w
 
 Fork of [EDITzDev/SkySaga](https://github.com/EDITzDev/SkySaga), maintained by [@NeUbivashka](https://github.com/NeUbivashka) and [@v1k1ng31](https://github.com/v1k1ng31). Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+Contributors: [@idkb8907](https://github.com/idkb8907).
+
 Protocol and gameplay documentation lives in the [Wiki](../../wiki).
 
 > This is a non-commercial preservation / research project. It is not affiliated with Radiant Worlds or Smilegate. You need your own copy of the game client.

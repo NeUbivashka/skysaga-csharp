@@ -49,6 +49,7 @@ public sealed class WorldInstance : IDisposable
             return;
 
         Ai.Tick();
+        Manager.RegenerateVoxels(DateTime.UtcNow);
         SyncEntities();
 
         foreach (var connection in Connections.GetAllConnections().ToList())

@@ -9,7 +9,7 @@ public static class WorldMapLoader
         PropertyNameCaseInsensitive = true
     };
 
-    public static bool TryLoad(IMapChunkManager chunkManager, WorldInfo world, out MapDefinition? definition, out List<WorldMapEntityData> entities)
+    public static bool TryLoad(IMapChunkManager chunkManager, WorldInfo world, IDictionary<Vector3Int, float> voxelDamage, out MapDefinition? definition, out List<WorldMapEntityData> entities)
     {
         ArgumentNullException.ThrowIfNull(chunkManager);
 
@@ -75,6 +75,14 @@ public static class WorldMapLoader
             var chunk = chunkManager.GetOrCreateChunk(chunkPos);
             chunk.SetVoxel(localX, localY, localZ, voxel.Block, voxel.Meta);
             placed++;
+
+            if (voxel.Health is { } health)
+            {
+                if (VoxelTable.TryGet(voxel.Block, out var stats) && stats.IsDiggable && health >= 1 && health < stats.Durability)
+                    voxelDamage[new Vector3Int(voxel.X, voxel.Y, voxel.Z)] = stats.Durability - health;
+                else
+                    Console.WriteLine($"[WorldMapLoader] Ignoring health {health} at ({voxel.X}, {voxel.Y}, {voxel.Z}): block {voxel.Block} needs 1..durability-1 and must be diggable.");
+            }
         }
 
         for (int cx = 0; cx < sizeX; cx++)

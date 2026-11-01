@@ -4,6 +4,8 @@ namespace SkySaga.Game.Components;
 
 public class PlayerAspectsComponent : Component
 {
+    private const uint TeleportingMethodMax = 4;
+
     private const uint PermissionCountMax = 0x10;
 
     public static readonly string[] DefaultPermissions =
@@ -21,6 +23,7 @@ public class PlayerAspectsComponent : Component
     public bool CanDamageDevices { get; set => SetIfChanged(ref field, value); }
     public bool IsSpectator { get; set => SetIfChanged(ref field, value); }
     public bool IsTeleporting { get; set => SetIfChanged(ref field, value); }
+    public uint? TeleportingMethod { get; set => SetIfChanged(ref field, value); }
     public bool IsDebugPlayer { get; set => SetIfChanged(ref field, value); }
     public string? Tags { get; set => SetIfChanged(ref field, value); }
     public int AccountLevel { get; set => SetIfChanged(ref field, value); }
@@ -31,6 +34,15 @@ public class PlayerAspectsComponent : Component
 
     public override bool TrySync(string parameterName, BitStream bitStream)
     {
+        if (parameterName.Equals(nameof(TeleportingMethod), StringComparison.OrdinalIgnoreCase))
+        {
+            if (TeleportingMethod is not uint method)
+                return false;
+
+            bitStream.WriteRanged(Math.Min(method, TeleportingMethodMax), TeleportingMethodMax);
+            return true;
+        }
+
         if (parameterName.Equals(nameof(IsLocal), StringComparison.OrdinalIgnoreCase))
         {
             bitStream.Write(IsLocal);

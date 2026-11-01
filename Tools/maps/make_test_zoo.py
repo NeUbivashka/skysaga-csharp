@@ -36,6 +36,11 @@ BROKEN_GROUPS = [
     ("Ronin", r"^Jungle_Lizard_"),
     ("Other", r"^(FTUE_CityGuard_|Test_Biped|Jungle_Monkey_Mastery|Desert_Chicken$|Midwinter_Chicken$)"),
 ]
+DAMAGED_BLOCK = 2
+DAMAGED_BLOCK_HEALTH = (219, 188, 156, 125, 94, 63, 31)
+DAMAGED_BLOCK_X = 14
+DAMAGED_BLOCK_Z = 54
+DAMAGED_BLOCK_SPACING = 2
 REFERENCE_CHEST = "Chest_Generic_Major"
 REFERENCE_CHEST_SLOTS = 55 - 9
 REFERENCE_CHEST_SPACING = 2
@@ -90,6 +95,12 @@ def creature_names(all_types):
         elif name.startswith("HUB_NPC_"):
             names.append(name)
     return names
+
+
+def damaged_blocks():
+    return [{"x": DAMAGED_BLOCK_X + i * DAMAGED_BLOCK_SPACING, "y": GROUND_Y, "z": DAMAGED_BLOCK_Z,
+             "block": DAMAGED_BLOCK, "meta": 0, "health": health}
+            for i, health in enumerate(DAMAGED_BLOCK_HEALTH)]
 
 
 def reference_chests(z):
@@ -163,7 +174,7 @@ def main():
                      "z": max(e["z"] for e in creatures) + 14})
 
     world = {"mapSizeChunks": {"x": SIZE_CHUNKS[0], "y": SIZE_CHUNKS[1], "z": SIZE_CHUNKS[2]},
-             "biomeName": "Forest", "gameMode": 1, "voxels": voxels, "entities": entities}
+             "biomeName": "Forest", "gameMode": 1, "voxels": voxels + damaged_blocks(), "entities": entities}
     out = os.path.join(GAME, "Data", "TestZoo.json")
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(world, f, separators=(",", ":"))

@@ -7,6 +7,7 @@ namespace SkySaga.Game.Managers.World;
 public sealed class WorldManager : IWorldManager, IDisposable
 {
     private readonly MapChunkManager _chunkManager;
+    private readonly PlayerConnectionManager _playerConnectionManager;
     private readonly Random _random = new(1337);
     private FileSystemWatcher? _mapFileWatcher;
     private System.Threading.Timer? _reloadDebounceTimer;
@@ -30,6 +31,15 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private const byte OreVeinPart = 0;
     private const byte OreVeinFacing = 2;
 
+    private readonly List<WorldMapEntityData> _mapTrees = [];
+
+    private readonly Dictionary<int, List<Vector3Int>> _treeBlocks = [];
+    private readonly Dictionary<Vector3Int, string> _treeLoot = [];
+
+    private static readonly uint?[] TreeMaterials = [Util.ComputeCrc32("Wood_Brown"), Util.ComputeCrc32("Plant_Green")];
+
+    private static readonly uint?[] CactusMaterials = [Util.ComputeCrc32("Plant_Green"), Util.ComputeCrc32("Plant_Pink")];
+
     private readonly List<PlacedDevice> _devices = [];
 
     private const int CheckpointSearchRadius = 4;
@@ -43,6 +53,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private const int LandingSearchRadius = 16;
 
     public System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, float> VoxelDamage { get; } = new();
+    public System.Collections.Concurrent.ConcurrentDictionary<Vector3Int, DateTime> VoxelRegeneration { get; } = new();
+
+    private const float VoxelRegenerationPerSecond = 5f;
+    private static readonly TimeSpan VoxelRegenerationDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan VoxelRegenerationInterval = TimeSpan.FromSeconds(1);
+    private DateTime _nextVoxelRegeneration;
 
     public WorldManager(WorldInfo info, PlayerConnectionManager playerConnectionManager)
     {
@@ -50,6 +66,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         Info = info;
         EntityManager = new EntityManager();
+        _playerConnectionManager = playerConnectionManager;
         _chunkManager = new MapChunkManager(info, playerConnectionManager);
         _checkpoints = info.IsPersistent ? WorldStore.LoadCheckpoints(info.Id) : [];
 
@@ -134,7 +151,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
             return;
         }
 
-        if (WorldMapLoader.TryLoad(ChunkManager, Info, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
+        VoxelDamage.Clear();
+        VoxelRegeneration.Clear();
+
+        if (WorldMapLoader.TryLoad(ChunkManager, Info, VoxelDamage, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
         {
             Definition = loadedDefinition;
 
@@ -161,8 +181,16 @@ public sealed class WorldManager : IWorldManager, IDisposable
         }
 
         ChunkManager.LoadSavedEdits();
+
+        foreach (var voxel in VoxelDamage.Keys)
+            if (ChunkManager.HasEdit(voxel))
+                VoxelDamage.TryRemove(voxel, out _);
+
         LoadDevices();
         LoadOreVeins();
+
+        foreach (var tree in _mapTrees)
+            SpawnTree(tree.TreeType!, new Vector3Int(tree.X, tree.Y, tree.Z), tree.Seed ?? 0, fromMap: true);
 
         foreach (var entity in EntityManager.Entities.ToList())
             PlaceLinkedVoxels(entity);
@@ -608,6 +636,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (string.Equals(spec.Name, "Player", StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            if (spec.TreeType is { Length: > 0 })
+            {
+                _mapTrees.Add(spec);
+                continue;
+            }
+
             var creature = SpawnCreature(spec.Name, position);
 
             if (spec.Items is { Count: > 0 } && creature.Count > 0)
@@ -727,6 +761,83 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return [.. loadoutItems.Select(item => item.Item).OfType<Entity>(), entity];
     }
 
+    public Entity? SpawnTree(string typeName, Vector3Int root, int seed, bool fromMap)
+    {
+        if (!TreeTable.TryGet(typeName, out var type))
+            return null;
+
+        var parts = TreeGrowth.Grow(type, new Random(seed));
+        var blocks = parts.Select(part => root + part.Block).ToList();
+
+        if (parts.Count == 0
+            || !fromMap && blocks.Any(block => ChunkManager.GetVoxel(block) != WorldChunk.Air))
+            return null;
+
+        var destroyed = blocks.Select(block => fromMap && ChunkManager.HasEdit(block) && ChunkManager.GetVoxel(block) != TreeGrowth.TreeVoxel).ToList();
+
+        foreach (var (block, gone) in blocks.Zip(destroyed))
+            if (!gone)
+                ChunkManager.SetVoxelUnsaved(block, TreeGrowth.TreeVoxel);
+
+        var template = type.Name switch
+        {
+            "Vine" => "TreeVine",
+            "Metal_Deposit" => "TreeMetalOre",
+            "Keystone_Deposit" => "TreeKeystoneOre",
+            _ when type.Name.StartsWith("Ivy", StringComparison.OrdinalIgnoreCase) => "TreeIvy",
+            _ => "Tree"
+        };
+
+        if (!EntityManager.TryCreateEntity(template, out var entity)
+            || !entity.TryGetComponent<ClientTreeComponent>(out var tree))
+            return null;
+
+        if (entity.TryGetComponent<TransformComponent>(out var transform))
+            transform.Position = new Vector3(root.X, root.Y, root.Z);
+
+        if (entity.TryGetComponent<MaterialCompositionComponent>(out var composition))
+            composition.MaterialList = type.Name == "DesertCactus" ? CactusMaterials : TreeMaterials;
+
+        tree.TreeType = type.Crc;
+        tree.Description = [.. parts.Select(part => part.Part)];
+        tree.PartsDestroyed = destroyed;
+        _treeBlocks[entity.Id] = blocks;
+
+        foreach (var block in blocks)
+            _treeLoot[block] = TreeLootTable(type.Name);
+
+        Console.WriteLine($"[Trees] {type.Name} #{entity.Id} at {root}: {parts.Count} parts, {destroyed.Count(gone => gone)} already cut (seed {seed})");
+
+        return entity;
+    }
+
+    private static string TreeLootTable(string typeName) => typeName switch
+    {
+        "DesertCactus" => "Tree_Cactus_LootTable",
+        "BambooTree" => "Bamboo_LootTable",
+        _ => "Tree_Trunk_LootTable"
+    };
+
+    public bool IsDugEntity(int entityId) => _treeBlocks.ContainsKey(entityId) || IsOreVein(entityId);
+
+    public string? CutTreeBlock(Vector3Int block)
+    {
+        if (!_treeLoot.Remove(block, out var table))
+            return null;
+
+        foreach (var (id, blocks) in _treeBlocks)
+        {
+            if (!blocks.Contains(block)
+                || !EntityManager.TryGetEntity(id, out var entity)
+                || !entity.TryGetComponent<ClientTreeComponent>(out var tree))
+                continue;
+
+            tree.PartsDestroyed = [.. tree.PartsDestroyed.Select((gone, index) => gone || blocks[index] == block)];
+        }
+
+        return table;
+    }
+
     public void SendInitialChunks(PlayerConnection connection)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -838,11 +949,55 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return ordered;
     }
 
+    public void HitVoxel(Vector3Int voxel, DateTime now)
+    {
+        if (!VoxelDamage.ContainsKey(voxel) || VoxelRegeneration.ContainsKey(voxel))
+            VoxelRegeneration[voxel] = now + VoxelRegenerationDelay;
+    }
+
+    public void RegenerateVoxels(DateTime now)
+    {
+        if (now < _nextVoxelRegeneration)
+            return;
+
+        _nextVoxelRegeneration = now + VoxelRegenerationInterval;
+
+        foreach (var (voxel, from) in VoxelRegeneration)
+        {
+            if (now <= from)
+                continue;
+
+            var chunk = new Vector3Int(voxel.X / 32, voxel.Y / 32, voxel.Z / 32);
+            var local = new Vector3Int(voxel.X % 32, voxel.Y % 32, voxel.Z % 32);
+            var damage = VoxelDamage.GetValueOrDefault(voxel) - (float)(now - from).TotalSeconds * VoxelRegenerationPerSecond;
+
+            if (damage > 0 && VoxelTable.TryGet(ChunkManager.GetVoxel(chunk, local), out var stats))
+            {
+                VoxelDamage[voxel] = damage;
+                VoxelRegeneration[voxel] = now;
+
+                if (UpdateVoxelDamage.For(Definition, voxel, stats.Durability - damage, 0) is { } update)
+                    _playerConnectionManager.BroadcastToAll(update);
+
+                continue;
+            }
+
+            VoxelDamage.TryRemove(voxel, out _);
+            VoxelRegeneration.TryRemove(voxel, out _);
+
+            if (UpdateVoxelDamage.TryPackVoxelId(Definition, voxel, out var voxelId))
+                _playerConnectionManager.BroadcastToAll(new RemoveVoxelDamage { VoxelId = voxelId });
+        }
+    }
+
     public void Reset()
     {
         ((EntityManager)EntityManager).Clear();
         _oreVeins.Clear();
         _mapCreatureSpawns.Clear();
+        _mapTrees.Clear();
+        _treeBlocks.Clear();
+        _treeLoot.Clear();
         ChunkManager.ClearAll();
         InitializeWorld();
     }
