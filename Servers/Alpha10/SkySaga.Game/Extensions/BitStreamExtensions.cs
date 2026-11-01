@@ -5,6 +5,8 @@ namespace SkySaga.Game.Extensions;
 public static class BitStreamExtensions
 {
     private const int EscapeBias = byte.MaxValue + 1 - (byte)DefaultMessageIDTypes.ID_USER_PACKET_ENUM;
+    private const int LongStringBase = byte.MaxValue;
+    private const uint LongStringExtraMax = 0xFF00;
 
     #region Read
 
@@ -37,20 +39,28 @@ public static class BitStreamExtensions
             return string.Empty;
 
         var largeLength = bitStream.ReadBit();
+        int length;
 
         if (largeLength)
-            throw new NotImplementedException();
+        {
+            if (!bitStream.ReadInt32(LongStringExtraMax, out var extra))
+                return string.Empty;
 
-        var lengthData = new byte[1];
+            length = LongStringBase + extra;
+        }
+        else
+        {
+            var lengthData = new byte[1];
 
-        if (!bitStream.ReadBits(lengthData, 8u))
-            return string.Empty;
+            if (!bitStream.ReadBits(lengthData, 8u))
+                return string.Empty;
 
-        var length = lengthData[0];
+            length = lengthData[0];
+        }
 
         var stringData = new byte[length];
 
-        if (!bitStream.ReadBits(stringData, length * 8u))
+        if (!bitStream.ReadBits(stringData, (uint)length * 8u))
             return string.Empty;
 
         return Encoding.UTF8.GetString(stringData);
@@ -248,15 +258,18 @@ public static class BitStreamExtensions
 
         var length = bytes.Length;
 
-        if (length < 255)
+        if (length < LongStringBase)
         {
             bitStream.Write0();
             bitStream.Write((byte)length);
         }
         else
         {
+            if (length > LongStringBase + LongStringExtraMax)
+                throw new ArgumentOutOfRangeException(nameof(value), length, "The client reads string lengths up to 0xFFFF bytes.");
+
             bitStream.Write1();
-            bitStream.Write(length);
+            bitStream.WriteRanged((uint)(length - LongStringBase), LongStringExtraMax);
         }
 
         bitStream.WriteBits(bytes, (uint)length * 8u, true);
