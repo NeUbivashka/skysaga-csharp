@@ -30,6 +30,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private readonly Dictionary<Vector3Int, int> _oreVeins = [];
     private const byte OreVeinPart = 0;
     private const byte OreVeinFacing = 2;
+    private const byte WaterVoxel = 50;
+
+    private int? _seaLevel;
+    private Entity? _sea;
 
     private readonly List<WorldMapEntityData> _mapTrees = [];
 
@@ -153,6 +157,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         VoxelDamage.Clear();
         VoxelRegeneration.Clear();
+        _seaLevel = null;
+        _sea = null;
 
         if (WorldMapLoader.TryLoad(ChunkManager, Info, VoxelDamage, out var loadedDefinition, out var loadedEntities) && loadedDefinition is not null)
         {
@@ -532,6 +538,48 @@ public sealed class WorldManager : IWorldManager, IDisposable
         _oreVeins[pos] = entity.Id;
     }
 
+    private void SpawnSea(int level, int floor)
+    {
+        if (!EntityManager.TryCreateEntity("SeaLevel", out var entity))
+            return;
+
+        if (!entity.TryGetComponent<SeaLevelComponent>(out var sea))
+        {
+            EntityManager.RemoveEntity(entity.Id);
+            return;
+        }
+
+        sea.SeaLevel = level;
+        sea.SeaFloorLevel = floor;
+        _seaLevel = level;
+        _sea = entity;
+    }
+
+    public void SendSea(PlayerConnection connection)
+    {
+        if (_sea is null)
+            return;
+
+        connection.Send(new EntityAdd
+        {
+            Id = _sea.Id,
+            NameHash = Util.ComputeCrc32(_sea.Name),
+            SyncData = _sea.GetSyncData(newEntity: true)
+        });
+
+        Console.WriteLine($"[WorldManager] Sent the sea, level {_seaLevel}, to {connection.CharacterName}.");
+    }
+
+    public bool IsUnderwater(Vector3 position)
+    {
+        if (_seaLevel is { } level && position.Y < level)
+            return true;
+
+        var voxel = new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y), (int)MathF.Floor(position.Z));
+
+        return ChunkManager.GetVoxel(voxel) == WaterVoxel;
+    }
+
     public bool IsOreVein(int entityId) => _oreVeins.ContainsValue(entityId);
 
     public Entity? TakeOreVein(Vector3Int block)
@@ -645,6 +693,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             if (string.Equals(spec.Name, "Player", StringComparison.OrdinalIgnoreCase))
                 continue;
+
+            if (string.Equals(spec.Name, "SeaLevel", StringComparison.OrdinalIgnoreCase))
+            {
+                SpawnSea(spec.SeaLevel ?? 0, spec.SeaFloorLevel ?? 0);
+                continue;
+            }
 
             if (spec.TreeType is { Length: > 0 })
             {
@@ -912,7 +966,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         GameEvents.Record("player.join", Info.Id, characterId, new { kind = Info.Kind.ToString(), template = Info.Template });
         WorldStore.SetOnline(characterId, Info.Id);
 
-        foreach (var entity in InventoryFirst(EntityManager.Entities))
+        foreach (var entity in InventoryFirst(EntityManager.Entities).Where(entity => entity != _sea))
         {
             var entityAdd = new EntityAdd
             {

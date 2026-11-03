@@ -186,7 +186,7 @@ public class ChatCommands(IWorldManager worldManager, PlayerConnectionManager pl
         if (!connection.PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
             return "The player has no health.";
 
-        health.Damage(int.MaxValue / 2);
+        health.Damage(int.MaxValue / 2, HealthComponent.DamageReasonDebug);
 
         return "Killed.";
     }

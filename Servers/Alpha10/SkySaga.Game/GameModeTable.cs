@@ -2,11 +2,13 @@ namespace SkySaga.Game;
 
 public static class GameModeTable
 {
-    private static readonly Lazy<Dictionary<string, bool>> PlayersCanDamagePlayersByMode = new(Load);
+    private const double DefaultRespawnDelay = 10;
 
-    private static Dictionary<string, bool> Load()
+    private static readonly Lazy<Dictionary<string, (bool PlayersCanDamagePlayers, double RespawnDelay)>> Modes = new(Load);
+
+    private static Dictionary<string, (bool PlayersCanDamagePlayers, double RespawnDelay)> Load()
     {
-        var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        var map = new Dictionary<string, (bool PlayersCanDamagePlayers, double RespawnDelay)>(StringComparer.OrdinalIgnoreCase);
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "GameModes.txt");
 
         if (!File.Exists(path))
@@ -16,15 +18,18 @@ public static class GameModeTable
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (parts.Length == 2)
-                map[parts[0]] = parts[1] == "1";
+            if (parts.Length == 3)
+                map[parts[0]] = (parts[1] == "1", double.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture));
         }
 
         return map;
     }
 
     public static bool PlayersCanDamagePlayers(GameMode mode)
-        => PlayersCanDamagePlayersByMode.Value.GetValueOrDefault(PropertiesName(mode));
+        => Modes.Value.GetValueOrDefault(PropertiesName(mode)).PlayersCanDamagePlayers;
+
+    public static double RespawnDelay(GameMode mode)
+        => Modes.Value.TryGetValue(PropertiesName(mode), out var properties) ? properties.RespawnDelay : DefaultRespawnDelay;
 
     private static string PropertiesName(GameMode mode)
         => "GameMode_" + (mode == GameMode.Social ? "SocialHub" : mode.ToString());

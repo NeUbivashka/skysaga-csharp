@@ -38,4 +38,6 @@ public class WorldMapEntityData
     public string? TreeType { get; set; }
     public int? Seed { get; set; }
     public string? OnlyIn { get; set; }
+    public int? SeaLevel { get; set; }
+    public int? SeaFloorLevel { get; set; }
 }

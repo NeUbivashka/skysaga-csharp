@@ -135,7 +135,7 @@ public static class Combat
             + (creatureVictim ? CharacterStats(player).CreatureLevel : 0);
         var damage = (int)MathF.Round(Lookup(creatureVictim ? CreatureAiTable.CreatureDamageLut : CreatureAiTable.DamageLut, weaponLevel - armourLevel));
 
-        health.Damage(damage);
+        health.Damage(damage, HealthComponent.DamageReasonAttack, creature.Id);
 
         connections.BroadcastToAll(new HitOccurred
         {
@@ -168,7 +168,8 @@ public static class Combat
         connections.BroadcastToAll(new KillOccurred
         {
             SourceEntityId = creature.Id,
-            TargetEntityId = player.Id
+            TargetEntityId = player.Id,
+            Kind = HealthComponent.DamageReasonAttack
         });
 
         Console.WriteLine($"[Combat] {player.Name}#{player.Id} killed by {creature.Name}#{creature.Id}");

@@ -3,6 +3,14 @@ namespace SkySaga.Game.Components;
 public class HealthComponent : Component
 {
     private const uint HpMax = 0x7FFF;
+    private const uint DamageReasonMax = 9;
+
+    public const uint DamageReasonUnspecified = 0;
+    public const uint DamageReasonAttack = 1;
+    public const uint DamageReasonFell = 2;
+    public const uint DamageReasonDrowned = 3;
+    public const uint DamageReasonTemperatureHot = 5;
+    public const uint DamageReasonDebug = 6;
 
     public int MaxHP { get; set; } = 1000;
 
@@ -18,7 +26,11 @@ public class HealthComponent : Component
 
     public bool IsDead { get; set => SetIfChanged(ref field, value); }
 
-    public void Damage(int amount)
+    public uint LastKilledByDamageReason { get; set => SetIfChanged(ref field, value); }
+
+    public int LastKilledById { get; set => SetIfChanged(ref field, value); }
+
+    public void Damage(int amount, uint reason = DamageReasonUnspecified, int killerId = 0)
     {
         if (IsDead)
             return;
@@ -29,6 +41,8 @@ public class HealthComponent : Component
 
         if (SyncedFullHPValues == 0)
         {
+            LastKilledByDamageReason = reason;
+            LastKilledById = killerId;
             IsDead = true;
             DiedUtc = _lastDamageUtc;
         }
@@ -39,6 +53,8 @@ public class HealthComponent : Component
     public void Revive()
     {
         SyncedFullHPValues = MaxHP;
+        LastKilledByDamageReason = DamageReasonUnspecified;
+        LastKilledById = 0;
         IsDead = false;
     }
 
@@ -84,6 +100,18 @@ public class HealthComponent : Component
 
             bitStream.WriteRanged((uint)Math.Clamp(hp, 0, (int)HpMax), HpMax);
             bitStream.Write0();
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(LastKilledById), StringComparison.OrdinalIgnoreCase))
+        {
+            bitStream.WriteFullWidthUInt32((uint)LastKilledById);
+
+            return true;
+        }
+        else if (parameterName.Equals(nameof(LastKilledByDamageReason), StringComparison.OrdinalIgnoreCase))
+        {
+            bitStream.WriteRanged(LastKilledByDamageReason, DamageReasonMax);
 
             return true;
         }

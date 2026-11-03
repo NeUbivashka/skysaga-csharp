@@ -8,7 +8,8 @@ OUT = os.path.join(GAME, "Data", "GameModes.txt")
 def main():
     with open(GEODATA, encoding="utf-8") as f:
         geo = json.load(f)
-    rows = [f"{m['Name']} {int(m['GameplaySettings']['PlayersCanDamagePlayers'])}" for m in geo["GameModeProperties"]]
+    rows = [f"{m['Name']} {int(m['GameplaySettings']['PlayersCanDamagePlayers'])} {m['GameplaySettings']['RespawnDelay']}"
+            for m in geo["GameModeProperties"]]
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(rows) + "\n")
     print(f"{len(rows)} game modes -> {OUT}")

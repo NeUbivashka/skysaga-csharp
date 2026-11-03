@@ -24,6 +24,7 @@ public static class EnteredGameplay
         connection.CurrentVideoFileName = videoName;
 
         SendIsLocal(connection);
+        connection.WorldManager.SendSea(connection);
 
         if (!connection.WorldManager.Definition.Spec.IsFtue)
         {

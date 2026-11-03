@@ -20,7 +20,19 @@ public static class EntityLanded
         Console.WriteLine($"[EntityLanded] fell {fallHeight:0.##} voxels, damage {Math.Max(damage, 0)}");
 
         if (damage > 0 && connection.PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
-            health.Damage(damage);
+        {
+            var wasDead = health.IsDead;
+
+            health.Damage(damage, HealthComponent.DamageReasonFell);
+
+            if (health.IsDead && !wasDead)
+                connection.PlayerConnectionManager.BroadcastToAll(new KillOccurred
+                {
+                    SourceEntityId = connection.PlayerEntity.Id,
+                    TargetEntityId = connection.PlayerEntity.Id,
+                    Kind = HealthComponent.DamageReasonFell
+                });
+        }
 
         return true;
     }

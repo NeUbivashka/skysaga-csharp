@@ -126,6 +126,9 @@ public class PlayerConnection
             return true;
         }
 
+        if (ControlPackets.Contains(packetId) && IsDead)
+            return true;
+
         return packetId switch
         {
             PacketId.QuitGame => QuitGame.Handle(this, bitStream),
@@ -243,13 +246,36 @@ public class PlayerConnection
 
         if (PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health))
         {
-            if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= RespawnDelaySeconds)
+            if (health.IsDead && (DateTime.UtcNow - health.DiedUtc).TotalSeconds >= GameModeTable.RespawnDelay(WorldManager.Info.GameMode))
             {
                 GameEvents.Record("player.death", WorldManager.Info.Id, CharacterId);
                 Respawn();
             }
 
+            if (health.IsDead && PlayerEntity.TryGetComponent<ClientCharacterPhysicsComponent>(out var physics))
+                physics.InputMovementSpeed = 0;
+
             health.Regenerate(DateTime.UtcNow);
+
+            if (PlayerEntity.TryGetComponent<BreatheComponent>(out var breathe)
+                && PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var bodyTransform))
+            {
+                var wasDead = health.IsDead;
+
+                breathe.Update(WorldManager.IsUnderwater(bodyTransform.Position + new Vector3(0, HeadHeight, 0)), health, DateTime.UtcNow);
+
+                if (health.IsDead && !wasDead)
+                {
+                    PlayerConnectionManager.BroadcastToAll(new KillOccurred
+                    {
+                        SourceEntityId = PlayerEntity.Id,
+                        TargetEntityId = PlayerEntity.Id,
+                        Kind = DrownedKillKind
+                    });
+
+                    Console.WriteLine($"[Breathe] {PlayerEntity.Name}#{PlayerEntity.Id} drowned");
+                }
+            }
         }
 
         if (PlayerEntity.TryGetComponent<ClientChargeBarComponent>(out var chargeBar))
@@ -269,7 +295,18 @@ public class PlayerConnection
         }
     }
 
-    private const double RespawnDelaySeconds = 10;
+    private static readonly HashSet<PacketId> ControlPackets =
+    [
+        PacketId.SetInputMovement,
+        PacketId.PerformJump,
+        PacketId.RunActionList,
+        PacketId.ExecuteEntityAction,
+        (PacketId)241,
+    ];
+
+    private bool IsDead => PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead;
+    private const float HeadHeight = 1.6f;
+    private const uint DrownedKillKind = 3;
 
     public void Respawn()
     {
