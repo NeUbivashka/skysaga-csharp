@@ -263,8 +263,12 @@ public class PlayerConnection
                 && PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var bodyTransform))
             {
                 var wasDead = health.IsDead;
+                var healthBefore = health.SyncedFullHPValues;
 
                 breathe.Update(WorldManager.IsUnderwater(bodyTransform.Position + new Vector3(0, HeadHeight, 0)), health, DateTime.UtcNow);
+
+                if (health.SyncedFullHPValues < healthBefore)
+                    BroadcastSelfHit((int)(healthBefore - health.SyncedFullHPValues), HealthComponent.DamageReasonDrowned);
 
                 if (health.IsDead && !wasDead)
                 {
