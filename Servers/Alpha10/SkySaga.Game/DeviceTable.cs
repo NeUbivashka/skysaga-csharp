@@ -54,6 +54,13 @@ public static class DeviceTable
 
     public static bool TryGetByEntity(string entity, out DeviceInfo device) => DevicesByEntity.Value.TryGetValue(entity, out device);
 
-    public static Vector3 Origin(DeviceInfo device, Vector3Int voxel)
-        => new(voxel.X + (device.MinX + device.MaxX + 1) / 2f, voxel.Y - device.MinY, voxel.Z + (device.MinZ + device.MaxZ + 1) / 2f);
+    public static Vector3 Origin(DeviceInfo device, Vector3Int voxel, float yawDegrees = 0)
+    {
+        var (x, z) = ((device.MinX + device.MaxX) / 2f, (device.MinZ + device.MaxZ) / 2f);
+
+        for (var turns = ((int)MathF.Round(yawDegrees / 90f) % 4 + 4) % 4; turns > 0; turns--)
+            (x, z) = (z, -x);
+
+        return new(voxel.X + x + 0.5f, voxel.Y - device.MinY, voxel.Z + z + 0.5f);
+    }
 }

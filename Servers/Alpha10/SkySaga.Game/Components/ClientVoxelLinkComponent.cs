@@ -10,7 +10,11 @@ public class ClientVoxelLinkComponent : Component
 
     public IEnumerable<(Vector3Int Position, byte VoxelType)> GetWorldVoxels(Vector3 origin, float yawDegrees)
     {
-        var originVoxel = new Vector3Int((int)MathF.Floor(origin.X), (int)MathF.Floor(origin.Y), (int)MathF.Floor(origin.Z));
+        var (sin, cos) = MathF.SinCos(yawDegrees * MathF.PI / 180f);
+        var originVoxel = new Vector3Int(
+            (int)MathF.Floor(origin.X + AnchorShift * (sin + cos)),
+            (int)MathF.Floor(origin.Y),
+            (int)MathF.Floor(origin.Z + AnchorShift * (cos - sin)));
         var quarterTurns = ((int)MathF.Round(yawDegrees / 90f) % 4 + 4) % 4;
 
         foreach (var voxel in Voxels)
@@ -24,6 +28,7 @@ public class ClientVoxelLinkComponent : Component
         }
     }
 
+    private const float AnchorShift = 0.25f;
     private const uint VoxelCountEscape = 200;
     private const int OffsetMin = -15;
     private const uint OffsetRange = 30;

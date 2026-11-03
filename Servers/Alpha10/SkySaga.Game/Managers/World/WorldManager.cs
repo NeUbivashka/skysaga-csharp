@@ -679,7 +679,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 continue;
 
             var position = DeviceTable.TryGetByEntity(spec.Name, out var mapDevice)
-                ? DeviceTable.Origin(mapDevice, new Vector3Int(spec.X, spec.Y, spec.Z))
+                ? DeviceTable.Origin(mapDevice, new Vector3Int(spec.X, spec.Y, spec.Z), spec.Yaw ?? 0f)
                 : new Vector3(spec.X + 0.5f, spec.Y, spec.Z + 0.5f);
 
             if (string.Equals(spec.Name, "Airship", StringComparison.OrdinalIgnoreCase))
