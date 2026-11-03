@@ -6,11 +6,22 @@ import sys
 from targets import BUILD, BUNDLE, GAME, GEODATA
 
 SIZE_CHUNKS = (6, 4, 6)
-FLOOR_Y = 31
+FLOOR_Y = 6
 GROUND_Y = FLOOR_Y + 1
 FLOOR_BLOCK = 1
-FLOOR_DEPTH = 4
+SUBFLOOR_BLOCK = 0
+STONE_BLOCK = 2
+WATER_BLOCK = 50
 EDGE = 8
+SEA_LEVEL = 5
+SEA_FLOOR_LEVEL = 0
+SEA_START_Z = 104
+SEA_BED_Y = 2
+SEA_STEPS_X = range(28, 33)
+SEA_STEPS = {104: 5, 105: 4, 106: 3}
+POOL_XS = (range(14, 19), range(22, 27))
+POOL_ZS = range(82, 87)
+POOL_BED_Y = 3
 
 SMALL_SETS = {
     "36731": [
@@ -39,12 +50,13 @@ BROKEN_GROUPS = [
 DAMAGED_BLOCK = 2
 DAMAGED_BLOCK_HEALTH = (219, 188, 156, 125, 94, 63, 31)
 DAMAGED_BLOCK_X = 14
-DAMAGED_BLOCK_Z = 54
+DAMAGED_BLOCK_ZS = (54, 50)
 DAMAGED_BLOCK_SPACING = 2
-REFERENCE_CHEST = "Chest_Generic_Major"
-REFERENCE_CHEST_SLOTS = 55 - 9
-REFERENCE_CHEST_SPACING = 2
-REFERENCE_CHEST_BUILDS = {"36731"}
+CHEST_SPACING = 3
+CHESTS_PER_ROW = 18
+CHEST_ROWS_Z = (0, 8, 14)
+CHEST_BUILDS = {"36731"}
+EXCLUDED_CHESTS = {"Chest_Christmas_Minor"}
 ROW_SPACING = 6
 MENTAL_STATE_CREATURE = "Forest_Chicken"
 MENTAL_STATE_NEIGHBOUR = "Forest_Skitterling_Fighter_0"
@@ -52,7 +64,8 @@ MENTAL_STATES = ["Stun", "Dazed", "Sleep", "Resting", "Immobilised", "Vulnerable
 MENTAL_STATE_SPACING = 1
 FACING_START_YAW = 180
 HOSTILE_CREATURE = "Forest_Skitterling_Fighter_0"
-HOSTILE_DISTANCE = 20
+HOSTILE_POSITION = (80, 20)
+AIRSHIP_POSITION = (23, 64)
 COLUMN_SPACING = 4
 
 
@@ -69,6 +82,53 @@ ADVENTURE_ROW = [
     ("Barrel_A", 24, GROUND_Y, 77),
     ("Anvil_2x1x1", 27, GROUND_Y, 77),
 ]
+
+
+TREES = [
+    ("ForestTree", 36, 54, 11),
+    ("ForestTree", 40, 74, 23),
+    ("MountainTree", 44, 60, 37),
+    ("PalmTree", 38, 64, 41),
+    ("BambooTree", 46, 70, 53),
+    ("DesertCactus", 34, 78, 67),
+]
+DECORATION_YAWS = (0, 90, 180, 270)
+WINDOW_XS = (14, 18, 22, 26)
+WINDOW_Z = 90
+VINE_DECORATION_XS = (14, 19, 24, 29)
+VINE_DECORATION_Y = GROUND_Y + 3
+VINE_DECORATION_Z = 94
+ROTATED_BARREL = ("Barrel_A", 30, 90, 45)
+VINE_WALL_XS = range(12, 64)
+VINE_WALL_Z = 100
+VINE_WALL_TOP_Y = 14
+VINE_TREES = [(16, 1), (20, 2)]
+VINE_COLUMN_XS = (16, 20, 24)
+VINE_COLUMN_Z = 97
+VINE_COLUMN_TOP_Y = 13
+VINE_OVERHANG_ZS = (97, 98, 99)
+SPARSE_VINE_COLUMN_X = 24
+SPARSE_VINE_STRAIGHT = 23
+SPARSE_VINE_END = 30
+VINE_PART_Z = 99
+VINE_PART_START_X = 13
+VINE_PART_SPACING = 2
+VINE_PART_ROWS = [
+    (10, [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]),
+    (12, [31, 32, 33, 34, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 43, 44, 45, 46, 50, 51, 52, 53]),
+]
+IVY_ROW_Y = GROUND_Y + 1
+IVY_ROW_PARTS = (22, 28, 34)
+IVY_ROW_COUNT = 18
+IVY_TEST_Y = GROUND_Y + 2
+IVY_TEST_XS = (40, 43, 46, 49, 52, 55)
+IVY_TEST_ROWS = [(85, 19), (88, 25), (91, 31)]
+SPARSE_PLANT_MATERIALS = ["Plant_Green"]
+BLOCK_ROW_MATERIALS = (135, 132, 8, 134, 131, 133)
+BLOCK_ROW_X = 14
+BLOCK_ROW_Z = 57
+BLOCK_ROW_STRIP = 3
+BLOCK_ROW_WALL_HEIGHT = 3
 
 
 def broken_rows():
@@ -113,20 +173,21 @@ def creature_names(all_types):
 
 
 def damaged_blocks():
-    return [{"x": DAMAGED_BLOCK_X + i * DAMAGED_BLOCK_SPACING, "y": GROUND_Y, "z": DAMAGED_BLOCK_Z,
+    return [{"x": DAMAGED_BLOCK_X + i * DAMAGED_BLOCK_SPACING, "y": GROUND_Y, "z": z,
              "block": DAMAGED_BLOCK, "meta": 0, "health": health}
-            for i, health in enumerate(DAMAGED_BLOCK_HEALTH)]
+            for z in DAMAGED_BLOCK_ZS for i, health in enumerate(DAMAGED_BLOCK_HEALTH)]
 
 
-def reference_chests(z):
+def chest_gallery(z):
+    with open(os.path.join(os.path.dirname(GEODATA), "Entities.json"), encoding="utf-8") as f:
+        entities = {e["Name"] for e in json.load(f)["Entities"]}
     with open(GEODATA, encoding="utf-8") as f:
-        inventory_items = {r["Name"] for r in json.load(f)["Resources"] if r.get("IsInventoryItem")}
-    with open(os.path.join(GAME, "Data", "Resources.txt"), encoding="utf-8") as f:
-        items = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-    items = [item for item in items if item in inventory_items]
-    batches = [items[i:i + REFERENCE_CHEST_SLOTS] for i in range(0, len(items), REFERENCE_CHEST_SLOTS)]
-    return [{"name": REFERENCE_CHEST, "x": EDGE + i * REFERENCE_CHEST_SPACING, "y": GROUND_Y, "z": z, "items": batch}
-            for i, batch in enumerate(batches)]
+        names = sorted(r["Name"] for r in json.load(f)["Resources"] if r["Name"].startswith("Chest") and r["Name"] in entities)
+    return [{"name": name,
+             "x": EDGE + (i % CHESTS_PER_ROW) * CHEST_SPACING,
+             "y": GROUND_Y,
+             "z": z + CHEST_ROWS_Z[i // CHESTS_PER_ROW]}
+            for i, name in enumerate(names) if name not in EXCLUDED_CHESTS]
 
 
 def mental_state_row(entities):
@@ -140,6 +201,76 @@ def mental_state_row(entities):
             for i, state in enumerate(MENTAL_STATES)]
 
 
+def terrain_block(x, y, z):
+    if z >= SEA_START_Z:
+        if y == SEA_STEPS.get(z) and x in SEA_STEPS_X:
+            return STONE_BLOCK
+        if y > SEA_LEVEL:
+            return None
+        return SUBFLOOR_BLOCK if y <= SEA_BED_Y else WATER_BLOCK
+    if z in POOL_ZS and any(x in xs for xs in POOL_XS):
+        if y > SEA_LEVEL:
+            return None
+        return SUBFLOOR_BLOCK if y <= POOL_BED_Y else WATER_BLOCK
+    return FLOOR_BLOCK if y == FLOOR_Y else SUBFLOOR_BLOCK
+
+
+def terrain(sx, sz):
+    return [{"x": x, "y": y, "z": z, "block": block, "meta": 0}
+            for y in range(FLOOR_Y + 1) for x in range(sx) for z in range(sz)
+            if (block := terrain_block(x, y, z)) is not None]
+
+
+def stone(x, y, z):
+    return {"x": x, "y": y, "z": z, "block": STONE_BLOCK, "meta": 0}
+
+
+def vine_wall_blocks():
+    wall = [stone(x, y, VINE_WALL_Z) for x in VINE_WALL_XS for y in range(GROUND_Y, VINE_WALL_TOP_Y + 1)]
+    overhangs = [stone(x, VINE_WALL_TOP_Y, z) for x in VINE_COLUMN_XS for z in VINE_OVERHANG_ZS]
+    ivy_tests = [stone(x, IVY_TEST_Y, z) for z, _ in IVY_TEST_ROWS for x in IVY_TEST_XS]
+    return wall + overhangs + ivy_tests
+
+
+def block_row():
+    width = len(BLOCK_ROW_MATERIALS) * BLOCK_ROW_STRIP
+    material = lambda x: BLOCK_ROW_MATERIALS[(x - BLOCK_ROW_X) // BLOCK_ROW_STRIP]
+    xs = range(BLOCK_ROW_X, BLOCK_ROW_X + width)
+    floor = {(x, FLOOR_Y, z): material(x) for x in xs for z in range(BLOCK_ROW_Z, BLOCK_ROW_Z + BLOCK_ROW_STRIP)}
+    wall = [{"x": x, "y": y, "z": BLOCK_ROW_Z + BLOCK_ROW_STRIP, "block": material(x), "meta": 0}
+            for x in xs for y in range(GROUND_Y, GROUND_Y + BLOCK_ROW_WALL_HEIGHT)]
+    return floor, wall
+
+
+def sparse_entity(name, tree_type, x, y, z, parts):
+    return {"name": name, "x": x, "y": y, "z": z, "treeType": tree_type, "materials": SPARSE_PLANT_MATERIALS,
+            "sparseParts": [{"x": px, "y": py, "z": pz, "part": part, "facing": 0} for px, py, pz, part in parts]}
+
+
+def decorations():
+    windows = [{"name": "Window_Stone_A", "x": x, "y": GROUND_Y, "z": WINDOW_Z, "yaw": yaw}
+               for x, yaw in zip(WINDOW_XS, DECORATION_YAWS)]
+    vines = [{"name": "Vine_Jungle_A", "x": x, "y": VINE_DECORATION_Y, "z": VINE_DECORATION_Z, "yaw": yaw}
+             for x, yaw in zip(VINE_DECORATION_XS, DECORATION_YAWS)]
+    name, x, z, yaw = ROTATED_BARREL
+    return windows + vines + [{"name": name, "x": x, "y": GROUND_Y, "z": z, "yaw": yaw}]
+
+
+def vines_and_ivy():
+    ivy_row = [(VINE_PART_START_X + i * VINE_PART_SPACING, IVY_ROW_Y, VINE_WALL_Z, IVY_ROW_PARTS[i % len(IVY_ROW_PARTS)])
+               for i in range(IVY_ROW_COUNT)]
+    ivy_tests = [(x, IVY_TEST_Y, z, first + i) for z, first in IVY_TEST_ROWS for i, x in enumerate(IVY_TEST_XS)]
+    vine_rows = [(VINE_PART_START_X + i * VINE_PART_SPACING, y, VINE_PART_Z, part)
+                 for y, parts in VINE_PART_ROWS for i, part in enumerate(parts)]
+    column = [(SPARSE_VINE_COLUMN_X, y, VINE_COLUMN_Z, SPARSE_VINE_STRAIGHT) for y in range(VINE_COLUMN_TOP_Y, GROUND_Y, -1)]
+    column.append((SPARSE_VINE_COLUMN_X, GROUND_Y, VINE_COLUMN_Z, SPARSE_VINE_END))
+    trees = [{"name": "Tree", "x": x, "y": VINE_COLUMN_TOP_Y, "z": VINE_COLUMN_Z, "treeType": "Vine", "seed": seed}
+             for x, seed in VINE_TREES]
+    return [sparse_entity("SparseTreeIvy", "Ivy", VINE_PART_START_X, IVY_ROW_Y, VINE_PART_Z, ivy_row + ivy_tests),
+            sparse_entity("SparseTreeVine", "Vine", VINE_PART_START_X, VINE_PART_ROWS[0][0], VINE_PART_Z, vine_rows),
+            sparse_entity("SparseTreeVine", "Vine", SPARSE_VINE_COLUMN_X, GROUND_Y, VINE_COLUMN_Z, column)] + trees
+
+
 def adventure_row():
     return [{"name": name, "x": x, "y": y, "z": z, "onlyIn": "Adventure"} for name, x, y, z in ADVENTURE_ROW]
 
@@ -147,8 +278,10 @@ def adventure_row():
 def main():
     all_types = "--all" in sys.argv
     sx, sz = SIZE_CHUNKS[0] * 32, SIZE_CHUNKS[2] * 32
-    voxels = [{"x": x, "y": y, "z": z, "block": FLOOR_BLOCK, "meta": 0}
-              for y in range(FLOOR_Y - FLOOR_DEPTH + 1, FLOOR_Y + 1) for x in range(sx) for z in range(sz)]
+    voxels = terrain(sx, sz)
+    row_floor, row_wall = block_row()
+    for voxel in voxels:
+        voxel["block"] = row_floor.get((voxel["x"], voxel["y"], voxel["z"]), voxel["block"])
 
     per_row = (sx - 2 * EDGE) // 3
     types = voxel_types()
@@ -184,17 +317,22 @@ def main():
         entities += mental_state_row(creatures)
         for creature in creatures:
             if creature["name"] == HOSTILE_CREATURE:
-                creature["z"] += HOSTILE_DISTANCE
-    if BUILD in REFERENCE_CHEST_BUILDS:
-        entities += reference_chests(gallery_end_z + 4)
+                creature["x"], creature["z"] = HOSTILE_POSITION
+    if BUILD in CHEST_BUILDS:
+        entities += chest_gallery(gallery_end_z + 4)
     entities += adventure_row()
+    entities += decorations()
+    entities += vines_and_ivy()
+    entities += [{"name": "Tree", "x": x, "y": GROUND_Y, "z": z, "treeType": tree_type, "seed": seed}
+                 for tree_type, x, z, seed in TREES]
+    entities.append({"name": "SeaLevel", "x": 0, "y": 0, "z": 0, "seaLevel": SEA_LEVEL, "seaFloorLevel": SEA_FLOOR_LEVEL})
     entities.append({"name": "Airship",
-                     "x": (min(e["x"] for e in creatures) + max(e["x"] for e in creatures)) // 2,
+                     "x": AIRSHIP_POSITION[0],
                      "y": GROUND_Y,
-                     "z": max(e["z"] for e in creatures) + 14})
+                     "z": AIRSHIP_POSITION[1]})
 
     world = {"mapSizeChunks": {"x": SIZE_CHUNKS[0], "y": SIZE_CHUNKS[1], "z": SIZE_CHUNKS[2]},
-             "biomeName": "Forest", "gameMode": 1, "voxels": voxels + damaged_blocks(), "entities": entities}
+             "biomeName": "Forest", "gameMode": 1, "voxels": voxels + damaged_blocks() + vine_wall_blocks() + row_wall, "entities": entities}
     out = os.path.join(GAME, "Data", "TestZoo.json")
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(world, f, separators=(",", ":"))
