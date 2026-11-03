@@ -52,6 +52,9 @@ public class ClientSparseTreeComponent : Component
         (3200, 3200)
     ];
 
+    public static uint SizeProfileFor(int dimX, int dimZ)
+        => (uint)Math.Max(Array.IndexOf(SizeProfiles, ((uint)dimX, (uint)dimZ)), 0);
+
     public List<SparseTreePart> Description { get; set => SetIfChanged(ref field, value); } = [];
 
     public uint TreeType { get; set => SetIfChanged(ref field, value); }

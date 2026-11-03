@@ -40,4 +40,15 @@ public class WorldMapEntityData
     public string? OnlyIn { get; set; }
     public int? SeaLevel { get; set; }
     public int? SeaFloorLevel { get; set; }
+    public List<string>? Materials { get; set; }
+    public List<WorldMapSparsePartData>? SparseParts { get; set; }
+}
+
+public class WorldMapSparsePartData
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int Z { get; set; }
+    public byte Part { get; set; }
+    public byte Facing { get; set; }
 }

@@ -6,7 +6,8 @@ public static class TreeGrowth
 {
     public const byte TreeVoxel = 19;
 
-    private const byte PlusX = 0, MinusX = 1, PlusZ = 2, MinusZ = 3, Up = 4, Same = 6;
+    private const byte PlusX = 0, MinusX = 1, PlusZ = 2, MinusZ = 3, Up = 4, Down = 5, Same = 6;
+    private const int VineStraightDown = 23, VineEnd = 30, VineMinLength = 6, VineMaxLength = 7;
 
     private static readonly Vector3Int[] Offsets =
         [new(1, 0, 0), new(-1, 0, 0), new(0, 0, 1), new(0, 0, -1), new(0, 1, 0), new(0, -1, 0), new(0, 0, 0), new(0, 1, 0)];
@@ -30,8 +31,23 @@ public static class TreeGrowth
         "PalmTree" => GrowPalm(type, random),
         "BambooTree" => GrowBamboo(type, random),
         "DesertCactus" => GrowCactus(type, random),
+        "Vine" => GrowVine(type, random),
         _ => GrowForest(type, random)
     };
+
+    private static List<Placed> GrowVine(TreeTypeInfo type, Random random)
+    {
+        var builder = new Builder(type, random);
+        var length = random.Next(VineMinLength, VineMaxLength + 1);
+        var parent = -1;
+
+        for (var i = 0; i < length - 1; i++)
+            parent = builder.Add(type.Parts[VineStraightDown], parent, parent < 0 ? Same : Down);
+
+        builder.Add(type.Parts[VineEnd], parent, Down);
+
+        return builder.Parts;
+    }
 
     private sealed class Builder(TreeTypeInfo type, Random random)
     {

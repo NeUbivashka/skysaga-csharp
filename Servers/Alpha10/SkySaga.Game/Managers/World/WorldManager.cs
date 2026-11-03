@@ -538,6 +538,46 @@ public sealed class WorldManager : IWorldManager, IDisposable
         _oreVeins[pos] = entity.Id;
     }
 
+    private void SpawnSparseTree(WorldMapEntityData spec)
+    {
+        if (!EntityManager.TryCreateEntity(spec.Name, out var entity))
+            return;
+
+        if (!entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree)
+            || !entity.TryGetComponent<MaterialCompositionComponent>(out var material))
+        {
+            EntityManager.RemoveEntity(entity.Id);
+            return;
+        }
+
+        var sizeProfile = ClientSparseTreeComponent.SizeProfileFor(Definition.MapSizeChunks.X * ChunkSize, Definition.MapSizeChunks.Z * ChunkSize);
+
+        sparseTree.TreeType = Util.ComputeCrc32(spec.TreeType ?? spec.Name);
+        var blocks = spec.SparseParts!.Select(part => new Vector3Int(part.X, part.Y, part.Z)).ToList();
+        var originalVoxel = sparseTree.IsVoxelOwner ? TreeGrowth.TreeVoxel : WorldChunk.Air;
+
+        sparseTree.Description = [.. spec.SparseParts!.Select(part =>
+            new SparseTreePart(new Vector3Int(part.X, part.Y, part.Z), sizeProfile, part.Part, part.Facing, false,
+                sparseTree.IsVoxelOwner ? originalVoxel : ChunkManager.GetVoxel(new Vector3Int(part.X, part.Y, part.Z))))];
+        sparseTree.PartsDestroyed = [.. blocks.Select(block => sparseTree.IsVoxelOwner && ChunkManager.HasEdit(block) && ChunkManager.GetVoxel(block) != TreeGrowth.TreeVoxel)];
+
+        if (sparseTree.IsVoxelOwner)
+        {
+            foreach (var (block, gone) in blocks.Zip(sparseTree.PartsDestroyed))
+            {
+                if (gone)
+                    continue;
+
+                ChunkManager.SetVoxelUnsaved(block, TreeGrowth.TreeVoxel);
+                _treeLoot[block] = TreeLootTable(spec.TreeType ?? spec.Name);
+            }
+
+            _treeBlocks[entity.Id] = blocks;
+        }
+
+        material.MaterialList = [.. (spec.Materials ?? []).Select(name => Util.ComputeCrc32(name))];
+    }
+
     private void SpawnSea(int level, int floor)
     {
         if (!EntityManager.TryCreateEntity("SeaLevel", out var entity))
@@ -697,6 +737,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
             if (string.Equals(spec.Name, "SeaLevel", StringComparison.OrdinalIgnoreCase))
             {
                 SpawnSea(spec.SeaLevel ?? 0, spec.SeaFloorLevel ?? 0);
+                continue;
+            }
+
+            if (spec.SparseParts is { Count: > 0 })
+            {
+                SpawnSparseTree(spec);
                 continue;
             }
 
@@ -864,7 +910,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
             transform.Position = new Vector3(root.X, root.Y, root.Z);
 
         if (entity.TryGetComponent<MaterialCompositionComponent>(out var composition))
-            composition.MaterialList = type.Name == "DesertCactus" ? CactusMaterials : TreeMaterials;
+            composition.MaterialList = type.Name switch
+            {
+                "DesertCactus" => CactusMaterials,
+                "Vine" => [Util.ComputeCrc32("Plant_Green")],
+                _ => TreeMaterials
+            };
 
         tree.TreeType = type.Crc;
         tree.Description = [.. parts.Select(part => part.Part)];
@@ -883,6 +934,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     {
         "DesertCactus" => "Tree_Cactus_LootTable",
         "BambooTree" => "Bamboo_LootTable",
+        "Vine" => "Vine_LootTable",
         _ => "Tree_Trunk_LootTable"
     };
 
@@ -895,12 +947,13 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         foreach (var (id, blocks) in _treeBlocks)
         {
-            if (!blocks.Contains(block)
-                || !EntityManager.TryGetEntity(id, out var entity)
-                || !entity.TryGetComponent<ClientTreeComponent>(out var tree))
+            if (!blocks.Contains(block) || !EntityManager.TryGetEntity(id, out var entity))
                 continue;
 
-            tree.PartsDestroyed = [.. tree.PartsDestroyed.Select((gone, index) => gone || blocks[index] == block)];
+            if (entity.TryGetComponent<ClientTreeComponent>(out var tree))
+                tree.PartsDestroyed = [.. tree.PartsDestroyed.Select((gone, index) => gone || blocks[index] == block)];
+            else if (entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree))
+                sparseTree.PartsDestroyed = [.. sparseTree.PartsDestroyed.Select((gone, index) => gone || blocks[index] == block)];
         }
 
         return table;
