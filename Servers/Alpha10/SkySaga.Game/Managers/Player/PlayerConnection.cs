@@ -1,3 +1,4 @@
+using System.Linq;
 using SkySaga.Game.Database;
 using SkySaga.Game.Packets;
 
@@ -167,6 +168,7 @@ public class PlayerConnection
             PacketId.PlayerDodged => PlayerDodged.Handle(this, bitStream),
             PacketId.PerformJump => PerformJump.Handle(this, bitStream),
             PacketId.EntityLanded => Packets.EntityLanded.Handle(this, bitStream),
+            PacketId.TouchedVoxelTrackingSyncUp => Packets.TouchedVoxelTrackingSyncUp.Handle(this, bitStream),
             PacketId.RequestRespawn => Packets.RequestRespawn.Handle(this, bitStream),
             PacketId.JoinDestinationSelectionWorld => JoinDestinationSelectionWorld.Handle(this, bitStream),
             PacketId.JoinHomeWorld => JoinHomeWorld.Handle(this, bitStream),
@@ -276,6 +278,8 @@ public class PlayerConnection
                     Console.WriteLine($"[Breathe] {PlayerEntity.Name}#{PlayerEntity.Id} drowned");
                 }
             }
+
+            ApplyVoxelTouch(health, DateTime.UtcNow);
         }
 
         if (PlayerEntity.TryGetComponent<ClientChargeBarComponent>(out var chargeBar))
@@ -307,6 +311,54 @@ public class PlayerConnection
     private bool IsDead => PlayerEntity.TryGetComponent<ClientHealthComponent>(out var health) && health.IsDead;
     private const float HeadHeight = 1.6f;
     private const uint DrownedKillKind = 3;
+    private const byte MagmaVoxel = 135;
+    private const int MagmaTouchDamage = 120;
+    private static readonly TimeSpan VoxelTouchCooldown = TimeSpan.FromSeconds(1);
+
+    private DateTime _nextVoxelTouchUtc;
+
+    public IReadOnlyList<uint> TouchedVoxels { get; set; } = [];
+
+    public void BroadcastSelfHit(int damage, uint reason)
+    {
+        PlayerConnectionManager.BroadcastToAll(new HitOccurred
+        {
+            SourceEntityId = PlayerEntity.Id,
+            TargetEntityId = PlayerEntity.Id,
+            Amount = (uint)damage,
+            Kind = reason
+        });
+
+        PlayerConnectionManager.BroadcastToAll(new CombatResult
+        {
+            AttackerEntityId = PlayerEntity.Id,
+            VictimEntityId = PlayerEntity.Id,
+            Position = PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform) ? transform.Position : Vector3.Zero,
+            Damage = (uint)damage
+        });
+    }
+
+    private void ApplyVoxelTouch(HealthComponent health, DateTime now)
+    {
+        if (health.IsDead || now < _nextVoxelTouchUtc)
+            return;
+
+        if (!TouchedVoxels.Any(voxel => WorldManager.GetVoxelByTouchId(voxel) == MagmaVoxel))
+            return;
+
+        _nextVoxelTouchUtc = now + VoxelTouchCooldown;
+        health.Damage(MagmaTouchDamage, HealthComponent.DamageReasonTemperatureHot);
+
+        BroadcastSelfHit(MagmaTouchDamage, HealthComponent.DamageReasonTemperatureHot);
+
+        if (health.IsDead)
+            PlayerConnectionManager.BroadcastToAll(new KillOccurred
+            {
+                SourceEntityId = PlayerEntity.Id,
+                TargetEntityId = PlayerEntity.Id,
+                Kind = HealthComponent.DamageReasonTemperatureHot
+            });
+    }
 
     public void Respawn()
     {

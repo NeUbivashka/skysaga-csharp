@@ -30,6 +30,10 @@ public sealed class WorldManager : IWorldManager, IDisposable
     private readonly Dictionary<Vector3Int, int> _oreVeins = [];
     private const byte OreVeinPart = 0;
     private const byte OreVeinFacing = 2;
+    private const byte HoneyVoxel = 132;
+    private const byte HexapusVoxel = 133;
+    private const float SoftLandingScale = 0.5f;
+    private const float GroundProbe = 0.1f;
     private const byte WaterVoxel = 50;
 
     private int? _seaLevel;
@@ -618,6 +622,23 @@ public sealed class WorldManager : IWorldManager, IDisposable
         var voxel = new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y), (int)MathF.Floor(position.Z));
 
         return ChunkManager.GetVoxel(voxel) == WaterVoxel;
+    }
+
+    public byte GetVoxelByTouchId(uint touchId)
+    {
+        var sizeX = (uint)(Definition.MapSizeChunks.X * ChunkSize);
+        var sizeZ = (uint)(Definition.MapSizeChunks.Z * ChunkSize);
+        var layer = sizeX * sizeZ;
+        var row = touchId % layer;
+
+        return ChunkManager.GetVoxel(new Vector3Int((int)(row % sizeX), (int)(touchId / layer), (int)(row / sizeX)));
+    }
+
+    public float FallDamageScale(Vector3 position)
+    {
+        var below = new Vector3Int((int)MathF.Floor(position.X), (int)MathF.Floor(position.Y - GroundProbe), (int)MathF.Floor(position.Z));
+
+        return ChunkManager.GetVoxel(below) is HoneyVoxel or HexapusVoxel ? SoftLandingScale : 1f;
     }
 
     public bool IsOreVein(int entityId) => _oreVeins.ContainsValue(entityId);

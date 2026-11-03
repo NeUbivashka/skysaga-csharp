@@ -21,6 +21,8 @@ public interface IWorldManager
     List<Entity> SpawnCreature(string name, Vector3 position);
     Entity? SpawnTree(string typeName, Vector3Int root, int seed, bool fromMap);
     bool IsUnderwater(Vector3 position);
+    byte GetVoxelByTouchId(uint touchId);
+    float FallDamageScale(Vector3 position);
     void SendSea(PlayerConnection connection);
     bool IsDugEntity(int entityId);
     string? CutTreeBlock(Vector3Int block);

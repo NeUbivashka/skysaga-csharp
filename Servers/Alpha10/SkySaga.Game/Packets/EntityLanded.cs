@@ -15,6 +15,13 @@ public static class EntityLanded
         var fallHeight = (fallStart - landing) * HeightScale;
         var damage = (int)((fallHeight - SafeFallHeight) * DamagePerVoxel);
 
+        if (damage > 0 && connection.PlayerEntity.TryGetComponent<SmoothedTransformComponent>(out var transform))
+        {
+            var position = new Vector3(transform.Position.X, landing * HeightScale, transform.Position.Z);
+
+            damage = (int)(damage * connection.WorldManager.FallDamageScale(position));
+        }
+
         connection.Ai.Hear(connection.PlayerEntity, "Land");
 
         Console.WriteLine($"[EntityLanded] fell {fallHeight:0.##} voxels, damage {Math.Max(damage, 0)}");
@@ -24,6 +31,7 @@ public static class EntityLanded
             var wasDead = health.IsDead;
 
             health.Damage(damage, HealthComponent.DamageReasonFell);
+            connection.BroadcastSelfHit(damage, HealthComponent.DamageReasonFell);
 
             if (health.IsDead && !wasDead)
                 connection.PlayerConnectionManager.BroadcastToAll(new KillOccurred

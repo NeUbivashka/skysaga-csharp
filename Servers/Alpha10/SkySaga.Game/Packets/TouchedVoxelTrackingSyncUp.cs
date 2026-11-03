@@ -1,13 +1,30 @@
 namespace SkySaga.Game.Packets;
 
-public class TouchedVoxelTrackingSyncUp : ISerializablePacket
+public static class TouchedVoxelTrackingSyncUp
 {
-    public BitStream Serialize()
+    private const uint CountEscape = 100;
+
+    public static bool Handle(PlayerConnection connection, BitStream bitStream)
     {
-        var bitStream = new BitStream();
+        if (!bitStream.ReadEscapedCount(CountEscape, out var count))
+            return false;
 
-        bitStream.WritePacketId(PacketId.TouchedVoxelTrackingSyncUp);
+        var touched = new List<uint>((int)count);
+        var sides = new byte[1];
 
-        return bitStream;
+        for (var i = 0; i < count; i++)
+        {
+            if (!bitStream.ReadFullWidthUInt32(out var voxel))
+                return false;
+
+            if (!bitStream.ReadBits(sides, 8, alignBitsToRight: true))
+                return false;
+
+            touched.Add(voxel);
+        }
+
+        connection.TouchedVoxels = touched;
+
+        return true;
     }
 }
