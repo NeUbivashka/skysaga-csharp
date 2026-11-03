@@ -460,6 +460,11 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (entity.TryGetComponent<ClientPerUserInventoryStoreComponent>(out var store))
             store.IsLootFountain = false;
 
+        SetItemSpec(entity, itemCrc, materials);
+    }
+
+    private static void SetItemSpec(Entity entity, uint itemCrc, uint?[] materials)
+    {
         if (entity.TryGetComponent<ClientPickupComponent>(out var pickup))
             pickup.InventoryItemSpec = new InventoryItemRef
             {
@@ -795,6 +800,8 @@ public sealed class WorldManager : IWorldManager, IDisposable
                     && creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Info.OwnerCharacterId is { } islandOwner)
                     mapOwner.Owner = islandOwner;
             }
+            else if (creature.Count > 0 && MaterialTable.TryGet(Util.ComputeCrc32(spec.Name), out var generatedMaterials))
+                SetItemSpec(creature[^1], Util.ComputeCrc32(spec.Name), generatedMaterials);
 
             if (creature.Count == 0)
             {
