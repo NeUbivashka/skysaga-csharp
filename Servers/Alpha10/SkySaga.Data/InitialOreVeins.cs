@@ -6,13 +6,12 @@ namespace SkySaga.Data;
 
 public static class InitialOreVeins
 {
-    public const byte Block = 2;
+    public const byte Block = 56;
+
+    private static readonly HashSet<int> RockBlocks = [3, 16, 22, 27, 31, 46, 49, 51, 52, 53, 54, 55, 56];
 
     private const int ChunkSize = 32;
     public const int VeinLength = 3;
-    private const int VeinGap = 4;
-    private const int MinRadius = 8;
-    private const int MaxRadius = 48;
 
     private static readonly (OreVeinKind Kind, string Material)[] Veins =
     [
@@ -36,7 +35,12 @@ public static class InitialOreVeins
     ];
 
     internal sealed record IslandSite(HashSet<(int X, int Y, int Z)> Voxels, List<(int X, int Y, int Z)> Entities, Dictionary<(int X, int Y, int Z), VoxelEdit> Edits,
-        (int X, int Y, int Z) Spawn, (int X, int Y, int Z) Arrival, (int X, int Y, int Z) Size);
+        (int X, int Y, int Z) Spawn, (int X, int Y, int Z) Arrival, (int X, int Y, int Z) Size, HashSet<(int X, int Y, int Z)> Rock);
+
+    public static bool IsRock(int block) => RockBlocks.Contains(block);
+
+    private static bool IsExposed(HashSet<(int X, int Y, int Z)> voxels, (int X, int Y, int Z) cell)
+        => !voxels.Contains((cell.X, cell.Y, cell.Z - 1)) || !voxels.Contains((cell.X, cell.Y, cell.Z + 1));
 
     internal static IslandSite? ReadSite(SkySagaDbContext db, World island, byte[] template)
     {
@@ -52,14 +56,27 @@ public static class InitialOreVeins
         var sizeZ = size.GetProperty("z").GetInt32() * ChunkSize;
 
         var voxels = new HashSet<(int X, int Y, int Z)>();
+        var rock = new HashSet<(int X, int Y, int Z)>();
         foreach (var voxel in voxelArray.EnumerateArray())
-            if (voxel.GetProperty("block").GetInt32() != 255)
-                voxels.Add((voxel.GetProperty("x").GetInt32(), voxel.GetProperty("y").GetInt32(), voxel.GetProperty("z").GetInt32()));
+        {
+            var block = voxel.GetProperty("block").GetInt32();
+            if (block == 255)
+                continue;
+
+            var cell = (voxel.GetProperty("x").GetInt32(), voxel.GetProperty("y").GetInt32(), voxel.GetProperty("z").GetInt32());
+            voxels.Add(cell);
+            if (IsRock(block))
+                rock.Add(cell);
+        }
 
         var edits = db.VoxelEdits.Where(edit => edit.WorldId == island.Id).ToDictionary(edit => (edit.X, edit.Y, edit.Z));
         foreach (var edit in edits)
+        {
             if (edit.Value.Block == 255) voxels.Remove(edit.Key);
             else voxels.Add(edit.Key);
+            if (IsRock(edit.Value.Block)) rock.Add(edit.Key);
+            else rock.Remove(edit.Key);
+        }
 
         var entities = new List<(int X, int Y, int Z)>();
         (int X, int Y, int Z)? spawn = null;
@@ -77,7 +94,7 @@ public static class InitialOreVeins
         if (spawn is null) return null;
         entities.AddRange(db.PlacedDevices.Where(device => device.WorldId == island.Id).Select(device => new ValueTuple<int, int, int>(device.X, device.Y, device.Z)));
 
-        return new IslandSite(voxels, entities, edits, spawn.Value, airship ?? spawn.Value, (sizeX, sizeY, sizeZ));
+        return new IslandSite(voxels, entities, edits, spawn.Value, airship ?? spawn.Value, (sizeX, sizeY, sizeZ), rock);
     }
 
     public static bool AddToIsland(SkySagaDbContext db, World island, byte[] template, bool addCaveDisplay = false)
@@ -85,26 +102,14 @@ public static class InitialOreVeins
         if (ReadSite(db, island, template) is not { } site)
             return false;
 
-        var (voxels, entities, edits, center, _, (sizeX, sizeY, sizeZ)) = site;
         var wanted = Veins.Length * VeinLength;
         var selected = new List<(int X, int Y, int Z)>();
-        for (int radius = MinRadius; radius <= MaxRadius && selected.Count < wanted; radius++)
-        for (int dz = -radius; dz <= radius && selected.Count < wanted; dz++)
-        for (int dx = -radius; dx <= radius && selected.Count < wanted; dx++)
+        foreach (var start in site.Rock.OrderBy(cell => cell.Y).ThenBy(cell => cell.Z).ThenBy(cell => cell.X))
         {
-            if (Math.Max(Math.Abs(dx), Math.Abs(dz)) != radius) continue;
-            int x = center.X + dx, y = center.Y, z = center.Z + dz;
-            if (x < 1 || x + VeinLength - 1 >= sizeX || y < 1 || y + 1 >= sizeY || z < 1 || z >= sizeZ) continue;
-            bool valid = true;
-            for (int i = 0; i < VeinLength; i++)
-            {
-                var pos = (X: x + i, Y: y, Z: z);
-                if (voxels.Contains(pos) || voxels.Contains((pos.X, y + 1, z)) || !voxels.Contains((pos.X, y - 1, z))
-                    || entities.Any(e => Math.Abs(e.X - pos.X) <= 2 && Math.Abs(e.Y - y) <= 2 && Math.Abs(e.Z - z) <= 2)
-                    || selected.Any(p => Math.Abs(p.X - pos.X) <= VeinGap && Math.Abs(p.Z - z) <= VeinGap)) { valid = false; break; }
-            }
-            if (!valid) continue;
-            for (int i = 0; i < VeinLength; i++) selected.Add((x + i, y, z));
+            if (selected.Count == wanted) break;
+            var run = Enumerable.Range(0, VeinLength).Select(i => (X: start.X + i, start.Y, start.Z)).ToList();
+            if (run.All(cell => site.Rock.Contains(cell) && !selected.Contains(cell) && !site.Entities.Contains(cell) && IsExposed(site.Voxels, cell)))
+                selected.AddRange(run);
         }
         if (selected.Count != wanted) return false;
 
@@ -112,8 +117,6 @@ public static class InitialOreVeins
         {
             var pos = selected[i];
             var vein = Veins[i / VeinLength];
-            if (edits.TryGetValue(pos, out var edit)) edit.Block = Block;
-            else db.VoxelEdits.Add(new VoxelEdit { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Block = Block });
             db.OreVeins.Add(new OreVein { WorldId = island.Id, X = pos.X, Y = pos.Y, Z = pos.Z, Kind = vein.Kind, Material = NameCrc(vein.Material) });
         }
         if (addCaveDisplay)

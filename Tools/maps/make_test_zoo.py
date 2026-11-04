@@ -129,6 +129,10 @@ BLOCK_ROW_X = 14
 BLOCK_ROW_Z = 57
 BLOCK_ROW_STRIP = 3
 BLOCK_ROW_WALL_HEIGHT = 3
+ROCK_BLOCK = 56
+ROCK_WALL_XS = range(32, 44)
+ROCK_WALL_YS = range(7, 12)
+ROCK_WALL_Z = 60
 
 
 def broken_rows():
@@ -242,6 +246,10 @@ def block_row():
     return floor, wall
 
 
+def rock_wall():
+    return [{"x": x, "y": y, "z": ROCK_WALL_Z, "block": ROCK_BLOCK, "meta": 0} for x in ROCK_WALL_XS for y in ROCK_WALL_YS]
+
+
 def sparse_entity(name, tree_type, x, y, z, parts):
     return {"name": name, "x": x, "y": y, "z": z, "treeType": tree_type, "materials": SPARSE_PLANT_MATERIALS,
             "sparseParts": [{"x": px, "y": py, "z": pz, "part": part, "facing": 0} for px, py, pz, part in parts]}
@@ -332,7 +340,7 @@ def main():
                      "z": AIRSHIP_POSITION[1]})
 
     world = {"mapSizeChunks": {"x": SIZE_CHUNKS[0], "y": SIZE_CHUNKS[1], "z": SIZE_CHUNKS[2]},
-             "biomeName": "Forest", "gameMode": 1, "voxels": voxels + damaged_blocks() + vine_wall_blocks() + row_wall, "entities": entities}
+             "biomeName": "Forest", "gameMode": 1, "voxels": voxels + damaged_blocks() + vine_wall_blocks() + row_wall + rock_wall(), "entities": entities}
     out = os.path.join(GAME, "Data", "TestZoo.json")
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(world, f, separators=(",", ":"))

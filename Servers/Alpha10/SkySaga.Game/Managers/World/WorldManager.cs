@@ -565,7 +565,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
             ? ("SparseTreeKeystoneOre", "Keystone_Deposit")
             : ("SparseTreeMetalOre", "Metal_Deposit");
 
-        if (voxel != Data.InitialOreVeins.Block || !EntityManager.TryCreateEntity(entityName, out var entity))
+        if (!Data.InitialOreVeins.IsRock(voxel) || !EntityManager.TryCreateEntity(entityName, out var entity))
             return;
 
         if (!entity.TryGetComponent<ClientSparseTreeComponent>(out var sparseTree)
