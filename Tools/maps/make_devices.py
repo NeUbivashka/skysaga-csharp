@@ -7,6 +7,14 @@ LOOT_OUT = os.path.join(GAME, "Data", "DeviceLoot.txt")
 WORLD_ONLY = {"Mushroom_Cave_A", "Mushroom_Cave_B"}
 
 
+def collapse_thin_axes(occupancy, size):
+    for axis in "XZ":
+        if len({o[axis] for o in occupancy}) == 2 and size.get(axis, 2) < 1:
+            occupancy = [dict(o, **{axis: 0}) for o in occupancy]
+    unique = {(o["X"], o["Y"], o["Z"]): o for o in occupancy}
+    return list(unique.values())
+
+
 def entity_creating_items(geo):
     categories = {v["Name"]: v["Category"] for v in geo["VoxelActions"]}
     actions = {a["Name"]: a for a in geo["EquippedActions"]}
@@ -46,6 +54,7 @@ def main():
             continue
         mesh = entity_infos.get(entity, {}).get("Mesh")
         occupancy = mesh_infos.get(mesh, {}).get("VoxelOccupancy") or [{"X": 0, "Y": 0, "Z": 0}]
+        occupancy = collapse_thin_axes(occupancy, mesh_infos.get(mesh, {}).get("Size", {}))
         xs, ys, zs = ([o[axis] for o in occupancy] for axis in "XYZ")
         cells = ";".join(f"{o['X']},{o['Y']},{o['Z']}" for o in occupancy)
         rows.append(f"{resource['Name']} {entity} {min(xs)} {max(xs)} {min(ys)} {min(zs)} {max(zs)} {cells}")

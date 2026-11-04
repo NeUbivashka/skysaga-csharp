@@ -289,14 +289,13 @@ public sealed class WorldManager : IWorldManager, IDisposable
         Console.WriteLine($"[WorldManager] Placed {voxelLink.Voxels.Count} linked voxels of {entity.Name}#{entity.Id}.");
     }
 
-    public bool CanPlaceDevice(DeviceInfo device, Vector3Int voxel)
+    public bool CanPlaceDevice(DeviceInfo device, Vector3Int voxel, float yawDegrees = 0)
     {
-        var origin = DeviceTable.Origin(device, voxel);
-        var originVoxel = new Vector3Int((int)MathF.Floor(origin.X), (int)MathF.Floor(origin.Y), (int)MathF.Floor(origin.Z));
+        var origin = DeviceTable.Origin(device, voxel, yawDegrees);
 
         foreach (var cell in device.Cells)
         {
-            var position = originVoxel + cell;
+            var position = ClientVoxelLinkComponent.WorldCell(origin, yawDegrees, cell);
             var chunk = new Vector3Int(FloorDiv(position.X, ChunkSize), FloorDiv(position.Y, ChunkSize), FloorDiv(position.Z, ChunkSize));
             var local = new Vector3Int(position.X - chunk.X * ChunkSize, position.Y - chunk.Y * ChunkSize, position.Z - chunk.Z * ChunkSize);
 
@@ -307,13 +306,36 @@ public sealed class WorldManager : IWorldManager, IDisposable
         return true;
     }
 
-    public List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Vector3 surfaceNormal, Guid? owner, uint?[] materials)
+    private bool PlacesAgainstWall(string entityName)
     {
-        if (!CanPlaceDevice(device, voxel))
+        if (!EntityManager.TryCreateEntity(entityName, out var entity))
+            return false;
+
+        var againstWall = entity.TryGetComponent<ClientDynamicPlaceAgainstWallComponent>(out _);
+
+        EntityManager.RemoveEntity(entity.Id);
+
+        return againstWall;
+    }
+
+    private static float FacingPlayer(float lookYawDegrees)
+    {
+        var yaw = MathF.Round((lookYawDegrees + 180f) / 90f) * 90f % 360f;
+
+        return yaw > 180f ? yaw - 360f : yaw <= -180f ? yaw + 360f : yaw;
+    }
+
+    public List<Entity> PlaceDevice(uint itemCrc, DeviceInfo device, Vector3Int voxel, Vector3 surfaceNormal, float lookYawDegrees, Guid? owner, uint?[] materials)
+    {
+        var face = ClientDynamicPlaceAgainstWallComponent.FaceOf(surfaceNormal);
+        var againstWall = PlacesAgainstWall(device.Entity);
+        var yaw = !againstWall
+            ? FacingPlayer(lookYawDegrees)
+            : face is 2 or 3 ? 0f : MathF.Atan2(surfaceNormal.X, surfaceNormal.Z) * 180f / MathF.PI;
+
+        if (!CanPlaceDevice(device, voxel, againstWall ? 0f : yaw))
             return [];
 
-        var face = ClientDynamicPlaceAgainstWallComponent.FaceOf(surfaceNormal);
-        var yaw = face is 2 or 3 ? 0f : MathF.Atan2(surfaceNormal.X, surfaceNormal.Z) * 180f / MathF.PI;
         var placed = new PlacedDevice(itemCrc, voxel.X, voxel.Y, voxel.Z, owner, materials, face, yaw);
         var entities = SpawnDevice(placed, device);
 
@@ -434,6 +456,13 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
             if (entities[^1].TryGetComponent<TransformComponent>(out var transform))
                 transform.PitchDegrees = rule.Pitch;
+        }
+        else if (placed.Yaw != 0)
+        {
+            SetYaw(entities[^1], placed.Yaw);
+
+            if (entities[^1].TryGetComponent<TransformComponent>(out var turned))
+                turned.Position = DeviceTable.Origin(device, new Vector3Int(placed.X, placed.Y, placed.Z), placed.Yaw);
         }
 
         SetDeviceItemSpec(entities[^1], placed.ItemCrc, placed.Materials);
