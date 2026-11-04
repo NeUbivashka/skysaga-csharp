@@ -836,6 +836,34 @@ namespace SkySaga.Data.Migrations
                     b.ToTable("placed_devices", (string)null);
                 });
 
+            modelBuilder.Entity("SkySaga.Data.Entities.RemovedMapDevice", b =>
+                {
+                    b.Property<Guid>("WorldId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("world_id");
+
+                    b.Property<long>("ItemCrc")
+                        .HasColumnType("bigint")
+                        .HasColumnName("item_crc");
+
+                    b.Property<int>("X")
+                        .HasColumnType("integer")
+                        .HasColumnName("x");
+
+                    b.Property<int>("Y")
+                        .HasColumnType("integer")
+                        .HasColumnName("y");
+
+                    b.Property<int>("Z")
+                        .HasColumnType("integer")
+                        .HasColumnName("z");
+
+                    b.HasKey("WorldId", "ItemCrc", "X", "Y", "Z")
+                        .HasName("pk_removed_map_devices");
+
+                    b.ToTable("removed_map_devices", (string)null);
+                });
+
             modelBuilder.Entity("SkySaga.Data.Entities.VoxelEdit", b =>
                 {
                     b.Property<Guid>("WorldId")
@@ -1213,6 +1241,16 @@ namespace SkySaga.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_placed_devices_worlds_world_id");
+                });
+
+            modelBuilder.Entity("SkySaga.Data.Entities.RemovedMapDevice", b =>
+                {
+                    b.HasOne("SkySaga.Data.Entities.World", null)
+                        .WithMany()
+                        .HasForeignKey("WorldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_removed_map_devices_worlds_world_id");
                 });
 
             modelBuilder.Entity("SkySaga.Data.Entities.VoxelEdit", b =>

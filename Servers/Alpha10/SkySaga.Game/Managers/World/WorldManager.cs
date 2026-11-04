@@ -27,6 +27,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
     }
 
     private readonly Dictionary<int, PlacedDevice> _deviceEntities = [];
+    private readonly Dictionary<int, (uint ItemCrc, int X, int Y, int Z)> _islandMapDevices = [];
     private readonly Dictionary<Vector3Int, int> _oreVeins = [];
     private const byte OreVeinPart = 0;
     private const byte OreVeinFacing = 2;
@@ -348,7 +349,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         lock (_devicesLock)
         {
-            if (placedOnly && !_deviceEntities.ContainsKey(entity.Id))
+            if (placedOnly && !_deviceEntities.ContainsKey(entity.Id) && !_islandMapDevices.ContainsKey(entity.Id))
                 return [];
         }
 
@@ -383,6 +384,12 @@ public sealed class WorldManager : IWorldManager, IDisposable
         if (placed is null && Info.Kind == Data.Entities.WorldKind.Adventure && entity.TryGetComponent<TransformComponent>(out var origin))
             placed = new PlacedDevice(Util.ComputeCrc32(entity.Name), (int)MathF.Floor(origin.Position.X), (int)MathF.Floor(origin.Position.Y),
                 (int)MathF.Floor(origin.Position.Z), null, [.. ResourcePickups.MaterialsOf(entity)]);
+
+        if (_islandMapDevices.Remove(entity.Id, out var mapCell))
+        {
+            WorldStore.AddRemovedMapDevice(Info.Id, mapCell.ItemCrc, mapCell.X, mapCell.Y, mapCell.Z);
+            placed = new PlacedDevice(mapCell.ItemCrc, mapCell.X, mapCell.Y, mapCell.Z, Info.OwnerCharacterId, [.. ResourcePickups.MaterialsOf(entity)]);
+        }
 
         EntityManager.RemoveEntity(entity.Id);
         removed.Add(entity.Id);
@@ -736,12 +743,19 @@ public sealed class WorldManager : IWorldManager, IDisposable
 
         int spawned = 0;
 
+        var removedMapDevices = Info.IsPersistent && Info.Kind == Data.Entities.WorldKind.Island
+            ? WorldStore.LoadRemovedMapDevices(Info.Id).Select(device => (ItemCrc: (uint)device.ItemCrc, device.X, device.Y, device.Z)).ToHashSet()
+            : [];
+
         foreach (var spec in entities)
         {
             if (string.IsNullOrWhiteSpace(spec.Name))
                 continue;
 
             if (spec.OnlyIn is { Length: > 0 } && !string.Equals(spec.OnlyIn, Info.Kind.ToString(), StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (removedMapDevices.Contains((Util.ComputeCrc32(spec.Name), spec.X, spec.Y, spec.Z)))
                 continue;
 
             var position = DeviceTable.TryGetByEntity(spec.Name, out var mapDevice)
@@ -799,6 +813,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 if (Info.Kind != Data.Entities.WorldKind.Adventure
                     && creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Info.OwnerCharacterId is { } islandOwner)
                     mapOwner.Owner = islandOwner;
+
+                if (Info.Kind == Data.Entities.WorldKind.Island)
+                    _islandMapDevices[creature[^1].Id] = (nameHash, spec.X, spec.Y, spec.Z);
             }
             else if (creature.Count > 0 && MaterialTable.TryGet(Util.ComputeCrc32(spec.Name), out var generatedMaterials))
                 SetItemSpec(creature[^1], Util.ComputeCrc32(spec.Name), generatedMaterials);
@@ -1144,6 +1161,7 @@ public sealed class WorldManager : IWorldManager, IDisposable
         ((EntityManager)EntityManager).Clear();
         _oreVeins.Clear();
         _mapCreatureSpawns.Clear();
+        _islandMapDevices.Clear();
         _mapTrees.Clear();
         _treeBlocks.Clear();
         _treeLoot.Clear();

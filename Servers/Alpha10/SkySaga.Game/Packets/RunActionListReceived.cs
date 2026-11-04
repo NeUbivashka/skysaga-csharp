@@ -53,7 +53,9 @@ public static class RunActionListReceived
             return true;
         }
 
-        if (targetEntityId != 0 && !(hasVoxel == 1 && connection.WorldManager.IsDugEntity((int)targetEntityId)))
+        if (targetEntityId != 0
+            && !(hasVoxel == 1 && connection.WorldManager.IsDugEntity((int)targetEntityId))
+            && !(hasVoxel == 1 && PlacesOnDevice(connection, actionListId, usedItemCrc, (int)targetEntityId)))
         {
             Combat.PlayerAttack(connection, actionListId, (int)targetEntityId, usedItemCrc);
             return true;
@@ -159,6 +161,14 @@ public static class RunActionListReceived
 
         return DigDamageLut[^1].Output;
     }
+
+    private static bool PlacesOnDevice(PlayerConnection connection, uint actionListId, uint? usedItemCrc, int targetEntityId)
+        => usedItemCrc is { } crc
+            && DeviceTable.TryGet(crc, out _)
+            && ActionListAttackTable.Get(actionListId).Count == 0
+            && (ActionListVoxelActionTable.Has(actionListId, "CreateDeviceAction") || ActionListVoxelActionTable.Has(actionListId, "CreateEntityAction"))
+            && connection.WorldManager.EntityManager.TryGetEntity(targetEntityId, out var target)
+            && DeviceTable.TryGetByEntity(target.Name, out _);
 
     private static void PlaceDevice(PlayerConnection connection, Entity item, DeviceInfo device, Vector3Int voxel, Vector3 hitNormal)
     {

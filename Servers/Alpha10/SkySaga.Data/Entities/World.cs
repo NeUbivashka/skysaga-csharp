@@ -100,3 +100,12 @@ public class GameEvent
     public Guid? WorldId { get; set; }
     public string? Data { get; set; }
 }
+
+public class RemovedMapDevice
+{
+    public Guid WorldId { get; set; }
+    public long ItemCrc { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int Z { get; set; }
+}

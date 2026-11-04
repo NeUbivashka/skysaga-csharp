@@ -151,6 +151,22 @@ public static class WorldStore
         return [.. context.OreVeins.AsNoTracking().Where(vein => vein.WorldId == worldId)];
     }
 
+    public static List<RemovedMapDevice> LoadRemovedMapDevices(Guid worldId)
+    {
+        using var context = GameDatabase.Context();
+
+        return [.. context.RemovedMapDevices.AsNoTracking().Where(device => device.WorldId == worldId)];
+    }
+
+    public static void AddRemovedMapDevice(Guid worldId, uint itemCrc, int x, int y, int z)
+    {
+        GameDatabase.Enqueue(async context =>
+        {
+            context.RemovedMapDevices.Add(new RemovedMapDevice { WorldId = worldId, ItemCrc = itemCrc, X = x, Y = y, Z = z });
+            await context.SaveChangesAsync();
+        });
+    }
+
     public static List<PlacedDevice> LoadDevices(Guid worldId)
     {
         using var context = GameDatabase.Context();
