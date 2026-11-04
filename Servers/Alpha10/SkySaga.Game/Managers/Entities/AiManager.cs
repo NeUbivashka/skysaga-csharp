@@ -519,7 +519,12 @@ public class AiManager
         var reach = Vector3.Distance(body, transform.Position);
         var flatReach = Horizontal(body - transform.Position).Length();
 
-        if (ai.Abilities.Where(IsMelee).Any(ability => flatReach <= ability.HitReach && reach > ability.HitReach))
+        if (ai.Abilities.Where(IsMelee).Any(ability => reach <= ability.HitReach))
+        {
+            brain.Blocked = false;
+            brain.TauntEndsAt = null;
+        }
+        else if (ai.Abilities.Where(IsMelee).Any(ability => flatReach <= ability.HitReach))
             brain.Blocked = true;
 
         var outsideTerritory = ai.IsTerritorial && brain.Spawn.HomeRange > 0
