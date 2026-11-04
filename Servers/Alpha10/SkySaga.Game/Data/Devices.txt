@@ -146,7 +146,9 @@ Crate_A Crate_A 0 0 0 0 0 0,0,0
 Crate_B Crate_B 0 0 -1 0 0 0,-1,0;0,0,0
 Crate_Keystone Crate_Keystone 0 0 0 0 0 0,0,0
 Crate_Keystone_Open Crate_Keystone_Open 0 0 0 0 0 0,0,0
+CrumbleVoxel CrumbleVoxel 0 0 0 0 0 0,0,0
 CustomSpawner_Cage_Wolf CustomSpawner_Cage_Wolf -1 0 0 0 0 -1,0,0;0,0,0
+Damaged_Stone_Voxel Damaged_Stone_Voxel 0 0 0 0 0 0,0,0
 Door_Double_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
 Door_Jail_Double_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0
 Door_Jail_Single_A LogicNetworkInventoryItem 0 0 0 0 0 0,0,0

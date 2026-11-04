@@ -129,6 +129,10 @@ BLOCK_ROW_X = 14
 BLOCK_ROW_Z = 57
 BLOCK_ROW_STRIP = 3
 BLOCK_ROW_WALL_HEIGHT = 3
+DAMAGED_STONE_MATERIALS = ("Stone_Blue", "Stone_White", "Stone_Red", "Stone_Black", "Stone_Yellow")
+DAMAGED_STONE_X = 46
+DAMAGED_STONE_Z = 57
+DAMAGED_STONE_SPACING = 2
 ROCK_BLOCK = 56
 ROCK_WALL_XS = range(32, 44)
 ROCK_WALL_YS = range(7, 12)
@@ -260,8 +264,10 @@ def decorations():
                for x, yaw in zip(WINDOW_XS, DECORATION_YAWS)]
     vines = [{"name": "Vine_Jungle_A", "x": x, "y": VINE_DECORATION_Y, "z": VINE_DECORATION_Z, "yaw": yaw}
              for x, yaw in zip(VINE_DECORATION_XS, DECORATION_YAWS)]
+    stones = [{"name": "Damaged_Stone_Voxel", "x": DAMAGED_STONE_X + i * DAMAGED_STONE_SPACING, "y": GROUND_Y, "z": DAMAGED_STONE_Z,
+               "materials": [material]} for i, material in enumerate(DAMAGED_STONE_MATERIALS)]
     name, x, z, yaw = ROTATED_BARREL
-    return windows + vines + [{"name": name, "x": x, "y": GROUND_Y, "z": z, "yaw": yaw}]
+    return windows + vines + stones + [{"name": name, "x": x, "y": GROUND_Y, "z": z, "yaw": yaw}]
 
 
 def vines_and_ivy():

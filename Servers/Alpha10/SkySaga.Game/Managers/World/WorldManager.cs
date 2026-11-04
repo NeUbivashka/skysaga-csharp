@@ -837,7 +837,9 @@ public sealed class WorldManager : IWorldManager, IDisposable
                 FillLinkedVoxels(creature[^1], linkedDevice);
 
                 var nameHash = Util.ComputeCrc32(spec.Name);
-                SetDeviceItemSpec(creature[^1], nameHash, MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
+                SetDeviceItemSpec(creature[^1], nameHash, spec.Materials is { Count: > 0 }
+                    ? [.. spec.Materials.Select(name => (uint?)Util.ComputeCrc32(name))]
+                    : MaterialTable.TryGet(nameHash, out var mapMaterials) ? mapMaterials : []);
 
                 if (Info.Kind != Data.Entities.WorldKind.Adventure
                     && creature[^1].TryGetComponent<ClientOwnerComponent>(out var mapOwner) && Info.OwnerCharacterId is { } islandOwner)

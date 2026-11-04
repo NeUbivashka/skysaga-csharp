@@ -30,7 +30,7 @@ def entity_creating_items(geo):
     for resource in geo["Resources"]:
         tagged = sets.get(resource.get("AbilitiesSets") or "", {}).get("TaggedAbilities", [])
         names = [a["Action"] for t in tagged for a in abilities.get(t["Abilities"], {}).get("Actions", [])]
-        if any(creates(n) for n in names):
+        if any(creates(n) for n in names) or creates(resource.get("EquippedAction", "")):
             items.add(resource["Name"])
     return items
 
